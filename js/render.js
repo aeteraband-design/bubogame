@@ -248,9 +248,11 @@ function initMenuScenery() {
 }
 
 function startOrResumeFlight() {
-    // сначала — сброс прогресса, если начинается новая игра (иначе несколько секунд играла бы музыка и светила луна прошлого прохождения)
-    if (attempts <= 0) resetEntireGame();
-    else if (hasWonGame) startNewQuestKeepScore();
+    try { checkDailyReset(); } catch (e) {}
+    // попыток нет — сегодня играть нельзя: новая попытка начислится завтра
+    if (attempts <= 0) { returnToHome(); return; }
+    // после победы — новый поход с первого уровня (иначе несколько секунд играла бы музыка и светила луна прошлого прохождения)
+    if (hasWonGame) startNewQuestKeepScore();
     snapProgressVisuals();
     AudioFX.resume();
     AudioFX.setMode('game');
@@ -271,10 +273,9 @@ function startOrResumeFlight() {
     if (topHud) topHud.classList.remove('hidden');
     if (bottomHud) bottomHud.classList.remove('hidden');
 
-    if (attempts <= 0) resetEntireGame();
-    else if (hasWonGame) startNewQuestKeepScore();   // после победы — новый поход: темы заново, вопросы и попытки сохраняются
     hasStartedCampaign = true;
-    if (lives <= 0.5) { maxStamina = Math.max(100, maxStamina - featherMaxBonus); featherMaxBonus = 0; magicFeathersCaught = 0; lives = startLives; stamina = maxStamina; }
+    // после потери попытки полёт продолжается с того же уровня: вопросы, темы, перья, силы и прокачанные сердца сохраняются
+    if (lives <= 0.5) { lives = startLives; stamina = maxStamina; }
 
     if (!isFlightPaused) {
         invulnerableTime = 0; shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal';
@@ -333,18 +334,23 @@ function snapProgressVisuals() {
 }
 
 function startNewQuestKeepScore() {
-    const keepScore = score, keepAttempts = attempts, keepMilestone = attemptMilestone, keepMax = maxStamina, keepFeathers = magicFeathersCaught, keepStartLives = startLives, keepMaxLives = maxLives;
+    // победа: попытка не тратится, все бонусы (вопросы, перья, сила, прокачанные сердца) переходят в новый поход; темы и сложность — с первого уровня
+    const keep = { score, attempts, attemptMilestone, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, lives, heartOverflow, zeroDay };
     resetEntireGame();
-    score = keepScore; attempts = keepAttempts; attemptMilestone = keepMilestone; maxStamina = Math.max(100, keepMax - featherMaxBonus); featherMaxBonus = 0; magicFeathersCaught = 0; stamina = maxStamina;
-    startLives = keepStartLives; maxLives = keepMaxLives; lives = startLives;
+    score = keep.score; attempts = keep.attempts; attemptMilestone = keep.attemptMilestone;
+    maxStamina = keep.maxStamina; magicFeathersCaught = keep.magicFeathersCaught; featherMaxBonus = keep.featherMaxBonus; stamina = maxStamina;
+    startLives = keep.startLives; maxLives = keep.maxLives; heartOverflow = keep.heartOverflow; zeroDay = keep.zeroDay;
+    lives = Math.min(maxLives, Math.max(startLives, keep.lives));
     hasStartedCampaign = true;
     snapProgressVisuals();
     StorageManager.save();
     updateHUDAll();
 }
 
-function resetEntireGame() {
-    attempts = MAX_ATTEMPTS; score = 0; startLives = 3.0; maxLives = ADMIN_CFG.maxLives; lives = startLives; maxStamina = 100; magicFeathersCaught = 0; featherMaxBonus = 0; stamina = 100.0; hasStartedCampaign = false;
+// Полный сброс. keepAttempts — сохранить текущее число попыток (ручной «Начать заново»); attempts — сколько попыток дать (ежедневный сброс: 1)
+function resetEntireGame(opts) {
+    const o = opts || {};
+    attempts = o.keepAttempts ? attempts : (typeof o.attempts === 'number' ? o.attempts : MAX_ATTEMPTS); score = 0; heartOverflow = 0; zeroDay = ''; startLives = 3.0; maxLives = ADMIN_CFG.maxLives; lives = startLives; maxStamina = 100; magicFeathersCaught = 0; featherMaxBonus = 0; stamina = 100.0; hasStartedCampaign = false;
     hasWonGame = false;
     isFlightPaused = false;
     owl.visible = true;
@@ -361,6 +367,21 @@ function resetEntireGame() {
     snapProgressVisuals();
     updateHUDAll(); StorageManager.save();
 }
+
+// Ежедневная попытка: если вчера (или раньше) попытки закончились — сегодня 1 бесплатная попытка, но весь прошлый прогресс сгорает
+function checkDailyReset() {
+    if (attempts > 0) { if (zeroDay) { zeroDay = ''; StorageManager.saveLocal(); } return false; }
+    const today = todayKey();
+    if (!zeroDay) { zeroDay = today; StorageManager.saveLocal(); return false; }
+    if (today <= zeroDay) return false;
+    resetEntireGame({ attempts: 1 });
+    try { localStorage.setItem('bubo_daily_reset', today); } catch (e) {}
+    return true;
+}
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    try { if (!gameActive && checkDailyReset()) { updateHUDAll(); } } catch (e) {}
+});
 
 // Пауза: запоминаем, где именно были сова, трубы и предметы (только до закрытия вкладки)
 let pausedSnapshot = null;

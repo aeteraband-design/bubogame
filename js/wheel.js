@@ -4,36 +4,26 @@
 const RL_SPIN_T = 15, RL_FAST_T = 2.5;     // вращение ≈15 с: 2,5 с на полной скорости, потом долгое плавное торможение — в конце лента медленно доползает до приза
 // w — вес выпадения (на 100 000 условных шансов): командные призы выпадают совсем редко
 const RL_PRIZES = {
+    stamina: { icon: 'fa-feather-pointed', col: '#67E8F9', w: 16000, card: '+20%', cardSub: 'к силе',
+               title: '+20% К СИЛЕ', sub: 'Бонус', desc: 'Максимальный запас сил увеличен на 20%. Бонус сохраняется до сброса прогресса.' },
+    hearts:  { icon: 'fa-heart', col: '#F43F5E', w: 14000, card: '6 ЖИЗНЕЙ', cardSub: 'макс. запас<br>сердец',
+               title: '6 ЖИЗНЕЙ', sub: 'Максимальный запас сердец', desc: 'Максимум сердец — 6. Полёт начинается с 4 из 6 сердец, остальные можно добрать в полёте.' },
+    life:    { icon: 'fa-heart-circle-plus', col: '#EC4899', w: 22000, card: '+1', cardSub: 'жизнь',
+               title: '+1 ЖИЗНЬ', sub: 'Бонус', desc: 'Дополнительное сердце уже добавлено к твоим жизням.' },
     a1:      { icon: 'fa-rotate-right', col: '#FE7600', w: 30000, card: '+1', cardSub: 'попытка', attempts: 1,
                title: '+1 ПОПЫТКА', sub: 'Бонус', desc: 'Ещё одна попытка уже добавлена к твоим попыткам.' },
-    a2:      { icon: 'fa-rotate-right', col: '#FF9F1C', w: 20000, card: '+2', cardSub: 'попытки', attempts: 2,
-               title: '+2 ПОПЫТКИ', sub: 'Бонус', desc: 'Две дополнительные попытки уже добавлены к твоим попыткам.' },
-    a3:      { icon: 'fa-rotate-right', col: '#FFD35A', w: 8000, card: '+3', cardSub: 'попытки', attempts: 3,
-               title: '+3 ПОПЫТКИ', sub: 'Крупный бонус', desc: 'Три дополнительные попытки уже добавлены к твоим попыткам.' },
-    spin:    { icon: 'fa-dice', col: '#C084FC', w: 7000, card: '+1', cardSub: 'вращение<br>рулетки', extraSpin: 1,
-               title: '+1 ВРАЩЕНИЕ', sub: 'Бонус', desc: 'Ты получил ещё одно вращение рулетки — можно крутить снова!' },
-    spin2:   { icon: 'fa-dice', col: '#A78BFA', w: 2000, card: '+2', cardSub: 'вращения<br>рулетки', extraSpin: 2,
-               title: '+2 ВРАЩЕНИЯ', sub: 'Крупный бонус', desc: 'Ты получил сразу два вращения рулетки — можно крутить дальше!' },
-    hearts:  { icon: 'fa-heart', col: '#F43F5E', w: 18000, card: 'СЕРДЦА', cardSub: 'старт с 4,<br>максимум 6',
-               title: 'БОЛЬШЕ СЕРДЕЦ', sub: 'Бонус', desc: 'Следующий полёт начнётся с 4 сердец, а максимум сердец станет 6. Когда попытки закончатся и игра начнётся заново, всё вернётся как было.' },
-    stamina: { icon: 'fa-feather-pointed', col: '#67E8F9', w: 12000, card: 'СИЛЫ', cardSub: 'запас сил<br>+20%',
-               title: 'ЗАПАС СИЛ +20%', sub: 'Бонус', desc: 'Максимальный запас сил увеличен на 20%.' },
-    bar:     { icon: 'fa-martini-glass-citrus', col: '#E056FD', w: 3000, card: 'БАР', cardSub: 'сертификат<br>на 1000 ₽',
-               title: 'СЕРТИФИКАТ В БАР', sub: 'Редкий приз · 1000 ₽', desc: 'Сертификат на 1000 рублей в бар! Скоро здесь появится переход в чат, где ты сможешь его забрать.' },
-    disc1:   { icon: 'fa-percent', col: '#2DD4BF', w: 300, card: '−50%', cardSub: 'скидка<br>на проходку',
-               title: 'СКИДКА 50%', sub: 'Редкий приз · на проходку для одного человека', desc: 'Скидка 50% на проходку на игру для одного человека. Скоро здесь появится переход в чат, где ты сможешь её забрать.' },
-    pass:    { icon: 'fa-ticket', col: '#FFC53D', w: 500, card: 'ПРОХОДКА', cardSub: 'на одного<br>человека',
-               title: 'ПРОХОДКА НА ИГРУ', sub: 'Очень редкий приз · на одного человека', desc: 'Бесплатная проходка на игру! Скоро здесь появится переход в чат, где ты сможешь её забрать.' },
-    disc4:   { icon: 'fa-percent', col: '#38BDF8', w: 40, card: '−50%', cardSub: 'скидка для<br>команды из 4',
-               title: 'СКИДКА 50% НА КОМАНДУ', sub: 'Очень редкий приз · команда из четырёх человек', desc: 'Скидка 50% на проходки для команды из четырёх человек. Скоро здесь появится переход в чат, где ты сможешь её забрать.' },
-    pass4:   { icon: 'fa-ticket', col: '#FF4FA3', w: 50, card: 'ПРОХОДКА', cardSub: 'на команду<br>из 4 человек',
-               title: 'ПРОХОДКА НА КОМАНДУ', sub: 'Сверхредкий приз · команда из четырёх человек', desc: 'Бесплатные проходки на игру для команды из четырёх человек! Скоро здесь появится переход в чат, где ты сможешь их забрать.' },
-    discTeam:{ icon: 'fa-percent', col: '#A78BFA', w: 4, card: '−50%', cardSub: 'скидка для<br>всей команды',
-               title: 'СКИДКА 50% ДЛЯ ВСЕЙ КОМАНДЫ', sub: 'Почти легендарный приз', desc: 'Скидка 50% на проходки для всей твоей команды! Скоро здесь появится переход в чат, где ты сможешь её забрать.' },
-    passTeam:{ icon: 'fa-ticket', col: '#FFE066', w: 1, card: 'ПРОХОДКА', cardSub: 'на всю<br>команду',
-               title: 'ПРОХОДКА НА ВСЮ КОМАНДУ', sub: 'Легендарный приз', desc: 'Бесплатные проходки на игру для всей твоей команды! Это самый редкий приз рулетки. Скоро здесь появится переход в чат, где ты сможешь их забрать.' }
+    bar:     { icon: 'fa-martini-glass-citrus', col: '#E056FD', w: 3000, card: '1 000 ₽', cardSub: 'сертификат<br>в бар',
+               title: 'СЕРТИФИКАТ В БАР', sub: 'Редкий приз · 1 000 ₽', desc: 'Сертификат в бар на 1 000 рублей! Скоро здесь появится переход в чат, где ты сможешь его забрать.' },
+    pass:    { icon: 'fa-ticket', col: '#FFC53D', w: 500, card: 'ПРОХОДКА', cardSub: 'на 1<br>человека',
+               title: 'ПРОХОДКА НА 1 ЧЕЛОВЕКА', sub: 'Очень редкий приз', desc: 'Бесплатная проходка на игру для одного человека! Скоро здесь появится переход в чат, где ты сможешь её забрать.' },
+    pass4:   { icon: 'fa-ticket', col: '#38BDF8', w: 50, card: 'ПРОХОДКА', cardSub: 'на 4 человека<br>в команде',
+               title: 'ПРОХОДКА НА 4 ЧЕЛОВЕКА', sub: 'Сверхредкий приз · 4 человека в команде', desc: 'Бесплатные проходки на игру для четырёх человек из твоей команды! Скоро здесь появится переход в чат, где ты сможешь их забрать.' },
+    passTeam:{ icon: 'fa-ticket', col: '#A3E635', w: 1, card: 'ПРОХОДКА', cardSub: 'на всю<br>команду',
+               title: 'ПРОХОДКА НА ВСЮ КОМАНДУ', sub: 'Легендарный приз', desc: 'Бесплатные проходки на игру для всей твоей команды! Это самый редкий приз рулетки. Скоро здесь появится переход в чат, где ты сможешь их забрать.' },
+    discTeam:{ icon: 'fa-ticket', col: '#A78BFA', w: 4, card: '−50%', cardSub: 'скидка на<br>всю команду',
+               title: 'СКИДКА 50% НА ВСЮ КОМАНДУ', sub: 'Почти легендарный приз', desc: 'Скидка 50% на проходки для всей твоей команды! Скоро здесь появится переход в чат, где ты сможешь её забрать.' }
 };
-const RL_PATTERN = ['a1', 'hearts', 'bar', 'spin', 'a2', 'disc1', 'stamina', 'a1', 'pass', 'a3', 'spin2', 'hearts', 'pass4', 'a1', 'disc4', 'bar', 'spin', 'passTeam', 'a2', 'discTeam', 'stamina'];
+const RL_PATTERN = ['a1', 'hearts', 'bar', 'life', 'pass', 'stamina', 'a1', 'pass4', 'life', 'discTeam', 'hearts', 'a1', 'stamina', 'passTeam', 'life', 'bar'];
 const RW_GAP = 14;     // промежуток между карточками
 let rouletteSpins = 0;   // попытки вращения рулетки: даются за победу и как приз «ещё одно вращение»
 const rw = { spinning: false, prize: null, pos: 0, pitch: 130, cw: 120, pool: [], N: 0, vw: 300, drag: null, vel: 0, resumeAt: 0, idleRAF: 0, lastT: 0 };
@@ -134,6 +124,15 @@ function rwRender(pos) {
         }
     }
     rwUpdateFocus(pos);
+    rwSyncWheel(pos);
+}
+// Колесо в шапке крутится вместе с лентой: под оранжевой стрелкой всегда сектор той же карточки, что под стрелкой ленты
+function rwSyncWheel(pos) {
+    const rot = rw.rotorEl || (rw.rotorEl = document.querySelector('#rwWindow .rwp-rotor'));
+    if (!rot) return;
+    const u = (pos + rw.vw / 2 - RW_GAP / 2) / rw.pitch + 0.5 - (rw.cw / rw.pitch) / 2;
+    const deg = -(u / RL_PATTERN.length) * 360;
+    rot.style.transform = `rotate(${(deg % 360).toFixed(2)}deg)`;
 }
 function rwUpdateFocus(pos) {
     const el = rwCenterSlot(pos);
@@ -240,14 +239,54 @@ function spinRoulette() {
     requestAnimationFrame(frame);
 }
 function rwShowResult(key) {
-    const p = RL_PRIZES[key], res = rwEl('rwResult'), card = rwEl('rwResCard');
-    if (!res || !card) return;
-    card.style.setProperty('--c', p.col);
-    rwEl('rwResIco').innerHTML = `<i class="fa-solid ${p.icon}"></i>`;
+    const p = RL_PRIZES[key], res = rwEl('rwResult'), info = rwEl('rwResCard'), stage = rwEl('rwResStage'), win = rwEl('rwWindow');
+    if (!res || !info || !stage || !win) return;
+    info.style.setProperty('--c', p.col);
     rwEl('rwResTitle').innerText = p.title;
     rwEl('rwResSub').innerText = p.sub;
     rwEl('rwResDesc').innerText = p.desc;
-    res.classList.remove('hidden');
+    stage.innerHTML = '';
+    res.classList.remove('hidden', 'rw-res-in');
+    void res.offsetWidth;
+    res.classList.add('rw-res-in');   // фон плавно затемняется, текст и кнопка проявляются после полёта карточки
+    // карточка-победитель вылетает из ленты в центр с переворотом
+    const src = rw.pool.find(el => el.classList.contains('rw-win')) || rwCenterSlot(rw.pos);
+    const wr = win.getBoundingClientRect(), z = wr.width / (win.offsetWidth || wr.width) || 1;
+    const reel = rwEl('rwReel'), cs = reel ? getComputedStyle(reel) : null;
+    const card = document.createElement('div');
+    card.className = 'rw-card rw-win rw-fly';
+    card.style.cssText = rwCardStyle(key);
+    card.innerHTML = rwCardInner(key);
+    if (cs) ['--cw', '--cwd', '--ch'].forEach(v => card.style.setProperty(v, cs.getPropertyValue(v)));
+    const cw = rw.cw || 110, ch = rw.ch || 134;
+    card.style.width = cw + 'px'; card.style.height = ch + 'px';
+    stage.appendChild(card);
+    const sr = stage.getBoundingClientRect();
+    let fromX = 0, fromY = 0;
+    if (src) { const r = src.getBoundingClientRect(); fromX = (r.left + r.width / 2 - (sr.left + sr.width / 2)) / z; fromY = (r.top + r.height / 2 - (sr.top + sr.height / 2)) / z; }
+    const big = Math.min(1.75, (win.clientWidth * 0.52) / cw);
+    card.animate([
+        { transform: `translate(${fromX}px,${fromY}px) rotateY(0deg) scale(1)`, opacity: 1 },
+        { transform: `translate(${fromX * 0.4}px,${fromY * 0.4 - 30}px) rotateY(200deg) scale(${(1 + big) / 2})`, opacity: 1, offset: 0.55 },
+        { transform: `translate(0,0) rotateY(360deg) scale(${big * 1.08})`, offset: 0.85 },
+        { transform: `translate(0,0) rotateY(360deg) scale(${big})` }
+    ], { duration: 1100, easing: 'cubic-bezier(.3,.7,.3,1)', fill: 'forwards' });
+    setTimeout(() => {
+        // блёстки вокруг карточки
+        for (let i = 0; i < 26; i++) {
+            const sp = document.createElement('i');
+            sp.className = 'rw-res-spark';
+            const a = Math.random() * Math.PI * 2, d = 70 + Math.random() * 110, sz = 5 + Math.random() * 8;
+            sp.style.cssText = `width:${sz}px;height:${sz}px;--c:${Math.random() < 0.5 ? p.col : '#FFD98A'}`;
+            stage.appendChild(sp);
+            sp.animate([
+                { transform: 'translate(-50%,-50%) scale(0.2) rotate(0deg)', opacity: 0 },
+                { transform: `translate(calc(-50% + ${Math.cos(a) * d * 0.6}px), calc(-50% + ${Math.sin(a) * d * 0.6}px)) scale(1.2) rotate(90deg)`, opacity: 1, offset: 0.3 },
+                { transform: `translate(calc(-50% + ${Math.cos(a) * d}px), calc(-50% + ${Math.sin(a) * d + 20}px)) scale(0.4) rotate(220deg)`, opacity: 0 }
+            ], { duration: 1200 + Math.random() * 900, delay: Math.random() * 300, easing: 'cubic-bezier(.2,.7,.4,1)', fill: 'forwards' });
+        }
+        try { AudioFX.playLevelUp(); } catch (e) {}
+    }, 850);
     Haptics.powerup();
 }
 function claimRoulettePrize() {
@@ -256,11 +295,13 @@ function claimRoulettePrize() {
     const p = RL_PRIZES[key];
     if (p.attempts) { attempts += p.attempts; updateAttemptsHUD(); }
     if (p.extraSpin) rouletteSpins += p.extraSpin;
-    if (key === 'hearts') { startLives = 4.0; maxLives = 6.0; updateLivesHUD(); }
+    if (key === 'hearts') { startLives = Math.max(startLives, 4.0); maxLives = Math.max(maxLives, 6.0); updateLivesHUD(); }
+    if (key === 'life') { const base = lives <= 0.5 ? startLives : lives; lives = Math.min(maxLives, base + 1); updateLivesHUD(); }
     if (key === 'stamina') { maxStamina += 20; stamina = maxStamina; updateStaminaHUD(); }
     try { localStorage.setItem('bubo_last_prize', key + ':' + Date.now()); } catch (e) {}   // пригодится для будущего перехода в чат
     StorageManager.save();
-    rwEl('rwResult').classList.add('hidden');
+    rwEl('rwResult').classList.add('hidden'); rwEl('rwResult').classList.remove('rw-res-in');
+    { const st = rwEl('rwResStage'); if (st) st.innerHTML = ''; }
     const reel = rwEl('rwReel'); if (reel) reel.classList.remove('rw-done');
     rw.pool.forEach(el => el.classList.remove('rw-win', 'rw-focus'));
     rw.prize = null; rw.resumeAt = performance.now() + 800;
@@ -317,7 +358,7 @@ function rwBuildWheel() {
     }
     rot.innerHTML = s;
 }
-// Победа: даём попытку вращения и открываем рулетку (окно в стиле меню)
+// Победа (100%): попытка не тратится, даём вращение рулетки и показываем окно «Победа» (рулетка — по кнопке)
 function triggerVictory() {
     gameActive = false; waitingFirstTap = false;
     rouletteSpins++;
@@ -326,7 +367,44 @@ function triggerVictory() {
     returnToHome();
     AudioFX.setMode('victory');
     AudioFX.playLevelUp();
-    openRoulette({ victory: true });
+    openVictoryModal();
 }
+function vicSpinsWord(n) { return n + ' ' + ruPlural(n, ['вращение', 'вращения', 'вращений']); }
+function vicUpdate() {
+    const n = rouletteSpins, btn = rwEl('vicSpinBtn');
+    if (rwEl('vicSpinsText')) rwEl('vicSpinsText').innerText = vicSpinsWord(n);
+    if (rwEl('vicSpinLabel')) rwEl('vicSpinLabel').innerText = 'ВРАЩАТЬ РУЛЕТКУ (ДОСТУПНО: ' + n + ')';
+    if (btn) { btn.disabled = n <= 0; btn.classList.toggle('opacity-50', n <= 0); }
+}
+function vicConfetti(on) {
+    const layer = rwEl('vicConfetti'); if (!layer) return;
+    layer.innerHTML = '';
+    if (!on) return;
+    const cols = ['#FE7600', '#FFD35A', '#A855F7', '#38BDF8', '#F43F5E', '#4ADE80', '#FFFFFF'];
+    const N = (typeof gfxQuality !== 'undefined' && gfxQuality === 'low') ? 26 : 54;
+    for (let i = 0; i < N; i++) {
+        const c = document.createElement('i');
+        c.className = 'confetti';
+        const w = 5 + Math.random() * 6, h = Math.random() < 0.5 ? w : w * 0.45;
+        c.style.cssText = `left:${Math.random() * 100}%;width:${w}px;height:${h}px;background:${cols[i % cols.length]};border-radius:${Math.random() < 0.3 ? '50%' : '2px'};` +
+            `--d:${(3.6 + Math.random() * 3.4).toFixed(2)}s;--delay:${(-Math.random() * 6).toFixed(2)}s;--dx:${((Math.random() - 0.5) * 120).toFixed(0)}px;--r:${(360 + Math.random() * 720).toFixed(0)}deg;`;
+        layer.appendChild(c);
+    }
+}
+function openVictoryModal() {
+    const m = rwEl('winModal'); if (!m) return;
+    vicUpdate(); vicConfetti(true);
+    m.classList.remove('hidden');
+}
+function closeVictoryModal() {
+    const m = rwEl('winModal'); if (m) m.classList.add('hidden');
+    vicConfetti(false);
+}
+(function initVictoryUI() {
+    const on = (id, fn) => { const el = rwEl(id); if (el) el.addEventListener('click', (e) => { e.stopPropagation(); fn(); }); };
+    on('vicSpinBtn', () => { if (rouletteSpins <= 0) return; closeVictoryModal(); openRoulette({}); });
+    on('vicNewGameBtn', () => { closeVictoryModal(); startOrResumeFlight(); });
+    on('vicHomeBtn', () => { closeVictoryModal(); if (AudioFX.mode === 'victory') AudioFX.setMode('menu'); updateMenuVisibility(); });
+})();
 
 // Браузеры разрешают звук только после действия пользователя (касание, клик, клавиша).

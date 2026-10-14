@@ -120,7 +120,7 @@ function update() {
     if (owl.y + owl.radius > height) {
         owl.y = height - owl.radius;
         if (shieldTime <= 0 && invulnerableTime <= 0) {
-            handleHit('Вы упали на землю и у вас кончилась последняя жизнь!');
+            handleHit('Сова упала на землю — это была последняя жизнь.');
         } else {
             if (shieldTime > 0 && owl.vy > 0.5) shieldBump(Math.PI / 2, owl.vy / 8);
             owl.vy = -3.8; // Пружиним вверх
@@ -128,7 +128,7 @@ function update() {
     } else if (owl.y - owl.radius < 0) {
         owl.y = owl.radius;
         if (shieldTime <= 0 && invulnerableTime <= 0) {
-            handleHit('Вы взлетели слишком высоко и у вас кончилась последняя жизнь!');
+            handleHit('Сова вылетела за верхний край экрана — это была последняя жизнь.');
             owl.vy = 2.0; // Отталкиваем вниз
         } else {
             if (shieldTime > 0 && owl.vy < -0.5) shieldBump(-Math.PI / 2, -owl.vy / 8);
@@ -199,7 +199,7 @@ function update() {
             const effectiveTop = p.top + activeSqueeze;
             const effectiveBottom = p.bottom + activeSqueeze;
             if (owl.x + owl.radius > p.x && owl.x - owl.radius < p.x + p.width && (owl.y - owl.radius < effectiveTop || owl.y + owl.radius > height - effectiveBottom)) {
-                handleHit('Вы врезались в трубу и у вас кончилась последняя жизнь!');
+                handleHit('Сова врезалась в трубу — это была последняя жизнь.');
             }
         } else if (shieldTime > 0 && invulnerableTime <= 0 && !p.shieldPass) {
             // Щит: сердца не теряются, но сквозь трубу не пролететь — сова отскакивает, щит прогибается
@@ -337,7 +337,7 @@ function update() {
                 updateStaminaHUD();
                 Haptics.powerup();
                 it.pendingFX = { target: 'stamina', text: `Макс. силы ${ADMIN_CFG.infiniteSec}с`, color: '#00F0FF', icon: 'svg-infinite-feather' };
-                if (maxUp) it.extraFX = { target: 'stamina', text: 'Макс. сила +20%', color: '#00F0FF', icon: 'fa-feather-pointed' };   // вторая подсказка вместе с пером
+                if (maxUp) setTimeout(() => showGoldBanner('+20% к макс. силе', 'fa-feather-pointed', '#00F0FF'), 650);   // уведомление внизу, над панелью тем
             } else if (it.type === 'drink') {
                 AudioFX.playCollect(true);
                 stamina = Math.min(maxStamina, stamina + 10.0);
@@ -358,7 +358,16 @@ function update() {
                 it.extraFX = registerIceCream();
             } else if (it.type === 'heart') {
                 AudioFX.playStarCollect();
-                lives = Math.min(maxLives, Math.round((lives + 1.0) * 10) / 10);
+                if (lives >= maxLives - 0.001) {
+                    // все сердца целы: каждые 2 пойманных сердца — +1 к максимуму жизней (без потолка)
+                    heartOverflow++;
+                    if (heartOverflow >= 2) {
+                        heartOverflow = 0; maxLives += 1; lives = maxLives;
+                        setTimeout(() => { try { AudioFX.playMaxStaminaChime(); } catch (e) {} showGoldBanner('Макс. жизнь +1', 'fa-heart-circle-plus', '#F43F5E'); }, 650);
+                    }
+                } else {
+                    lives = Math.min(maxLives, Math.round((lives + 1.0) * 10) / 10);
+                }
                 updateLivesHUD(); StorageManager.save();
                 it.pendingFX = { target: 'heart', text: '+1.0 Жизнь', color: '#EF4444', icon: 'fa-heart' };
             } else if (it.type === 'pizza') {
@@ -725,13 +734,14 @@ function handleSecretRoulette(originX, originY) {
         return pickWeighted([
             { w: 25, run() {
                 if (lives <= 1.5) {
-                    // Последняя жизнь: обычная подсказка «−1 жизнь», игра ненадолго замирает, затем экран «продолжить / заново»
+                    // Последняя жизнь: обычная подсказка «Штраф: -1 Жизнь», игра останавливается, сова разлетается перьями,
+                    // после короткой паузы — стандартный экран смерти
                     lives = 0;
                     updateLivesHUD();
                     AudioFX.playHit();
                     Haptics.hit();
-                    // без «зависания»: сова сразу разлетается перьями, как при ударе о трубу; подсказка показывает, что забрала звезда
-                    handleRunFailure('Секретная звезда забрала последнюю жизнь!', { kind: 'ШТРАФ', text: 'Штраф: -1 Жизнь', color: '#EF4444', icon: 'fa-heart-crack' });
+                    try { spawnFlyingArrivalFX(originX, originY, 'other', 'Штраф: -1 Жизнь', '#EF4444', 'fa-heart-crack'); } catch (e) {}
+                    handleRunFailure('Секретная звезда дала штраф «−1 жизнь» — это была последняя жизнь.', { delay: 1500 });
                     return { skip: true, label: '', color: '#EF4444', icon: 'fa-heart-crack', isScoreAdd: false };
                 }
                 lives = Math.round((lives - 1.0) * 10) / 10;
@@ -851,7 +861,7 @@ function handleSecretRoulette(originX, originY) {
     })();
 }
 
-function handleHit(cause = 'Вы врезались в трубу и у вас кончилась последняя жизнь!') {
+function handleHit(cause = 'Сова врезалась в трубу — это была последняя жизнь.') {
     AudioFX.playHit();
     Haptics.hit();
 
@@ -876,7 +886,7 @@ function handleStaminaDepletion() {
     if (lives <= 1.5) {
         lives = 0;
         updateLivesHUD();
-        handleRunFailure('У вас кончилась выносливость и вы истратили последнюю жизнь!');
+        handleRunFailure('У совы закончились силы — это была последняя жизнь.');
         return;
     }
 
@@ -922,7 +932,7 @@ function triggerOwlFeatherExplosion() {
     }
 }
 
-function handleRunFailure(reason, hint) {
+function handleRunFailure(reason, opts) {
     gameActive = false;
     waitingFirstTap = false;
     isFlightPaused = false;
@@ -930,16 +940,11 @@ function handleRunFailure(reason, hint) {
     triggerOwlFeatherExplosion();
     Haptics.death();
     AudioFX.stopMusic();
-
-    // Если нас убило что-то из секретной звезды — сначала показываем, что именно мы взяли
-    let delay = 750;
-    if (hint) {
-        showEffectHint(hint.kind, hint.text, hint.color, hint.icon, 2300);
-        delay = 2400;
-    }
+    const delay = (opts && opts.delay) || 750;
 
     setTimeout(() => {
         attempts = Math.max(0, attempts - 1);
+        if (attempts <= 0 && !zeroDay) zeroDay = todayKey();
         StorageManager.save();
 
         // Если за это время игрок уже вышел в главное меню — экран поражения не показываем
@@ -950,48 +955,38 @@ function handleRunFailure(reason, hint) {
         }
 
         AudioFX.setMode('death');
-
-        const totalItems = getTotalCollectedThemes();
-        const finalScoreEl = document.getElementById('finalScore');
-        const finalTokensEl = document.getElementById('finalTokens');
-        const finalAttemptsEl = document.getElementById('finalAttempts');
-        if (finalScoreEl) finalScoreEl.innerText = score;
-        if (finalTokensEl) finalTokensEl.innerText = `${totalItems} / ${TOTAL_THEMES}`;
-        if (finalAttemptsEl) finalAttemptsEl.innerText = `${attempts}`;
-
-        const contBtn = document.getElementById('continueAttemptBtn');
-        const restartBtn = document.getElementById('restartFromGameOverBtn');
-        const titleEl = document.getElementById('gameOverTitle');
-        const subtextEl = document.getElementById('gameOverSubtext');
-        const contTitleEl = document.getElementById('continueAttemptTitle');
-        const contSubEl = document.getElementById('continueAttemptSub');
-
-        if (attempts > 0) {
-            if (titleEl) titleEl.innerText = 'ПОПЫТКА ПОТЕРЯНА';
-            if (subtextEl) subtextEl.innerText = `${reason} Собранные темы сохранены!`;
-            if (contBtn) contBtn.classList.remove('hidden');
-            if (restartBtn) restartBtn.classList.remove('hidden');
-            if (contTitleEl) contTitleEl.innerText = 'ПРОДОЛЖИТЬ';
-            if (contSubEl) contSubEl.innerText = `ОСТАЛОСЬ ПОПЫТОК: ${attempts}`;
-        } else {
-            // Попытки закончились: остаётся только выход в главное меню
-            if (titleEl) titleEl.innerText = 'ПОПЫТКИ ИСЧЕРПАНЫ';
-            if (subtextEl) subtextEl.innerText = `${reason} Все попытки потрачены!`;
-            if (contBtn) contBtn.classList.add('hidden');
-            if (restartBtn) restartBtn.classList.remove('hidden');
-        }
-        if (restartBtn) {
-            const exhausted = attempts <= 0;
-            restartBtn.classList.toggle('btn-bubo', exhausted);
-            restartBtn.classList.toggle('btn-secondary', !exhausted);
-            restartBtn.classList.toggle('restart-big', exhausted);
-            restartBtn.classList.toggle('shadow-xl', exhausted);
-        }
-        const restartLabel = restartBtn ? restartBtn.querySelector('span') : null;
-        if (restartLabel) restartLabel.innerText = (attempts > 0) ? 'ЗАНОВО' : 'НАЧАТЬ ЗАНОВО';
-
-        updateMenuVisibility();
-        const modal = document.getElementById('gameOverModal');
-        if (modal) modal.classList.remove('hidden');
+        showGameOverScreen(reason);
     }, delay);
+}
+
+// Экран смерти: понятная причина и что будет с попытками и прогрессом
+function showGameOverScreen(reason) {
+    const $ = (id) => document.getElementById(id);
+    const totalItems = getTotalCollectedThemes();
+    if ($('finalScore')) $('finalScore').innerText = score;
+    if ($('finalTokens')) $('finalTokens').innerText = `${totalItems} / ${TOTAL_THEMES}`;
+    if ($('finalAttempts')) $('finalAttempts').innerText = `${attempts}`;
+    if ($('gameOverReason')) $('gameOverReason').innerText = reason;
+    let lvlName = '';
+    try { lvlName = getDifficultyMultipliers().level; } catch (e) {}
+    const has = attempts > 0;
+    if ($('gameOverTitle')) $('gameOverTitle').innerText = has ? 'ПОПЫТКА ПОТЕРЯНА' : 'ПОПЫТКИ ЗАКОНЧИЛИСЬ';
+    if ($('gameOverSubtext')) $('gameOverSubtext').innerText = has ? 'Списана 1 попытка' : 'Списана последняя попытка';
+    const info = $('gameOverInfo');
+    if (info) {
+        info.classList.toggle('go-warn', !has);
+        info.innerHTML = has
+            ? `<i class="fa-solid fa-floppy-disk"></i><div><b>Прогресс сохранён.</b> Можно продолжить с текущего этапа${lvlName ? ` (сложность <span class="go-lvl">${lvlName}</span>)` : ''}: вопросы, темы, перья и силы остаются.</div>`
+            : `<i class="fa-solid fa-triangle-exclamation"></i><div><b>Попыток больше нет.</b> Если сегодня не заработать попытку (в рулетке или за 100 вопросов), завтра будет начислена 1 новая попытка, но <b>весь прогресс сгорит</b> и игра начнётся с нуля.</div>`;
+    }
+    const contBtn = $('continueAttemptBtn'), restartBtn = $('restartFromGameOverBtn'), homeBtn = $('gameOverHomeBtn'), okBtn = $('gameOverOkBtn');
+    if (contBtn) contBtn.classList.toggle('hidden', !has);
+    if ($('continueAttemptTitle')) $('continueAttemptTitle').innerText = 'ПРОДОЛЖИТЬ';
+    if ($('continueAttemptSub')) $('continueAttemptSub').innerText = `ОСТАЛОСЬ ПОПЫТОК: ${attempts}`;
+    if (restartBtn) restartBtn.classList.add('hidden');
+    if (homeBtn) homeBtn.classList.toggle('hidden', !has);
+    if (okBtn) okBtn.classList.toggle('hidden', has);
+    updateMenuVisibility();
+    const modal = $('gameOverModal');
+    if (modal) modal.classList.remove('hidden');
 }

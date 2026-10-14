@@ -244,13 +244,40 @@ if (startBtn) startBtn.addEventListener('click', (e) => {
 
 const resetProgressBtn = document.getElementById('resetProgressBtn');
 if (resetProgressBtn) resetProgressBtn.addEventListener('click', (e) => {
-    e.stopPropagation(); resetEntireGame(); startOrResumeFlight();
+    e.stopPropagation(); openResetConfirm();
 });
+
+// Подтверждение «Начать заново»: что именно будет потеряно
+function openResetConfirm() {
+    const m = document.getElementById('resetConfirmModal'), list = document.getElementById('resetLossList');
+    if (!m) return;
+    if (list) {
+        const total = getTotalCollectedThemes();
+        const rows = [
+            ['fa-feather-pointed', '#67E8F9', `Накопленная сила: ${Math.round(maxStamina)}%`],
+            ['fa-circle-question', '#FE7600', `Собранные вопросы: ${score} шт.`],
+            ['fa-heart', '#EF4444', `Макс. сердца: ${maxLives}`],
+            ['fa-layer-group', '#A855F7', `Собранные темы: ${total} / ${TOTAL_THEMES}`],
+            ['fa-feather', '#C084FC', `Перья и бонусы (${magicFeathersCaught} ${ruPlural(magicFeathersCaught, ['перо', 'пера', 'перьев'])})`]
+        ];
+        list.innerHTML = rows.map(r => `<li><i class="fa-solid ${r[0]}" style="color:${r[1]}"></i><span>${r[2]}</span></li>`).join('');
+    }
+    m.classList.remove('hidden');
+}
+(function () {
+    const m = document.getElementById('resetConfirmModal');
+    const yes = document.getElementById('resetYesBtn'), no = document.getElementById('resetNoBtn');
+    if (no) no.addEventListener('click', (e) => { e.stopPropagation(); if (m) m.classList.add('hidden'); });
+    if (yes) yes.addEventListener('click', (e) => {
+        e.stopPropagation(); if (m) m.classList.add('hidden');
+        resetEntireGame({ keepAttempts: true });   // попытки не обновляются — сбрасывается только прогресс
+        startOrResumeFlight();
+    });
+})();
 
 const continueAttemptBtn = document.getElementById('continueAttemptBtn');
 if (continueAttemptBtn) continueAttemptBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (attempts <= 0) resetEntireGame();
     startOrResumeFlight();
 });
 
@@ -265,6 +292,8 @@ if (restartFromGameOverBtn) restartFromGameOverBtn.addEventListener('click', (e)
 
 const gameOverHomeBtn = document.getElementById('gameOverHomeBtn');
 if (gameOverHomeBtn) gameOverHomeBtn.addEventListener('click', (e) => { e.stopPropagation(); returnToHome(); });
+const gameOverOkBtn = document.getElementById('gameOverOkBtn');
+if (gameOverOkBtn) gameOverOkBtn.addEventListener('click', (e) => { e.stopPropagation(); returnToHome(); });
 
 initRouletteUI();
 

@@ -98,20 +98,18 @@ function showGoldBanner(text, icon, color) {
     // в стиле подсказок (тёмная плашка, цветная рамка и свечение), но чуть крупнее; по центру — не налезает на таймеры эффектов слева
     el.innerHTML = `<div class="att-pill hint-like" style="color:${c};border-color:${c};box-shadow:0 0 14px ${c}88"><i class="fa-solid ${icon}"></i><span>${sentenceCase(text)}</span></div>`;
     fxLayer.appendChild(el);
-    // не налезаем на таймеры эффектов слева: если пересекаемся — сдвигаем правее, а если справа не хватает места — ниже них
+    // уведомление стоит внизу, прямо над нижней панелью (сложность и темы) — с таким же отступом, как таймеры под плашкой жизней сверху
     try {
-        // итоговый размер плашки (без анимации появления): размер вёрстки × масштаб интерфейса; центр — 50% по ширине и 17% по высоте
-        const pill = el.querySelector('.att-pill'), cr = container.getBoundingClientRect(), fr = el.parentNode.getBoundingClientRect();
-        const uz = parseFloat(getComputedStyle(el).scale) || 1, w = pill.offsetWidth * uz, h = pill.offsetHeight * uz;
-        const cx = fr.left + fr.width * 0.5, cy = fr.top + fr.height * 0.17;
-        const pr = { left: cx - w / 2, right: cx + w / 2, top: cy - h / 2, bottom: cy + h / 2, width: w, height: h };
-        const tags = [...document.querySelectorAll('#buffBar .buff-tag')].map(t => t.getBoundingClientRect()).filter(r => r.width > 0);
-        const hit = tags.filter(r => r.right > pr.left - 8 && r.left < pr.right + 8 && r.bottom > pr.top - 6 && r.top < pr.bottom + 6);
-        if (hit.length) {
-            const bRight = Math.max(...tags.map(r => r.right)), bBottom = Math.max(...tags.map(r => r.bottom));
-            const needCenter = bRight + 12 + pr.width / 2 - fr.left;
-            if (needCenter + pr.width / 2 <= fr.width - 10) el.style.left = needCenter + 'px';
-            else el.style.top = (bBottom + 12 + pr.height / 2 - fr.top) + 'px';
+        const pill = el.querySelector('.att-pill'), fr = el.parentNode.getBoundingClientRect();
+        const uz = parseFloat(getComputedStyle(el).scale) || 1, h = pill.offsetHeight * uz;
+        const bh = document.getElementById('bottomHud'), lc = document.getElementById('livesContainer'), bb = document.getElementById('buffBar');
+        let gap = 8 * uz;
+        if (lc && bb && lc.offsetParent) { const g = bb.getBoundingClientRect().top - lc.getBoundingClientRect().bottom; if (g > 0 && g < 40) gap = g; }
+        const btop = bh && bh.offsetParent ? bh.getBoundingClientRect().top - fr.top : -1;
+        if (btop > h * 3 && btop <= fr.height) {
+            const prev = [...fxLayer.querySelectorAll('.attempt-banner.at-bottom')].filter(x => x !== el).length;   // несколько уведомлений подряд — друг над другом
+            el.classList.add('at-bottom');
+            el.style.top = (btop - gap - h / 2 - prev * (h + 6)) + 'px';
         }
     } catch (e) {}
     setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 2400);
@@ -365,7 +363,8 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
         targetElem = document.getElementById('staminaIcon') || document.getElementById('staminaBadge');
     } else if (targetType === 'heart') {
         const cont = document.getElementById('livesContainer');
-        if (cont && cont.children.length) {
+        if (cont && cont.classList.contains('lives-compact')) targetElem = cont.querySelector('.lives-compact-heart') || cont;
+        else if (cont && cont.children.length) {
             const hi = Math.max(0, Math.min(cont.children.length - 1, Math.ceil(lives - 0.001) - 1));   // 3-я жизнь → 3-е сердце, 6-я → 6-е
             targetElem = cont.children[hi];
         } else targetElem = cont;
@@ -540,6 +539,24 @@ function renderLivesHUD() {
     // 5 жизней — рамка мягко светится красным; 1–1.5 жизни — рамка медленно мигает
     cont.classList.toggle('lives-max', lives >= maxLives);
     cont.classList.toggle('lives-danger', lives > 0 && lives <= 1.5);
+    // 6 и больше сердец: ряд сжимается в одно сердечко со счётчиком «❤ х 4/6»
+    if (maxLives >= 6) {
+        const prev = window.__livesShown;
+        const fmt = (v) => (Math.round(v * 10) / 10).toString().replace('.', ',');
+        let heart = cont.querySelector('.lives-compact-heart');
+        if (!cont.classList.contains('lives-compact')) {
+            cont.classList.add('lives-compact');
+            cont.innerHTML = '<div class="w-3.5 h-3.5 flex items-center justify-center shrink-0 lives-compact-heart"><i class="fa-solid fa-heart text-red-500 text-[12px] filter drop-shadow-[0_0_4px_rgba(239,68,68,0.9)]"></i></div><span class="lives-compact-txt"></span>';
+            heart = cont.querySelector('.lives-compact-heart');
+            cont.animate([{ transform: 'scale(0.85)', opacity: 0.4 }, { transform: 'scale(1)', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.34,1.56,.64,1)' });
+        }
+        if (typeof prev === 'number' && lives < prev - 0.01 && heart) spawnHeartBreak(heart, lives < prev - 0.6 ? 12 : 6.5);
+        window.__livesShown = lives;
+        const txt = cont.querySelector('.lives-compact-txt');
+        if (txt) txt.innerHTML = `<span class="lc-x">х</span> ${fmt(Math.max(0, lives))}/${fmt(maxLives)}`;
+        return;
+    }
+    if (cont.classList.contains('lives-compact')) { cont.classList.remove('lives-compact'); }
     // жизнь потеряна: сердечко (целое или половинка) раскалывается и падает вниз
     {
         const prev = window.__livesShown;
@@ -729,7 +746,8 @@ function checkVictoryCondition() {
 
 function updateMenuVisibility() {
     try { rwUpdateUI(); } catch (e) {}
-    try { const sb = document.getElementById('startBtnSub'); if (sb) sb.innerText = 'ОСТАЛОСЬ ПОПЫТОК: ' + attempts; } catch (e) {}
+    try { const sb = document.getElementById('startBtnSub'); if (sb) sb.innerText = attempts > 0 ? 'ОСТАЛОСЬ ПОПЫТОК: ' + attempts : 'НОВАЯ ПОПЫТКА — ЗАВТРА (ПРОГРЕСС СГОРИТ)'; } catch (e) {}
+    try { const sbt = document.getElementById('startBtn'); if (sbt) sbt.classList.toggle('no-attempts', attempts <= 0); } catch (e) {}
     const statsCard = document.getElementById('statsCard');
     const menuDiffCard = document.getElementById('menuDiffCard');
     const resetProgressBtn = document.getElementById('resetProgressBtn');
@@ -742,7 +760,7 @@ function updateMenuVisibility() {
     const hasProgress = hasStartedCampaign || score > 0 || total > 0 || attempts < MAX_ATTEMPTS || isFlightPaused;
 
     if (startBtnLabel) {
-        startBtnLabel.innerText = (attempts <= 0) ? 'НАЧАТЬ ЗАНОВО' : (hasWonGame ? 'НАЧАТЬ НОВЫЙ ПОЛЕТ' : (hasProgress ? 'ПРОДОЛЖИТЬ ПОЛЕТ' : 'НАЧАТЬ ПОЛЕТ'));
+        startBtnLabel.innerText = (attempts <= 0) ? 'ПОПЫТКИ ЗАКОНЧИЛИСЬ' : (hasWonGame ? 'НАЧАТЬ НОВЫЙ ПОЛЕТ' : (hasProgress ? 'ПРОДОЛЖИТЬ ПОЛЕТ' : 'НАЧАТЬ ПОЛЕТ'));
     }
 
     if (statsCard) {
@@ -891,8 +909,9 @@ function spawnPipe(startX) {
             else if (roll < 0.74) {
                 itemType = 'secret';
             }
-            else if (canSpawnFood && roll < 0.84) {
-                const hRoll = Math.random();
+            else if (roll < 0.84 && (canSpawnFood || Math.random() < 0.25)) {
+                // при полном запасе прилетают только сердца — ими прокачивается максимум жизней
+                const hRoll = canSpawnFood ? Math.random() : 0;
                 if (hRoll < 0.25) itemType = 'heart';
                 else if (hRoll < 0.50) itemType = 'pizza';
                 else if (hRoll < 0.75) itemType = 'burger';

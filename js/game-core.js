@@ -206,7 +206,10 @@ let attempts = MAX_ATTEMPTS;
 let score = 0;
 let lives = 3.0;
 let maxLives = ADMIN_CFG.maxLives;
-let startLives = 3.0;   // с сколькими сердцами начинается полёт (бонус рулетки: 5)
+let startLives = 3.0;   // с сколькими сердцами начинается полёт (бонус рулетки: 4 из 6)
+let heartOverflow = 0;   // сердца, пойманные при полном запасе: каждые 2 → «Макс. жизнь +1»
+let zeroDay = '';       // день (ГГГГ-ММ-ДД), когда закончились попытки: на следующий день — 1 новая попытка и полный сброс
+function todayKey() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 let stamina = 100.0;
 // Запас сил: после FEATHERS_FOR_MAX_UP волшебных перьев за игру максимум растёт со 100 до 130%
 let FEATHERS_FOR_MAX_UP = ADMIN_CFG.feathersForMax;
@@ -349,8 +352,10 @@ const StorageManager = {
                 hasWonGame = !!data.hasWonGame;
                 if (typeof data.maxStamina === 'number') maxStamina = Math.max(100, data.maxStamina);
                 if (typeof data.magicFeathersCaught === 'number') magicFeathersCaught = data.magicFeathersCaught;
-                if (typeof data.startLives === 'number') startLives = Math.max(3, Math.min(6, data.startLives));
-                if (typeof data.maxLives === 'number') maxLives = Math.max(5, Math.min(6, data.maxLives));
+                if (typeof data.startLives === 'number') startLives = Math.max(3, Math.min(99, data.startLives));
+                if (typeof data.maxLives === 'number') maxLives = Math.max(5, Math.min(99, data.maxLives));
+                if (typeof data.heartOverflow === 'number') heartOverflow = Math.max(0, Math.min(1, data.heartOverflow));
+                if (typeof data.zeroDay === 'string') zeroDay = data.zeroDay;
                 if (typeof data.rouletteSpins === 'number') rouletteSpins = Math.max(0, Math.min(99, data.rouletteSpins));
                 if (typeof data.featherMaxBonus === 'number') featherMaxBonus = Math.max(0, data.featherMaxBonus);
                 if (data.collected) {
@@ -375,7 +380,7 @@ const StorageManager = {
     saveLocal() {
         try {
             const payload = {
-                attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins,
+                attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins, heartOverflow, zeroDay,
                 collected: { ...collected },
                 settings: {
                     musicVolume: AudioFX.musicVolume,
@@ -392,6 +397,7 @@ const StorageManager = {
 
     async init() {
         this.loadLocal();
+        try { checkDailyReset(); } catch (e) {}
         updateMenuVisibility();
         updateHUDAll();
 
@@ -455,7 +461,7 @@ const StorageManager = {
             const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
             const progressRef = doc(this.db, 'artifacts', this.appId, 'users', this.userId, 'progress', 'game_state');
             await setDoc(progressRef, {
-                attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins,
+                attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins, heartOverflow, zeroDay,
                 collected: { ...collected },
                 settings: {
                     musicVolume: AudioFX.musicVolume,

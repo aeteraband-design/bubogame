@@ -26,6 +26,7 @@
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
     <link rel="stylesheet" href="css/boot.css">
+    <link rel="stylesheet" href="css/features.css">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -568,8 +569,11 @@
 
             <div class="space-y-0.5">
                 <h2 id="gameOverTitle" class="text-base text-white font-black">ЗАБЕГ ОКОНЧЕН</h2>
-                <p id="gameOverSubtext" class="text-[10px] text-purple-200 font-medium">Сова выбилась из сил!</p>
+                <p id="gameOverSubtext" class="text-[10px] text-purple-200 font-medium">Списана 1 попытка</p>
             </div>
+
+            <div class="go-reason"><i class="fa-solid fa-skull-crossbones"></i><div><span class="go-reason-k">ПРИЧИНА</span><span id="gameOverReason">Сова врезалась в трубу.</span></div></div>
+            <div id="gameOverInfo" class="go-info"></div>
 
             <div class="bg-[#140326]/80 p-2.5 rounded-2xl border border-[#782CE9]/30 space-y-1.5 text-[11px] font-medium">
                 <div class="flex justify-between text-purple-300">
@@ -598,10 +602,53 @@
                     <i class="fa-solid fa-rotate-left text-xs font-black"></i>
                     <span class="font-black">ЗАНОВО</span>
                 </button>
+                <button id="gameOverOkBtn" class="hidden btn-green w-full py-3 rounded-2xl text-[12px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black shadow-xl active:scale-95 transition-all">
+                    <i class="fa-solid fa-check text-sm font-black"></i>
+                    <span class="font-black">ПОНЯТНО</span>
+                </button>
                 <button id="gameOverHomeBtn" class="w-full py-2 rounded-xl text-[10px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black bg-[#2d0e52]/90 hover:bg-[#381267] border border-[#a855f7]/50 text-purple-300 shadow-md active:scale-95 transition-all">
                     <i class="fa-solid fa-house text-xs font-black text-[#FE7600]"></i>
                     <span class="font-black text-white">В ГЛАВНОЕ МЕНЮ</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ПОБЕДА (100% прохождение): промежуточное окно перед рулеткой -->
+    <div id="winModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-4 bg-[#140326]/30 backdrop-blur-[7px] text-center">
+        <div id="vicConfetti" class="confetti-layer"></div>
+        <div class="glass-panel vic-panel w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-3">
+            <div class="rwp-ring vic-ring" aria-hidden="true"></div>
+            <div class="vic-head">
+                <div class="win-medal-wrap"><div class="vic-halo"></div><div class="vic-medal"><i class="fa-solid fa-trophy"></i></div><div class="vic-orbit"><span>✦</span><span>✦</span><span>✦</span><span>✦</span></div></div>
+                <h2 class="vic-h2 font-black">ПОБЕДА!</h2>
+            </div>
+            <p class="vic-msg">Поздравляем! Вы прошли игру на <b>100%</b> и собрали <b>все темы</b>! Ваша попытка не потрачена, а весь текущий прогресс и собранные бонусы сохранены. Вы можете испытать удачу в рулетке или сразу начать новую игру с этой же попытки!</p>
+            <div class="vic-accent"><div class="rw-spins-ring"><i class="fa-solid fa-dice"></i></div><div class="vic-accent-t"><span>Вам доступно вращение в рулетке!</span><b id="vicSpinsText">1 вращение</b></div></div>
+            <div class="space-y-2 pt-1">
+                <button id="vicSpinBtn" class="btn-bubo w-full py-3 rounded-2xl text-[12px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black shadow-xl">
+                    <i class="fa-solid fa-dice text-sm font-black"></i><span id="vicSpinLabel" class="font-black">ВРАЩАТЬ РУЛЕТКУ (ДОСТУПНО: 1)</span>
+                </button>
+                <button id="vicNewGameBtn" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black">
+                    <i class="fa-solid fa-play text-xs font-black text-[#FE7600]"></i><span class="font-black text-white">НАЧАТЬ НОВУЮ ИГРУ</span>
+                </button>
+                <button id="vicHomeBtn" class="w-full py-2 rounded-xl text-[10px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black bg-[#2d0e52]/90 hover:bg-[#381267] border border-[#a855f7]/50 text-purple-300 shadow-md active:scale-95 transition-all">
+                    <i class="fa-solid fa-house text-xs font-black text-[#FE7600]"></i><span class="font-black text-white">В ГЛАВНОЕ МЕНЮ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ПОДТВЕРЖДЕНИЕ «НАЧАТЬ ЗАНОВО» -->
+    <div id="resetConfirmModal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-[#140326]/40 backdrop-blur-[7px] text-center">
+        <div class="glass-panel w-full max-w-xs rounded-3xl p-5 border-red-500/50 shadow-2xl space-y-3">
+            <div class="rc-ico"><i class="fa-solid fa-rotate-left"></i></div>
+            <h2 class="text-[15px] leading-snug text-white font-black">Вы точно хотите сбросить текущий прогресс и начать новую игру?</h2>
+            <p class="text-[11px] text-purple-200 font-semibold">Весь текущий прогресс будет безвозвратно потерян:</p>
+            <ul id="resetLossList" class="rc-list"></ul>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button id="resetYesBtn" class="btn-green py-3 rounded-2xl text-[12px] uppercase tracking-wider font-black shadow-xl">ДА</button>
+                <button id="resetNoBtn" class="btn-red py-3 rounded-2xl text-[12px] uppercase tracking-wider font-black shadow-xl">НЕТ</button>
             </div>
         </div>
     </div>
@@ -648,19 +695,20 @@
                 </button>
             </div>
 
-            <!-- выпавший приз -->
-            <div id="rwResult" class="hidden rw-result">
-                <div id="rwResCard" class="rw-res-card">
-                    <div class="rw-res-ico" id="rwResIco"><i class="fa-solid"></i></div>
-                    <div class="rw-res-kicker">ТЕБЕ ВЫПАЛО</div>
+            <!-- выпавший приз: затемнение, карточка вылетает в центр с переворотом и блёстками -->
+            <div id="rwResult" class="hidden rw-result rw-result2">
+                <div class="rw-res-stage" id="rwResStage"></div>
+                <div id="rwResCard" class="rw-res-info">
+                    <div class="rw-res-kicker2">ВЫ ВЫИГРАЛИ!</div>
                     <div class="rw-res-title" id="rwResTitle"></div>
                     <div class="rw-res-sub" id="rwResSub"></div>
                     <p class="rw-res-desc" id="rwResDesc"></p>
                     <button id="rwClaimBtn" class="btn-bubo w-full py-3 rounded-2xl text-[12px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black">
                         <i class="fa-solid fa-gift font-black"></i>
-                        <span class="font-black">ЗАБРАТЬ</span>
+                        <span class="font-black">ЗАБРАТЬ ПРИЗ</span>
                     </button>
                 </div>
+                <span id="rwResIco" class="hidden"></span>
             </div>
         </div>
     </div>
