@@ -107,3 +107,7 @@
 .fly-label-tag, #buffBar .buff-tag { font-size: calc(10.5px + 2px * var(--tb, 1)) !important; padding: 4.5px 8px !important; gap: 4px !important; border-radius: 11px !important; }
 .fly-label-tag i, #buffBar .buff-tag i { font-size: calc(10.5px + 2px * var(--tb, 1)) !important; }
 .fly-label-tag svg, #buffBar .buff-tag svg { width: calc(12px + 2px * var(--tb, 1)) !important; height: calc(12px + 2px * var(--tb, 1)) !important; }
+
+/* окно «Победа» первые 1,5 с не реагирует на тапы — кнопки чуть приглушены */
+#winModal.win-locked button { opacity: 0.55; transition: opacity 0.3s; }
+#winModal button { transition: opacity 0.3s; }

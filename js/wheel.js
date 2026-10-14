@@ -394,14 +394,18 @@ function vicConfetti(on) {
 function openVictoryModal() {
     const m = rwEl('winModal'); if (!m) return;
     vicUpdate(); vicConfetti(true);
+    // кнопки срабатывают не сразу: игрок ещё тапает по экрану после полёта и мог случайно нажать «Вращать рулетку»
+    m.__lockUntil = performance.now() + 3000;
+    m.classList.add('win-locked'); setTimeout(() => m.classList.remove('win-locked'), 3000);
     m.classList.remove('hidden');
+    m.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 450, easing: 'ease-out' });
 }
 function closeVictoryModal() {
     const m = rwEl('winModal'); if (m) m.classList.add('hidden');
     vicConfetti(false);
 }
 (function initVictoryUI() {
-    const on = (id, fn) => { const el = rwEl(id); if (el) el.addEventListener('click', (e) => { e.stopPropagation(); fn(); }); };
+    const on = (id, fn) => { const el = rwEl(id); if (el) el.addEventListener('click', (e) => { e.stopPropagation(); const m = rwEl('winModal'); if (m && m.__lockUntil && performance.now() < m.__lockUntil) return; fn(); }); };
     on('vicSpinBtn', () => { if (rouletteSpins <= 0) return; closeVictoryModal(); openRoulette({}); });
     on('vicNewGameBtn', () => { closeVictoryModal(); startOrResumeFlight(); });
     on('vicHomeBtn', () => { closeVictoryModal(); if (AudioFX.mode === 'victory') AudioFX.setMode('menu'); updateMenuVisibility(); });
