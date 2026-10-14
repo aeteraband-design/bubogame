@@ -102,3 +102,8 @@
 .attempt-banner .att-pill.hint-like { gap: 6px !important; padding: 5px 11px !important; border-radius: 9999px !important; border-width: 1.5px !important; }
 .attempt-banner .att-pill.hint-like i { font-size: calc(11px * var(--tb, 1)) !important; }
 .attempt-banner .att-pill.hint-like span { font-size: calc(11px * var(--tb, 1)) !important; letter-spacing: 0.01em !important; }
+
+/* ===== Подсказки и таймеры — один размер (чуть крупнее прежнего), чтобы подсказка, улетая в таймер, не меняла размер ===== */
+.fly-label-tag, #buffBar .buff-tag { font-size: 11.5px !important; padding: 4px 7px !important; gap: 4px !important; border-radius: 10px !important; }
+.fly-label-tag i, #buffBar .buff-tag i { font-size: 11.5px !important; }
+.fly-label-tag svg, #buffBar .buff-tag svg { width: 13px !important; height: 13px !important; }

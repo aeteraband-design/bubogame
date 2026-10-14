@@ -362,14 +362,15 @@ function update() {
                     // все сердца целы: каждые 2 пойманных сердца — +1 к максимуму жизней (без потолка)
                     heartOverflow++;
                     if (heartOverflow >= 2) {
-                        heartOverflow = 0; maxLives += 1; lives = maxLives;
+                        heartOverflow = 0; maxLives += 1; lives = maxLives; it.__maxUp = true;
                         setTimeout(() => { try { AudioFX.playMaxStaminaChime(); } catch (e) {} showGoldBanner('Макс. жизнь +1', 'fa-heart', '#EF4444'); }, 900);
                     }
                 } else {
                     lives = Math.min(maxLives, Math.round((lives + 1.0) * 10) / 10);
                 }
                 updateLivesHUD(); StorageManager.save();
-                it.pendingFX = { target: 'heart', text: '+1.0 Жизнь', color: '#EF4444', icon: 'fa-heart' };
+                // при прокачке максимума маленькой подсказки нет — только крупное уведомление внизу
+                it.pendingFX = { target: 'heart', text: it.__maxUp ? '' : '+1.0 Жизнь', color: '#EF4444', icon: 'fa-heart' };
             } else if (it.type === 'pizza') {
                 AudioFX.playCollect(true);
                 lives = Math.min(maxLives, Math.round((lives + 0.5) * 10) / 10);
