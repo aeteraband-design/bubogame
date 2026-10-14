@@ -1,0 +1,406 @@
+function draw() {
+    ctx.setTransform(viewScale * renderScale * WORLD_K, 0, 0, viewScale * renderScale * WORLD_K, 0, 0);
+    const df = currentDrunkFactor;
+    if (df > 0.001) {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#090117';
+        ctx.fillRect(0, 0, width, height);
+        ctx.save();
+        ctx.translate(width / 2, height / 2);
+        ctx.rotate(Math.sin(frame * 0.035) * 0.04 * df);
+        const z = 1 + (0.07 + 0.025 * Math.sin(frame * 0.05 + 1)) * df;
+        ctx.scale(z, z);
+        ctx.translate(-width / 2, -height / 2);
+        drawScene();
+        ctx.restore();
+    } else {
+        drawScene();
+    }
+}
+
+let camZoom = 1;
+// Маленькие заготовленные картинки для шлейфа: снежинка (холодная палитра) и пузырёк коктейля
+let __flapSnow = null, __flapBubble = null;
+function flapSnowSprite() {
+    if (__flapSnow) return __flapSnow;
+    const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d');
+    g.translate(16, 16); g.strokeStyle = '#E0F2FE'; g.lineCap = 'round'; g.lineWidth = 2.2;
+    g.shadowColor = '#7DD3FC'; g.shadowBlur = 5;
+    for (let k = 0; k < 6; k++) {
+        g.save(); g.rotate(k * Math.PI / 3);
+        g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -12); g.moveTo(0, -7); g.lineTo(-3.5, -10); g.moveTo(0, -7); g.lineTo(3.5, -10); g.stroke();
+        g.restore();
+    }
+    g.fillStyle = '#BAE6FD'; g.beginPath(); g.arc(0, 0, 2.2, 0, Math.PI * 2); g.fill();
+    return (__flapSnow = c);
+}
+function flapBubbleSprite() {
+    if (__flapBubble) return __flapBubble;
+    const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d');
+    const grd = g.createRadialGradient(13, 12, 1, 16, 16, 14);
+    grd.addColorStop(0, 'rgba(255,255,255,0.55)'); grd.addColorStop(0.55, 'rgba(45,212,191,0.18)'); grd.addColorStop(1, 'rgba(45,212,191,0.05)');
+    g.fillStyle = grd; g.beginPath(); g.arc(16, 16, 13, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(153,246,228,0.9)'; g.lineWidth = 2; g.beginPath(); g.arc(16, 16, 13, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.9)'; g.beginPath(); g.ellipse(11, 10, 3.2, 2, -0.6, 0, Math.PI * 2); g.fill();
+    return (__flapBubble = c);
+}
+// Отрисовка списка частиц (снежинки, пузырьки, кружочки, перья и т. д.) — общая для игры и для тестовой вкладки
+function drawParticleList(list) {
+    list.forEach(pt => {
+        if (pt.kind === 'snow' || pt.kind === 'bubble') {
+            const spr = pt.kind === 'snow' ? flapSnowSprite() : flapBubbleSprite(), s = pt.size * 2;
+            ctx.globalAlpha = Math.max(0, Math.min(1, pt.alpha));
+            if (pt.kind === 'snow') {
+                ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(pt.angle); ctx.drawImage(spr, -s / 2, -s / 2, s, s); ctx.restore();
+            } else ctx.drawImage(spr, pt.x - s / 2, pt.y - s / 2, s, s);
+            ctx.globalAlpha = 1;
+            return;
+        }
+        if (pt.isRing) {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, pt.alpha);
+            ctx.strokeStyle = pt.color;
+            ctx.lineWidth = 1.6;
+            ctx.shadowColor = pt.color;
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        } else if (pt.isFeather) {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, pt.alpha);
+            ctx.translate(pt.x, pt.y);
+            ctx.rotate(pt.angle || 0);
+            ctx.fillStyle = pt.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, pt.size, pt.size * 0.35, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(-pt.size, 0);
+            ctx.lineTo(pt.size, 0);
+            ctx.stroke();
+            ctx.restore();
+        } else if (pt.isStar) {
+            drawSparkleStar(pt.x, pt.y, 4, pt.size, pt.size * 0.28, pt.color, pt.alpha);
+        } else if (pt.isWisp) {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, pt.alpha);
+            ctx.fillStyle = pt.color;
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        } else {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, pt.alpha);
+            ctx.fillStyle = pt.color;
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    });
+}
+
+function drawScene() {
+    ctx.clearRect(0, 0, width, height);
+    
+    if (!window.__skyGrad || window.__skyGradH !== height) {
+        const g = ctx.createLinearGradient(0, 0, 0, height);
+        g.addColorStop(0, '#1E0842');
+        g.addColorStop(0.5, '#140326');
+        g.addColorStop(1, '#090117');
+        window.__skyGrad = g; window.__skyGradH = height;
+    }
+    ctx.fillStyle = window.__skyGrad; ctx.fillRect(0, 0, width, height);
+
+    if (!window.__starGlow) {
+        const c = document.createElement('canvas'); c.width = c.height = 32;
+        const g = c.getContext('2d');
+        const rg = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+        rg.addColorStop(0, 'rgba(255,255,255,0.75)'); rg.addColorStop(0.35, 'rgba(255,255,255,0.28)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = rg; g.fillRect(0, 0, 32, 32);
+        window.__starGlow = c;
+    }
+    ctx.fillStyle = '#FFFFFF';
+    for (const st of stars) {
+        st.alpha += (Math.random() - 0.5) * 0.05 * dtMult;
+        st.alpha = Math.max(0.2, Math.min(0.95, st.alpha));
+        ctx.globalAlpha = st.alpha;
+        if (st.size > 1.2 / WORLD_K && gfxQuality !== 'low') ctx.drawImage(window.__starGlow, st.x - 6 / WORLD_K, st.y - 6 / WORLD_K, 12 / WORLD_K, 12 / WORLD_K);   // свечение крупных звёзд — как на загрузке
+        ctx.beginPath(); ctx.arc(st.x, st.y, st.size, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    const isStartMenuOpen = !document.getElementById('startScreen').classList.contains('hidden');
+    const isGameOverOpen = !document.getElementById('gameOverModal').classList.contains('hidden');
+    drawMoon();
+    if (!gameActive) cityOffset += 0.5 * dtMult;   // в меню и на паузе город медленно плывёт
+    drawCity();
+
+    if (gameActive || waitingFirstTap || isStartMenuOpen || isGameOverOpen) {
+        drawClouds();
+    }
+
+    // камера: при эффекте ускорения чуть отдаляется (видно больше), при замедлении чуть приближается; от уровня сложности не зависит
+    {
+        const zt = (gameActive && speedBoostTime > 0) ? 0.95 : ((gameActive && slowMotionTime > 0) ? 1.07 : 1);
+        camZoom += (zt - camZoom) * Math.min(1, 0.02 * dtMult);
+        if (Math.abs(zt - camZoom) < 0.0005) camZoom = zt;
+    }
+    ctx.save();
+    if (Math.abs(camZoom - 1) > 0.0005) { ctx.translate(width / 2, height / 2); ctx.scale(camZoom, camZoom); ctx.translate(-width / 2, -height / 2); }
+    pipes.forEach(drawPipe);
+
+    items.forEach(it => {
+        if ((it.type === 'stamina' || it.type === 'infinite') && it.trail && it.trail.length > 2) {
+            ctx.save();
+            const ringOffsets = [
+                { idx: 2, alpha: 0.45, lineWidth: 1.6 },
+                { idx: 5, alpha: 0.25, lineWidth: 1.3 },
+                { idx: 7, alpha: 0.12, lineWidth: 1.0 }
+            ];
+
+            const trailColor = (CATEGORIES[it.type] && CATEGORIES[it.type].color) || '#00F0FF';
+
+            ringOffsets.forEach(cfg => {
+                if (cfg.idx < it.trail.length) {
+                    const pt = it.trail[cfg.idx];
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, it.radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = trailColor;
+                    ctx.globalAlpha = cfg.alpha;
+                    ctx.lineWidth = cfg.lineWidth;
+                    ctx.shadowColor = trailColor;
+                    ctx.shadowBlur = 6;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            });
+            ctx.restore();
+        }
+    });
+
+    items.forEach(drawToken);
+
+    drawParticleList(particles);
+
+    drawSpeedStars();
+    if (currentFreezeFactor > 0.01 && owl.visible) drawFrozenOwl(); else owl.draw();
+    drawIceShards();
+    ctx.restore();   // конец слоя камеры
+}
+
+let perfAvgDt = 16.7, perfSlowFrames = 0, perfCooldown = 240;
+let dtEma = 0, dtDebt = 0, dtOut = 0;   // сглаженная длительность кадра, накопленная разница со временем, счётчик выбившихся кадров
+function gameLoop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    let dt = timestamp - lastTime;
+    lastTime = timestamp;
+
+    const rawDt = dt;
+    if (dt > 100 || dt < 0) dt = 16.666; 
+    // Ровный шаг: при стабильном потоке кадров (60/90/120 Гц) берём сглаженное значение — движение без «шажков» из-за дрожания таймера.
+    // Если кадр явно выбился (пропуск, смена частоты экрана), берём настоящий шаг. Скорость игры по времени не меняется.
+    if (!dtEma) dtEma = dt;
+    let dtUse;
+    if (Math.abs(dt - dtEma) < dtEma * 0.25) { dtOut = 0; dtEma += (dt - dtEma) * 0.05; dtUse = dtEma + dtDebt * 0.1; }
+    else { if (++dtOut >= 6) { dtEma = dt; dtOut = 0; } dtUse = dt; }       // 6 «выбившихся» кадров подряд — экран сменил частоту
+    dtDebt += dt - dtUse;                                                   // разница копится и возвращается — общее время точно сохраняется
+    dt = dtUse;
+    dtMult = dt / 16.666;
+    // Автоматическое облегчение графики на слабых телефонах: если кадры стабильно долгие, снижаем качество на ступень.
+    // Скорость игры от этого не меняется (она считается по реальному времени кадра).
+    if (gameActive && !document.hidden && rawDt > 0 && rawDt < 250) {
+        perfAvgDt += (rawDt - perfAvgDt) * 0.04;
+        if (perfCooldown > 0) perfCooldown--;
+        else if (perfAvgDt > 22 && gfxQuality !== 'low') {
+            if (++perfSlowFrames > 150) {
+                gfxQuality = gfxQuality === 'high' ? 'medium' : 'low';
+                applyGfxQuality();
+                perfSlowFrames = 0; perfCooldown = 360; perfAvgDt = 16.7;
+            }
+        } else perfSlowFrames = Math.max(0, perfSlowFrames - 2);
+    }
+
+    update(); 
+    checkAttemptMilestone();
+    flushHud();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+function initMenuScenery() {
+    pipes = [];
+    items = [];
+    owl.visible = true;
+    // в меню сова стоит ровно там же, где начнёт полёт
+    owl.x = getOwlStartX();
+    owl.baseY = height * 0.38;
+    owl.y = height * 0.38;
+    owl.vy = 0;
+    waitingFirstTap = true;
+    gameActive = false;
+}
+
+function startOrResumeFlight() {
+    // сначала — сброс прогресса, если начинается новая игра (иначе несколько секунд играла бы музыка и светила луна прошлого прохождения)
+    if (attempts <= 0) resetEntireGame();
+    else if (hasWonGame) startNewQuestKeepScore();
+    snapProgressVisuals();
+    AudioFX.resume();
+    AudioFX.setMode('game');
+    const startScreen = document.getElementById('startScreen');
+    const rulesModal = document.getElementById('rulesModal');
+    const gameOverModal = document.getElementById('gameOverModal');
+    const victoryModal = document.getElementById('rouletteModal');
+    const tapMsg = document.getElementById('tapToStartMsg');
+    const topHud = document.getElementById('topHud');
+    const bottomHud = document.getElementById('bottomHud');
+
+    if (startScreen) startScreen.classList.add('hidden');
+    if (rulesModal) rulesModal.classList.add('hidden');
+    if (gameOverModal) gameOverModal.classList.add('hidden');
+    if (victoryModal) victoryModal.classList.add('hidden');
+    if (tapMsg) tapMsg.classList.remove('hidden');
+
+    if (topHud) topHud.classList.remove('hidden');
+    if (bottomHud) bottomHud.classList.remove('hidden');
+
+    if (attempts <= 0) resetEntireGame();
+    else if (hasWonGame) startNewQuestKeepScore();   // после победы — новый поход: темы заново, вопросы и попытки сохраняются
+    hasStartedCampaign = true;
+    if (lives <= 0.5) { maxStamina = Math.max(100, maxStamina - featherMaxBonus); featherMaxBonus = 0; magicFeathersCaught = 0; lives = startLives; stamina = maxStamina; }
+
+    if (!isFlightPaused) {
+        invulnerableTime = 0; shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal';
+        lastBuffStateKey = '';
+        resetOvereatDrunk();
+        lowStaminaSoundTimer = 0;
+        lastKnownDiffIdx = getDifficultyIndex();
+        pausedSnapshot = null;
+        speedStars = [];
+        pipesSinceTheme = 0; lastThemeKey = '';
+        frame = 0; 
+        pipeDistanceTracker = 0;
+        owl.visible = true;
+        owl.x = getOwlStartX(); 
+        owl.y = height * 0.38; 
+        owl.baseY = height * 0.38; 
+        owl.vy = 0; 
+        owl.wing = 0; 
+        hoverAngle = 0;
+        pipes = []; items = []; particles = [];
+        spawnInitialPipes();
+    } else {
+        owl.visible = true;
+        owl.x = getOwlStartX();
+        owl.vy = 0;
+        owl.wing = 0;
+        if (pausedSnapshot) {
+            // продолжаем ровно с того места, где поставили паузу
+            pipes = pausedSnapshot.pipes;
+            items = pausedSnapshot.items;
+            particles = [];
+            owl.x = pausedSnapshot.owlX;
+            owl.y = pausedSnapshot.owlY;
+            owl.baseY = pausedSnapshot.owlY;
+            owl.rotation = pausedSnapshot.owlRot;
+            pipeDistanceTracker = pausedSnapshot.tracker;
+            frame = pausedSnapshot.frame;
+            hoverAngle = 0;
+            pausedSnapshot = null;
+        }
+        isFlightPaused = false;
+    }
+
+    lastTime = 0;
+    updateHUDAll(); StorageManager.save();
+    gameActive = false;
+    waitingFirstTap = true;
+}
+
+// Новый поход после победы: все темы собираются заново, а вопросы и оставшиеся попытки сохраняются
+// Луна, музыка и скорость сразу встают в положение текущего прогресса: ничего не «откатывается» и не разгоняется на глазах
+function snapProgressVisuals() {
+    try { moonPhase = moonPhaseTarget(); moonRendered = -1; moonSprite = null; } catch (e) {}
+    try { AudioFX.snapSpeedFactor(); } catch (e) {}
+    try { gameSpeedFactor = gameSpeedFrom = gameSpeedTarget = 1; gameSpeedT = 1; spacingFactor = spacingFrom = spacingTarget = 1; spacingT = 1; prevDistMult = 1; } catch (e) {}
+}
+
+function startNewQuestKeepScore() {
+    const keepScore = score, keepAttempts = attempts, keepMilestone = attemptMilestone, keepMax = maxStamina, keepFeathers = magicFeathersCaught, keepStartLives = startLives, keepMaxLives = maxLives;
+    resetEntireGame();
+    score = keepScore; attempts = keepAttempts; attemptMilestone = keepMilestone; maxStamina = Math.max(100, keepMax - featherMaxBonus); featherMaxBonus = 0; magicFeathersCaught = 0; stamina = maxStamina;
+    startLives = keepStartLives; maxLives = keepMaxLives; lives = startLives;
+    hasStartedCampaign = true;
+    snapProgressVisuals();
+    StorageManager.save();
+    updateHUDAll();
+}
+
+function resetEntireGame() {
+    attempts = MAX_ATTEMPTS; score = 0; startLives = 3.0; maxLives = ADMIN_CFG.maxLives; lives = startLives; maxStamina = 100; magicFeathersCaught = 0; featherMaxBonus = 0; stamina = 100.0; hasStartedCampaign = false;
+    hasWonGame = false;
+    isFlightPaused = false;
+    owl.visible = true;
+    // Новая игра: сложность сбрасывается, и трубы СРАЗУ становятся стандартной ширины
+    // (а не расширяются на глазах у игрока из сжатого состояния прошлой игры)
+    lastKnownDiffIdx = 0;
+    attemptMilestone = 0;
+    currentDifficultySqueeze = 0;
+    pipesSinceTheme = 0; lastThemeKey = '';
+    collected = { music: 0, logic: 0, kino: 0, series: 0, cartoons: 0, fun: 0 };
+    shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal'; invulnerableTime = 0;
+    resetOvereatDrunk();
+    pipes = []; items = []; particles = [];
+    snapProgressVisuals();
+    updateHUDAll(); StorageManager.save();
+}
+
+// Пауза: запоминаем, где именно были сова, трубы и предметы (только до закрытия вкладки)
+let pausedSnapshot = null;
+function returnToHome() {
+    if (gameActive) {
+        isFlightPaused = true;
+        pausedSnapshot = {
+            pipes: pipes, items: items,
+            owlX: owl.x, owlY: owl.y, owlRot: owl.rotation,
+            tracker: pipeDistanceTracker, frame: frame
+        };
+    } else {
+        clearAllBuffs();
+    }
+    const bar = document.getElementById('buffBar');
+    if (bar) bar.innerHTML = '';
+    lastBuffStateKey = '';
+
+    gameActive = false; waitingFirstTap = true;
+    AudioFX.setMode('menu');
+    StorageManager.save(); updateMenuVisibility();
+    const startScreen = document.getElementById('startScreen');
+    const rulesModal = document.getElementById('rulesModal');
+    const gameOverModal = document.getElementById('gameOverModal');
+    const victoryModal = document.getElementById('rouletteModal');
+    const tapMsg = document.getElementById('tapToStartMsg');
+    const topHud = document.getElementById('topHud');
+    const bottomHud = document.getElementById('bottomHud');
+
+    if (startScreen) startScreen.classList.remove('hidden');
+    if (rulesModal) rulesModal.classList.add('hidden');
+    if (gameOverModal) gameOverModal.classList.add('hidden');
+    if (victoryModal) victoryModal.classList.add('hidden');
+    if (tapMsg) tapMsg.classList.add('hidden');
+
+    if (topHud) topHud.classList.add('hidden');
+    if (bottomHud) bottomHud.classList.add('hidden');
+
+    initMenuScenery();
+}
+
+// Запуск сохранения/интерфейса после загрузки всех файлов игры
+StorageManager.init();

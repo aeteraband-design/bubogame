@@ -1,0 +1,42 @@
+#bootLoader { position: fixed; inset: 0; z-index: 9999; transition: opacity 0.45s ease; font-family: 'Onest', sans-serif; background: #07010f; }
+/* фон загрузки — центральная колонка с небом игры (на телефоне она на весь экран, на ПК — треть экрана по центру, по бокам тёмное поле) */
+#bootLoader::before { content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, #1E0842 0%, #140326 50%, #090117 100%); }
+#bootLoader .bl-name, #bootLoader .bl-pct, #bootLoader .bl-tap { font-family: 'Onest', sans-serif; }
+#bootLoader { --bl-col: 100vw; }
+#bootLoader { --bl-pad: 24px; }
+@media (min-width: 768px) { #bootLoader { --bl-col: max(33.333vw, 380px); --bl-pad: 0px; } }   /* на ПК полоска загрузки — ровно центральная треть экрана, фон — на всю ширину */
+#bootLoader .bl-stars { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+/* тёплая дымка у горизонта — тот же градиент, что за городом в игре (от 45% высоты вниз, до 11% оранжевого) */
+#bootLoader .bl-haze { position: absolute; left: 0; right: 0; top: 45%; bottom: 0; pointer-events: none; background: linear-gradient(180deg, rgba(254, 140, 60, 0), rgba(254, 140, 60, 0.11)); }
+#bootLoader .bl-logo { position: absolute; left: 50%; top: 42px; transform: translateX(-50%) scale(1.17); transform-origin: 50% 0; display: flex; align-items: center; gap: 10px; white-space: nowrap;
+    filter: drop-shadow(0 2px 20px rgba(254, 118, 0, 0.65)); }
+#bootLoader .bl-logo.synced { left: 0; }
+#bootLoader .bl-ico { width: 44px; height: 44px; border-radius: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #FE7600, #782CE9); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); }
+#bootLoader .bl-ico i { color: #fff; font-size: 18px; }
+#bootLoader .bl-txt { display: flex; align-items: center; gap: 6px; font-weight: 900; font-size: 30px; letter-spacing: -0.025em; line-height: 1; }
+/* сова — в центре экрана */
+#bootLoader .bl-owlbox { position: absolute; left: 50%; top: 47%; width: 360px; height: 360px; margin: -180px 0 0 -180px; zoom: var(--menu-zoom, 1); transform: scale(0.88); transform-origin: 50% 50%; }   /* уменьшение одним масштабом: рисунок не искажается */
+#bootLoader .bl-owlbox::before { content: ''; position: absolute; left: 50%; top: 50%; width: 534px; height: 534px; margin: -267px 0 0 -267px; border-radius: 50%; background: radial-gradient(circle, rgba(146, 72, 251, 0.40) 0%, rgba(106, 32, 212, 0.20) 45%, transparent 70%); animation: blHalo 3s ease-in-out infinite; }   /* свечение в цвет совы */
+#bootLoader .bl-owlcv { position: relative; width: 360px; height: 360px; display: block; }
+/* внизу: слева подпись, справа крупные проценты, под ними тонкая полоска на всю ширину */
+#bootLoader .bl-foot { position: absolute; left: calc(50% - var(--bl-col) / 2 + var(--bl-pad)); right: calc(50% - var(--bl-col) / 2 + var(--bl-pad)); bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); }   /* максимально прижато к низу, внутри центральной колонки */
+#bootLoader .bl-prog { zoom: var(--menu-zoom, 1); }
+#bootLoader .bl-prog { transition: opacity 0.5s ease; }
+#bootLoader .bl-foot.done .bl-prog { opacity: 0; }
+#bootLoader .bl-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }   /* подпись и проценты стоят на одной нижней линии */
+#bootLoader .bl-name { font-size: 20px; font-weight: 800; letter-spacing: 0.01em; color: #8f84b3; transition: color 0.4s; }
+#bootLoader .bl-name.done { color: #34D399; }
+#bootLoader .bl-pct { font-size: 52px; font-weight: 900; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums;
+    background: linear-gradient(90deg, #FE7600 0%, #A855F7 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#bootLoader .bl-bar { position: relative; height: 4px; width: 100%; margin-top: 14px; border-radius: 9999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+#bootLoader .bl-mask { position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: 9999px; background: linear-gradient(90deg, #FE7600, #A855F7); box-shadow: 0 0 10px rgba(254, 118, 0, 0.6); }
+/* когда всё готово — аккуратная надпись под полоской; нажать можно в любом месте экрана */
+#bootLoader .bl-tap { zoom: var(--menu-zoom, 1); position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; text-align: center;
+    font-size: 14px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #b7aed3; text-shadow: 0 0 10px rgba(183, 174, 211, 0.55); opacity: 0; pointer-events: none; }
+#bootLoader .bl-tap.ready { opacity: 1; pointer-events: auto; animation: blTapIn 0.5s ease-out 0.5s both, blTapPulse 2s ease-in-out 1s infinite; }   /* сначала загрузка полностью гаснет (0,5 с), потом надпись плавно появляется (0,5 с), затем без рывка — пульсация */
+@keyframes blTapIn { from { opacity: 0; } to { opacity: 0.72; } }
+@keyframes blTapPulse { 0%, 100% { opacity: 0.72; text-shadow: 0 0 8px rgba(183, 174, 211, 0.4); } 50% { opacity: 1; text-shadow: 0 0 14px rgba(205, 196, 232, 0.9), 0 0 30px rgba(183, 174, 211, 0.5); } }
+@keyframes blHalo { 0%, 100% { transform: scale(0.94); opacity: 0.8; } 50% { transform: scale(1.06); opacity: 1; } }
+    

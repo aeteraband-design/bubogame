@@ -1,0 +1,997 @@
+function update() {
+    if (deathFreeze > 0) {
+        deathFreeze -= dtMult;
+        if (deathFreeze <= 0) { deathFreeze = 0; handleRunFailure(deathFreezeReason); }
+        return;
+    }
+    owl.update();
+    updateSpeedStars();
+    updateIceShards();
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.x += pt.vx * dtMult; 
+        pt.y += pt.vy * dtMult; 
+        if (pt.kind === 'snow') pt.angle += pt.vAngle * dtMult;   // снежинка лишь чуть поворачивается
+        if (pt.isFeather) {
+            pt.vy += 0.12 * dtMult;
+            pt.vx *= Math.pow(0.97, dtMult);
+            pt.angle = (pt.angle || 0) + ((pt.vAngle || 0.05) * dtMult);
+        }
+        pt.alpha -= (pt.decay || 0.025) * dtMult;
+        if (pt.grow) pt.size += pt.grow * dtMult;
+        if (pt.alpha <= 0) {
+            particles.splice(i, 1);
+        }
+    }
+
+    if (!gameActive) return;
+    frame += dtMult;
+
+    if (infiniteStaminaTime > 0) {
+        infiniteStaminaTime -= dtMult;
+        stamina = maxStamina;
+        updateStaminaHUD();
+    } else {
+        stamina = Math.max(0, stamina - 0.044 * staminaDrainMult() * dtMult);   // в покое силы уходят чуть быстрее (было 0,04)
+        updateStaminaHUD();
+    }
+
+    if (stamina <= 25 && infiniteStaminaTime <= 0) {
+        lowStaminaSoundTimer += dtMult;
+        const alertInterval = stamina <= 12 ? 85 : 120;
+        if (lowStaminaSoundTimer >= alertInterval) {
+            lowStaminaSoundTimer = 0;
+            AudioFX.playLowStaminaAlert();
+            Haptics.vibrate(12);
+        }
+    } else {
+        lowStaminaSoundTimer = 0;
+    }
+
+    if (stamina <= 0 && infiniteStaminaTime <= 0) {
+        handleStaminaDepletion();
+        return;
+    }
+
+    if (shieldTime > 0) {
+        shieldTime -= dtMult;
+        if (shieldAppearAnim > 0) shieldAppearAnim -= dtMult;
+    }
+
+    if (speedBoostTime > 0) {
+        speedBoostTime -= dtMult;
+        if (speedBoostTime <= 0) AudioFX.onSpeedChanged();
+    }
+    if (slowMotionTime > 0) {
+        slowMotionTime -= dtMult;
+        if (slowMotionTime <= 0) AudioFX.onSpeedChanged();
+    }
+
+    if (overeatTime > 0) {
+        overeatTime -= dtMult;
+        if (overeatTime <= 0) { overeatTime = 0; AudioFX.playOverEatEnd(); }
+    }
+    if (drunkTime > 0) {
+        drunkTime -= dtMult;
+        if (drunkTime <= 0) { drunkTime = 0; AudioFX.playDrunkEnd(); }
+    }
+    if (freezeTime > 0) {
+        freezeTime -= dtMult;
+        if (freezeTime <= 0) { freezeTime = 0; AudioFX.playFreezeEnd(); spawnIceBurst('thaw'); Haptics.hit(); }
+    }
+    {
+        const fStep = 0.025 * dtMult;
+        const fTarget = freezeTime > 0 ? 1 : 0;
+        currentFreezeFactor += Math.max(-fStep, Math.min(fStep, fTarget - currentFreezeFactor));
+    }
+    {
+        const oStep = 0.02 * dtMult;
+        const oTarget = overeatTime > 0 ? 1 : 0;
+        currentOvereatFactor += Math.max(-oStep, Math.min(oStep, oTarget - currentOvereatFactor));
+        const dStep = 0.02 * dtMult;
+        const dTarget = drunkTime > 0 ? 1 : 0;
+        currentDrunkFactor += Math.max(-dStep, Math.min(dStep, dTarget - currentDrunkFactor));
+    }
+
+    if (compressionTime > 0) {
+        compressionTime -= dtMult;
+        currentCompressionFactor = Math.min(1.0, currentCompressionFactor + 0.04 * dtMult);
+        if (compressionTime <= 0) {
+            AudioFX.playCompressEnd();
+            Haptics.powerup();
+        }
+    } else {
+        currentCompressionFactor = Math.max(0.0, currentCompressionFactor - 0.04 * dtMult);
+    }
+
+    const diffInfo = getDifficultyMultipliers();
+    if (currentDifficultySqueeze < diffInfo.targetSqueeze) {
+        currentDifficultySqueeze = Math.min(diffInfo.targetSqueeze, currentDifficultySqueeze + 0.4 * dtMult);
+    } else if (currentDifficultySqueeze > diffInfo.targetSqueeze) {
+        currentDifficultySqueeze = Math.max(diffInfo.targetSqueeze, currentDifficultySqueeze - 0.4 * dtMult);
+    }
+
+    if (invulnerableTime > 0) invulnerableTime -= dtMult;
+
+    updateBuffHUD();
+
+    // Ограничение полёта (потолок и пол)
+    if (owl.y + owl.radius > height) {
+        owl.y = height - owl.radius;
+        if (shieldTime <= 0 && invulnerableTime <= 0) {
+            handleHit('Вы упали на землю и у вас кончилась последняя жизнь!');
+        } else {
+            if (shieldTime > 0 && owl.vy > 0.5) shieldBump(Math.PI / 2, owl.vy / 8);
+            owl.vy = -3.8; // Пружиним вверх
+        }
+    } else if (owl.y - owl.radius < 0) {
+        owl.y = owl.radius;
+        if (shieldTime <= 0 && invulnerableTime <= 0) {
+            handleHit('Вы взлетели слишком высоко и у вас кончилась последняя жизнь!');
+            owl.vy = 2.0; // Отталкиваем вниз
+        } else {
+            if (shieldTime > 0 && owl.vy < -0.5) shieldBump(-Math.PI / 2, -owl.vy / 8);
+            owl.vy = 2.0; // Пружиним вниз
+        }
+    }
+
+    let baseSpeed = 2.24;
+    baseSpeed *= diffInfo.speedMult;
+
+    let currentSpeed = baseSpeed;
+    // Плавный разгон/торможение игры (~0.9 с), синхронно с музыкой
+    const gsTarget = speedBoostTime > 0 ? 1.30 : (slowMotionTime > 0 ? 0.70 : 1.0);
+    if (gsTarget !== gameSpeedTarget) { gameSpeedFrom = gameSpeedFactor; gameSpeedTarget = gsTarget; gameSpeedT = 0; }
+    gameSpeedT = Math.min(1, gameSpeedT + dtMult / 54);
+    gameSpeedFactor = gameSpeedFrom + (gsTarget - gameSpeedFrom) * (gameSpeedT * gameSpeedT * (3 - 2 * gameSpeedT));
+    currentSpeed *= gameSpeedFactor;
+    if (gsTarget !== spacingTarget) { spacingFrom = spacingFactor; spacingTarget = gsTarget; spacingT = 0; }
+    spacingT = Math.min(1, spacingT + dtMult / SPACING_RAMP_FRAMES);
+    spacingFactor = spacingFrom + (gsTarget - spacingFrom) * (spacingT * spacingT * (3 - 2 * spacingT));
+
+    pipeDistanceTracker += currentSpeed * dtMult;
+    cityOffset += currentSpeed * dtMult;   // ночной город уезжает назад вместе с полётом (медленнее — он далеко)
+    
+    // Расстояние между трубами меняется плавно: +14% при полном ускорении, -25% при полном замедлении (базовое расстояние чуть меньше: 262 вместо 275)
+    const distMult = spacingFactor >= 1 ? 1 + (spacingFactor - 1) * (0.14 / 0.30) : 1 - (1 - spacingFactor) * (0.25 / 0.30);
+    let targetPipeDistance = 262 * distMult;
+
+    // Трубы, которые уже летят на экране, плавно сдвигаются ближе (замедление) или дальше (ускорение):
+    // не нужно ждать, пока долетят новые трубы из-за края экрана
+    const dRatio = distMult / prevDistMult;
+    prevDistMult = distMult;
+    if (gameActive && Math.abs(dRatio - 1) > 1e-6 && Math.abs(dRatio - 1) < 0.05) {
+        for (const it of items) {
+            for (const p of pipes) {
+                if (p.x > owl.x && Math.abs(it.x - (p.x + p.width / 2)) < 60) { it.x += (p.x - owl.x) * (dRatio - 1); break; }
+            }
+        }
+        let newestX = -1e9;
+        for (const p of pipes) {
+            if (p.x > owl.x) p.x += (p.x - owl.x) * (dRatio - 1);
+            if (p.x > newestX) newestX = p.x;
+        }
+        // без обрезки до нуля: если трубу растянуло за край экрана, следующая должна подождать (раньше из-за этого трубы налезали друг на друга)
+        if (newestX > -1e8) pipeDistanceTracker = (width + 25) - newestX;
+    }
+
+    if (pipeDistanceTracker >= targetPipeDistance) {
+        // страховка: новая труба никогда не появляется слишком близко к предыдущей
+        let newestPipeX = -1e9;
+        for (const q of pipes) if (q.x > newestPipeX) newestPipeX = q.x;
+        const realGap = (width + 25 + Math.ceil(width * 0.03)) - newestPipeX;
+        if (realGap >= targetPipeDistance * 0.9) {
+            spawnPipe();
+            pipeDistanceTracker = 0;
+        } else {
+            pipeDistanceTracker = realGap;
+        }
+    }
+
+    const activeSqueeze = currentDifficultySqueeze + (currentCompressionFactor * 32);
+
+    for (let i = pipes.length - 1; i >= 0; i--) {
+        const p = pipes[i];
+        p.x -= currentSpeed * dtMult;
+
+        if (shieldTime <= 0 && invulnerableTime <= 0) {
+            const effectiveTop = p.top + activeSqueeze;
+            const effectiveBottom = p.bottom + activeSqueeze;
+            if (owl.x + owl.radius > p.x && owl.x - owl.radius < p.x + p.width && (owl.y - owl.radius < effectiveTop || owl.y + owl.radius > height - effectiveBottom)) {
+                handleHit('Вы врезались в трубу и у вас кончилась последняя жизнь!');
+            }
+        } else if (shieldTime > 0 && invulnerableTime <= 0 && !p.shieldPass) {
+            // Щит: сердца не теряются, но сквозь трубу не пролететь — сова отскакивает, щит прогибается
+            const effTop = p.top + activeSqueeze;
+            const effBot = height - (p.bottom + activeSqueeze);
+            const r = owl.radius;
+            if (owl.x + r > p.x && owl.x - r < p.x + p.width && (owl.y - r < effTop || owl.y + r > effBot)) {
+                const hitTop = owl.y - r < effTop;
+                const penSide = (owl.x + r) - p.x;
+                const penV = hitTop ? effTop - (owl.y - r) : (owl.y + r) - effBot;
+                if (owl.x < p.x && penSide < penV) {
+                    // удар в торец трубы: труба толкает сову назад, сова отскакивает к проходу
+                    const pw = 0.5 + Math.min(0.5, Math.abs(owl.vy) * 0.05 + (penSide > 3 ? 0.2 : 0));
+                    owl.x = p.x - r;
+                    owl.vy = hitTop ? Math.max(owl.vy, 2.6) : Math.min(owl.vy, -3.4);
+                    shieldBump(0, pw);
+                } else if (hitTop) {
+                    const pw = Math.abs(owl.vy) / 8;
+                    owl.y = effTop + r; owl.vy = Math.max(owl.vy, 2.2);
+                    shieldBump(-Math.PI / 2, pw);
+                } else {
+                    const pw = Math.abs(owl.vy) / 8;
+                    owl.y = effBot - r; owl.vy = Math.min(owl.vy, -3.4);
+                    shieldBump(Math.PI / 2, pw);
+                }
+                // если трубой прижало к самому краю экрана — щит всё же проталкивает сову сквозь неё
+                if (owl.x - r < 4) p.shieldPass = true;
+            }
+        }
+        if (p.x + p.width < -40 - width * 0.03) pipes.splice(i, 1);
+    }
+
+    // Сова плавно возвращается на своё место, если труба её оттолкнула
+    {
+        const sx = getOwlStartX();
+        if (owl.x < sx) owl.x = Math.min(sx, owl.x + 0.9 * dtMult);
+        shieldDent *= Math.pow(0.925, dtMult);   // распрямляется медленнее — прогиб дольше виден
+        shieldHitPower *= Math.pow(0.9, dtMult);
+    }
+
+    for (let i = items.length - 1; i >= 0; i--) {
+        const it = items[i];
+
+        if (!it.centerX) {
+            it.centerX = it.x;
+            it.centerY = it.y;
+        }
+
+        if (it.isCollecting) {
+            it.shrinkStep = (it.shrinkStep || 0) + 1 * dtMult;
+            
+            if (it.shrinkStep <= 2) {
+                it.scale = 1.0 + it.shrinkStep * 0.07;
+            } else {
+                const progress = (it.shrinkStep - 2) / 5;
+                it.scale = Math.max(0, 1.14 * (1 - progress * progress));
+            }
+
+            if (it.shrinkStep >= 7 || it.scale <= 0.02) {
+                const burstX = it.centerX;
+                const burstY = it.centerY;
+                const itemCat = CATEGORIES[it.type] || CATEGORIES.question;
+
+                spawnCollectionStarBurst(burstX, burstY, itemCat.color);
+
+                if (it.pendingFX) {
+                    spawnFlyingArrivalFX(burstX, burstY, it.pendingFX.target, it.pendingFX.text, it.pendingFX.color, it.pendingFX.icon);
+                    if (it.pendingFX.preHeld) hudPending[it.pendingFX.preHeld] = Math.max(0, (hudPending[it.pendingFX.preHeld] || 0) - 1);
+                    if (it.extraFX) { spawnFlyingArrivalFX(burstX, burstY, it.extraFX.target, it.extraFX.text, it.extraFX.color, it.extraFX.icon, true); if (it.extraFX.onShow) it.extraFX.onShow(); }
+                }
+
+                items.splice(i, 1);
+                continue;
+            }
+
+            it.centerX -= currentSpeed * dtMult;
+            it.x = it.centerX;
+            it.y = it.centerY;
+            continue;
+        }
+
+        if (it.isMoving) {
+            it.x -= (currentSpeed + (it.speedX || 1.2)) * dtMult;
+            it.y = it.baseY + Math.sin(frame * it.waveSpeed + it.floatOffset) * it.waveAmp;
+            it.centerX = it.x;
+            it.centerY = it.y;
+
+            if (!it.trail) it.trail = [];
+            it.trail.unshift({ x: it.x, y: it.y });
+            if (it.trail.length > 8) it.trail.pop();
+        } else {
+            it.x -= currentSpeed * dtMult;
+            it.y = it.baseY + Math.sin(frame * 0.07 + it.floatOffset) * 3.5;
+            it.centerX = it.x;
+            it.centerY = it.y;
+        }
+
+        if (Math.hypot(owl.x - it.x, owl.y - it.y) < owl.radius + it.radius && !it.collected) {
+            it.collected = true;
+            it.isCollecting = true;
+            it.shrinkStep = 0;
+            it.scale = 1.0;
+            Haptics.collectTheme();
+
+            const collectX = it.x;
+            const collectY = it.y;
+
+            const oldDiffLevel = getDifficultyMultipliers().level;
+
+            if (it.type === 'question') {
+                AudioFX.playCollect(false);
+                score++; scheduleHud('score');
+                StorageManager.save();
+                it.pendingFX = { target: 'score', text: '+1 Вопрос', color: '#FE7600', icon: 'fa-circle-question' };
+                if (attemptMilestone >= 0 && Math.floor(score / QUESTIONS_PER_ATTEMPT) > attemptMilestone) {   // этот вопрос даёт попытку: подсказки появятся и исчезнут вместе
+                    hudPending.attempts = (hudPending.attempts || 0) + 1;   // число попыток сменится, когда долетит шарик
+                    it.extraFX = { target: 'attempts', text: '+1 Попытка', color: '#FFC53D', icon: 'fa-rotate-right', onShow: () => { hudPending.attempts = Math.max(0, (hudPending.attempts || 0) - 1); flashAttemptsBadge(); } };
+                    window.__attemptHintPending = true;
+                }
+            } else if (it.type === 'stamina') {
+                AudioFX.playCollect(true);
+                stamina = Math.min(maxStamina, stamina + 50.0);
+                updateStaminaHUD(); StorageManager.save();
+                it.pendingFX = { target: 'stamina', text: '+50% Сил', color: '#67E8F9', icon: 'fa-feather-pointed' };
+            } else if (it.type === 'infinite') {
+                AudioFX.playStarCollect();
+                infiniteStaminaTime = ADMIN_CFG.infiniteSec * 60;
+                magicFeathersCaught++;
+                let maxUp = false;
+                if (magicFeathersCaught % FEATHERS_FOR_MAX_UP === 0) {
+                    maxStamina += 20; featherMaxBonus += 20; maxUp = true;
+                    setTimeout(triggerMaxStaminaUp, 650);   // блеск плашки, когда долетит шарик
+                }
+                stamina = maxStamina;
+                updateStaminaHUD();
+                Haptics.powerup();
+                it.pendingFX = { target: 'stamina', text: `Макс. силы ${ADMIN_CFG.infiniteSec}с`, color: '#00F0FF', icon: 'svg-infinite-feather' };
+                if (maxUp) it.extraFX = { target: 'stamina', text: 'Макс. сила +20%', color: '#00F0FF', icon: 'fa-feather-pointed' };   // вторая подсказка вместе с пером
+            } else if (it.type === 'drink') {
+                AudioFX.playCollect(true);
+                stamina = Math.min(maxStamina, stamina + 10.0);
+                updateStaminaHUD(); StorageManager.save();
+                it.pendingFX = { target: 'stamina', text: '+10% Сил', color: '#2DD4BF', icon: 'fa-martini-glass-citrus' };
+                it.extraFX = registerDrink();
+            } else if (it.type === 'mocktail') {
+                AudioFX.playCollect(true);
+                stamina = Math.min(maxStamina, stamina + 5.0);
+                updateStaminaHUD(); StorageManager.save();
+                it.pendingFX = { target: 'stamina', text: '+5% Сил', color: '#F4B942', icon: 'fa-beer-mug-empty' };
+                it.extraFX = registerDrink();
+            } else if (it.type === 'icecream') {
+                AudioFX.playCollect(true);
+                stamina = Math.min(maxStamina, stamina + 15.0);
+                updateStaminaHUD(); StorageManager.save();
+                it.pendingFX = { target: 'stamina', text: '+15% Сил', color: '#B5E4FF', icon: 'fa-ice-cream' };
+                it.extraFX = registerIceCream();
+            } else if (it.type === 'heart') {
+                AudioFX.playStarCollect();
+                lives = Math.min(maxLives, Math.round((lives + 1.0) * 10) / 10);
+                updateLivesHUD(); StorageManager.save();
+                it.pendingFX = { target: 'heart', text: '+1.0 Жизнь', color: '#EF4444', icon: 'fa-heart' };
+            } else if (it.type === 'pizza') {
+                AudioFX.playCollect(true);
+                lives = Math.min(maxLives, Math.round((lives + 0.5) * 10) / 10);
+                updateLivesHUD(); StorageManager.save();
+                it.pendingFX = { target: 'heart', text: '+0.5 Жизни', color: '#F97316', icon: 'fa-pizza-slice' };
+                it.extraFX = registerJunkFood();
+            } else if (it.type === 'burger') {
+                AudioFX.playCollect(true);
+                lives = Math.min(maxLives, Math.round((lives + 0.5) * 10) / 10);
+                updateLivesHUD(); StorageManager.save();
+                it.pendingFX = { target: 'heart', text: '+0.5 Жизни', color: '#F59E0B', icon: 'fa-burger' };
+                it.extraFX = registerJunkFood();
+            } else if (it.type === 'hotdog') {
+                AudioFX.playCollect(true);
+                lives = Math.min(maxLives, Math.round((lives + 0.5) * 10) / 10);
+                updateLivesHUD(); StorageManager.save();
+                it.pendingFX = { target: 'heart', text: '+0.5 Жизни', color: '#FB923C', icon: 'fa-hotdog' };
+                it.extraFX = registerJunkFood();
+            } else if (it.type === 'shield') {
+                AudioFX.playShieldCollect();
+                shieldTime = ADMIN_CFG.shieldSec * 60;
+                shieldAppearAnim = 12;
+                Haptics.powerup();
+                it.pendingFX = { target: 'other', text: `Щит ${ADMIN_CFG.shieldSec}с`, color: '#22C55E', icon: 'fa-shield-halved' };
+            } else if (it.type === 'compress') {
+                AudioFX.playCompressStart();
+                compressionTime = ADMIN_CFG.compressSec * 60;
+                Haptics.powerup();
+                it.pendingFX = { target: 'other', text: `Сжатие ${ADMIN_CFG.compressSec}с`, color: '#D946EF', icon: 'svg-compress' };
+            } else if (it.type === 'speedup') {
+                AudioFX.playStarCollect();
+                slowMotionTime = 0;
+                speedBoostTime = ADMIN_CFG.speedSec * 60;
+                AudioFX.onSpeedChanged();
+                Haptics.powerup();
+                it.pendingFX = { target: 'other', text: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#F59E0B', icon: 'fa-bolt' };
+            } else if (it.type === 'slowmo') {
+                AudioFX.playStarCollect();
+                speedBoostTime = 0;
+                slowMotionTime = ADMIN_CFG.slowSec * 60;
+                AudioFX.onSpeedChanged();
+                Haptics.powerup();
+                it.pendingFX = { target: 'other', text: `Замедление ${ADMIN_CFG.slowSec}с`, color: '#38BDF8', icon: 'fa-hourglass-half' };
+            } else if (it.type === 'secret') {
+                const rouletteResult = handleSecretRoulette(collectX, collectY);
+                if (!rouletteResult.skip) {
+                    it.pendingFX = { target: rouletteResult.target || (rouletteResult.isScoreAdd ? 'score' : 'other'), text: rouletteResult.label, color: rouletteResult.color, icon: rouletteResult.icon };
+                    if (rouletteResult.target === 'heart' || rouletteResult.target === 'stamina') {   // жизнь/силы засчитаются в плашке, когда долетит шарик
+                        const hg = hudGroup(rouletteResult.target);
+                        hudPending[hg] = (hudPending[hg] || 0) + 1;
+                        it.pendingFX.preHeld = hg;
+                    }
+                }
+                StorageManager.save();
+            } else {
+                AudioFX.playThemeCollect();
+                const cat = CATEGORIES[it.type];
+                const maxLimit = cat.count;
+                if (collected[it.type] < maxLimit) {
+                    collected[it.type]++;
+                    const labelText = collected[it.type] === maxLimit ? `+1 ${cat.name} (${maxLimit}/${maxLimit})` : `+1 ${cat.name}`;
+                    it.pendingFX = { target: it.type, text: labelText, color: cat.color, icon: cat.faClass };
+                    updateCollectionHUD();
+                    StorageManager.save();
+                    checkVictoryCondition();
+                } else {
+                    it.pendingFX = { target: it.type, text: `${maxLimit}/${maxLimit} ${cat.name}`, color: cat.color, icon: cat.faClass };
+                }
+            }
+
+            const newDiffLevel = getDifficultyMultipliers().level;
+            if (oldDiffLevel !== newDiffLevel) {
+                AudioFX.onSpeedChanged();
+            }
+
+            continue;
+        }
+        if (it.x < -40) items.splice(i, 1);
+    }
+}
+
+// Подсказка эффекта с отсчётом («Щит 10с», «Замедление 10с»…) после появления улетает в свой таймер вверху
+// и превращается в него: текст меняется на «Щит: 10с», ширина плавно подстраивается, таймер проявляется на её месте
+const buffArrive = {};
+let lastBuffKeySet = new Set();
+const lastBuffLeft = {};
+const buffRefreshed = {};
+function pulseBuff(key) {
+    const t = document.querySelector(`#buffBar [data-key="${key}"]`);
+    if (!t) return;
+    t.classList.remove('buff-pulse'); void t.offsetWidth; t.classList.add('buff-pulse');
+    setTimeout(() => t.classList.remove('buff-pulse'), 520);
+}
+// есть ли у какого-то подобранного предмета ещё не показанная подсказка для этого таймера
+function buffTagPending(key) {
+    try {
+        for (const it of items) {
+            if (it.pendingFX && buffKeyForLabel(it.pendingFX.text) === key) return true;
+            if (it.extraFX && buffKeyForLabel(it.extraFX.text) === key) return true;
+        }
+    } catch (e) {}
+    return false;
+}
+function buffKeyForLabel(t) {
+    t = String(t || '');
+    if (/^Щит \d+с$/i.test(t)) return 'shield';
+    if (/^Макс\. силы \d+с$/i.test(t)) return 'infinite';
+    if (/^Сжатие \d+с$/i.test(t)) return 'compress';
+    if (/^Ускорение \d+с$/i.test(t)) return 'speed';
+    if (/^Замедление \d+с$/i.test(t)) return 'slow';
+    if (/переели/i.test(t)) return 'overeat';
+    if (/замёрзли|замерзли/i.test(t)) return 'freeze';
+    if (/опьянели/i.test(t)) return 'drunk';
+    return null;
+}
+function sendTagToTimer(tag, key) {
+    tag.__toTimer = true;
+    const existing = document.querySelector(`#buffBar [data-key="${key}"]`);
+    const alreadyShown = existing && existing.style.opacity !== '0' && !buffArrive[key];
+    if (!alreadyShown) buffArrive[key] = performance.now() + 2500;
+    lastBuffStateKey = ''; updateBuffHUD();
+    tag.style.animation = 'buffTagIntro 0.45s linear forwards';   // в начале движется так же, как обычные подсказки — соседние не наезжают
+    const showTimer = () => {
+        delete buffArrive[key];
+        const t = document.querySelector(`#buffBar [data-key="${key}"]`);
+        if (t) { t.style.transition = 'none'; t.style.opacity = '1'; void t.offsetWidth; t.style.transition = ''; }   // появляется мгновенно — на месте прилетевшей подсказки
+    };
+    const startFly = () => {
+        if (tag.__holdUntil && performance.now() < tag.__holdUntil) { setTimeout(startFly, tag.__holdUntil - performance.now()); return; }   // ждём, пока верхняя подсказка начнёт таять
+        const el = document.querySelector(`#buffBar [data-key="${key}"]`);
+        if (!el || !tag.parentNode) { if (tag.parentNode) tag.parentNode.removeChild(tag); showTimer(); return; }
+        // превращение в надпись таймера: фиксируем ширину, меняем содержимое и плавно растягиваем до новой
+        const w0 = tag.offsetWidth;
+        tag.style.width = w0 + 'px'; tag.style.overflow = 'hidden';
+        tag.innerHTML = el.innerHTML;
+        tag.style.width = 'auto'; const w1 = tag.offsetWidth; tag.style.width = w0 + 'px';
+        void tag.offsetWidth;
+        const er = el.getBoundingClientRect(), tr = tag.getBoundingClientRect();
+        tag.style.transition = 'left 0.55s cubic-bezier(0.22, 1, 0.36, 1), top 0.55s cubic-bezier(0.22, 1, 0.36, 1), width 0.35s ease';
+        tag.style.left = (parseFloat(tag.style.left) + (er.left - tr.left)) + 'px';
+        tag.style.top = (parseFloat(tag.style.top) + ((er.top + er.height / 2) - (tr.top + tr.height / 2))) + 'px';
+        tag.style.width = w1 + 'px';
+        setTimeout(() => {
+            showTimer();
+            if (alreadyShown) {   // эффект продлён: подсказка «вливается» в таймер, таймер вздрагивает
+                tag.style.transition = 'opacity 0.18s ease, transform 0.18s ease'; tag.style.transform = 'scale(0.7)'; tag.style.opacity = '0';
+                const t2 = document.querySelector(`#buffBar [data-key="${key}"]`);
+                if (t2) { t2.classList.remove('buff-pulse'); void t2.offsetWidth; t2.classList.add('buff-pulse'); setTimeout(() => t2.classList.remove('buff-pulse'), 500); }
+            } else {
+                // подсказка уже выглядит ровно как таймер — убираем её сразу, без плавного угасания поверх таймера (иначе два свечения складываются и «мигают»)
+                tag.style.transition = 'none'; tag.style.opacity = '0';
+            }
+            setTimeout(() => { if (tag.parentNode) tag.parentNode.removeChild(tag); }, 230);
+        }, 570);
+    };
+    setTimeout(startFly, 450);
+}
+
+let lastBuffSig = -1;
+function updateBuffHUD() {
+    const bar = document.getElementById('buffBar');
+    if (!bar) return;
+    const sig = Math.ceil(shieldTime / 60) + Math.ceil(infiniteStaminaTime / 60) * 31 + Math.ceil(compressionTime / 60) * 961 + Math.ceil(speedBoostTime / 60) * 29791 +
+                Math.ceil(slowMotionTime / 60) * 923521 + Math.ceil(overeatTime / 60) * 28629151 + Math.ceil(freezeTime / 60) * 887503681 + Math.ceil(drunkTime / 60) * 27512614111;
+    if (sig === lastBuffSig && lastBuffStateKey !== '') return;   // ни одна секунда не сменилась — нечего перерисовывать
+    // (при продлении эффекта секунда подскакивает вверх — это тоже смена, проверка ниже сработает сразу)
+    lastBuffSig = sig;
+
+    const activeBuffs = [];
+    if (shieldTime > 0) {
+        activeBuffs.push({
+            key: 'shield', left: shieldTime, text: `ЩИТ: ${Math.ceil(shieldTime / 60)}с`,
+            color: '#22C55E',
+            icon: 'fa-shield-halved'
+        });
+    }
+    if (infiniteStaminaTime > 0) {
+        activeBuffs.push({
+            key: 'infinite', left: infiniteStaminaTime, text: `МАКС. СИЛЫ: ${Math.ceil(infiniteStaminaTime / 60)}с`,
+            color: '#00F0FF',
+            svgIcon: `<div style="position:relative;display:inline-flex;align-items:center;justify-content:flex-start;width:15px;height:14px;margin-right:0;color:#00F0FF;flex-shrink:0"><i class="fa-solid fa-feather-pointed" style="font-size:11px"></i><span class="inf-sign" style="position:absolute;right:-1px;bottom:-2px;font-weight:900;color:#fff;line-height:1;text-shadow:0 0 2px #000,0 0 4px #000">∞</span></div>`
+        });
+    }
+    if (compressionTime > 0) {
+        activeBuffs.push({
+            key: 'compress', left: compressionTime, text: `СЖАТИЕ: ${Math.ceil(compressionTime / 60)}с`,
+            color: '#D946EF',
+            svgIcon: `<svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#D946EF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5"/></svg>`
+        });
+    }
+    if (speedBoostTime > 0) {
+        activeBuffs.push({
+            key: 'speed', left: speedBoostTime, text: `УСКОРЕНИЕ: ${Math.ceil(speedBoostTime / 60)}с`,
+            color: '#F59E0B',
+            icon: 'fa-bolt'
+        });
+    }
+    if (slowMotionTime > 0) {
+        activeBuffs.push({
+            key: 'slow', left: slowMotionTime, text: `ЗАМЕДЛЕНИЕ: ${Math.ceil(slowMotionTime / 60)}с`,
+            color: '#38BDF8',
+            icon: 'fa-hourglass-half'
+        });
+    }
+
+    if (overeatTime > 0) {
+        activeBuffs.push({
+            key: 'overeat', left: overeatTime, text: `ПЕРЕЕДАНИЕ: ${Math.ceil(overeatTime / 60)}с`,
+            color: '#FB923C',
+            icon: 'fa-burger'
+        });
+    }
+    if (freezeTime > 0) {
+        activeBuffs.push({
+            key: 'freeze', left: freezeTime, text: `ЗАМЕРЗАНИЕ: ${Math.ceil(freezeTime / 60)}с`,
+            color: '#B5E4FF',
+            icon: 'fa-snowflake'
+        });
+    }
+    if (drunkTime > 0) {
+        activeBuffs.push({
+            key: 'drunk', left: drunkTime, text: `ОПЬЯНЕНИЕ: ${Math.ceil(drunkTime / 60)}с`,
+            color: '#2DD4BF',
+            icon: 'fa-martini-glass-citrus'
+        });
+    }
+
+    // Новый таймер, к которому вот-вот полетит подсказка, не показываем заранее: он проявится, когда подсказка долетит
+    {
+        const keysNow = activeBuffs.map(b => b.key);
+        for (const b of activeBuffs) {
+            const k = b.key;
+            const refreshed = lastBuffLeft[k] !== undefined && b.left > lastBuffLeft[k] + 30;   // эффект взяли ещё раз — время подскочило
+            if (!lastBuffKeySet.has(k) && !buffArrive[k] && buffTagPending(k)) buffArrive[k] = performance.now() + 1600;
+            if (refreshed && lastBuffKeySet.has(k)) buffRefreshed[k] = performance.now() + 1500;   // продление: подсказку не создаём, таймер пульсирует
+            lastBuffLeft[k] = b.left;
+        }
+        for (const k in lastBuffLeft) if (!keysNow.includes(k)) delete lastBuffLeft[k];
+        lastBuffKeySet = new Set(keysNow);
+    }
+    activeBuffs.sort((a, b) => b.left - a.left);   // у кого больше времени — выше
+    const stateKey = activeBuffs.map(b => b.key + ':' + b.text).join('|');
+    if (stateKey === lastBuffStateKey) return;
+    lastBuffStateKey = stateKey;
+    renderBuffBar(bar, activeBuffs);
+    for (const k in buffRefreshed) { if (performance.now() < buffRefreshed[k] && !buffRefreshed[k + ':p']) { buffRefreshed[k + ':p'] = 1; pulseBuff(k); } }
+}
+
+function makeBuffEl(b) {
+    const el = document.createElement('div');
+    el.dataset.key = b.key;
+    el.className = 'buff-tag text-[10px] font-black rounded-xl shadow-lg flex items-center';
+    el.style.cssText = `transition: opacity 0.2s; padding: 3px 6px 3px 6px; gap: 3px; background-color: rgba(20, 3, 38, 0.95); border: 1.5px solid ${b.color}; box-shadow: 0 0 12px ${b.color}88; color: ${b.color};`;
+    el.innerHTML = `<span style="display:inline-flex;min-width:11px;height:14px;justify-content:center;align-items:center;flex-shrink:0">${b.svgIcon ? b.svgIcon : `<i class="fa-solid ${b.icon}" style="color: ${b.color};"></i>`}</span><span class="buff-txt" style="font-weight:900!important;">${sentenceCase(b.text)}</span>`;
+    return el;
+}
+function renderBuffBar(bar, list) {
+    const z = parseFloat(getComputedStyle(bar).zoom) || 1;
+    const els = new Map();
+    [...bar.children].forEach(el => { if (!el.dataset.leaving) els.set(el.dataset.key, el); });
+    const before = new Map();
+    els.forEach((el, k) => before.set(k, el.getBoundingClientRect().top));
+    const keep = new Set(list.map(b => b.key));
+    // закончившиеся: плавно тают, не занимая места
+    els.forEach((el, k) => {
+        if (keep.has(k)) return;
+        el.dataset.leaving = '1';
+        const ol = el.offsetLeft, ot = el.offsetTop;   // запоминаем место ДО отрыва от потока — иначе таймер прыгает наверх
+        el.style.position = 'absolute'; el.style.left = ol + 'px'; el.style.top = ot + 'px';
+        el.style.transition = 'opacity 0.25s ease, transform 0.25s ease'; el.style.opacity = '0'; el.style.transform = 'scale(0.9)';
+        setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 270);
+    });
+    // обновляем / добавляем в нужном порядке
+    list.forEach((b) => {
+        let el = els.get(b.key);
+        if (!el) el = makeBuffEl(b);
+        const txt = el.querySelector('.buff-txt'); const t = sentenceCase(b.text);
+        if (txt && txt.textContent !== t) txt.textContent = t;
+        const hidden = !!(buffArrive[b.key] && performance.now() < buffArrive[b.key]);
+        if (hidden) { el.style.transition = 'opacity 0.12s'; el.style.opacity = '0'; } else if (el.style.opacity === '0' && !buffArrive[b.key]) el.style.opacity = '1';
+        bar.appendChild(el);   // переставляет в нужный порядок
+    });
+    // плавный сдвиг тех, кто поменял место (FLIP)
+    els.forEach((el, k) => {
+        if (!keep.has(k) || !before.has(k)) return;
+        const dy = (before.get(k) - el.getBoundingClientRect().top) / z;
+        if (Math.abs(dy) < 0.5) return;
+        el.style.transition = 'none'; el.style.transform = `translateY(${dy}px)`;
+        void el.offsetWidth;
+        el.style.transition = 'transform 0.38s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s';
+        el.style.transform = '';
+    });
+}
+
+function registerJunkFood() {
+    junkFoodCount++;
+    if (junkFoodCount >= OVEREAT_TRIGGER) {
+        junkFoodCount = 0;
+        overeatTime = ADMIN_CFG.overeatSec * 60;
+        AudioFX.playOverEat();
+        Haptics.powerup();
+        return { target: 'other', text: 'Вы переели!', color: '#FB923C', icon: 'fa-burger' };
+    }
+    return null;
+}
+
+function registerDrink() {
+    drinkCount++;
+    if (drinkCount >= DRUNK_TRIGGER) {
+        drinkCount = 0;
+        drunkTime = ADMIN_CFG.drunkSec * 60;
+        AudioFX.playDrunk();
+        Haptics.powerup();
+        return { target: 'other', text: 'Вы опьянели!', color: '#2DD4BF', icon: 'fa-martini-glass-citrus' };
+    }
+    return null;
+}
+
+function resetOvereatDrunk() {
+    junkFoodCount = 0; drinkCount = 0;
+    overeatTime = 0; drunkTime = 0;
+    currentOvereatFactor = 0; currentDrunkFactor = 0;
+    iceCreamCount = 0; freezeTime = 0; currentFreezeFactor = 0;
+    owl.spinAngle = 0; owl.spinVel = 0;
+    owl.drunkOffset = 0;
+    owl.radius = owl.baseRadius;
+    gameSpeedFactor = gameSpeedFrom = gameSpeedTarget = 1; gameSpeedT = 1;
+    spacingFactor = spacingFrom = spacingTarget = 1; spacingT = 1; prevDistMult = 1;
+}
+
+function clearAllBuffs() {
+    resetOvereatDrunk();
+    shieldTime = 0;
+    shieldAppearAnim = 0;
+    infiniteStaminaTime = 0;
+    compressionTime = 0;
+    currentCompressionFactor = 0;
+    speedBoostTime = 0;
+    slowMotionTime = 0;
+    invulnerableTime = 0;
+    lastBuffStateKey = '';
+    const bar = document.getElementById('buffBar');
+    if (bar) bar.innerHTML = '';
+    if (AudioFX && AudioFX.onSpeedChanged) {
+        AudioFX.onSpeedChanged();
+    }
+}
+
+function pickWeighted(options) {
+    let r = Math.random() * options.reduce((sum, o) => sum + o.w, 0);
+    for (const o of options) { if ((r -= o.w) < 0) return o; }
+    return options[options.length - 1];
+}
+
+// Секретная звезда: шанс штрафа зависит от уровня сложности (см. DIFF_LEVELS).
+// Все подсказки: «Штраф: ...» — плохо, «Бонус: ...» — хорошо.
+function handleSecretRoulette(originX, originY) {
+    const negativeChance = getDifficultyMultipliers().negChance;
+    const THEME_KEYS = ['music', 'logic', 'kino', 'series', 'cartoons', 'fun'];
+
+    if (Math.random() < negativeChance) {
+        return pickWeighted([
+            { w: 25, run() {
+                if (lives <= 1.5) {
+                    // Последняя жизнь: обычная подсказка «−1 жизнь», игра ненадолго замирает, затем экран «продолжить / заново»
+                    lives = 0;
+                    updateLivesHUD();
+                    AudioFX.playHit();
+                    Haptics.hit();
+                    // без «зависания»: сова сразу разлетается перьями, как при ударе о трубу; подсказка показывает, что забрала звезда
+                    handleRunFailure('Секретная звезда забрала последнюю жизнь!', { kind: 'ШТРАФ', text: 'Штраф: -1 Жизнь', color: '#EF4444', icon: 'fa-heart-crack' });
+                    return { skip: true, label: '', color: '#EF4444', icon: 'fa-heart-crack', isScoreAdd: false };
+                }
+                lives = Math.round((lives - 1.0) * 10) / 10;
+                AudioFX.playHit();
+                Haptics.hit();
+                updateLivesHUD();
+                triggerTopHUDPop('heart');
+                return { label: 'Штраф: -1 Жизнь', color: '#EF4444', icon: 'fa-heart-crack', isScoreAdd: false };
+            } },
+            { w: 22, run() {
+                stamina = Math.max(5.0, stamina - 35.0);
+                updateStaminaHUD();
+                AudioFX.playHit();
+                triggerTopHUDPop('stamina');
+                return { label: 'Штраф: -35% Сил', color: '#F43F5E', icon: 'fa-feather-pointed', isScoreAdd: false };
+            } },
+            { w: 22, run() {
+                const existing = THEME_KEYS.filter(k => (collected[k] || 0) > 0);
+                if (existing.length === 0) {
+                    stamina = Math.max(5.0, stamina - 25.0);
+                    updateStaminaHUD();
+                    AudioFX.playHit();
+                    return { label: 'Штраф: -25% Сил', color: '#F43F5E', icon: 'fa-feather-pointed', isScoreAdd: false };
+                }
+                const lostKey = existing[Math.floor(Math.random() * existing.length)];
+                collected[lostKey]--;
+                updateCollectionHUD();
+                AudioFX.playHit();
+                triggerBadgeAnimation(lostKey, true);
+                return { label: `Штраф: -1 ${CATEGORIES[lostKey].name}`, color: '#F43F5E', icon: 'fa-triangle-exclamation', isScoreAdd: false };
+            } },
+            { w: 13, run() {
+                AudioFX.playCompressStart();
+                compressionTime = ADMIN_CFG.compressSec * 60;
+                Haptics.powerup();
+                return { label: `Сжатие ${ADMIN_CFG.compressSec}с`, color: '#D946EF', icon: 'svg-compress', isScoreAdd: false };
+            } },
+            { w: 14, run() {
+                AudioFX.playStarCollect();
+                slowMotionTime = 0;
+                speedBoostTime = ADMIN_CFG.speedSec * 60;
+                AudioFX.onSpeedChanged();
+                Haptics.powerup();
+                return { label: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#F59E0B', icon: 'fa-bolt', isScoreAdd: false };
+            } }
+        ]).run();
+    }
+
+    return pickWeighted([
+        { w: 14, run() {
+            stamina = maxStamina;
+            updateStaminaHUD();
+            Haptics.powerup();
+            AudioFX.playCollect(true);
+            return { label: `Бонус: Силы ${maxStamina}%`, color: '#67E8F9', icon: 'fa-feather-pointed', isScoreAdd: false, target: 'stamina' };
+        } },
+        { w: 5, run() {
+            if (lives < maxLives) {
+                lives = Math.min(maxLives, Math.round((lives + 1.0) * 10) / 10);
+                updateLivesHUD();
+                triggerTopHUDPop('heart');
+            }
+            AudioFX.playStarCollect();
+            return { label: 'Бонус: +1 Жизнь', color: '#EF4444', icon: 'fa-heart', isScoreAdd: false, target: 'heart' };
+        } },
+        { w: 6, run() {
+            if (lives < maxLives) {
+                lives = Math.min(maxLives, Math.round((lives + 0.5) * 10) / 10);
+                updateLivesHUD();
+            }
+            AudioFX.playCollect(true);
+            return { label: 'Бонус: +0.5 Жизни', color: '#F97316', icon: 'fa-pizza-slice', isScoreAdd: false, target: 'heart' };
+        } },
+        { w: 18, run() {
+            shieldTime = ADMIN_CFG.shieldSec * 60;
+            shieldAppearAnim = 12;
+            AudioFX.playShieldCollect();
+            Haptics.powerup();
+            return { label: `Щит ${ADMIN_CFG.shieldSec}с`, color: '#22C55E', icon: 'fa-shield-halved', isScoreAdd: false };
+        } },
+        { w: 17, run() {
+            speedBoostTime = 0;
+            slowMotionTime = ADMIN_CFG.slowSec * 60;
+            AudioFX.playStarCollect();
+            AudioFX.onSpeedChanged();
+            Haptics.powerup();
+            return { label: `Замедление ${ADMIN_CFG.slowSec}с`, color: '#38BDF8', icon: 'fa-hourglass-half', isScoreAdd: false };
+        } },
+        { w: 20, run() {
+            const open = THEME_KEYS.filter(k => (collected[k] || 0) < CATEGORIES[k].count);
+            if (open.length > 0) {
+                const key = open[Math.floor(Math.random() * open.length)];
+                collected[key]++;
+                updateCollectionHUD();
+                AudioFX.playThemeCollect();
+                StorageManager.save();
+                checkVictoryCondition();
+                return { label: `+1 ${CATEGORIES[key].name}`, color: CATEGORIES[key].color, icon: CATEGORIES[key].faClass, isScoreAdd: false, target: key };   // иконка темы летит вниз в свою плашку, как при обычном сборе
+            }
+            return null;
+        } },
+        { w: 20, run() {
+            score += 3;
+            scheduleHud('score');
+            triggerTopHUDPop('score');
+            AudioFX.playCollect(false);
+            StorageManager.save();
+            return { label: 'Бонус: +3 Вопроса', color: '#FE7600', icon: 'fa-circle-question', isScoreAdd: true };
+        } }
+    ]).run() || (() => {
+        score += 3;
+        scheduleHud('score');
+        triggerTopHUDPop('score');
+        AudioFX.playCollect(false);
+        StorageManager.save();
+        return { label: 'Бонус: +3 Вопроса', color: '#FE7600', icon: 'fa-circle-question', isScoreAdd: true };
+    })();
+}
+
+function handleHit(cause = 'Вы врезались в трубу и у вас кончилась последняя жизнь!') {
+    AudioFX.playHit();
+    Haptics.hit();
+
+    if (lives <= 1.5) {
+        lives = 0;
+        updateLivesHUD();
+        handleRunFailure(cause);
+        return;
+    }
+
+    lives = Math.round((lives - 1.0) * 10) / 10;
+    invulnerableTime = 130;
+    owl.vy = -3.8;
+    updateLivesHUD(); StorageManager.save();
+    triggerTopHUDPop('heart');
+}
+
+function handleStaminaDepletion() {
+    AudioFX.playHit();
+    Haptics.hit();
+
+    if (lives <= 1.5) {
+        lives = 0;
+        updateLivesHUD();
+        handleRunFailure('У вас кончилась выносливость и вы истратили последнюю жизнь!');
+        return;
+    }
+
+    lives = Math.round((lives - 1.0) * 10) / 10;
+    stamina = maxStamina;
+    invulnerableTime = 130;
+    updateLivesHUD(); updateStaminaHUD(); StorageManager.save();
+    triggerTopHUDPop('heart');
+}
+
+function triggerOwlFeatherExplosion() {
+    owl.visible = false;
+    const featherColors = ['#8B3CF7', '#621BCA', '#A855F7', '#C084FC', '#FE7600', '#FFA040', '#FFFFFF', '#EDE5F8'];
+    for (let i = 0; i < 34; i++) {
+        const speed = 2.0 + Math.random() * 5.0;
+        const angle = Math.random() * Math.PI * 2;
+        particles.push({
+            x: owl.x + (Math.random() - 0.5) * 16,
+            y: owl.y + (Math.random() - 0.5) * 16,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 1.5,
+            color: featherColors[Math.floor(Math.random() * featherColors.length)],
+            alpha: 1.0,
+            size: 5.5 + Math.random() * 4.5,
+            decay: 0.013 + Math.random() * 0.009,
+            isFeather: true,
+            angle: Math.random() * Math.PI * 2,
+            vAngle: (Math.random() - 0.5) * 0.22
+        });
+    }
+    for (let i = 0; i < 15; i++) {
+        particles.push({
+            x: owl.x,
+            y: owl.y,
+            vx: (Math.random() - 0.5) * 5,
+            vy: (Math.random() - 0.5) * 5,
+            color: '#FE7600',
+            alpha: 1.0,
+            size: 3.0,
+            decay: 0.03,
+            isStar: true
+        });
+    }
+}
+
+function handleRunFailure(reason, hint) {
+    gameActive = false;
+    waitingFirstTap = false;
+    isFlightPaused = false;
+    clearAllBuffs();
+    triggerOwlFeatherExplosion();
+    Haptics.death();
+    AudioFX.stopMusic();
+
+    // Если нас убило что-то из секретной звезды — сначала показываем, что именно мы взяли
+    let delay = 750;
+    if (hint) {
+        showEffectHint(hint.kind, hint.text, hint.color, hint.icon, 2300);
+        delay = 2400;
+    }
+
+    setTimeout(() => {
+        attempts = Math.max(0, attempts - 1);
+        StorageManager.save();
+
+        // Если за это время игрок уже вышел в главное меню — экран поражения не показываем
+        const startScreenEl = document.getElementById('startScreen');
+        if (startScreenEl && !startScreenEl.classList.contains('hidden')) {
+            updateMenuVisibility();
+            return;
+        }
+
+        AudioFX.setMode('death');
+
+        const totalItems = getTotalCollectedThemes();
+        const finalScoreEl = document.getElementById('finalScore');
+        const finalTokensEl = document.getElementById('finalTokens');
+        const finalAttemptsEl = document.getElementById('finalAttempts');
+        if (finalScoreEl) finalScoreEl.innerText = score;
+        if (finalTokensEl) finalTokensEl.innerText = `${totalItems} / ${TOTAL_THEMES}`;
+        if (finalAttemptsEl) finalAttemptsEl.innerText = `${attempts}`;
+
+        const contBtn = document.getElementById('continueAttemptBtn');
+        const restartBtn = document.getElementById('restartFromGameOverBtn');
+        const titleEl = document.getElementById('gameOverTitle');
+        const subtextEl = document.getElementById('gameOverSubtext');
+        const contTitleEl = document.getElementById('continueAttemptTitle');
+        const contSubEl = document.getElementById('continueAttemptSub');
+
+        if (attempts > 0) {
+            if (titleEl) titleEl.innerText = 'ПОПЫТКА ПОТЕРЯНА';
+            if (subtextEl) subtextEl.innerText = `${reason} Собранные темы сохранены!`;
+            if (contBtn) contBtn.classList.remove('hidden');
+            if (restartBtn) restartBtn.classList.remove('hidden');
+            if (contTitleEl) contTitleEl.innerText = 'ПРОДОЛЖИТЬ';
+            if (contSubEl) contSubEl.innerText = `ОСТАЛОСЬ ПОПЫТОК: ${attempts}`;
+        } else {
+            // Попытки закончились: остаётся только выход в главное меню
+            if (titleEl) titleEl.innerText = 'ПОПЫТКИ ИСЧЕРПАНЫ';
+            if (subtextEl) subtextEl.innerText = `${reason} Все попытки потрачены!`;
+            if (contBtn) contBtn.classList.add('hidden');
+            if (restartBtn) restartBtn.classList.remove('hidden');
+        }
+        if (restartBtn) {
+            const exhausted = attempts <= 0;
+            restartBtn.classList.toggle('btn-bubo', exhausted);
+            restartBtn.classList.toggle('btn-secondary', !exhausted);
+            restartBtn.classList.toggle('restart-big', exhausted);
+            restartBtn.classList.toggle('shadow-xl', exhausted);
+        }
+        const restartLabel = restartBtn ? restartBtn.querySelector('span') : null;
+        if (restartLabel) restartLabel.innerText = (attempts > 0) ? 'ЗАНОВО' : 'НАЧАТЬ ЗАНОВО';
+
+        updateMenuVisibility();
+        const modal = document.getElementById('gameOverModal');
+        if (modal) modal.classList.remove('hidden');
+    }, delay);
+}

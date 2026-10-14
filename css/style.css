@@ -1,0 +1,1972 @@
+/* BUBO Quiz Owl Flight — все стили игры (кроме экрана загрузки, он внутри index.html) */
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
+            font-family: 'Onest', sans-serif;
+            font-weight: 500;
+        }
+        h1, h2, h3, h4, .font-black, strong, button, .btn-bubo, .btn-secondary, span.font-black, .fly-label-tag, .collection-theme-label {
+            font-weight: 900 !important;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0d021a;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        .btn-bubo {
+            background: linear-gradient(135deg, #FE7600 0%, #ff8c1a 100%);
+            box-shadow: 0 4px 22px rgba(254, 118, 0, 0.5);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 900;
+        }
+        .btn-bubo:active {
+            transform: scale(0.97);
+            box-shadow: 0 2px 10px rgba(254, 118, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(120, 44, 233, 0.3);
+            border: 1px solid rgba(120, 44, 233, 0.7);
+            transition: all 0.2s ease;
+            color: #e9d5ff;
+            font-weight: 900;
+        }
+        .btn-secondary:active {
+            transform: scale(0.97);
+            background: rgba(120, 44, 233, 0.5);
+        }
+
+        .glass-panel {
+            background: rgba(29, 9, 54, 0.95);
+            border: 1px solid rgba(120, 44, 233, 0.55);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .glass-panel-menu {
+            background: rgba(29, 9, 54, 0.65);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(120, 44, 233, 0.45);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        @keyframes hudPopSpring {
+            0% { transform: scale(1); }
+            35% { transform: scale(1.24); filter: brightness(1.4); }
+            70% { transform: scale(0.96); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+
+        .hud-pop-score {
+            animation: hudPopSpring 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            box-shadow: 0 0 20px rgba(254, 118, 0, 0.85) !important;
+            border-color: #FE7600 !important;
+        }
+
+        .hud-pop-stamina {
+            animation: hudPopSpring 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.85) !important;
+            border-color: #22c55e !important;
+        }
+
+        .hud-pop-heart {
+            animation: hudPopSpring 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.85) !important;
+            border-color: #EF4444 !important;
+        }
+
+        @keyframes staminaDangerPulse {
+            0%, 100% {
+                box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+                border-color: rgba(239, 68, 68, 0.7);
+                background: rgba(45, 10, 20, 0.95);
+            }
+            50% {
+                box-shadow: 0 0 22px rgba(239, 68, 68, 1), inset 0 0 8px rgba(239, 68, 68, 0.5);
+                border-color: #ff3b3b;
+                background: rgba(90, 15, 30, 0.98);
+                transform: scale(1.05);
+            }
+        }
+        .stamina-critical {
+            animation: staminaDangerPulse 0.65s ease-in-out infinite;
+        }
+
+        @keyframes badgePulse {
+            0% { transform: scale(1); filter: brightness(1); }
+            40% { transform: scale(1.25); filter: brightness(1.5); }
+            70% { transform: scale(0.96); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+        .badge-animate {
+            animation: badgePulse 0.45s ease-in-out;
+        }
+        /* Тема прилетела: такой же «пружинный» отскок, как у плашек сверху */
+        .badge-pop {
+            animation: hudPopSpring 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            box-shadow: 0 0 18px var(--pop-col, #FE7600) !important;
+            border-color: var(--pop-col, #FE7600) !important;
+        }
+        /* Тема потеряна: плашка вздрагивает и мигает красным */
+        @keyframes badgeLossShake {
+            0%, 100% { transform: translateX(0) rotate(0); }
+            15% { transform: translateX(-4px) rotate(-5deg); }
+            30% { transform: translateX(4px) rotate(5deg); }
+            45% { transform: translateX(-3px) rotate(-3deg); }
+            60% { transform: translateX(3px) rotate(2deg); }
+            80% { transform: translateX(-1px); }
+        }
+        .badge-loss {
+            animation: badgeLossShake 0.6s ease-in-out;
+            box-shadow: 0 0 18px rgba(239, 68, 68, 0.9) !important;
+            border-color: #EF4444 !important;
+        }
+        /* Иконка потерянной темы «отваливается» и падает */
+        @keyframes iconFallOff {
+            0%   { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; }
+            22%  { transform: translate(-50%, -95%) rotate(-14deg) scale(1.2); opacity: 1; }
+            100% { transform: translate(-20%, 140%) rotate(-80deg) scale(0.8); opacity: 0; }
+        }
+        .icon-fall { position: absolute; z-index: 60; pointer-events: none; animation: iconFallOff 1s cubic-bezier(0.45, 0, 0.8, 0.6) forwards; }
+        @keyframes lossMinusUp {
+            0% { transform: translate(-50%, 0) scale(0.6); opacity: 0; }
+            20% { transform: translate(-50%, -6px) scale(1.15); opacity: 1; }
+            100% { transform: translate(-50%, -26px) scale(1); opacity: 0; }
+        }
+        .loss-minus { position: absolute; z-index: 61; pointer-events: none; color: #EF4444; font-weight: 900; font-size: 13px; text-shadow: 0 0 6px rgba(239,68,68,.8), 0 1px 2px #000; animation: lossMinusUp 1s ease-out forwards; }
+
+        @keyframes floatUpSmooth {
+            /* подсказка появляется, держится, затем строго вертикально поднимается, уменьшается к своему центру и тает
+               (центр не уезжает влево: сдвиг вправо на половину «потерянной» ширины компенсирует масштаб от левого края) */
+            /* появляется, держится, затем быстро чуть съезжает вверх, уменьшается и тает (≈0,27 с) */
+            0%   { opacity: 0; transform: translate3d(calc(50% * 0.12), 6px, 0) scale(0.88); }
+            14%  { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+            78%  { opacity: 1; transform: translate3d(0, 0, 0) scale(1); animation-timing-function: ease-in; }
+            100% { opacity: 0; transform: translate3d(calc(50% * 0.15), -12px, 0) scale(0.85); }
+        }
+        .fly-label-tag {
+            animation: floatUpSmooth 0.84s linear forwards;   /* показ ≈0,65 с, затем быстрое исчезновение (≈0,18 с) */
+            pointer-events: none;
+            position: absolute;
+            z-index: 60;
+            white-space: nowrap;
+            will-change: transform, opacity;
+            font-weight: 900 !important;
+        }
+
+        .flying-orb {
+            position: absolute;
+            z-index: 55;
+            pointer-events: none;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);   /* только transform: без «all» (пересчёт всех свойств на каждом кадре) */
+        }
+
+        @keyframes tapRippleAnim {
+            0% { transform: scale(0.4); opacity: 0.9; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+        .tap-ripple {
+            position: absolute;
+            border-radius: 9999px;
+            border: 2px solid #FE7600;
+            pointer-events: none;
+            animation: tapRippleAnim 0.5s ease-out forwards;
+            z-index: 45;
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(254, 118, 0, 0.5);
+            border-radius: 4px;
+        }
+
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; color-scheme: only light; }
+        html, body, button, canvas, div, span, i, strong { forced-color-adjust: none; -webkit-forced-color-adjust: none; }
+        button { -webkit-appearance: none; appearance: none; -webkit-tap-highlight-color: transparent; }
+        * { -webkit-tap-highlight-color: transparent; }
+        .restart-big { padding: 16px 12px !important; font-size: 17px !important; border-radius: 18px !important; letter-spacing: .06em; color: #fff !important; }
+        .restart-big i, .restart-big span { font-size: 17px !important; color: #fff !important; }
+        .collection-theme-label { font-size: var(--label-fs, 8px) !important; line-height: 1 !important; white-space: nowrap; }
+        .collection-badge-slot {
+            padding-top: 7px;
+            padding-bottom: 7px;
+            padding-left: 2px;
+            padding-right: 2px;
+            height: auto; min-height: 50px; gap: 3px; justify-content: center; padding-top: 6px; padding-bottom: 6px;   /* иконка, название и счётчик не слипаются: между ними всегда зазор */
+            transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+    
+        /* Адаптив: на компьютере игра занимает весь экран */
+        @media (min-width: 768px) {
+            #gameContainer { max-width: none !important; max-height: none !important; aspect-ratio: auto !important; width: 100% !important; height: 100% !important; }
+            #bottomHud { left: 50% !important; right: auto !important; width: max(33.3333%, calc(420px / var(--hud-zoom, 1))); max-width: calc(100% - 28px); transform: translateX(-50%); zoom: var(--hud-zoom, 1); }   /* на компьютере нижняя панель — центральная треть экрана */
+            #bottomHud .collection-badge-slot { padding-left: 2px !important; padding-right: 2px !important; }
+            :where(#startScreen, #rulesModal, #settingsModal, #gameOverModal, #victoryModal) > * { max-width: 448px; }
+            :where(#startScreen) > * { width: 100%; margin-left: auto; margin-right: auto; }
+        }
+        #topHud { zoom: var(--ui-zoom, 1); }
+        #buffBar { zoom: var(--ui-zoom, 1); top: 3.5rem; }
+    
+        /* ===== Шкала сложности ===== */
+        .diff-card { --lvl: #22C55E; position: relative; }
+        .diff-bar { position: relative; height: 12px; width: 100%; }
+        .diff-track { position: absolute; left: 0; right: 0; top: 3px; height: 6px; border-radius: 9999px; overflow: hidden; background: #0d021a; }
+        .diff-track::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(147, 51, 234, 0.35); pointer-events: none; z-index: 3; }
+        .diff-gradient { position: absolute; inset: 0; background: linear-gradient(90deg, #22C55E 0%, #22C55E 22%, #A3E635 52%, #FBBF24 76%, #F43F5E 100%); }
+        .diff-mask { position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: 9999px; background: linear-gradient(90deg, #34D399, #FBBF24, #F43F5E); transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); z-index: 1; }
+        .diff-shine { position: absolute; top: 0; bottom: 0; left: -24%; width: 24%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.95), transparent); opacity: 0; pointer-events: none; z-index: 2; }
+        .diff-tick { position: absolute; top: 0; width: 1px; height: 12px; margin-left: -0.5px; background: rgba(255, 255, 255, 0.26); pointer-events: none; transition: background 0.4s, box-shadow 0.4s; z-index: 4; }
+        .diff-tick.lit { background: rgba(255, 255, 255, 0.55); }
+        .diff-glow { position: absolute; top: 3px; height: 6px; left: 0; width: 0; transform: translateX(-100%); border-radius: 9999px; pointer-events: none; opacity: 0; z-index: 2;
+            background: linear-gradient(90deg, transparent, var(--glow-color, #22C55E));
+            transition: left 0.6s cubic-bezier(0.22, 1, 0.36, 1), width 0.6s, opacity 0.6s, box-shadow 0.6s;
+            animation: diffGlowPulse var(--glow-dur, 2.6s) ease-in-out infinite; }
+        @keyframes diffGlowPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.8); } }
+
+        @keyframes diffCardFlash {
+            0%   { box-shadow: 0 0 0 0 transparent; }
+            22%  { box-shadow: 0 0 14px 1px var(--lvl); border-color: var(--lvl); }
+            100% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); }
+        }
+        .diff-card.levelup { animation: diffCardFlash 1.4s ease-out; }
+        @keyframes diffLabelPop {
+            0%   { transform: scale(1); }
+            30%  { transform: scale(1.4); filter: brightness(1.7); }
+            65%  { transform: scale(0.96); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+        .diff-label-pop { display: inline-block; animation: diffLabelPop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes diffShineMove {
+            from { transform: translateX(0) skewX(-20deg); opacity: 1; }
+            to   { transform: translateX(520%) skewX(-20deg); opacity: 1; }
+        }
+        .diff-card.levelup .diff-shine { animation: diffShineMove 1s ease-out 0.05s both; }
+        @keyframes diffRing {
+            0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(3.4); opacity: 0; }
+        }
+        .diff-ring { position: absolute; top: 6px; width: 14px; height: 14px; border-radius: 9999px; border: 2px solid var(--lvl); box-shadow: 0 0 10px var(--lvl); pointer-events: none; opacity: 0; animation: diffRing 0.9s ease-out forwards; z-index: 5; }
+
+        /* ===== Центральные подсказки (Бонус / Штраф / новый уровень) ===== */
+        @keyframes fxBannerAnim {
+            0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+            12%  { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+            22%  { transform: translate(-50%, -50%) scale(1); }
+            82%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -62%) scale(1); }
+        }
+        .fx-banner { position: absolute; left: 50%; top: 30%; z-index: 70; pointer-events: none; text-align: center; max-width: 90%; animation: fxBannerAnim var(--dur, 2.4s) ease-out forwards; }
+        /* Плашка жизней */
+        .lives-max { box-shadow: 0 0 12px rgba(239, 68, 68, 0.6) !important; border-color: rgba(239, 68, 68, 0.95) !important; }
+        @keyframes livesDangerPulse {
+            0%, 100% { box-shadow: 0 0 3px rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.45); }
+            50%      { box-shadow: 0 0 16px rgba(239, 68, 68, 0.95); border-color: #ff3b3b; }
+        }
+        .lives-danger { animation: livesDangerPulse 1.8s ease-in-out infinite; }
+        .stamina-max { box-shadow: 0 0 12px rgba(0, 240, 255, 0.75) !important; border-color: #00F0FF !important; }
+        @keyframes attemptPop {
+            0% { transform: scale(1); }
+            35% { transform: scale(1.7); color: #FE7600; text-shadow: 0 0 8px #FE7600; }
+            100% { transform: scale(1); }
+        }
+        .attempt-pop { display: inline-block; animation: attemptPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        /* Игровые плашки: без размытия фона (визуально не видно, а телефону легче) */
+        #topHud [class*="backdrop-blur"], #bottomHud [class*="backdrop-blur"], #buffBar * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+        /* Настройка графики */
+        .gfx-tick { color: rgba(216, 180, 254, 0.45); transition: color 0.2s; }
+        .gfx-tick.on { color: #FE7600; }
+        /* Низкая графика: без размытия фона, фон меню чуть плотнее, чтобы текст хорошо читался */
+        .gfx-low [class*="backdrop-blur"], .gfx-low .glass-panel-menu { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+        .gfx-low .glass-panel-menu { background: rgba(29, 9, 54, 0.9) !important; }
+        .gfx-low #startScreen, .gfx-low #rulesModal, .gfx-low #settingsModal, .gfx-low #gameOverModal, .gfx-low #victoryModal { background-color: rgba(20, 3, 38, 0.55) !important; }
+        /* Главные оранжевые кнопки (начать / продолжить / начать заново): перелив и мягкое «дыхание» */
+        #startBtn, #continueAttemptBtn, #restartFromGameOverBtn.restart-big, #understoodRulesBtn, #rlSpinBtn, #rlClaimBtn {
+            position: relative; overflow: hidden; isolation: isolate;
+            background: linear-gradient(110deg, #FE7600 0%, #ff8c1a 35%, #ffb054 50%, #ff8c1a 65%, #FE7600 100%);
+            background-size: 220% 100%;
+            animation: btnFlow 3.2s ease-in-out infinite, btnBreath 2.4s ease-in-out infinite;
+        }
+        #startBtn::after, #continueAttemptBtn::after, #restartFromGameOverBtn.restart-big::after, #understoodRulesBtn::after, #rlSpinBtn::after, #rlClaimBtn::after {
+            content: ''; position: absolute; top: -20%; bottom: -20%; left: -60%; width: 45%;
+            background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0) 20%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0) 80%, transparent 100%);
+            transform: skewX(-20deg); pointer-events: none; z-index: 1;
+            animation: btnShine 2.8s ease-in-out infinite;
+        }
+        #startBtn > *, #continueAttemptBtn > *, #restartFromGameOverBtn.restart-big > *, #understoodRulesBtn > *, #rlSpinBtn > *, #rlClaimBtn > * { position: relative; z-index: 2; }
+        @keyframes btnShine { 0% { left: -60%; } 55% { left: 130%; } 100% { left: 130%; } }
+        @keyframes btnFlow { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        @keyframes btnBreath {
+            0%, 100% { box-shadow: 0 4px 18px rgba(254, 118, 0, 0.45); }
+            50% { box-shadow: 0 4px 30px rgba(254, 118, 0, 0.85), 0 0 0 2px rgba(255, 176, 84, 0.35); }
+        }
+        /* Экран победы: праздник */
+        #victoryModal > .glass-panel { position: relative; z-index: 2; animation: vicGlow 2s ease-in-out infinite; }
+        @keyframes vicGlow {
+            0%, 100% { box-shadow: 0 0 24px rgba(254, 118, 0, 0.5); }
+            50% { box-shadow: 0 0 50px rgba(255, 200, 60, 0.9), 0 0 90px rgba(254, 118, 0, 0.45); }
+        }
+        .vic-trophy-wrap { position: relative; }
+        .vic-rays { position: absolute; left: 50%; top: 50%; width: 160px; height: 160px; margin: -80px 0 0 -80px; border-radius: 50%; pointer-events: none;
+            background: repeating-conic-gradient(rgba(255, 215, 0, 0.3) 0deg 10deg, transparent 10deg 24deg);
+            -webkit-mask: radial-gradient(circle, #000 25%, transparent 68%); mask: radial-gradient(circle, #000 25%, transparent 68%);
+            animation: vicSpin 9s linear infinite; }
+        @keyframes vicSpin { to { transform: rotate(360deg); } }
+        .vic-trophy { position: relative; animation: vicBounce 1.6s ease-in-out infinite; box-shadow: 0 0 22px rgba(255, 200, 60, 0.7); }
+        @keyframes vicBounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-5px) scale(1.08); } }
+        #victoryModal h2 { background: linear-gradient(90deg, #FFD700, #FE7600, #FFF1A8, #FFD700); background-size: 200% 100%;
+            -webkit-background-clip: text; background-clip: text; color: transparent !important; animation: vicText 2.5s linear infinite; }
+        @keyframes vicText { to { background-position: 200% 0; } }
+        #promoCodeVal { animation: vicPromo 1.8s ease-in-out infinite; }
+        @keyframes vicPromo { 0%, 100% { text-shadow: 0 0 4px rgba(254, 118, 0, 0.4); } 50% { text-shadow: 0 0 14px rgba(255, 190, 60, 1); } }
+        .confetti-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
+        .confetti { position: absolute; top: -20px; opacity: 0.95; animation: confFall var(--d) linear var(--delay) infinite; }
+        @keyframes confFall {
+            0% { transform: translate3d(0, -20px, 0) rotate(0deg); }
+            100% { transform: translate3d(var(--dx), var(--fall, 115vh), 0) rotate(var(--r)); }
+        }
+        /* ===== Экран победы: неоновый праздничный вид ===== */
+        .vic-trophy-wrap { position: relative; height: 104px; display: flex; align-items: center; justify-content: center; }
+        .vic-trophy-wrap .vic-rays { z-index: 0; width: 200px; height: 200px; margin: -100px 0 0 -100px; }
+        .vic-halo { position: absolute; left: 50%; top: 50%; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 50%; z-index: 1; pointer-events: none;
+            background: radial-gradient(circle, rgba(255, 210, 80, 0.6) 0%, rgba(254, 118, 0, 0.18) 55%, transparent 70%);
+            animation: vicPulse 1.8s ease-in-out infinite; }
+        @keyframes vicPulse { 0%, 100% { transform: scale(0.92); opacity: 0.75; } 50% { transform: scale(1.12); opacity: 1; } }
+        .vic-medal { position: relative; z-index: 2; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle at 35% 30%, #FFF6C2 0%, #FFC531 35%, #FE7600 75%, #B84A00 100%);
+            box-shadow: 0 0 0 3px rgba(255, 236, 170, 0.95), 0 0 0 7px rgba(254, 118, 0, 0.45), 0 0 30px rgba(255, 190, 60, 0.95), 0 0 60px rgba(254, 118, 0, 0.6),
+                        inset 0 -6px 12px rgba(120, 40, 0, 0.45), inset 0 4px 8px rgba(255, 255, 255, 0.6);
+            animation: vicBounce 1.6s ease-in-out infinite; }
+        .vic-medal i { font-size: 32px; color: #FFFFFF; filter: drop-shadow(0 2px 2px rgba(120, 40, 0, 0.6)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.9)); }
+        .vic-orbit { position: absolute; left: 50%; top: 50%; width: 118px; height: 118px; margin: -59px 0 0 -59px; z-index: 3; pointer-events: none; animation: vicSpin 5s linear infinite; }
+        .vic-orbit span { position: absolute; font-size: 13px; color: #FFE680; text-shadow: 0 0 6px #FFD700, 0 0 12px #FE7600; animation: vicTwinkle 1.2s ease-in-out infinite; }
+        .vic-orbit span:nth-child(1) { left: 50%; top: -6px; margin-left: -5px; }
+        .vic-orbit span:nth-child(2) { right: -6px; top: 50%; margin-top: -8px; animation-delay: 0.3s; color: #E9D5FF; text-shadow: 0 0 6px #A855F7, 0 0 12px #A855F7; }
+        .vic-orbit span:nth-child(3) { left: 50%; bottom: -6px; margin-left: -5px; animation-delay: 0.6s; }
+        .vic-orbit span:nth-child(4) { left: -6px; top: 50%; margin-top: -8px; animation-delay: 0.9s; color: #BAE6FD; text-shadow: 0 0 6px #38BDF8, 0 0 12px #38BDF8; }
+        @keyframes vicTwinkle { 0%, 100% { opacity: 0.35; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1.25); } }
+        /* неоновая переливающаяся рамка окна */
+        #victoryModal > .glass-panel { overflow: visible; box-shadow: inset 0 0 30px rgba(168, 85, 247, 0.25); }
+        #victoryModal > .glass-panel::before { content: ''; position: absolute; inset: -2px; border-radius: inherit; padding: 2.5px; pointer-events: none;
+            background: linear-gradient(90deg, #FE7600, #FFD700, #A855F7, #38BDF8, #FE7600); background-size: 300% 100%;
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+            animation: vicBorder 3s linear infinite; filter: drop-shadow(0 0 6px rgba(255, 200, 80, 0.9)); }
+        @keyframes vicBorder { to { background-position: 300% 0; } }
+        #victoryModal h2 { font-size: min(52px, 10.2vw) !important; line-height: 1 !important; letter-spacing: 0.03em; margin: 0; filter: drop-shadow(0 0 10px rgba(255, 190, 60, 0.85)); }
+        /* кубок рядом с надписью «ПОБЕДА!», из него расходятся крупные лучи */
+        .vic-title-row { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 4px 0 8px; }
+        .vic-medal-wrap { position: relative; width: 62px; height: 62px; flex: 0 0 62px; }
+        .vic-medal-wrap .vic-medal { width: 62px; height: 62px; }
+        .vic-medal-wrap .vic-medal i { font-size: 28px; }
+        .vic-medal-wrap .vic-halo { width: 92px; height: 92px; margin: -46px 0 0 -46px; }
+        .vic-medal-wrap .vic-orbit { width: 90px; height: 90px; margin: -45px 0 0 -45px; }
+        .vic-medal-wrap .vic-orbit span { font-size: 11px; }
+        .vic-medal-rays { position: absolute; left: 50%; top: 50%; width: 2200px; height: 2200px; margin: -1100px 0 0 -1100px; border-radius: 50%; pointer-events: none; z-index: -1;
+            background: repeating-conic-gradient(rgba(150, 105, 255, 0.15) 0deg 11deg, transparent 11deg 30deg);
+            -webkit-mask-image: radial-gradient(circle, #000 0, rgba(0, 0, 0, 0.6) 230px, transparent 560px); mask-image: radial-gradient(circle, #000 0, rgba(0, 0, 0, 0.6) 230px, transparent 560px);
+            animation: vicSpin 60s linear infinite; }
+        #victoryModal .vic-title-row { position: relative; z-index: 1; }
+        #victorySub { font-size: 17px !important; line-height: 1.3; margin: 0; padding: 4px 0 8px; }
+        #victoryModal .border-dashed { box-shadow: 0 0 16px rgba(254, 118, 0, 0.55), inset 0 0 14px rgba(254, 118, 0, 0.25); animation: vicBox 2s ease-in-out infinite; }
+        @keyframes vicBox { 0%, 100% { border-color: #FE7600; } 50% { border-color: #FFD700; box-shadow: 0 0 26px rgba(255, 200, 60, 0.8), inset 0 0 18px rgba(255, 190, 60, 0.35); } }
+        /* Верхние плашки и кнопки: лёгкая прозрачность с размытием — игру видно сквозь них, но всё хорошо читается */
+        #topHud #livesContainer, #topHud #staminaBadge, #topHud #scoreBadge, #topHud #musicToggleBtn, #topHud #homeBtn {
+            background-color: rgba(29, 9, 54, 0.82) !important;   /* без размытия: плашки чуть плотнее, чтобы фон не просвечивал так сильно */
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        .gfx-low #topHud #livesContainer, .gfx-low #topHud #staminaBadge, .gfx-low #topHud #scoreBadge, .gfx-low #topHud #musicToggleBtn, .gfx-low #topHud #homeBtn {
+            background-color: rgba(29, 9, 54, 0.92) !important;
+            backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+        }
+        /* Меню на широких экранах (ПК): всё крупнее, коэффициент считается под размер экрана */
+        #startScreen > div { zoom: var(--menu-zoom, 1); }
+        /* Правила: все иконки в строках одного визуального размера */
+        #rulesModal .w-9.h-9 > i { font-size: 16px !important; width: 20px; text-align: center; line-height: 1; }
+        #rulesModal .w-9.h-9 > svg { width: 18px !important; height: 18px !important; }
+        #rulesModal .w-9.h-9 > div { width: 20px !important; height: 18px !important; }
+        #rulesModal .w-9.h-9 > div > i { font-size: 15px !important; }
+        #rulesModal .w-9.h-9 > i.fa-rotate-right, #rulesModal .w-9.h-9 > i.fa-layer-group, #rulesModal .w-9.h-9 > i.fa-pizza-slice { font-size: 15px !important; }
+        #rulesModal .w-9.h-9 > i.fa-bolt, #rulesModal .w-9.h-9 > i.fa-ice-cream, #rulesModal .w-9.h-9 > i.fa-hand-pointer { font-size: 17px !important; }
+        /* Запас сил вырос: плашка сил подпрыгивает и вспыхивает зелёным */
+        @keyframes staminaUpPop {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.35); box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.9), 0 0 26px rgba(34, 197, 94, 1); }
+            55% { transform: scale(0.95); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        #topHud #staminaBadge { position: relative; }
+        #topHud #staminaBadge.stamina-up { animation: staminaUpPop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        /* по рамке плашки пробегает светлый блик по кругу */
+        #topHud #staminaBadge.stamina-up::after {
+            content: ''; position: absolute; inset: -2px; border-radius: 13px; padding: 2px; pointer-events: none;
+            background: conic-gradient(from var(--sweep, 0deg), transparent 0deg, rgba(255,255,255,0.95) 30deg, #4ADE80 60deg, transparent 100deg, transparent 360deg);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+            animation: staminaSweep 1.1s linear forwards;
+        }
+        @property --sweep { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+        @keyframes staminaSweep { from { --sweep: 0deg; opacity: 1; } 85% { opacity: 1; } to { --sweep: 360deg; opacity: 0; } }
+        .fly-label-tag { transform-origin: left center; }
+        /* Подсказки, летящие шарики и центральные надписи растут вместе с интерфейсом на больших экранах */
+        .fly-label-tag, .flying-orb { scale: var(--ui-zoom, 1); }
+        .fx-banner { scale: var(--ui-zoom, 1); }
+        /* Окна правил, настроек, поражения и победы на ПК — крупнее, как и меню */
+        #rulesModal > div, #settingsModal > div, #gameOverModal > div, #victoryModal > .glass-panel { zoom: var(--menu-zoom, 1); }
+        /* Окна не выходят за экран по высоте: отступ сверху и снизу, шапка и кнопки всегда видны, листается середина */
+        #rulesModal > div, #settingsModal > div, #gameOverModal > div, #victoryModal > .glass-panel {
+            max-height: calc((100dvh - 32px) / var(--menu-zoom, 1)) !important;
+        }
+        @supports not (height: 100dvh) {
+            #rulesModal > div, #settingsModal > div, #gameOverModal > div, #victoryModal > .glass-panel { max-height: calc((100vh - 32px) / var(--menu-zoom, 1)) !important; }
+        }
+        #rulesModal > div { display: flex; flex-direction: column; }
+        #rulesModal > div > .overflow-y-auto { flex: 1 1 auto; min-height: 0; }
+        #rulesModal > div > :not(.overflow-y-auto) { flex-shrink: 0; }
+        #settingsModal > div, #gameOverModal > div, #victoryModal > .glass-panel { overflow-y: auto; }
+        /* Окно правил такой же ширины, как главное меню */
+        #rulesModal > div { max-width: 448px !important; }
+        /* Таймеры эффектов выглядят так же, как подсказки (размер и шрифт масштабируются вместе с интерфейсом) */
+        #buffBar .buff-tag { white-space: nowrap; align-self: flex-start; }
+        /* текст подсказок и таймеров ровно посередине плашки по высоте */
+        .fly-label-tag, #buffBar .buff-tag { line-height: 1 !important; padding-top: 3px !important; padding-bottom: 3px !important; }
+        .fly-label-tag > span:last-child, #buffBar .buff-tag > span:last-child { line-height: 1; position: relative; top: 0.5px; }
+        /* Золотая плашка «+1 ПОПЫТКА» */
+        .attempt-banner { position: absolute; left: 50%; top: 17%; z-index: 72; pointer-events: none; scale: var(--ui-zoom, 1); animation: attBanner 2.2s ease-out forwards; }
+        @keyframes attBanner {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.45); }
+            12% { opacity: 1; transform: translate(-50%, -50%) scale(1.14); }
+            22% { transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -62%) scale(1); }
+        }
+        .att-pill { position: relative; display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 10px; white-space: nowrap;
+            background: rgba(24, 8, 44, 0.93); border: 1.5px solid #FFD35A;
+            box-shadow: 0 0 10px rgba(255, 200, 70, 0.6), 0 0 22px rgba(255, 170, 40, 0.3); }
+        .att-pill i { color: #FFD35A; font-size: 10px; }
+        .att-pill span { font-weight: 900; font-size: 9px; letter-spacing: 0.04em; color: #FFD35A; }
+        .att-flash { position: absolute; left: 50%; top: 50%; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; pointer-events: none;
+            background: radial-gradient(circle, rgba(255, 240, 170, 0.9), rgba(255, 200, 70, 0) 65%); animation: attFlash 0.7s ease-out forwards; }
+        @keyframes attFlash { 0% { opacity: 0; transform: scale(0.3); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
+        .att-spark { position: absolute; left: 50%; top: 50%; color: #FFE680; text-shadow: 0 0 6px #FFC53D, 0 0 12px #FF9F1C; opacity: 0; pointer-events: none;
+            animation: attSpark 1.1s ease-out var(--sd, 0s) forwards; }
+        @keyframes attSpark { 0% { opacity: 1; transform: translate(-50%, -50%) scale(0.4); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(1.1) rotate(120deg); } }
+        /* ===== Рулетка призов (в стиле игры) ===== */
+        .rl-frame { position: relative; margin: 0 2px; padding: 16px 0 12px; border-radius: 22px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.02)); border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+        .rl-cap { display: flex; align-items: center; gap: 10px; padding: 0 16px 8px; font-size: 9px; letter-spacing: 0.3em; font-weight: 900; color: #c4a1ff; }
+        .rl-cap::before, .rl-cap::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(196, 161, 255, 0.55)); }
+        .rl-cap::after { transform: scaleX(-1); }
+        .rl-hint { padding: 8px 16px 0; font-size: 9px; font-weight: 600; color: rgba(196, 161, 255, 0.7); letter-spacing: 0.04em; }
+        /* карточки выплывают из темноты по краям окна */
+        .rl-viewport { position: relative; padding: 20px 0; overflow: hidden;
+            -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 20%, #000 80%, transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 20%, #000 80%, transparent 100%); }
+        .rl-track { display: flex; position: relative; width: max-content; align-items: stretch; will-change: transform; }
+        /* «линза» выбора: стеклянное окошко в центре */
+        .rl-lens { display: none; position: absolute; left: 50%; top: 5px; bottom: 5px; width: 122px; margin-left: -61px; border-radius: 18px; z-index: 2; pointer-events: none;
+            border: 1px solid rgba(254, 118, 0, 0.5); background: linear-gradient(180deg, rgba(254, 118, 0, 0.10), rgba(254, 118, 0, 0.02));
+            box-shadow: 0 0 18px rgba(254, 118, 0, 0.2), inset 0 0 16px rgba(254, 118, 0, 0.1); }
+        .rl-beam { position: absolute; left: 50%; top: 0; bottom: 0; width: 184px; margin-left: -92px; z-index: 2; pointer-events: none;
+            background: linear-gradient(90deg, transparent, rgba(254, 118, 0, 0.14) 32%, rgba(255, 190, 120, 0.2) 50%, rgba(254, 118, 0, 0.14) 68%, transparent);
+            -webkit-mask-image: linear-gradient(180deg, transparent, #000 16%, #000 84%, transparent); mask-image: linear-gradient(180deg, transparent, #000 16%, #000 84%, transparent); }
+        .rl-pointer { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; z-index: 3; pointer-events: none;
+            background: linear-gradient(180deg, #FFB347 0, #FE7600 12%, rgba(254, 118, 0, 0.5) 28%, rgba(254, 118, 0, 0.06) 45%, rgba(254, 118, 0, 0.06) 55%, rgba(254, 118, 0, 0.5) 72%, #FE7600 88%, #FFB347 100%);
+            filter: drop-shadow(0 0 5px rgba(254, 118, 0, 0.9)); }
+        .rl-pointer::before, .rl-pointer::after { content: ''; position: absolute; left: 50%; width: 30px; height: 20px; margin-left: -15px; background: linear-gradient(180deg, #FFC070, #FE7600); }
+        .rl-pointer::before { top: 0; clip-path: polygon(0 0, 100% 0, 100% 42%, 50% 100%, 0 42%); }
+        .rl-pointer::after { bottom: 0; background: linear-gradient(0deg, #FFC070, #FE7600); clip-path: polygon(50% 0, 100% 58%, 100% 100%, 0 100%, 0 58%); }
+        .rl-pointer.rl-tick { animation: rlTick 0.12s ease-out; }
+        @keyframes rlTick { 0% { filter: brightness(2); } 100% { filter: none; } }
+        /* карточка-билетик: стекло, вырезы по бокам, перфорация, подпись снизу */
+        .rl-card { --notch: 105px; position: relative; flex: 0 0 154px; width: 154px; margin: 0 9px; border-radius: 22px; box-sizing: border-box; overflow: hidden;
+            display: flex; flex-direction: column;
+            background: linear-gradient(165deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.04) 45%, rgba(255, 255, 255, 0.075));
+            border: 1.5px solid var(--ca, var(--c));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 0 22px var(--cg, transparent), 0 8px 18px rgba(0, 0, 0, 0.35);
+            -webkit-mask-image: radial-gradient(circle 10px at 0 var(--notch), transparent 9.5px, #000 10px), radial-gradient(circle 10px at 100% var(--notch), transparent 9.5px, #000 10px);
+            -webkit-mask-composite: source-in;
+            mask-image: radial-gradient(circle 10px at 0 var(--notch), transparent 9.5px, #000 10px), radial-gradient(circle 10px at 100% var(--notch), transparent 9.5px, #000 10px);
+            mask-composite: intersect; transition: transform 0.14s ease-out, box-shadow 0.14s; }
+        .rl-top { height: 104px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle at 50% 52%, var(--cg), transparent 68%), repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0 5px, transparent 5px 11px); }
+        .rl-perf { flex: 0 0 auto; height: 0; margin: 0 14px; border-top: 2px dashed rgba(255, 255, 255, 0.3); }
+        .rl-bot { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 5px; padding: 13px 8px 14px; text-align: center; }
+        .rl-ico { flex: 0 0 auto; width: 70px; height: 70px; border-radius: 50%; border: 3px solid var(--c); display: flex; align-items: center; justify-content: center; color: var(--c);
+            font-size: 30px; background: rgba(13, 2, 26, 0.8); box-shadow: 0 0 14px var(--ca, var(--c)), inset 0 0 12px rgba(0, 0, 0, 0.45); }
+        .rl-ico i { filter: drop-shadow(0 0 6px var(--c)); }
+        .rl-ct { color: #fff; font-weight: 900; font-size: 16px; line-height: 1.08; letter-spacing: 0.02em; max-width: 100%; }
+        .rl-cs { color: var(--c); font-weight: 800; font-size: 13.5px; line-height: 1.22; opacity: 0.95; }
+        .rl-legend::after { content: ''; position: absolute; top: -20%; bottom: -20%; left: -60%; width: 40%; transform: skewX(-20deg); pointer-events: none;
+            background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.32), transparent); animation: btnShine 3s ease-in-out infinite; }
+        .rl-card.rl-focus { transform: scale(1.05); border-color: var(--c);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 0 28px var(--cg), 0 0 24px var(--ca), 0 8px 18px rgba(0, 0, 0, 0.35); }
+        /* после остановки выпавшая карточка загорается, остальные затихают */
+        .rl-track.rl-done .rl-card:not(.rl-win) { opacity: 0.3; filter: saturate(0.5); transition: opacity 0.5s, filter 0.5s; }
+        .rl-win { z-index: 1; animation: rlWin 1s ease-in-out infinite alternate; }
+        @keyframes rlWin { from { box-shadow: 0 0 10px var(--ca), inset 0 0 16px var(--cg); transform: scale(1); } to { box-shadow: 0 0 26px var(--c), inset 0 0 22px var(--cg); transform: scale(1.07); } }
+        #rlSpinBtn:disabled { opacity: 0.75; filter: saturate(0.7); }
+        #rlStage { padding: 0 4px; } #rlSpinBtn { margin-top: 6px; }
+        .rl-summary { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; border-radius: 16px; font-size: 13px; color: #fff; font-weight: 700;
+            background: rgba(29, 9, 54, 0.9); border: 3px solid #8B4DFF; box-shadow: 0 0 16px rgba(120, 44, 233, 0.25); }
+        .rl-summary i { font-size: 22px; filter: drop-shadow(0 0 8px currentColor); }
+        /* выпавший приз: фон затемняется, карточка в стиле игры по центру */
+        .rl-reveal { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 16px;
+            background: rgba(8, 1, 20, 0.86); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: rlRevealIn 0.4s ease-out; }
+        @keyframes rlRevealIn { from { opacity: 0; } to { opacity: 1; } }
+        .rl-reveal-card { position: relative; width: 100%; max-width: 320px; text-align: center; padding: 26px 18px 18px; border-radius: 24px; overflow: hidden;
+            background: linear-gradient(180deg, rgba(42, 15, 78, 0.98), rgba(22, 6, 44, 0.99)); border: 3px solid var(--c);
+            box-shadow: 0 0 30px var(--cg2, var(--c)), inset 0 0 24px rgba(0, 0, 0, 0.35); animation: rlCardPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes rlCardPop { from { opacity: 0; transform: scale(0.7) translateY(24px); } to { opacity: 1; transform: none; } }
+        .rl-reveal-rays { display: none; }
+        .rl-reveal-ico { position: relative; width: 86px; height: 86px; margin: 0 auto 14px; border-radius: 50%; border: 4px solid var(--c); display: flex; align-items: center; justify-content: center;
+            font-size: 38px; color: var(--c); background: rgba(13, 2, 26, 0.9); box-shadow: 0 0 22px var(--c), inset 0 0 16px rgba(0, 0, 0, 0.5); }
+        .rl-reveal-ico i { filter: drop-shadow(0 0 10px var(--c)); }
+        .rl-reveal-ico::after { content: ''; position: absolute; inset: -9px; border-radius: 50%; border: 2px dashed var(--c); opacity: 0.7; animation: vicSpin 9s linear infinite; }
+        .rl-reveal-kicker { font-size: 9px; letter-spacing: 0.32em; font-weight: 900; color: #c4a1ff; }
+        .rl-reveal-title { margin-top: 5px; font-size: 21px; line-height: 1.1; font-weight: 900; color: var(--c); text-shadow: 0 0 12px var(--ca); }
+        .rl-reveal-sub { margin-top: 4px; font-size: 14px; font-weight: 800; color: #fff; opacity: 0.8; }
+        .rl-reveal-desc { margin: 14px 0 18px; font-size: 13px; line-height: 1.4; font-weight: 500; color: #d8c9f5; }
+        #victoryModal { overflow: hidden; }
+        .rl-reveal.hidden, .rl-summary.hidden, #rlStage.hidden, #playAgainBtn.hidden { display: none !important; }
+        /* окно победы: никаких полос прокрутки, рамка и лучи не вылезают за края */
+        #victoryModal > .glass-panel { overflow: hidden !important; overflow: clip !important; scrollbar-width: none; -ms-overflow-style: none; }
+        #victoryModal > .glass-panel::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        /* одна толстая обводка (6px) с переливающимся градиентом; ширина окна как у главного меню */
+        #victoryModal > .glass-panel { border-width: 0 !important; max-width: 448px !important; padding: 30px 28px 28px !important; }
+        #victoryModal > .glass-panel::before { inset: 0; padding: 6px; z-index: 5; }
+        /* лучи за кубком — на всю плашку, еле заметные, к низу сходят на нет */
+        .vic-panel-rays { position: absolute; inset: 0; overflow: hidden; pointer-events: none; border-radius: inherit;
+            -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.5) 40%, transparent 88%);
+            mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.5) 40%, transparent 88%); }
+        .vic-panel-rays i { position: absolute; left: 50%; top: 72px; width: 1800px; height: 1800px; margin: -900px 0 0 -900px; border-radius: 50%;
+            background: repeating-conic-gradient(rgba(150, 105, 255, 0.085) 0deg 7deg, transparent 7deg 18deg); animation: vicSpin 45s linear infinite; }
+        #victoryModal .glass-panel > * { position: relative; z-index: 1; }
+        #victoryModal .vic-rays { display: none; }
+        /* слой конфетти и затемнение с выпавшим призом — на всю ширину экрана (общее ограничение 448px для окон их не касается) */
+        #victoryModal > .confetti-layer, #victoryModal > .rl-reveal { max-width: none !important; width: 100%; }
+        /* ===== Окно победы: проще и в стиле игры ===== */
+        #victoryModal > .glass-panel { border: 3px solid transparent !important; padding: 32px 30px 30px !important; animation: none !important;
+            background: linear-gradient(125deg, #160730, #231048 38%, #1a0a3b 62%, #160730) padding-box, linear-gradient(135deg, #FE7600, #8B4DFF) border-box !important;
+            background-size: 320% 320%, 100% 100% !important;
+            box-shadow: 0 0 26px rgba(254, 118, 0, 0.22), 0 0 60px rgba(120, 44, 233, 0.25) !important; animation: vicBg 18s ease-in-out infinite alternate !important; }
+        @keyframes vicBg { 0% { background-position: 0% 50%, 0 0; } 100% { background-position: 100% 50%, 0 0; } }
+        #victoryModal > .glass-panel::before { display: none !important; }
+        .vic-medal-wrap, .vic-trophy-wrap, .vic-panel-rays, .vic-medal-rays { display: none !important; }
+        .vic-badge { flex: 0 0 auto; width: 58px; height: 58px; border-radius: 50%; border: 3px solid #FFC53D; display: flex; align-items: center; justify-content: center;
+            font-size: 26px; color: #FFC53D; background: rgba(13, 2, 26, 0.85); box-shadow: 0 0 14px rgba(255, 197, 61, 0.5), inset 0 0 12px rgba(0, 0, 0, 0.5); }
+        #victoryModal h2 { background: none !important; -webkit-background-clip: border-box !important; background-clip: border-box !important; animation: none !important;
+            color: #FFC53D !important; filter: none !important; text-shadow: 0 0 16px rgba(255, 170, 40, 0.4); }
+        #victorySub { font-size: 18px !important; line-height: 1.35; margin: 0; padding: 4px 0 10px; }
+        #victorySub .vs1 { color: #fff; font-weight: 800; }
+        #victorySub .vs2 { color: #c4a1ff; font-weight: 700; font-size: 16px; }
+        #victoryModal .vic-title-row { gap: 14px; }
+        .rl-frame { margin: 0 2px; }
+        #rlStage { padding: 0; position: relative; }
+        #rlStage::before { content: ''; position: absolute; inset: -8px -16px; z-index: -1; pointer-events: none; filter: blur(22px);
+            background: radial-gradient(circle at 16% 36%, rgba(254, 118, 0, 0.34), transparent 55%), radial-gradient(circle at 84% 64%, rgba(139, 77, 255, 0.42), transparent 58%);
+            animation: rlBlobs 10s ease-in-out infinite alternate; }
+        @keyframes rlBlobs { from { transform: translateX(-10px) scale(1); } to { transform: translateX(10px) scale(1.06); } }
+        /* «ПОБЕДА!» оранжевая, переливается и блестит, как главные кнопки; кубок и кружок крупнее */
+        #victoryModal h2 { font-size: min(50px, 9.6vw) !important;
+            background: linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, 0.85) 50%, transparent 62%), linear-gradient(110deg, #FE7600 0%, #ff8c1a 35%, #ffb054 50%, #ff8c1a 65%, #FE7600 100%) !important;
+            background-size: 260% 100%, 220% 100% !important; -webkit-background-clip: text !important; background-clip: text !important; color: transparent !important;
+            text-shadow: none !important; filter: drop-shadow(0 0 10px rgba(254, 118, 0, 0.45)) !important; animation: vicTitle 3.4s ease-in-out infinite !important; }
+        @keyframes vicTitle { 0% { background-position: 170% 0, 0% 50%; } 60%, 100% { background-position: -70% 0, 100% 50%; } }
+        .vic-badge { position: relative; overflow: hidden; width: 72px; height: 72px; font-size: 34px; border-color: #FE7600; color: #FFB054;
+            box-shadow: 0 0 16px rgba(254, 118, 0, 0.55), inset 0 0 14px rgba(0, 0, 0, 0.5); }
+        .vic-badge::after { content: ''; position: absolute; top: -20%; bottom: -20%; left: -60%; width: 45%; transform: skewX(-20deg); pointer-events: none;
+            background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent); animation: btnShine 3.4s ease-in-out infinite; }
+        /* ===== Окно победы: на всю высоту, на компьютере — средняя треть экрана ===== */
+        #victoryModal { padding: 14px !important; }
+        #victoryModal > .glass-panel { zoom: 1 !important; max-height: none !important; max-width: none !important; height: 100%;
+            width: min(100%, max(448px, 33.333vw)) !important; padding: 26px 26px 24px !important;
+            display: flex !important; flex-direction: column; justify-content: center; gap: 16px; }
+        #victoryModal > .glass-panel > * { margin: 0 !important; }
+        #victoryModal .vic-title-row { padding: 0; }
+        #victorySub { padding: 0 !important; }
+        #rlStage { display: flex; flex-direction: column; gap: 14px; }
+        .rl-viewport { padding: calc(16px * var(--u, 1)) 0 !important; }
+        .rl-card { --notch: calc(var(--ch, 214px) * 0.6); flex: 0 0 var(--cw, 154px) !important; width: var(--cw, 154px) !important; height: var(--ch, 214px);
+            margin: 0 calc(9px * var(--u, 1)) !important; border-radius: calc(22px * var(--u, 1)) !important;
+            -webkit-mask-image: radial-gradient(circle calc(10px * var(--u, 1)) at 0 var(--notch), transparent calc(9.5px * var(--u, 1)), #000 calc(10px * var(--u, 1))), radial-gradient(circle calc(10px * var(--u, 1)) at 100% var(--notch), transparent calc(9.5px * var(--u, 1)), #000 calc(10px * var(--u, 1)));
+            mask-image: radial-gradient(circle calc(10px * var(--u, 1)) at 0 var(--notch), transparent calc(9.5px * var(--u, 1)), #000 calc(10px * var(--u, 1))), radial-gradient(circle calc(10px * var(--u, 1)) at 100% var(--notch), transparent calc(9.5px * var(--u, 1)), #000 calc(10px * var(--u, 1))); }
+        .rl-top { height: calc(var(--ch, 214px) * 0.6) !important; }
+        .rl-perf { margin: 0 calc(14px * var(--u, 1)) !important; }
+        .rl-bot { padding: calc(12px * var(--u, 1)) 8px calc(10px * var(--u, 1)) !important; gap: calc(5px * var(--u, 1)) !important; justify-content: center !important; }
+        .rl-ico { width: calc(76px * var(--u, 1)) !important; height: calc(76px * var(--u, 1)) !important; font-size: calc(33px * var(--u, 1)) !important; }
+        .rl-ct { font-size: calc(17px * var(--u, 1)) !important; white-space: nowrap; }
+        .rl-cs { font-size: calc(14px * var(--u, 1)) !important; }
+        .rl-pointer::before, .rl-pointer::after { width: calc(30px * var(--u, 1)); height: calc(20px * var(--u, 1)); margin-left: calc(-15px * var(--u, 1)); }
+        .rl-beam { width: calc(var(--cw, 154px) * 1.2); margin-left: calc(var(--cw, 154px) * -0.6); }
+        /* одинаковые воздушные отступы: подпись → рамка рулетки → кнопка */
+        #victoryModal > .glass-panel { gap: 0 !important; }
+        #victoryModal > .glass-panel > .vic-title-row { margin: 0 0 12px !important; }
+        #victoryModal > .glass-panel > #victorySub { margin: 0 0 30px !important; }
+        #victoryModal #rlStage { gap: 30px !important; }
+        #victoryModal > .glass-panel > #rlSummary { margin: 0 0 22px !important; }
+        #victoryModal > .glass-panel > #playAgainBtn { margin: 0 !important; }
+        /* ===== Рулетка: чистые карточки-билетики с цельным контуром, плавное затухание по краям ===== */
+        .rl-cap { color: #FFC53D !important; text-shadow: 0 0 10px rgba(255, 197, 61, 0.35); }
+        .rl-cap::before, .rl-cap::after { background: linear-gradient(90deg, transparent, rgba(255, 197, 61, 0.6)) !important; }
+        .rl-beam { display: none !important; }
+        .rl-viewport { -webkit-mask-image: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 0.35) 8%, #000 26%, #000 74%, rgba(0, 0, 0, 0.35) 92%, transparent 100%) !important;
+            mask-image: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 0.35) 8%, #000 26%, #000 74%, rgba(0, 0, 0, 0.35) 92%, transparent 100%) !important; }
+        /* внешняя оболочка: цветной контур строго по форме билетика (вместе с вырезами) */
+        .rl-card { --outline: drop-shadow(1.5px 0 0 var(--ca)) drop-shadow(-1.5px 0 0 var(--ca)) drop-shadow(0 1.5px 0 var(--ca)) drop-shadow(0 -1.5px 0 var(--ca));
+            --notch: calc(var(--ch, 214px) * 0.6);
+            border: 0 !important; background: none !important; box-shadow: none !important; overflow: visible !important; -webkit-mask: none !important; mask: none !important;
+            filter: var(--outline); border-radius: 0 !important; }
+        .rl-in { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: calc(22px * var(--u, 1));
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0) 38%), radial-gradient(circle at 50% 30%, var(--cg2, rgba(255, 255, 255, 0.14)), transparent 62%), linear-gradient(165deg, #2b1752, #1b0a38 55%, #251149);
+            -webkit-mask-image: radial-gradient(circle calc(10px * var(--u, 1)) at 0 var(--notch), transparent calc(9.5px * var(--u, 1)), #000 calc(10px * var(--u, 1))), radial-gradient(circle calc(10px * var(--u, 1)) at 100% var(--notch), transparent calc(9.5px * var(--u, 1)), #000 calc(10px * var(--u, 1))), radial-gradient(circle calc(2.5px * var(--u, 1)) at 50% var(--notch), transparent calc(2px * var(--u, 1)), #000 calc(2.5px * var(--u, 1)));
+            -webkit-mask-size: 100% 100%, 100% 100%, calc(16px * var(--u, 1)) 100%; -webkit-mask-repeat: no-repeat, no-repeat, repeat-x; -webkit-mask-composite: source-in, source-in;
+            mask-image: radial-gradient(circle calc(10px * var(--u, 1)) at 0 var(--notch), transparent calc(9.5px * var(--u, 1)), #000 calc(10px * var(--u, 1))), radial-gradient(circle calc(10px * var(--u, 1)) at 100% var(--notch), transparent calc(9.5px * var(--u, 1)), #000 calc(10px * var(--u, 1))), radial-gradient(circle calc(2.5px * var(--u, 1)) at 50% var(--notch), transparent calc(2px * var(--u, 1)), #000 calc(2.5px * var(--u, 1)));
+            mask-size: 100% 100%, 100% 100%, calc(16px * var(--u, 1)) 100%; mask-repeat: no-repeat, no-repeat, repeat-x; mask-composite: intersect, intersect; }
+        .gfx-low .rl-in { -webkit-mask-image: none; mask-image: none; }
+        /* без полос на фоне кружка; перфорация — тонкая линия с «пробитыми» отверстиями (прозрачные) */
+        .rl-top { background: radial-gradient(circle at 50% 54%, var(--cg), transparent 66%) !important; }
+        .rl-perf { border-top: 0 !important; height: 1px !important; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent); }
+        .rl-legend .rl-in::after { content: ''; position: absolute; top: -20%; bottom: -20%; left: -60%; width: 40%; transform: skewX(-20deg); pointer-events: none;
+            background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.28), transparent); animation: btnShine 3s ease-in-out infinite; }
+        .rl-legend::after { display: none !important; }
+        .rl-card.rl-focus { transform: scale(1.06); filter: var(--outline) drop-shadow(0 0 12px var(--ca)) !important; box-shadow: none !important; }
+        .rl-win { animation: rlWin2 1s ease-in-out infinite alternate !important; box-shadow: none !important; }
+        @keyframes rlWin2 { from { transform: scale(1); filter: var(--outline) drop-shadow(0 0 6px var(--ca)); } to { transform: scale(1.07); filter: var(--outline) drop-shadow(0 0 20px var(--c)); } }
+        .rl-track.rl-done .rl-card:not(.rl-win) { filter: var(--outline) saturate(0.5) !important; opacity: 0.3; }
+        /* одинаковые поля сверху и снизу */
+        #victoryModal > .glass-panel { padding: 28px 26px !important; }
+        /* ===== Окно победы: вместо чёрного — цвет фона; кубок оранжевый, как надпись ===== */
+        .vic-badge { background: linear-gradient(145deg, #2d1859, #1c0b3a) !important; box-shadow: 0 0 16px rgba(254, 118, 0, 0.5), inset 0 0 14px rgba(130, 80, 230, 0.28) !important; }
+        .vic-badge i { background: linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, 0.85) 50%, transparent 62%), linear-gradient(110deg, #FE7600 0%, #ff8c1a 35%, #ffb054 50%, #ff8c1a 65%, #FE7600 100%) !important;
+            background-size: 260% 100%, 220% 100% !important; -webkit-background-clip: text !important; background-clip: text !important; color: transparent !important; -webkit-text-fill-color: transparent;
+            animation: vicTitle 3.4s ease-in-out infinite !important; filter: drop-shadow(0 0 6px rgba(254, 118, 0, 0.5)); }
+        .vic-badge::after { display: none !important; }
+        .rl-ico { background: radial-gradient(circle, rgba(74, 42, 138, 0.92), rgba(34, 14, 70, 0.96)) !important; box-shadow: 0 0 calc(14px * var(--u, 1)) var(--ca, var(--c)), inset 0 0 12px rgba(130, 80, 230, 0.25) !important; }
+        .rl-reveal-ico { background: radial-gradient(circle, rgba(74, 42, 138, 0.95), rgba(34, 14, 70, 0.98)) !important; box-shadow: 0 0 22px var(--c), inset 0 0 16px rgba(130, 80, 230, 0.25) !important; }
+        /* ===== Окно победы: прозрачное стекло с переливающимся фиолетовым градиентом ===== */
+        #victoryModal > .glass-panel { border: 0 !important; animation: vicBg 16s ease-in-out infinite alternate !important;
+            background: linear-gradient(125deg, rgba(30, 12, 66, 0.74), rgba(76, 32, 140, 0.64) 32%, rgba(46, 22, 112, 0.7) 58%, rgba(96, 36, 120, 0.62) 80%, rgba(30, 12, 66, 0.74)) !important;
+            background-size: 340% 340% !important; backdrop-filter: blur(16px) saturate(1.25); -webkit-backdrop-filter: blur(16px) saturate(1.25);
+            box-shadow: 0 0 26px rgba(254, 118, 0, 0.2), 0 0 60px rgba(120, 44, 233, 0.25) !important; }
+        /* тонкая оранжево-фиолетовая рамка по краю (не закрашивает прозрачное стекло) */
+        #victoryModal > .glass-panel::before { content: '' !important; display: block !important; position: absolute; inset: 0; border-radius: inherit; padding: 3px; z-index: 5; pointer-events: none;
+            background: linear-gradient(135deg, #FE7600, #8B4DFF); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; }
+        /* медленно плывущие цветные пятна внутри стекла: оранжевый, розовый, синий — как огни города */
+        #victoryModal > .glass-panel::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+            background: radial-gradient(circle at 18% 12%, rgba(254, 118, 0, 0.2), transparent 42%), radial-gradient(circle at 88% 38%, rgba(224, 86, 253, 0.24), transparent 46%), radial-gradient(circle at 36% 92%, rgba(70, 120, 255, 0.22), transparent 48%);
+            background-size: 170% 170%; animation: vicBlobs 14s ease-in-out infinite alternate; }
+        @keyframes vicBlobs { 0% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
+        .gfx-low #victoryModal > .glass-panel { backdrop-filter: none; -webkit-backdrop-filter: none;
+            background: linear-gradient(125deg, rgba(30, 12, 66, 0.93), rgba(60, 26, 112, 0.9)) !important; }
+        /* ===== Окно победы: тёмный ночной фон, «ПОБЕДА!» по центру и крупнее ===== */
+        #victoryModal { background: rgba(10, 3, 26, 0.86) !important; }
+        #victoryModal > .glass-panel { background: linear-gradient(125deg, rgba(24, 9, 54, 0.8), rgba(56, 24, 108, 0.7) 32%, rgba(36, 17, 90, 0.76) 58%, rgba(70, 28, 100, 0.68) 80%, rgba(24, 9, 54, 0.8)) !important; background-size: 340% 340% !important; }
+        .vic-badge { display: none !important; }
+        #victoryModal .vic-title-row { justify-content: center; text-align: center; width: 100%; }
+        #victoryModal h2 { font-size: min(68px, 11vw) !important; text-align: center; width: 100%; }
+        /* свечение карточек не обрезается сверху и снизу: вокруг ленты оставлен запас под сияние */
+        .rl-viewport { padding: max(32px, calc(38px * var(--u, 1))) 0 !important; }
+        .rl-frame { overflow: visible !important; }
+        /* ===== Окно рулетки: тёмный ночной фон с медленно переливающимися фиолетовыми пятнами ===== */
+        .rl-frame { background: linear-gradient(180deg, #160733, #0f0526) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+            overflow: hidden !important; border: 1px solid rgba(160, 110, 255, 0.28) !important; box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.45), 0 10px 28px rgba(0, 0, 0, 0.3) !important; }
+        .rl-frame::before { content: ''; position: absolute; inset: 0; border-radius: inherit; z-index: 0; pointer-events: none;
+            background: radial-gradient(circle at 18% 28%, rgba(124, 58, 237, 0.5), transparent 42%), radial-gradient(circle at 82% 72%, rgba(168, 85, 247, 0.42), transparent 46%),
+                        radial-gradient(circle at 52% 96%, rgba(91, 44, 190, 0.55), transparent 48%), radial-gradient(circle at 70% 12%, rgba(192, 78, 230, 0.3), transparent 40%);
+            background-size: 220% 220%; animation: rlFlow 13s ease-in-out infinite alternate; }
+        @keyframes rlFlow { 0% { background-position: 0% 20%; } 50% { background-position: 60% 100%; } 100% { background-position: 100% 0%; } }
+        .rl-frame > * { position: relative; z-index: 1; }
+        .gfx-low .rl-frame::before { animation: none; }
+        /* ===== Лёгкий режим окна победы: меньше размытий и перерисовок, плавнее на телефонах ===== */
+        .rl-viewport { -webkit-mask-image: none !important; mask-image: none !important; }
+        .rl-viewport::after { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none;
+            background: linear-gradient(90deg, #150731 0, rgba(21, 7, 49, 0.55) 9%, rgba(21, 7, 49, 0) 26%, rgba(21, 7, 49, 0) 74%, rgba(21, 7, 49, 0.55) 91%, #150731 100%); }
+        .rl-viewport::before { filter: none !important; }
+        @media (max-width: 900px), (pointer: coarse) {
+            #victoryModal { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgba(10, 3, 26, 0.95) !important; }
+            #victoryModal > .glass-panel { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; animation: none !important; background-size: auto !important;
+                background: linear-gradient(125deg, rgba(26, 10, 58, 0.95), rgba(54, 24, 104, 0.93) 50%, rgba(26, 10, 58, 0.95)) !important; }
+            #victoryModal > .glass-panel::after, .rl-frame::before { animation: none !important; }
+            #victoryModal h2 { animation: none !important; filter: none !important; }
+            .rl-legend .rl-in::after { display: none !important; }
+            .rl-card { filter: none !important; }
+            .rl-in { box-shadow: inset 0 0 0 1.5px var(--ca); }
+            .rl-card.rl-focus { transform: none !important; filter: none !important; transition: none !important; }
+            .rl-win { animation: none !important; filter: drop-shadow(0 0 10px var(--c)) !important; transform: scale(1.05); }
+            .rl-track.rl-done .rl-card:not(.rl-win) { filter: none !important; }
+            .rl-pointer, .rl-pointer::before, .rl-pointer::after { filter: none !important; }
+            .confetti { opacity: 0.9; }
+        }
+        /* ===== Лента призов: несколько реальных карточек, позиционируются через transform; лёгкая и плавная ===== */
+        .rl-track { display: block !important; position: relative !important; width: 100% !important; height: var(--ch, 214px) !important; will-change: auto !important; transform: none !important; }
+        .rl-card { position: absolute !important; top: 0; left: 0; flex: none !important; margin: 0 0 0 calc(9px * var(--u, 1)) !important; will-change: transform; }
+        .rl-viewport { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+        .rl-viewport.rl-grab { cursor: grabbing; }
+        /* ===== Рулетка: цельный контур карточки по форме билетика (в т.ч. вырезы по краям), без тяжёлых фильтров ===== */
+        .rl-card { --b: calc(2.5px * var(--u, 1)); --R: calc(10px * var(--u, 1)); --notch: calc(var(--ch, 214px) * 0.6);
+            filter: none !important; box-shadow: none !important; border: 0 !important; overflow: visible !important;
+            border-radius: calc(22px * var(--u, 1)) !important;
+            background: linear-gradient(160deg, var(--c), var(--ca)) !important;
+            -webkit-mask-image: radial-gradient(circle var(--R) at 0 var(--notch), transparent calc(var(--R) - 0.5px), #000 var(--R)), radial-gradient(circle var(--R) at 100% var(--notch), transparent calc(var(--R) - 0.5px), #000 var(--R)) !important;
+            mask-image: radial-gradient(circle var(--R) at 0 var(--notch), transparent calc(var(--R) - 0.5px), #000 var(--R)), radial-gradient(circle var(--R) at 100% var(--notch), transparent calc(var(--R) - 0.5px), #000 var(--R)) !important;
+            -webkit-mask-composite: source-in !important; mask-composite: intersect !important; }
+        .rl-card .rl-in { position: absolute !important; inset: var(--b) !important; border-radius: calc(19.5px * var(--u, 1)) !important; box-shadow: none !important;
+            -webkit-mask-image: radial-gradient(circle calc(var(--R) + var(--b)) at calc(var(--b) * -1) calc(var(--notch) - var(--b)), transparent calc(var(--R) + var(--b) - 0.5px), #000 calc(var(--R) + var(--b))),
+                                radial-gradient(circle calc(var(--R) + var(--b)) at calc(100% + var(--b)) calc(var(--notch) - var(--b)), transparent calc(var(--R) + var(--b) - 0.5px), #000 calc(var(--R) + var(--b))),
+                                radial-gradient(circle calc(2.5px * var(--u, 1)) at 50% calc(var(--notch) - var(--b)), transparent calc(2px * var(--u, 1)), #000 calc(2.5px * var(--u, 1))) !important;
+            mask-image: radial-gradient(circle calc(var(--R) + var(--b)) at calc(var(--b) * -1) calc(var(--notch) - var(--b)), transparent calc(var(--R) + var(--b) - 0.5px), #000 calc(var(--R) + var(--b))),
+                        radial-gradient(circle calc(var(--R) + var(--b)) at calc(100% + var(--b)) calc(var(--notch) - var(--b)), transparent calc(var(--R) + var(--b) - 0.5px), #000 calc(var(--R) + var(--b))),
+                        radial-gradient(circle calc(2.5px * var(--u, 1)) at 50% calc(var(--notch) - var(--b)), transparent calc(2px * var(--u, 1)), #000 calc(2.5px * var(--u, 1))) !important;
+            -webkit-mask-size: 100% 100%, 100% 100%, calc(16px * var(--u, 1)) 100% !important; mask-size: 100% 100%, 100% 100%, calc(16px * var(--u, 1)) 100% !important;
+            -webkit-mask-repeat: no-repeat, no-repeat, repeat-x !important; mask-repeat: no-repeat, no-repeat, repeat-x !important;
+            -webkit-mask-composite: source-in, source-in !important; mask-composite: intersect, intersect !important; }
+        .rl-card .rl-top { height: calc(var(--ch, 214px) * 0.6 - var(--b)) !important; }
+        .rl-card.rl-focus { filter: none !important; box-shadow: none !important; transition: none !important; background: linear-gradient(160deg, #FFF3D6, var(--c)) !important; }
+        .rl-win { animation: none !important; transform-origin: center; filter: drop-shadow(0 0 12px var(--c)) !important; background: linear-gradient(160deg, #FFF3D6, var(--c)) !important; }
+        .rl-track.rl-done .rl-card:not(.rl-win) { filter: none !important; opacity: 0.3; }
+        .rl-legend .rl-in::after, .rl-legend::after { display: none !important; }
+        .rl-pointer, .rl-pointer::before, .rl-pointer::after { filter: none !important; animation: none !important; }
+        .rl-viewport { contain: layout paint; isolation: isolate; }
+        /* фон: переливы только через transform (GPU), без перерисовки; без размытия за окном — оно сильно тормозило конфетти */
+        #victoryModal, #victoryModal > .glass-panel { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+        #victoryModal { background: rgba(8, 2, 22, 0.94) !important; }
+        #victoryModal > .glass-panel { animation: none !important; background-size: auto !important;
+            background: linear-gradient(125deg, rgba(16, 6, 40, 0.95), rgba(36, 16, 82, 0.93) 50%, rgba(18, 7, 44, 0.95)) !important; }
+        #victoryModal > .glass-panel::after { inset: -25% !important; border-radius: 0 !important; background-size: auto !important; background-position: 0 0 !important; animation: vicBlobs2 18s ease-in-out infinite alternate !important; will-change: transform;
+            background: radial-gradient(circle at 20% 18%, rgba(254, 118, 0, 0.12), transparent 36%), radial-gradient(circle at 85% 40%, rgba(224, 86, 253, 0.16), transparent 40%), radial-gradient(circle at 38% 88%, rgba(70, 120, 255, 0.14), transparent 42%) !important; }
+        @keyframes vicBlobs2 { 0% { transform: translate3d(-3%, -2%, 0) rotate(0deg); } 100% { transform: translate3d(3%, 3%, 0) rotate(8deg); } }
+        .rl-frame { background: linear-gradient(180deg, #0d041f, #080216) !important; }
+        .rl-frame::before { inset: -30% !important; border-radius: 0 !important; background-size: auto !important; background-position: 0 0 !important; animation: rlFlow2 20s ease-in-out infinite alternate !important; will-change: transform;
+            background: radial-gradient(circle at 25% 30%, rgba(124, 58, 237, 0.26), transparent 38%), radial-gradient(circle at 78% 68%, rgba(168, 85, 247, 0.22), transparent 40%), radial-gradient(circle at 50% 92%, rgba(91, 44, 190, 0.28), transparent 42%) !important; }
+        @keyframes rlFlow2 { 0% { transform: translate3d(-4%, -3%, 0) rotate(0deg); } 100% { transform: translate3d(4%, 3%, 0) rotate(12deg); } }
+        .rl-viewport::after { background: linear-gradient(90deg, #0a0319 0, rgba(10, 3, 25, 0.55) 9%, rgba(10, 3, 25, 0) 26%, rgba(10, 3, 25, 0) 74%, rgba(10, 3, 25, 0.55) 91%, #0a0319 100%) !important; }
+        @media (max-width: 900px), (pointer: coarse) { #victoryModal > .glass-panel::after, .rl-frame::before { animation: none !important; } }
+        /* ===== Знак бесконечности у волшебного пера: на телефоне мельче, на компьютере крупнее ===== */
+        .inf-sign { font-size: 8px !important; }
+        @media (min-width: 900px) { .inf-sign { font-size: 11.5px !important; } }
+        /* ===== Плитки тем, подсказки, рулетка: финальные подгонки ===== */
+        .fly-label-tag, .flying-orb { scale: min(var(--ui-zoom, 1), 1.25); }
+        #buffBar { zoom: min(var(--ui-zoom, 1), 1.25); }
+        /* ===== Таймеры под панелью жизней: отступ как положено на компьютере и на телефоне; знак ∞ крупнее на компьютере ===== */
+        #buffBar { top: calc((3.5rem * var(--ui-zoom, 1) + 8px) / min(var(--ui-zoom, 1), 1.25)) !important; }
+        @media (min-width: 900px) { .inf-sign { font-size: 14px !important; } }
+        @keyframes buffTagIntro { 0% { opacity: 0; transform: translate3d(calc(50% * 0.12), 6px, 0) scale(0.88); } 26% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } 100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }   /* появляется так же, как обычные подсказки, и стоит на месте — не наезжает на соседнюю */
+        #buffBar { position: absolute; display: flex !important; flex-direction: column; align-items: flex-start; gap: 4px; }
+        #buffBar > * { margin: 0 !important; }
+        #buffBar .buff-tag.buff-pulse { animation: buffPulse 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes buffPulse { 0% { transform: scale(1); } 40% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    
+
+        /* ===== Телефон: единый вид панелей, как на эталонном скриншоте (--phone-zoom ≈ 1 на обычных телефонах, --tb добирает размер текста и иконок) ===== */
+        @media (max-width: 767px) { #bottomHud { zoom: var(--phone-zoom, 1); } }
+        #tapToStartMsg > div { zoom: var(--phone-zoom, 1); }
+        #bootLoader .bl-mid, #bootLoader .bl-go { zoom: var(--menu-zoom, 1); }
+        #topHud [class*="text-[10px]"] { font-size: calc(10px * var(--tb, 1)) !important; }
+        #topHud [class*="text-[11px]"] { font-size: calc(11px * var(--tb, 1)) !important; }
+        #topHud [class*="text-[12px]"], #topHud .text-xs { font-size: calc(12px * var(--tb, 1)) !important; }
+        #topHud [class*="text-[14px]"] { font-size: calc(14px * var(--tb, 1)) !important; }
+        #bottomHud [class*="text-[8px]"] { font-size: calc(8px * var(--tb, 1)) !important; }
+        #bottomHud [class*="text-[12px]"] { font-size: calc(12px * var(--tb, 1)) !important; }
+        #tapToStartMsg .text-xs { font-size: calc(12px * var(--tb, 1)) !important; }
+        #tapToStartMsg .text-sm { font-size: calc(14px * var(--tb, 1)) !important; }
+
+        .attempt-banner .att-pill i { font-size: calc(10px * var(--tb, 1)); }
+        .attempt-banner .att-pill span { font-size: calc(9px * var(--tb, 1)); }
+        /* Половинка жизни: красное сердечко ровно вдвое меньше целого, по центру пустого */
+        #livesContainer .half-heart { line-height: 1; font-size: calc(7px * var(--tb, 1)) !important; }   /* половинка чуть крупнее (+~17%) */
+        #livesContainer > * + * { margin-left: 5px !important; }   /* сердечки: расстояние (5px) */
+        #livesContainer { padding-left: 12px !important; padding-right: 12px !important; }   /* по бокам столько же воздуха, сколько сверху и снизу */
+
+
+/* ===== рулетка (v0.9) ===== */
+
+.rw-note {
+    padding: 8px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgb(255, 255, 255);
+    text-align: center;
+    line-height: 1.3;
+    background: rgba(254, 118, 0, 0.12);
+    border: 1px solid rgba(254, 118, 0, 0.4);
+}
+
+.rw-note b {
+    color: rgb(254, 118, 0);
+    font-weight: 900;
+}
+
+.rw-reel {
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    contain: layout paint;
+}
+
+.rw-reel.rw-grab {
+    cursor: grabbing;
+}
+
+.rw-reel::after {
+    content: "";
+    position: absolute;
+    inset: 0px;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.rw-track {
+    position: absolute;
+    inset: 0px;
+}
+
+.rw-card {
+    position: absolute;
+    left: 0px;
+    height: var(--ch, 134px);
+    box-sizing: border-box;
+    will-change: transform;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.rw-ico {
+    line-height: 1;
+}
+
+.rw-name {
+    line-height: 1.1;
+}
+
+.rw-reel.rw-done .rw-card:not(.rw-win) {
+    opacity: 0.35;
+}
+
+.rw-pointer {
+    position: absolute;
+    left: 50%;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.rw-result.hidden {
+    display: none !important;
+}
+
+.rw-result {
+    position: absolute;
+    inset: 0px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    border-radius: inherit;
+    background: rgba(13, 2, 26, 0.94);
+}
+
+.rw-res-card {
+    width: 100%;
+    text-align: center;
+    padding: 20px 14px 14px;
+    border-radius: 20px;
+    background: rgba(29, 9, 54, 0.95);
+    border: 2px solid var(--c);
+}
+
+.rw-res-ico {
+    width: 78px;
+    height: 78px;
+    margin: 0px auto 12px;
+    border-radius: 50%;
+    border: 3px solid var(--c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    color: var(--c);
+    background: rgb(20, 3, 38);
+    box-shadow: 0 0 18px var(--c);
+}
+
+.rw-res-kicker {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    font-weight: 900;
+    color: rgb(196, 161, 255);
+}
+
+.rw-res-title {
+    margin-top: 4px;
+    font-size: 19px;
+    line-height: 1.12;
+    font-weight: 900;
+    color: var(--c);
+}
+
+.rw-res-sub {
+    margin-top: 3px;
+    font-size: 11px;
+    font-weight: 800;
+    color: rgb(255, 255, 255);
+    opacity: 0.8;
+}
+
+.rw-res-desc {
+    margin: 10px 0px 14px;
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 500;
+    color: rgb(216, 201, 245);
+}
+
+.rw-menu-btn {
+    position: absolute;
+    right: 2px;
+    top: 31px;
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    color: rgb(254, 118, 0);
+    background: rgba(36, 10, 66, 0.85);
+    border: 1px solid rgba(120, 44, 233, 0.6);
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 4px 14px;
+    transition: transform 0.15s;
+}
+
+.rw-menu-btn:active {
+    transform: scale(0.94);
+}
+
+.rw-menu-btn.has-spins {
+    border-color: rgb(254, 118, 0);
+    box-shadow: rgba(254, 118, 0, 0.5) 0px 0px 14px;
+}
+
+.rw-badge {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0px 5px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 900;
+    color: rgb(255, 255, 255);
+    background: rgb(254, 118, 0);
+    border: 2px solid rgb(20, 3, 38);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rw-badge.hidden {
+    display: none !important;
+}
+
+#rwWindow {
+    overflow: hidden auto;
+    scrollbar-width: none;
+}
+
+#rwWindow::-webkit-scrollbar {
+    display: none;
+}
+
+.rw-ico {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rw-reel {
+    height: auto;
+}
+
+.rw-card {
+    margin-top: calc(var(--ch, 134px) / -2);
+    grid-template-rows: 49% auto 1fr;
+}
+
+.rw-ico {
+    margin-top: calc(var(--ch, 134px) * -0.04);
+}
+
+.rw-name {
+    white-space: nowrap;
+}
+
+.rw-sub {
+    line-height: 1.2;
+    text-align: center;
+    max-width: 100%;
+    white-space: normal !important;
+}
+
+.rw-card {
+    top: calc(var(--rw-top) + (100% - var(--rw-top) - var(--rw-bot)) / 2) !important;
+}
+
+.rw-card.rw-focus {
+    background: linear-gradient(180deg, var(--cf1), var(--cf2)), #150626 !important;
+}
+
+.rw-reel-title {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    z-index: 6;
+    text-align: center;
+    pointer-events: none;
+    text-transform: uppercase;
+}
+
+.rw-reel-hint {
+    position: absolute;
+    z-index: 6;
+    text-align: center;
+    pointer-events: none;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.rw-victory {
+    text-align: center;
+}
+
+.rw-victory.hidden {
+    display: none !important;
+}
+
+.rw-vic-title {
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    color: transparent;
+    background: linear-gradient(110deg, rgb(254, 118, 0) 0%, rgb(255, 140, 26) 30%, rgb(255, 227, 176) 50%, rgb(255, 140, 26) 70%, rgb(254, 118, 0) 100%) 0% 0% / 240% 100% text;
+    animation: 3.2s ease-in-out 0s infinite normal none running btnFlow;
+    filter: drop-shadow(rgba(254, 118, 0, 0.3) 0px 0px 10px);
+}
+
+.gfx-low .rw-vic-title {
+    animation: auto ease 0s 1 normal none running none;
+    filter: none;
+}
+
+.rw-vic-l1 {
+    margin-top: 6px;
+    font-weight: 800;
+    color: rgb(255, 255, 255);
+}
+
+.rw-vic-l2 {
+    font-size: 12px;
+    font-weight: 700;
+    color: rgb(196, 161, 255);
+}
+
+.rw-card {
+    display: flex !important;
+    flex-direction: column !important;
+    place-items: stretch !important;
+    padding: 0px !important;
+    gap: 0px !important;
+    overflow: hidden !important;
+    background: none !important;
+    border: 0px !important;
+    border-radius: calc(var(--cw, 120px) * 0.12) !important;
+}
+
+.rw-card .rw-top {
+    flex: 0 0 58%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rw-card .rw-bot {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.rw-ico {
+    width: auto !important;
+    height: auto !important;
+    border: 0px !important;
+    border-radius: 0px !important;
+    background: none !important;
+    box-shadow: none !important;
+    margin: 0px !important;
+    align-self: auto !important;
+}
+
+.rw-name {
+    margin-top: 0px !important;
+}
+
+.rw-sub {
+    margin-top: calc(var(--ch, 134px) * 0.02) !important;
+}
+
+.rw-card.rw-win {
+    background: none !important;
+}
+
+.rw-spins-pill {
+    display: flex;
+}
+
+.rw-spins-pill.has .rw-spins-ring {
+    border-color: rgb(254, 118, 0);
+}
+
+.rw-spins-text {
+    display: flex;
+    justify-content: space-between;
+    color: rgb(233, 221, 255);
+}
+
+.rw-spins-text b {
+    color: rgb(255, 255, 255);
+}
+
+.rw-reel-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.rw-reel-title i {
+    color: rgb(254, 118, 0);
+    font-size: 1.05em;
+}
+
+#openRouletteBtn.rw-menu-btn {
+    z-index: 6;
+    zoom: var(--ui-zoom, 1);
+    position: absolute !important;
+    top: 12px !important;
+    right: 14px !important;
+    left: auto !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+    color: rgb(233, 213, 255) !important;
+    background-color: rgba(29, 9, 54, 0.72) !important;
+    border: 1px solid rgba(120, 44, 233, 0.6) !important;
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 6px 14px !important;
+}
+
+#openRouletteBtn.rw-menu-btn.has-spins {
+    color: rgb(254, 118, 0) !important;
+    border-color: rgb(254, 118, 0) !important;
+    box-shadow: rgba(254, 118, 0, 0.5) 0px 0px 12px !important;
+}
+
+#openRouletteBtn .rw-badge {
+    top: -7px;
+    right: -7px;
+    min-width: 17px;
+    height: 17px;
+    font-size: 10px;
+    padding: 0px 4px;
+}
+
+.rw-reel-title {
+    color: rgb(233, 221, 255) !important;
+    text-shadow: none !important;
+}
+
+.rw-reel-title i {
+    text-shadow: none !important;
+}
+
+.rw-card .rw-top {
+    box-shadow: none !important;
+}
+
+.rw-ico {
+    color: var(--c) !important;
+    text-shadow: none !important;
+    filter: none !important;
+    font-size: calc(var(--cw, 120px) * 0.2) !important;
+}
+
+.rw-name {
+    font-weight: 600 !important;
+    font-size: clamp(11px, calc(var(--cw, 120px) * 0.095), 17px) !important;
+    letter-spacing: 0.02em !important;
+}
+
+.rw-sub {
+    font-weight: 500 !important;
+    font-size: clamp(9px, calc(var(--cw, 120px) * 0.072), 13px) !important;
+}
+
+.rw-card.rw-win {
+    box-shadow: none !important;
+}
+
+.rw-card.rw-win .rw-bot {
+    background: rgb(60, 37, 102) !important;
+}
+
+.rw-pointer::before, .rw-pointer::after {
+    content: "" !important;
+    position: absolute !important;
+    left: 50% !important;
+    width: 0px !important;
+    height: 0px !important;
+    border-left: 7px solid transparent !important;
+    border-right: 7px solid transparent !important;
+}
+
+.rw-pointer::before {
+    bottom: auto !important;
+    border-top: 9px solid rgb(254, 118, 0) !important;
+    border-bottom: 0px !important;
+}
+
+.rw-pointer::after {
+    top: auto !important;
+    border-bottom: 9px solid rgb(254, 118, 0) !important;
+    border-top: 0px !important;
+}
+
+.rw-reel-title i {
+    display: none !important;
+}
+
+.rw-spins-ring {
+    border: 0px !important;
+    box-shadow: none !important;
+}
+
+.rw-spins-pill.has .rw-spins-ring {
+    color: rgb(254, 118, 0) !important;
+    box-shadow: none !important;
+    border: 0px !important;
+}
+
+.rw-reel-hint {
+    line-height: 1.1;
+}
+
+.rw-pointer {
+    width: 1px !important;
+    margin-left: -0.5px !important;
+}
+
+.rw-pointer::before, .rw-pointer::after {
+    margin-left: -6px !important;
+    border-left-width: 6px !important;
+    border-right-width: 6px !important;
+}
+
+.rw-pointer::before {
+    border-top-width: 8px !important;
+}
+
+.rw-pointer::after {
+    border-bottom-width: 8px !important;
+}
+
+.rw-card.rw-focus .rw-bot {
+    background: linear-gradient(var(--ct4), var(--ct4)), #2f1d52 !important;
+}
+
+.rw-card.rw-focus .rw-top {
+    background: linear-gradient(180deg, var(--ct2), var(--ct3)), #1b0b30 !important;
+}
+
+.rw-card .rw-top {
+    background: linear-gradient(var(--tt), var(--tt)), #140726 !important;
+}
+
+.rw-card .rw-bot {
+    background: linear-gradient(var(--tb), var(--tb)), #140726 !important;
+    border-top: 0px !important;
+}
+
+.rw-name {
+    color: rgb(247, 241, 255) !important;
+}
+
+.rw-sub {
+    color: rgb(211, 198, 238) !important;
+}
+
+.rw-reel-title {
+    top: 16px !important;
+    font-family: Onest, sans-serif !important;
+    font-weight: 900 !important;
+    font-size: clamp(17px, 5.3vw, 24px) !important;
+    letter-spacing: 0px !important;
+    line-height: 1.1 !important;
+}
+
+.rw-title {
+    text-align: center;
+    font-family: Onest, sans-serif;
+    font-weight: 900;
+    font-size: clamp(21px, 6.2vw, 30px);
+    letter-spacing: 0px;
+    line-height: 1.1;
+}
+
+.gfx-low .rw-title {
+    animation: auto ease 0s 1 normal none running none;
+}
+
+.rw-reel {
+    box-shadow: rgba(147, 51, 234, 0.55) 0px 2px 0px inset, rgba(147, 51, 234, 0.55) 0px -2px 0px inset, rgba(0, 0, 0, 0.75) 16px 0px 14px -10px inset, rgba(0, 0, 0, 0.75) -16px 0px 14px -10px inset !important;
+}
+
+.rw-reel::after {
+    background: linear-gradient(90deg, rgba(13, 2, 26, 0.85) 0px, rgba(13, 2, 26, 0.45) 6%, rgba(13, 2, 26, 0) 15%, rgba(13, 2, 26, 0) 85%, rgba(13, 2, 26, 0.45) 94%, rgba(13, 2, 26, 0.85) 100%) !important;
+}
+
+.rw-reel-hint {
+    transform: translateX(-50%);
+    white-space: nowrap;
+    padding: 5px 14px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.075);
+    left: 50% !important;
+    right: auto !important;
+    width: auto !important;
+    bottom: 12px !important;
+    color: rgba(214, 198, 245, 0.9) !important;
+}
+
+.rw-pointer {
+    background: rgb(255, 138, 31) !important;
+    box-shadow: rgba(254, 118, 0, 0.75) 0px 0px 6px 1px, rgba(254, 118, 0, 0.35) 0px 0px 14px 2px !important;
+}
+
+.rw-pointer::before, .rw-pointer::after {
+    filter: drop-shadow(rgba(254, 118, 0, 0.9) 0px 0px 4px);
+    border-top-color: rgb(255, 138, 31);
+}
+
+.rw-pointer::after {
+    border-top-color: transparent;
+    border-bottom-color: rgb(255, 138, 31) !important;
+}
+
+.rw-pointer::before {
+    border-top-color: rgb(255, 138, 31) !important;
+}
+
+.rw-title {
+    margin-bottom: 10px;
+}
+
+.rw-reel {
+    --rw-top: 12px;
+    --rw-bot: 12px;
+    align-self: stretch;
+    background: radial-gradient(55% 130%, rgba(122, 62, 205, 0.32), rgba(122, 62, 205, 0) 70%), rgb(13, 2, 26) !important;
+}
+
+.rw-pointer {
+    top: 0px !important;
+    bottom: 0px !important;
+}
+
+.rw-pointer::before {
+    top: 0px !important;
+}
+
+.rw-pointer::after {
+    bottom: 0px !important;
+}
+
+.rw-hint {
+    text-align: center;
+    font-size: 9.5px;
+    font-weight: 600;
+    line-height: 1.1;
+    color: rgba(196, 172, 235, 0.75);
+}
+
+.rw-card .rw-bot {
+    justify-content: center !important;
+    padding: 0px 6px !important;
+}
+
+.rw-sub {
+    min-height: 2.4em;
+}
+
+.rw-spins-pill {
+    background: rgba(255, 255, 255, 0.035) !important;
+    border: 1px solid rgba(147, 51, 234, 0.22) !important;
+    align-items: center !important;
+}
+
+.rw-spins-text {
+    align-items: center !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+}
+
+.rw-spins-text b {
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+}
+
+.rw-spin-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.rw-spin-btn span, .rw-spin-btn i {
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+
+.rw-reel {
+    width: 100% !important;
+    margin-left: 0px !important;
+    margin-right: 0px !important;
+    border-radius: 16px !important;
+}
+
+@media (min-width: 640px) {
+.rw-reel {
+    margin-left: 0px !important;
+    margin-right: 0px !important;
+}}
+
+.rw-reel::after {
+    border-radius: 16px !important;
+}
+
+.rw-reel {
+    flex: 0 0 auto !important;
+    min-height: 0px !important;
+}
+
+.rw-card {
+    width: var(--cwd, var(--cw, 120px)) !important;
+}
+
+.rw-card::after {
+    content: "";
+    position: absolute;
+    inset: 0px;
+    pointer-events: none;
+    background: linear-gradient(115deg, rgba(255, 255, 255, 0) 25%, rgba(255, 255, 255, 0.16) 50%, rgba(255, 255, 255, 0) 75%);
+}
+
+.rw-card.rw-focus .rw-top, .rw-card.rw-win .rw-top {
+    background: linear-gradient(var(--tt), var(--tt)), #140726 !important;
+}
+
+.rw-card.rw-focus .rw-bot, .rw-card.rw-win .rw-bot {
+    background: linear-gradient(var(--tb), var(--tb)), #140726 !important;
+}
+
+.rw-card::before {
+    content: "";
+    position: absolute;
+    inset: 0px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s;
+    background: linear-gradient(180deg, var(--tt2), var(--tb2));
+}
+
+.rw-card.rw-focus::before {
+    opacity: 0.55;
+}
+
+.rw-card.rw-win::before {
+    opacity: 0.8;
+}
+
+.rw-card::after {
+    z-index: 3;
+    opacity: var(--sh, 0);
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 41%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0) 59%) !important;
+    background-repeat: initial !important;
+    background-attachment: initial !important;
+    background-origin: initial !important;
+    background-clip: initial !important;
+    background-color: initial !important;
+    background-size: 300% 100% !important;
+    background-position: var(--shp, 90%) 0 !important;
+}
+
+.rw-spins-pill {
+    margin-top: 0px !important;
+    align-self: center !important;
+    justify-content: center !important;
+}
+
+.rw-spins-text {
+    flex: 0 0 auto !important;
+    gap: 8px !important;
+}
+
+.rw-spins-pill {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+}
+
+.rw-title {
+    color: rgb(255, 255, 255) !important;
+    background: none !important;
+    -webkit-text-fill-color: rgb(255, 255, 255) !important;
+    animation: auto ease 0s 1 normal none running none !important;
+}
+
+.rw-spins-pill {
+    border-radius: 999px !important;
+    width: max-content !important;
+    min-width: 0px !important;
+}
+
+.rw-spins-ring {
+    border-radius: 50% !important;
+}
+
+.rw-spins-pill:not(.has) .rw-spins-ring {
+    background: rgb(43, 36, 64) !important;
+    color: rgb(143, 123, 176) !important;
+}
+
+.rw-spins-text {
+    padding-right: 0px !important;
+}
+
+.rw-spins-pill {
+    padding: 8px 20px 8px 8px !important;
+    gap: 12px !important;
+}
+
+.rw-spins-ring {
+    width: 38px !important;
+    height: 38px !important;
+    flex: 0 0 38px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+}
+
+.rw-spins-ring i {
+    display: block;
+    width: 100%;
+    text-align: center;
+    line-height: 1;
+    margin: 0px;
+}
+
+.rw-spins-ring {
+    font-size: 14px !important;
+    color: rgb(192, 132, 252) !important;
+    background: linear-gradient(rgba(192, 132, 252, 0.2), rgba(192, 132, 252, 0.2)), rgb(20, 7, 38) !important;
+}
+
+.rw-spins-pill.has .rw-spins-ring, .rw-spins-pill:not(.has) .rw-spins-ring {
+    color: rgb(192, 132, 252) !important;
+    background: linear-gradient(rgba(192, 132, 252, 0.2), rgba(192, 132, 252, 0.2)), rgb(20, 7, 38) !important;
+    box-shadow: none !important;
+}
+
+.rw-spins-pill:not(.has) .rw-spins-ring {
+    opacity: 0.6;
+}
+
+.rw-spins-ring i.fa-dice, .rw-ico.fa-dice {
+    transform: translate(-0.044em, -0.028em);
+}
+
+#openRouletteBtn i.fa-dice {
+    transform: translate(-0.04em, -0.012em);
+}
+
+#rouletteModal > .glass-panel {
+    overflow: hidden auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(254, 118, 0, 0.5) transparent;
+}
+
+#rouletteModal > .glass-panel::-webkit-scrollbar {
+    display: block !important;
+    width: 4px;
+}
+
+#rouletteModal > .glass-panel::-webkit-scrollbar-thumb {
+    background: rgba(254, 118, 0, 0.5);
+    border-radius: 4px;
+}
+
+.rw-reel {
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+}
+
+.rw-spins-pill {
+    margin-bottom: 4px !important;
+}
+
+.rw-vic-title {
+    font-size: min(52px, 15vw) !important;
+}
+
+.rw-vic-l1 {
+    font-size: 16px;
+}
+
+.rw-blue {
+    color: rgb(56, 189, 248);
+}
+
+.rw-orange {
+    color: rgb(254, 118, 0);
+}
+
+.rw-spin-btn:disabled {
+    opacity: 0.55;
+    filter: saturate(0.6);
+}
+
+#rwWindow > * {
+    flex-shrink: 0;
+}
+
+#rouletteModal {
+    background: rgba(20, 3, 38, 0.8) !important;
+}
+
+#rouletteModal i.fa-dice {
+    transform: translate(-0.044em, -0.028em);
+}
+
+#rouletteModal {
+    padding: 8px !important;
+}
+
+.rw-victory {
+    padding: 4px 0px 0px;
+    margin-bottom: 4px;
+}
+
+.rw-vic-l2 {
+    margin-top: 4px;
+}
+
+.rw-logo {
+    margin-bottom: 2px;
+}
+
+.rw-spin-btn {
+    flex-direction: row !important;
+    padding: 14px 12px !important;
+}
+
+.rw-hint {
+    margin-top: 12px !important;
+    margin-bottom: 14px !important;
+}
+
+#rwWindow > * {
+    margin-top: 0px !important;
+}
+
+#rwWindow .rw-victory:not(.hidden) + .rw-logo {
+    margin-top: var(--rw-gap, 30px) !important;
+}
+
+#rwWindow .rw-reel {
+    margin-top: var(--rw-gap, 30px) !important;
+    box-shadow: none !important;
+}
+
+#rwWindow .rw-hint {
+    margin-top: 14px !important;
+    margin-bottom: 0px !important;
+}
+
+#rwWindow .rw-spins-pill {
+    margin-top: var(--rw-gap, 30px) !important;
+    margin-bottom: 0px !important;
+}
+
+#rwWindow .rw-btns {
+    margin-top: var(--rw-gap, 30px) !important;
+}
+
+#rwWindow .rw-btns > * + * {
+    margin-top: 10px !important;
+}
+
+.rw-logo {
+    gap: 10px;
+}
+
+.rw-logo > div:first-child {
+    box-shadow: rgba(254, 118, 0, 0.35) 0px 6px 18px;
+}
+
+#rouletteModal > .glass-panel {
+    zoom: min(var(--menu-zoom, 1), 1.1) !important;
+    max-width: calc(448px * var(--menu-zoom, 1) / min(var(--menu-zoom, 1), 1.1)) !important;
+    max-height: calc((100dvh - 24px) / min(var(--menu-zoom, 1), 1.1)) !important;
+}
+
+#rwWindow .rwp-head {
+    text-align: center;
+    padding: 20px 0px 0px;
+}
+
+#rwWindow .rwp-title {
+    display: block;
+    font-size: 25px;
+    line-height: 1.1;
+    text-transform: uppercase;
+    letter-spacing: 0px;
+    white-space: nowrap;
+    font-weight: 900 !important;
+    filter: none !important;
+    text-shadow: none !important;
+    padding: 0 26px;
+}
+
+#rwWindow .rwp-t1, #rwWindow .rwp-t2 {
+    font-weight: 900 !important;
+}
+
+#rwWindow .rwp-t1 {
+    color: transparent !important;
+}
+
+#rwWindow .rwp-t2 {
+    color: transparent !important;
+}
+
+#rwWindow .rwp-sub {
+    margin-top: 10px;
+    line-height: 1.4;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: rgba(196, 172, 235, 0.75) !important;
+    padding: 0 4px;
+}
+
+#rwWindow .rwp-head + .rw-reel {
+    margin-top: 18px !important;
+}
+
+#rwSpinBtn {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background: linear-gradient(110deg, rgb(254, 118, 0) 0%, rgb(255, 140, 26) 35%, rgb(255, 176, 84) 50%, rgb(255, 140, 26) 65%, rgb(254, 118, 0) 100%) 0% 0% / 220% 100%;
+    animation: 3.2s ease-in-out 0s infinite normal none running btnFlow, 2.4s ease-in-out 0s infinite normal none running btnBreath;
+}
+
+#rwSpinBtn::after {
+    content: "";
+    position: absolute;
+    top: -20%;
+    bottom: -20%;
+    left: -60%;
+    width: 45%;
+    background: linear-gradient(100deg, transparent 0%, rgba(255, 255, 255, 0) 20%, rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0) 80%, transparent 100%);
+    transform: skewX(-20deg);
+    pointer-events: none;
+    z-index: 1;
+    animation: 2.8s ease-in-out 0s infinite normal none running btnShine;
+}
+
+#rwSpinBtn > * {
+    position: relative;
+    z-index: 2;
+}
+
+#rwSpinBtn.no-spins {
+    cursor: default;
+    animation: auto ease 0s 1 normal none running none !important;
+    background: linear-gradient(135deg, rgb(59, 31, 92) 0%, rgb(45, 23, 71) 100%) !important;
+    box-shadow: none !important;
+    border-color: rgba(196, 167, 255, 0.22) !important;
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+#rwSpinBtn.no-spins::after {
+    display: none;
+}
+
+#rwSpinBtn.no-spins span, #rwSpinBtn.no-spins i {
+    color: rgba(221, 208, 247, 0.55) !important;
+}
+
+#rwWindow .rw-reel {
+    background: radial-gradient(55% 130% at 50% 50%, rgba(122, 62, 205, 0.18), rgba(122, 62, 205, 0) 70%), rgb(17, 5, 33) !important;
+}
+
+#rwWindow .rw-reel::after {
+    background: none !important;
+    box-shadow: inset 0 0 0 3px rgb(76, 29, 149) !important;   /* непрозрачная рамка поверх карточек — они уходят под неё */
+}
+
+
+/* Раскладка по высоте: кнопки внизу окна, а блок «заголовок, подпись, лента, подпись под лентой, счётчик» — по центру между верхом окна и кнопками */
+#rwWindow { display: flex !important; flex-direction: column !important; }
+
+#rwWindow #closeRouletteBtn { position: absolute !important; top: 12px; right: 12px; }
+   /* крестик не занимает места в раскладке */
+#rwWindow .rwp-head { margin-top: auto !important; }
+
+#rwWindow .rwp-sub { line-height: 1.3 !important; }
+
+#rwWindow .rw-hint { line-height: 1.3 !important; margin-top: 14px !important; }
+
+#rwWindow .rwp-head + .rw-reel { margin-top: 18px !important; }
+
+#rwWindow .rw-spins-pill { margin-top: 18px !important; margin-bottom: auto !important; }
+   /* счётчик ближе к подписи под лентой */
+#rwWindow .rw-btns { margin-top: var(--rw-btn-gap, 36px) !important; }
+   /* такой же отступ, как сверху до заголовка — блок ровно по центру */
+
+
+/* ===================== Оформление окна рулетки: эмблема-колесо, свечения, искорки, анимированная рамка ===================== */
+#rwWindow { overflow: hidden; }
+
+#rwWindow > *:not(.rwp-deco) { position: relative; z-index: 1; }
+
+#rwWindow #closeRouletteBtn { z-index: 3; }
+
+#rwWindow .rwp-deco { position: absolute; inset: 0; z-index: 0; pointer-events: none; border-radius: inherit; overflow: hidden; }
+
+#rwWindow .rwp-blob { position: absolute; border-radius: 50%; filter: blur(38px); opacity: 0.5; }
+
+#rwWindow .rwp-blob.b1 { width: 70%; height: 32%; left: 15%; top: -8%; background: radial-gradient(circle, rgba(254, 118, 0, 0.55), rgba(254, 118, 0, 0) 70%); animation: rwpBlob 9s ease-in-out infinite alternate; }
+
+#rwWindow .rwp-blob.b2 { width: 80%; height: 34%; left: 10%; bottom: -10%; background: radial-gradient(circle, rgba(139, 92, 246, 0.55), rgba(139, 92, 246, 0) 70%); animation: rwpBlob 11s ease-in-out infinite alternate-reverse; }
+
+@keyframes rwpBlob { from { transform: translate3d(-6%, 0, 0) scale(1); } to { transform: translate3d(6%, 4%, 0) scale(1.08); } }
+
+/* тонкая рамка окна с бегущим светом */
+@property --rwp-ang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
+#rwWindow .rwp-ring { position: absolute; inset: 0; border-radius: inherit; padding: 2px;
+    background: conic-gradient(from var(--rwp-ang), rgba(254, 118, 0, 0) 0deg, rgba(254, 118, 0, 0.95) 35deg, rgba(255, 197, 61, 1) 62deg, rgba(254, 118, 0, 0) 105deg, rgba(168, 85, 247, 0) 185deg, rgba(196, 140, 255, 0.95) 240deg, rgba(168, 85, 247, 0) 295deg),
+        linear-gradient(rgba(120, 44, 233, 0.6), rgba(120, 44, 233, 0.6));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+    animation: rwpRing 6s linear infinite; opacity: 1; }
+   /* единственная рамка окна: сплошной фиолетовый контур, по которому бегут оранжево-золотой и сиреневый блики */
+@keyframes rwpRing { to { --rwp-ang: 360deg; } }
+
+/* мерцающие искорки */
+#rwWindow .rwp-spark { position: absolute; width: var(--s, 9px); height: var(--s, 9px); transform: translate(-50%, -50%); animation: rwpTwinkle 2.4s ease-in-out infinite; animation-delay: var(--d, 0s); opacity: 0; }
+
+#rwWindow .rwp-spark::before { content: ''; position: absolute; inset: 0; background: #FFD98A; clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); filter: drop-shadow(0 0 4px rgba(255, 197, 61, 1)) drop-shadow(0 0 8px rgba(255, 170, 60, 0.6)); }
+
+@keyframes rwpTwinkle { 0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5) rotate(0deg); } 45% { opacity: 1; transform: translate(-50%, -50%) scale(1.1) rotate(45deg); } 70% { opacity: 0.3; } }
+
+/* эмблема: колесо по мотивам примера — полупрозрачный обод, двухтоновые сектора в цветах игры, светлый центр с джойстиком, белая стрелка; объём за счёт теней и блика */
+#rwWindow .rwp-emblem { position: relative; width: 80px; height: 80px; margin: 0 auto 12px; }
+
+#rwWindow .rwp-emblem-glow { position: absolute; inset: -18px; border-radius: 50%; background: radial-gradient(circle, rgba(168, 85, 247, 0.38) 0%, rgba(254, 118, 0, 0.14) 45%, rgba(168, 85, 247, 0) 70%); animation: rwpGlow 3.2s ease-in-out infinite; }
+
+@keyframes rwpGlow { 0%, 100% { opacity: 0.7; transform: scale(0.96); } 50% { opacity: 1; transform: scale(1.04); } }
+
+#rwWindow .rwp-wheel { position: relative; width: 100%; height: 100%; display: block; filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5)); }
+
+#rwWindow .rwp-rotor { transform-origin: 50px 50px; transform-box: view-box; animation: rwpSpin 16s linear infinite; }
+
+#rwWindow.rw-is-spinning .rwp-rotor { animation-duration: 1s; }
+
+@keyframes rwpSpin { to { transform: rotate(360deg); } }
+
+#rwWindow .rwp-core-ico { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 18px; color: #FE7600; filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.6)); }
+
+#rwWindow .rwp-pin { position: absolute; left: 50%; top: -2px; width: 0; height: 0; transform: translateX(-50%); border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 12px solid #FFFFFF; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45)); }
+
+/* счётчик попыток: золотистое число, кубик слегка покачивается, когда есть вращения */
+#rwWindow .rw-spins-pill.has b, #rwWindow #rwSpins { color: #FFC53D !important; }
+
+#rwWindow .rw-spins-pill.has .rw-spins-ring i { animation: rwpDice 2.6s ease-in-out infinite; display: inline-block; }
+
+@keyframes rwpDice { 0%, 70%, 100% { transform: rotate(0deg); } 78% { transform: rotate(-14deg); } 86% { transform: rotate(10deg); } 93% { transform: rotate(-5deg); } }
+
+@media (prefers-reduced-motion: reduce) { #rwWindow .rwp-rotor, #rwWindow .rwp-ring, #rwWindow .rwp-spark, #rwWindow .rwp-blob { animation: none !important; }}
+
+
+
+/* Заголовок «Рулетка призов»: градиент слева направо — от белого к оранжевому, и мягкий бегущий блик */
+#rwWindow .rwp-title { background: linear-gradient(100deg, #FFFFFF 0%, #FFFFFF 30%, #FFE3C2 42%, #FFFFFF 54%, #FFFFFF 100%), linear-gradient(90deg, #FFFFFF 0%, #FFFFFF 25%, #FFB86B 75%, #FE7600 100%);
+    background-size: 260% 100%, 100% 100%; background-blend-mode: multiply; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: rwpTitleShine 4.5s ease-in-out infinite; filter: drop-shadow(0 2px 8px rgba(254, 118, 0, 0.25)) !important; }
+
+#rwWindow .rwp-t1, #rwWindow .rwp-t2 { -webkit-text-fill-color: transparent; }
+
+@keyframes rwpTitleShine { 0% { background-position: 120% 0, 0 0; } 60%, 100% { background-position: -40% 0, 0 0; } }
+
+
+
+/* у самого окна своей рамки больше нет — её заменяет переливающийся контур (иначе получался двойной) */
+#rwWindow { border-color: transparent !important; }
+#rwWindow > .rw-result { position:absolute !important; inset:0; z-index:20 !important; display:flex; align-items:center; justify-content:center; padding:14px; border-radius:inherit; background:rgba(13,2,26,0.94); overflow-y:auto; }
+#rwWindow > .rw-result.hidden { display:none !important; }
+.rw-res-card { position:relative; width:100%; max-width:340px; margin:auto; text-align:center; padding:22px 16px 16px; border-radius:22px;
+  background:linear-gradient(180deg, rgba(48,18,88,0.98), rgba(24,7,48,0.99)); border:2px solid var(--c); box-shadow:0 0 28px color-mix(in srgb, var(--c) 45%, transparent), inset 0 0 22px rgba(0,0,0,0.35); animation:rwResPop .5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes rwResPop { from { opacity:0; transform:scale(.75) translateY(20px); } to { opacity:1; transform:none; } }
+.rw-res-ico { position:relative; box-shadow:0 0 22px var(--c), inset 0 0 14px rgba(130,80,230,.25) !important; background:radial-gradient(circle, rgba(74,42,138,.95), rgba(34,14,70,.98)) !important; }
+.rw-res-ico::after { content:''; position:absolute; inset:-8px; border-radius:50%; border:2px dashed var(--c); opacity:.6; animation:rwResSpin 9s linear infinite; }
+@keyframes rwResSpin { to { transform:rotate(360deg); } }
+.rw-res-title { text-shadow:0 0 12px color-mix(in srgb, var(--c) 60%, transparent); }

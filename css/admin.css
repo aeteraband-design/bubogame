@@ -1,0 +1,93 @@
+/* ===== Админка ===== */
+#openAdminBtn.rw-menu-btn { position: absolute !important; top: 12px !important; left: 14px !important; right: auto !important; width: 36px !important; height: 36px !important; z-index: 6;
+    border-radius: 12px !important; font-size: 12px !important; color: #e9d5ff !important; zoom: var(--ui-zoom, 1);
+    background-color: rgba(29, 9, 54, 0.72) !important; border: 1px solid rgba(120, 44, 233, 0.6) !important; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3) !important; }
+#adminModal { position: absolute; inset: 0; z-index: 45; display: flex; align-items: center; justify-content: center; padding: 12px;
+    background: rgba(20, 3, 38, 0.82); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
+#adminModal.hidden { display: none !important; }
+/* окно всегда на весь экран (с отступом 12px) — размер не прыгает при переключении вкладок */
+#adminModal .adm-panel { width: 100%; max-width: 448px; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 22px; text-align: left;
+    zoom: var(--menu-zoom, 1); height: calc((100dvh - 24px) / var(--menu-zoom, 1)); max-height: calc((100dvh - 24px) / var(--menu-zoom, 1));
+    background: linear-gradient(180deg, rgba(36, 10, 66, 0.97), rgba(24, 6, 46, 0.97)); border: 1px solid rgba(254, 118, 0, 0.4); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55); }
+#adminModal .adm-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(120, 44, 233, 0.3); flex: 0 0 auto; }
+#adminModal .adm-title { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; font-size: 13px; }
+#adminModal .adm-title i { color: #FE7600; }
+#adminModal .adm-title span, #adminModal .adm-tab span, #adminModal .adm-btn span { font-weight: inherit !important; }   /* общий стиль делал текст в span тонким — берём жирность от родителя */
+#adminModal .adm-x { width: 32px; height: 32px; border-radius: 10px; border: 0; background: rgba(120, 44, 233, 0.3); color: #e9d5ff; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+#adminModal .adm-x:active { background: rgba(120, 44, 233, 0.6); }
+#adminModal .adm-tabs { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; flex: 0 0 auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 12px 8px; margin: -12px -8px; }
+#adminModal .adm-tabs::-webkit-scrollbar { display: none; }
+#adminModal .adm-tab { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 11px; border: 1px solid rgba(120, 44, 233, 0.5); background: rgba(120, 44, 233, 0.2);
+    color: #d8c4ff; font-weight: 800; font-size: 11px; white-space: nowrap; transition: background 0.2s, color 0.2s, box-shadow 0.2s; }
+#adminModal .adm-tab.on { background: linear-gradient(180deg, #FF9F1C, #FE7600); border-color: rgba(255, 214, 150, 0.85); color: #fff; box-shadow: 0 0 0 1px rgba(255, 190, 110, 0.35), 0 0 9px rgba(254, 118, 0, 0.7); text-shadow: 0 0 6px rgba(255, 200, 120, 0.6); }
+#adminModal .adm-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; justify-content: flex-start; gap: 6px; scrollbar-width: thin; scrollbar-color: rgba(254, 118, 0, 0.5) transparent; }
+#adminModal .adm-sum { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 14px; border: 1px solid rgba(254, 118, 0, 0.5);
+    background: linear-gradient(90deg, rgba(254, 118, 0, 0.18), rgba(120, 44, 233, 0.18)); color: #ffd9b3; font-weight: 800; font-size: 12px; white-space: nowrap; }
+#adminModal .adm-sum b { color: #fff; font-size: 18px; font-weight: 900; }
+#adminModal .adm-row { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 14px; background: #1a0a30; border: 1px solid rgba(120, 44, 233, 0.32); }
+#adminModal .adm-ico { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.05); border: 1px solid currentColor; font-size: 14px; }
+#adminModal .adm-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+#adminModal .adm-txt b { color: #fff; font-weight: 800; font-size: 13px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#adminModal .adm-unit { color: #b79df0; font-weight: 600; font-size: 10px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#adminModal .adm-step { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; }
+#adminModal .adm-step button { width: 30px; height: 30px; border-radius: 9px; border: 1px solid rgba(120, 44, 233, 0.6); background: rgba(120, 44, 233, 0.35); color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+#adminModal .adm-step button:active { background: #FE7600; border-color: #FE7600; }
+#adminModal .adm-num { min-width: 30px; text-align: center; color: #fff; font-weight: 900; font-size: 12px; font-variant-numeric: tabular-nums; }
+#adminModal .adm-foot { display: flex; gap: 8px; flex: 0 0 auto; padding-top: 8px; border-top: 1px solid rgba(120, 44, 233, 0.3); }
+#adminModal .adm-btn { flex: 1 1 0; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 10px; border-radius: 14px; border: 0; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; font-size: 11px; }
+#adminModal .adm-btn-1 { background: linear-gradient(90deg, #FE7600, #FF9F1C); color: #fff; box-shadow: 0 6px 16px rgba(254, 118, 0, 0.4); }
+#adminModal .adm-btn-2 { flex: 1 1 0; background: rgba(120, 44, 233, 0.25); border: 1px solid rgba(120, 44, 233, 0.5); color: #e9d5ff; }
+#adminModal .adm-btn-2.sure { background: rgba(244, 63, 94, 0.25); border-color: #F43F5E; color: #fecdd3; }
+#adminModal .adm-btn:active { transform: scale(0.97); }
+/* Плашка сил: ширина по самому широкому значению «100%» (с текущим шрифтом), по бокам такой же отступ, как сверху и снизу */
+#topHud #staminaBadge { width: calc(46px + 10px * var(--tb, 1) * var(--stam-k, 2.56)) !important; padding-left: 0 !important; padding-right: 0 !important; justify-content: center !important; box-sizing: border-box; }
+/* Верхние иконки одного видимого размера: сердечки чуть меньше, перо и вопрос подогнаны по высоте к сердечку (у них глиф крупнее) */
+#topHud #livesContainer i.fa-heart:not(.half-heart) { font-size: calc(11.5px * var(--tb, 1)) !important; }
+#topHud #staminaIcon { font-size: calc(11.75px * var(--tb, 1)) !important; }
+#topHud #staminaVal, #topHud #scoreVal { line-height: 1 !important; }
+/* цифры строго по центру плашки по вертикали */
+#topHud #scoreIcon { font-size: calc(11.9px * var(--tb, 1)) !important; }
+
+/* Плоские иконки пива и сжатия труб (в стиле остальных, без контура) */
+.fa-bubo-beer:before, .fa-bubo-squeeze:before { content: ""; display: inline-block; width: 0.95em; height: 0.95em; vertical-align: -0.1em; background-color: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.2 7.4C2.4 6.3 3 4.7 4.5 4.6C4.7 2.8 6.6 1.9 8 2.9C9 1.5 11.2 1.5 12.1 2.9C13.2 1.8 15.3 2.3 15.5 3.9C17 3.9 17.9 5.4 17.2 6.6C17.9 7 18 7.6 17.7 8H3.4Z M4.2 8H16.8L15.6 21H5.4Z M17.2 9.6H18.6A2.7 2.7 0 0 1 18.6 15H17.2V13.4H18.6A1.1 1.1 0 0 0 18.6 11.2H17.2Z'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.2 7.4C2.4 6.3 3 4.7 4.5 4.6C4.7 2.8 6.6 1.9 8 2.9C9 1.5 11.2 1.5 12.1 2.9C13.2 1.8 15.3 2.3 15.5 3.9C17 3.9 17.9 5.4 17.2 6.6C17.9 7 18 7.6 17.7 8H3.4Z M4.2 8H16.8L15.6 21H5.4Z M17.2 9.6H18.6A2.7 2.7 0 0 1 18.6 15H17.2V13.4H18.6A1.1 1.1 0 0 0 18.6 11.2H17.2Z'/%3E%3C/svg%3E") no-repeat center / contain; }
+.fa-bubo-squeeze:before { -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 2h17A1.5 1.5 0 0 1 22 3.5V8.5H2V3.5A1.5 1.5 0 0 1 3.5 2z M8 8.5h8L12 12z M8 15.5h8L12 12z M2 15.5h20v5a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 20.5z'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 2h17A1.5 1.5 0 0 1 22 3.5V8.5H2V3.5A1.5 1.5 0 0 1 3.5 2z M8 8.5h8L12 12z M8 15.5h8L12 12z M2 15.5h20v5a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 20.5z'/%3E%3C/svg%3E") no-repeat center / contain; }
+
+/* Окно настроек — до краёв экрана, как окно правил: фиксированная высота, список прокручивается, «Сохранить» всегда внизу */
+#settingsModal > div { height: calc((100vh - 32px) / var(--menu-zoom, 1)); }
+@supports (height: 100dvh) { #settingsModal > div { height: calc((100dvh - 32px) / var(--menu-zoom, 1)); } }
+#settingsModal > div > .overflow-y-auto { flex: 1 1 auto; min-height: 0; }
+#settingsModal > div { max-width: 448px !important; }   /* по ширине — как окно правил */
+
+/* Админка → «Тест» */
+#adminModal .adm-prev { position: relative; height: 240px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(147, 51, 234, 0.5); background: #140326; flex-shrink: 0; }
+#adminModal .adm-prev canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#adminModal .adm-effs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+#adminModal .adm-chk { display: flex; align-items: center; gap: 8px; font: 800 12px 'Onest', sans-serif; color: #d9d0f2; text-align: left; background: rgba(120, 44, 233, 0.2); border: 1px solid rgba(147, 51, 234, 0.45); border-radius: 12px; padding: 10px; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+#adminModal .adm-chk .adm-box { width: 18px; height: 18px; flex: 0 0 18px; border-radius: 6px; border: 1.5px solid rgba(196, 161, 255, 0.7); display: flex; align-items: center; justify-content: center; color: transparent; font-size: 10px; transition: background 0.15s, color 0.15s; }
+#adminModal .adm-chk .adm-ei { font-size: 13px; color: #FE7600; width: 16px; text-align: center; }
+#adminModal .adm-chk.on { color: #fff; background: rgba(254, 118, 0, 0.18); border-color: #FFB36B; }
+#adminModal .adm-chk.on .adm-box { background: linear-gradient(135deg, #FE7600, #C25A00); border-color: #FFB36B; color: #fff; }
+#adminModal .adm-prev-reset { display: flex; justify-content: center; margin-top: 12px; }
+#adminModal .adm-chip-reset { font: 800 12px 'Onest', sans-serif; color: #fff; background: rgba(225, 29, 72, 0.28); border: 1px solid rgba(244, 63, 94, 0.7); border-radius: 12px; padding: 10px 22px; cursor: pointer; }
+
+/* Плашки «+1 попытка» и «Макс. сила +20%» — как подсказки, только немного крупнее */
+.attempt-banner .att-pill.hint-like { display: inline-flex !important; align-items: center; gap: 4px; padding: 3.5px 8px !important; border-radius: 9999px !important;
+    background: rgba(20, 3, 38, 0.95) !important; border: 1.5px solid currentColor; font-weight: 900; white-space: nowrap; text-shadow: none !important; }
+.attempt-banner .att-pill.hint-like i { font-size: 8.5px !important; color: inherit !important; }
+.attempt-banner .att-pill.hint-like span { font-size: 8.5px !important; font-weight: 900 !important; letter-spacing: 0 !important; color: inherit !important; }
+
+/* «+1 попытка»: плашка «ПОПЫТКИ» вспыхивает золотом, стрелка делает оборот, число переливается */
+#attemptsBadge { transform-origin: center; }
+#attemptsBadge.attempts-up { animation: none; }
+@keyframes attemptsUpPop { 0% { transform: scale(1); filter: none; } 25% { transform: scale(1.3); filter: drop-shadow(0 0 6px #FFC53D) drop-shadow(0 0 12px rgba(255, 165, 0, 0.8)); } 55% { transform: scale(0.95); } 100% { transform: scale(1); filter: none; } }
+#attemptsBadge.attempts-up i { display: inline-block; animation: attemptsSpin 0.9s cubic-bezier(0.3, 0.8, 0.3, 1); color: #FFC53D !important; }
+@keyframes attemptsSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+#attemptsBadge.attempts-up #attemptsVal, #attemptsBadge.attempts-up span { background: linear-gradient(90deg, #fff 0%, #FFC53D 35%, #fff7d6 50%, #FFC53D 65%, #fff 100%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent !important; animation: attemptsShine 1.2s ease-out; }
+@keyframes attemptsShine { from { background-position: 120% 0; } to { background-position: -100% 0; } }
+
+.attempts-glow { position: absolute; pointer-events: none; z-index: 40; border-radius: 9999px; border: 1.5px solid rgba(255, 197, 61, 0.95);
+    box-shadow: 0 0 10px rgba(255, 197, 61, 0.9), 0 0 22px rgba(255, 165, 0, 0.7), inset 0 0 8px rgba(255, 197, 61, 0.6);
+    animation: attemptsGlowPulse 1.25s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+@keyframes attemptsGlowPulse { 0% { opacity: 0; transform: scale(0.85); } 18% { opacity: 1; transform: scale(1.12); } 45% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.18); } }
