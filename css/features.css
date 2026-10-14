@@ -98,12 +98,7 @@
 #livesContainer .lives-compact-txt { font-size: 12px; font-weight: 900; color: #fff; white-space: nowrap; letter-spacing: 0.01em; line-height: 1; }
 #livesContainer .lives-compact-txt .lc-x { color: #FCA5A5; font-size: 10px; margin-right: 1px; }
 
-/* ===== Крупные уведомления внизу («+1 попытка», «Макс. жизнь +1», «+20% к макс. силе») — в 2 раза крупнее подсказок ===== */
-.attempt-banner .att-pill.hint-like { gap: 8px !important; padding: 8px 16px !important; border-radius: 9999px !important; border-width: 2px !important; }
-.attempt-banner .att-pill.hint-like i { font-size: calc(17px * var(--tb, 1)) !important; }
-.attempt-banner .att-pill.hint-like span { font-size: calc(17px * var(--tb, 1)) !important; letter-spacing: 0.01em !important; }
-
-/* ===== Обычные подсказки — чуть крупнее (в браузере телефона выглядели мелко) ===== */
-.fly-label-tag { font-size: calc(11px * var(--tb, 1)) !important; padding: 3.5px 7px !important; }
-.fly-label-tag i { font-size: calc(11px * var(--tb, 1)) !important; }
-.fly-label-tag svg { width: calc(13px * var(--tb, 1)) !important; height: calc(13px * var(--tb, 1)) !important; }
+/* ===== Крупные уведомления внизу («+1 попытка», «Макс. жизнь +1», «+20% к макс. силе») — крупнее подсказок ===== */
+.attempt-banner .att-pill.hint-like { gap: 6px !important; padding: 5px 11px !important; border-radius: 9999px !important; border-width: 1.5px !important; }
+.attempt-banner .att-pill.hint-like i { font-size: calc(11px * var(--tb, 1)) !important; }
+.attempt-banner .att-pill.hint-like span { font-size: calc(11px * var(--tb, 1)) !important; letter-spacing: 0.01em !important; }
