@@ -499,3 +499,17 @@ if (window.ResizeObserver) {
 }
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitThemeLabels);
 fitThemeLabels();
+
+// Тестовый бонус по ссылке: ?test=10 → 10 вращений рулетки и минимум 10 попыток (один раз, параметр сразу убирается из адреса)
+(function () {
+    try {
+        const q = new URLSearchParams(location.search), n = parseInt(q.get('test'), 10);
+        if (!n || n < 1) return;
+        const k = Math.min(99, n);
+        rouletteSpins = Math.min(99, rouletteSpins + k);
+        attempts = Math.max(attempts, k); zeroDay = '';
+        StorageManager.save(); updateHUDAll();
+        q.delete('test');
+        history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+    } catch (e) {}
+})();
