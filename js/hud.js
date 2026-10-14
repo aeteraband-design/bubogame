@@ -553,7 +553,7 @@ function renderLivesHUD() {
         if (typeof prev === 'number' && lives < prev - 0.01 && heart) spawnHeartBreak(heart, lives < prev - 0.6 ? 12 : 6.5);
         window.__livesShown = lives;
         const txt = cont.querySelector('.lives-compact-txt');
-        if (txt) txt.innerHTML = `<span class="lc-x">х</span> ${fmt(Math.max(0, lives))}/${fmt(maxLives)}`;
+        if (txt) txt.innerHTML = `${fmt(Math.max(0, lives))}/${fmt(maxLives)}`;
         return;
     }
     if (cont.classList.contains('lives-compact')) { cont.classList.remove('lives-compact'); }

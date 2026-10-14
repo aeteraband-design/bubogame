@@ -112,7 +112,8 @@ function checkAttemptMilestone() {
         try { AudioFX.playAttemptBonus(); } catch (e) {}
         // подсказку «+1 попытка» покажет сам подобранный вопрос (вместе с «+1 вопрос»); иначе — показываем здесь
         if (window.__attemptHintPending) { window.__attemptHintPending = false; StorageManager.save(); return; }
-        spawnFlyingArrivalFX(owl.x, owl.y, 'attempts', gained > 1 ? `+${gained} Попытки` : '+1 Попытка', '#FFC53D', 'fa-rotate-right', true);
+        spawnFlyingArrivalFX(owl.x, owl.y, 'attempts', '', '#FFC53D', 'fa-rotate-right', true);
+        showGoldBanner(gained > 1 ? `+${gained} попытки` : '+1 попытка', 'fa-rotate-right', '#FFC53D');
         flashAttemptsBadge();
         StorageManager.save();
     }
