@@ -53,21 +53,18 @@ function rwLayout() {
     const zoom = Math.min(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1, 1.1);
     const total = ((container.clientHeight || window.innerHeight) - 24) / zoom;
     // окно невысокое, по содержимому; лента — компактной высоты; блоки разделены отступами 30px (на очень низких экранах до 22px)
-    let others = 0, gapPx = 30;
-    for (;;) {
-        win.style.setProperty('--rw-gap', gapPx + 'px');
-        win.style.height = 'auto'; reel.style.height = '0px';
-        others = win.offsetHeight;
-        if (total - others - 6 >= 190 || gapPx <= 22) break;
-        gapPx -= 2;
-    }
+    // лента с карточками забирает всю свободную высоту окна и «резинится»: при изменении высоты экрана карточки сразу подстраиваются
+    const gapPx = total < 640 ? 14 : 18;
+    win.style.setProperty('--rw-gap', gapPx + 'px');
+    win.style.height = 'auto'; reel.style.height = '0px';
+    const others = win.offsetHeight;
     const W = reel.clientWidth || 280; rw.vw = W;
-    const pad = RW_GAP * 1.2;   // лента чуть ниже
-    let cw = Math.min(W / 1.6, 230), ch = cw * 1.22;   // карточки крупнее — лента выше
-    const maxReel = Math.max(120, total - others - 6);
-    if (ch + pad * 2 > maxReel) { ch = maxReel - pad * 2; cw = ch / 1.22; }
-    cw = Math.max(cw, 76); ch = cw * 1.22;
-    const reelH = ch + pad * 2;
+    const pad = RW_GAP * 1.2;
+    const freeH = Math.max(150, total - others - 8);
+    // ширина карточки — чтобы в ленте было видно ~2 карточки; высота — сколько позволяет экран (карточка может быть чуть вытянутой)
+    let cw = Math.max(76, Math.min(W / 1.8, (freeH - pad * 2) / 1.22));
+    let ch = Math.max(cw * 1.22, Math.min(freeH - pad * 2, cw * 1.6));
+    const reelH = Math.max(ch + pad * 2, freeH);   // окно ленты занимает всю свободную высоту, карточки — по центру
     reel.style.height = reelH.toFixed(1) + 'px';
     const cwd = cw * 0.9;
     reel.style.setProperty('--cw', cw.toFixed(1) + 'px'); reel.style.setProperty('--cwd', cwd.toFixed(1) + 'px'); reel.style.setProperty('--ch', ch.toFixed(1) + 'px');
@@ -86,7 +83,12 @@ function rwLayout() {
         win.querySelectorAll('.rwp-spark').forEach(sp => { const r = sp.getBoundingClientRect(); const hit = blocks.some(b => r.left < b.right + 4 && b.left - 4 < r.right && r.top < b.bottom + 4 && b.top - 4 < r.bottom); sp.style.display = hit ? 'none' : ''; });
     } catch (e) {}
 }
-window.addEventListener('resize', () => { const m = rwEl('rouletteModal'); if (m && !m.classList.contains('hidden') && !rw.spinning) rwLayout(); });
+{
+    const relayout = () => { const m = rwEl('rouletteModal'); if (m && !m.classList.contains('hidden') && !rw.spinning) rwLayout(); };
+    window.addEventListener('resize', relayout);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', relayout);
+    try { new ResizeObserver(relayout).observe(document.getElementById('gameContainer') || document.body); } catch (e) {}
+}
 // Всего несколько реальных карточек — они переиспользуются по кругу, поэтому лента лёгкая и не тормозит
 function rwEnsurePool() {
     const track = rwEl('rwTrack'); if (!track) return;
@@ -381,13 +383,13 @@ function vicConfetti(on) {
     layer.innerHTML = '';
     if (!on) return;
     const cols = ['#FE7600', '#FFD35A', '#A855F7', '#38BDF8', '#F43F5E', '#4ADE80', '#FFFFFF'];
-    const N = (typeof gfxQuality !== 'undefined' && gfxQuality === 'low') ? 26 : 54;
+    const N = (typeof gfxQuality !== 'undefined' && gfxQuality === 'low') ? 40 : 80;
     for (let i = 0; i < N; i++) {
         const c = document.createElement('i');
-        c.className = 'confetti';
-        const w = 5 + Math.random() * 6, h = Math.random() < 0.5 ? w : w * 0.45;
-        c.style.cssText = `left:${Math.random() * 100}%;width:${w}px;height:${h}px;background:${cols[i % cols.length]};border-radius:${Math.random() < 0.3 ? '50%' : '2px'};` +
-            `--d:${(3.6 + Math.random() * 3.4).toFixed(2)}s;--delay:${(-Math.random() * 6).toFixed(2)}s;--dx:${((Math.random() - 0.5) * 120).toFixed(0)}px;--r:${(360 + Math.random() * 720).toFixed(0)}deg;`;
+        c.className = 'wc';
+        const w = 7 + Math.random() * 7, h = Math.random() < 0.5 ? w : w * 0.45;
+        c.style.cssText = `left:${(Math.random() * 100).toFixed(1)}%;width:${w.toFixed(1)}px;height:${h.toFixed(1)}px;background:${cols[i % cols.length]};border-radius:${Math.random() < 0.3 ? '50%' : '2px'};` +
+            `--d:${(3.4 + Math.random() * 3).toFixed(2)}s;--delay:${(-Math.random() * 6).toFixed(2)}s;--dx:${((Math.random() - 0.5) * 140).toFixed(0)}px;--r:${(360 + Math.random() * 720).toFixed(0)}deg;`;
         layer.appendChild(c);
     }
 }
@@ -395,8 +397,7 @@ function openVictoryModal() {
     const m = rwEl('winModal'); if (!m) return;
     vicUpdate(); vicConfetti(true);
     // кнопки срабатывают не сразу: игрок ещё тапает по экрану после полёта и мог случайно нажать «Вращать рулетку»
-    m.__lockUntil = performance.now() + 3000;
-    m.classList.add('win-locked'); setTimeout(() => m.classList.remove('win-locked'), 3000);
+    m.__lockUntil = performance.now() + 3000;   // кнопки выглядят как обычно, но первые 3 с не нажимаются
     m.classList.remove('hidden');
     m.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 450, easing: 'ease-out' });
 }

@@ -12,23 +12,23 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.10.9">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.11.0">
     <!-- Google Fonts: Onest -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <script src="js/music-hold.js?v=0.10.9"></script>
-<script src="js/tailwind-config.js?v=0.10.9"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.10.9">
+    <script src="js/music-hold.js?v=0.11.0"></script>
+<script src="js/tailwind-config.js?v=0.11.0"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.11.0">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.10.9" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.11.0" id="adminStyle">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.10.9">
-    <link rel="stylesheet" href="css/features.css?v=0.10.9">
+    <link rel="stylesheet" href="css/boot.css?v=0.11.0">
+    <link rel="stylesheet" href="css/features.css?v=0.11.0">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -45,7 +45,7 @@
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
     </div>
-    <script src="js/boot.js?v=0.10.9"></script>
+    <script src="js/boot.js?v=0.11.0"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 backdrop-blur-[7px] overflow-y-auto custom-scroll">
@@ -616,29 +616,27 @@
         </div>
     </div>
 
-    <!-- ПОБЕДА (100% прохождение): промежуточное окно перед рулеткой -->
-    <div id="winModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-4 bg-[#140326]/30 backdrop-blur-[7px] text-center">
-        <div id="vicConfetti" class="confetti-layer"></div>
-        <div class="glass-panel vic-panel w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-3">
-            <div class="rwp-ring vic-ring" aria-hidden="true"></div>
-            <div class="vic-head">
-                <div class="win-medal-wrap"><div class="vic-halo"></div><div class="vic-medal"><i class="fa-solid fa-trophy"></i></div><div class="vic-orbit"><span>✦</span><span>✦</span><span>✦</span><span>✦</span></div></div>
-                <h2 class="vic-h2 font-black">ПОБЕДА!</h2>
-            </div>
-            <p class="vic-msg">Поздравляем! Вы прошли игру на <b>100%</b> и собрали <b>все темы</b>! Ваша попытка не потрачена, а весь текущий прогресс и собранные бонусы сохранены. Вы можете испытать удачу в рулетке или сразу начать новую игру с этой же попытки!</p>
-            <div class="vic-accent"><div class="rw-spins-ring"><i class="fa-solid fa-dice"></i></div><div class="vic-accent-t"><span>Вам доступно вращение в рулетке!</span><b id="vicSpinsText">1 вращение</b></div></div>
-            <div class="space-y-2 pt-1">
-                <button id="vicSpinBtn" class="btn-bubo w-full py-3 rounded-2xl text-[12px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black shadow-xl">
-                    <i class="fa-solid fa-dice text-sm font-black"></i><span id="vicSpinLabel" class="font-black">ВРАЩАТЬ РУЛЕТКУ (ДОСТУПНО: 1)</span>
+    <!-- ПОБЕДА (100% прохождение): промежуточное окно перед рулеткой, в стиле окна рулетки -->
+    <div id="winModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 bg-[#140326]/30 backdrop-blur-[7px] text-center">
+        <div id="winWindow" class="glass-panel w-full max-w-sm rounded-3xl flex flex-col shadow-2xl relative">
+            <div class="win-deco" aria-hidden="true"><div class="win-blob b1"></div><div class="win-blob b2"></div><div class="win-rays"></div></div>
+            <div class="win-emblem"><div class="win-emblem-glow"></div><div class="win-cup"><i class="fa-solid fa-trophy"></i></div><i class="win-st s1">✦</i><i class="win-st s2">✦</i><i class="win-st s3">✦</i></div>
+            <div class="win-title">ПОБЕДА!</div>
+            <p class="win-text">Поздравляем! Вы прошли игру на <b>100%</b> и собрали <b>все темы</b>! Ваша попытка не потрачена, а весь текущий прогресс и собранные бонусы сохранены. Вы можете испытать удачу в рулетке или сразу начать новую игру с этой же попытки!</p>
+            <div class="win-pill"><div class="win-pill-ring"><i class="fa-solid fa-dice"></i></div><div class="win-pill-t"><span>Вам доступно вращение в рулетке!</span><b id="vicSpinsText">1 вращение</b></div></div>
+            <div class="win-btns">
+                <button id="vicSpinBtn" class="btn-bubo win-spin w-full py-3.5 rounded-2xl text-[13px] uppercase tracking-wider flex items-center justify-center space-x-2 shadow-2xl font-black">
+                    <i class="fa-solid fa-rocket text-sm text-white font-black"></i><span id="vicSpinLabel" class="font-black text-white">ВРАЩАТЬ РУЛЕТКУ (ДОСТУПНО: 1)</span>
                 </button>
-                <button id="vicNewGameBtn" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black">
+                <button id="vicNewGameBtn" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider font-black flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-play text-xs font-black text-[#FE7600]"></i><span class="font-black text-white">НАЧАТЬ НОВУЮ ИГРУ</span>
                 </button>
-                <button id="vicHomeBtn" class="w-full py-2 rounded-xl text-[10px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black bg-[#2d0e52]/90 hover:bg-[#381267] border border-[#a855f7]/50 text-purple-300 shadow-md active:scale-95 transition-all">
+                <button id="vicHomeBtn" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider font-black flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-house text-xs font-black text-[#FE7600]"></i><span class="font-black text-white">В ГЛАВНОЕ МЕНЮ</span>
                 </button>
             </div>
         </div>
+        <div id="vicConfetti" class="win-confetti" aria-hidden="true"></div>
     </div>
 
     <!-- ПОДТВЕРЖДЕНИЕ «НАЧАТЬ ЗАНОВО» -->
@@ -710,18 +708,18 @@
         </div>
     </div>
 
-    <script src="js/audio.js?v=0.10.9"></script>
-    <script src="js/game-core.js?v=0.10.9"></script>
-    <script src="js/owl.js?v=0.10.9"></script>
-    <script src="js/hud.js?v=0.10.9"></script>
-    <script src="js/scenery.js?v=0.10.9"></script>
-    <script src="js/items.js?v=0.10.9"></script>
-    <script src="js/update.js?v=0.10.9"></script>
-    <script src="js/render.js?v=0.10.9"></script>
-    <script src="js/wheel.js?v=0.10.9"></script>
-    <script src="js/ui.js?v=0.10.9"></script>
-<script src="js/admin.js?v=0.10.9"></script>
-<script src="js/text-measure.js?v=0.10.9"></script>
-<script src="js/fullscreen.js?v=0.10.9"></script>
+    <script src="js/audio.js?v=0.11.0"></script>
+    <script src="js/game-core.js?v=0.11.0"></script>
+    <script src="js/owl.js?v=0.11.0"></script>
+    <script src="js/hud.js?v=0.11.0"></script>
+    <script src="js/scenery.js?v=0.11.0"></script>
+    <script src="js/items.js?v=0.11.0"></script>
+    <script src="js/update.js?v=0.11.0"></script>
+    <script src="js/render.js?v=0.11.0"></script>
+    <script src="js/wheel.js?v=0.11.0"></script>
+    <script src="js/ui.js?v=0.11.0"></script>
+<script src="js/admin.js?v=0.11.0"></script>
+<script src="js/text-measure.js?v=0.11.0"></script>
+<script src="js/fullscreen.js?v=0.11.0"></script>
 </body>
 </html>

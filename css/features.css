@@ -24,38 +24,56 @@
 #gameOverModal .go-info.go-warn { background: rgba(254, 118, 0, 0.1); border-color: rgba(254, 118, 0, 0.55); }
 #gameOverModal .go-info.go-warn > i { color: #FE7600; }
 
-/* ===== Окно «Победа» ===== */
-#winModal .vic-panel { position: relative; z-index: 2; overflow: hidden; border-color: transparent !important; }
-#winModal .vic-panel > *:not(.vic-ring) { position: relative; z-index: 1; }
-/* бегущий градиент по контуру — тот же, что у окна рулетки */
-#winModal .vic-ring { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; padding: 2px;
-    background: conic-gradient(from var(--rwp-ang), rgba(254, 118, 0, 0) 0deg, rgba(254, 118, 0, 0.95) 35deg, rgba(255, 197, 61, 1) 62deg, rgba(254, 118, 0, 0) 105deg, rgba(168, 85, 247, 0) 185deg, rgba(196, 140, 255, 0.95) 240deg, rgba(168, 85, 247, 0) 295deg),
-        linear-gradient(rgba(120, 44, 233, 0.6), rgba(120, 44, 233, 0.6));
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
-    animation: rwpRing 6s linear infinite; }
-#winModal .confetti-layer { z-index: 1; }
-#winModal .vic-panel .confetti-layer { z-index: 0; }
-#winModal .vic-head { display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 6px; }
-#winModal > .glass-panel { zoom: var(--menu-zoom, 1); max-height: calc((100dvh - 32px) / var(--menu-zoom, 1)); overflow-y: auto; scrollbar-width: none; }
-#winModal .win-medal-wrap { position: relative; width: 66px; height: 66px; flex: 0 0 66px; }
-#winModal .win-medal-wrap .vic-halo { width: 96px; height: 96px; margin: -48px 0 0 -48px; }
-#winModal .win-medal-wrap .vic-orbit { width: 96px; height: 96px; margin: -48px 0 0 -48px; }
-#winModal .win-medal-wrap .vic-orbit span { font-size: 11px; }
-#winModal .win-medal-wrap .vic-medal { width: 66px; height: 66px; }
-#winModal .win-medal-wrap .vic-medal i { font-size: 30px; }
-#winModal .vic-h2 { font-size: min(44px, 11vw) !important; line-height: 1 !important; letter-spacing: 0.03em; margin: 0;
-    background: linear-gradient(90deg, #FFD700, #FE7600, #FFF1A8, #FFD700); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
-    animation: vicText 2.5s linear infinite; filter: drop-shadow(0 0 10px rgba(255, 190, 60, 0.75)); }
-#winModal .vic-msg { font-size: 12px; line-height: 1.45; font-weight: 600; color: #DCCBFA; }
-#winModal .vic-msg b { color: #FFD35A; font-weight: 900; }
-#winModal .vic-accent { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 12px; border-radius: 16px;
-    background: rgba(254, 118, 0, 0.1); border: 1px solid rgba(254, 118, 0, 0.6); box-shadow: 0 0 18px rgba(254, 118, 0, 0.28), inset 0 0 14px rgba(254, 118, 0, 0.12); animation: vicBox 2s ease-in-out infinite; }
-#winModal .vic-accent .rw-spins-ring { color: #FE7600 !important; font-size: 20px; }
-#winModal .vic-accent .rw-spins-ring i { display: inline-block; animation: rwpDice 2.6s ease-in-out infinite; }
-#winModal .vic-accent-t { display: flex; flex-direction: column; text-align: left; line-height: 1.2; }
-#winModal .vic-accent-t span { font-size: 11.5px; font-weight: 800; color: #fff; }
-#winModal .vic-accent-t b { font-size: 15px; font-weight: 900; color: #FFC53D; }
-#winModal button[disabled] { pointer-events: none; }
+/* ===== Окно «Победа» — в стиле окна рулетки ===== */
+#winModal > #winWindow { zoom: var(--menu-zoom, 1); max-height: calc((100dvh - 24px) / var(--menu-zoom, 1)); overflow: hidden; position: relative;
+    padding: 26px 20px 20px; gap: 14px; border: 1.5px solid rgba(168, 120, 245, 0.38) !important; background: rgba(29, 9, 54, 0.96); }
+#winWindow > *:not(.win-deco) { position: relative; z-index: 1; }
+#winWindow .win-deco { position: absolute; inset: 0; z-index: 0; pointer-events: none; border-radius: inherit; overflow: hidden; }
+#winWindow .win-blob { position: absolute; border-radius: 50%; filter: blur(38px); opacity: 0.55; }
+#winWindow .win-blob.b1 { width: 80%; height: 36%; left: 10%; top: -10%; background: radial-gradient(circle, rgba(254, 118, 0, 0.6), rgba(254, 118, 0, 0) 70%); animation: rwpBlob 9s ease-in-out infinite alternate; }
+#winWindow .win-blob.b2 { width: 80%; height: 34%; left: 10%; bottom: -10%; background: radial-gradient(circle, rgba(139, 92, 246, 0.55), rgba(139, 92, 246, 0) 70%); animation: rwpBlob 11s ease-in-out infinite alternate-reverse; }
+#winWindow .win-rays { position: absolute; left: 50%; top: 70px; width: 520px; height: 520px; margin: -260px 0 0 -260px; border-radius: 50%;
+    background: repeating-conic-gradient(rgba(255, 197, 61, 0.10) 0deg 9deg, transparent 9deg 24deg);
+    -webkit-mask-image: radial-gradient(circle, #000 0, rgba(0,0,0,0.5) 120px, transparent 250px); mask-image: radial-gradient(circle, #000 0, rgba(0,0,0,0.5) 120px, transparent 250px);
+    animation: vicSpin 40s linear infinite; }
+#winWindow .win-emblem { position: relative; width: 86px; height: 86px; margin: 0 auto; }
+#winWindow .win-emblem-glow { position: absolute; inset: -22px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 197, 61, 0.45) 0%, rgba(254, 118, 0, 0.18) 45%, rgba(168, 85, 247, 0) 70%); animation: rwpGlow 3.2s ease-in-out infinite; }
+#winWindow .win-cup { position: relative; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 35% 30%, #FFF6C2 0%, #FFC531 35%, #FE7600 75%, #B84A00 100%);
+    box-shadow: 0 0 0 3px rgba(255, 236, 170, 0.9), 0 0 0 7px rgba(254, 118, 0, 0.35), 0 0 30px rgba(255, 190, 60, 0.85), inset 0 -6px 12px rgba(120, 40, 0, 0.45), inset 0 4px 8px rgba(255, 255, 255, 0.6);
+    animation: vicBounce 1.8s ease-in-out infinite; }
+#winWindow .win-cup i { font-size: 38px; color: #fff; filter: drop-shadow(0 2px 2px rgba(120, 40, 0, 0.6)); }
+#winWindow .win-st { position: absolute; font-style: normal; color: #FFD98A; text-shadow: 0 0 6px #FFC53D, 0 0 12px #FE7600; animation: vicTwinkle 1.4s ease-in-out infinite; }
+#winWindow .win-st.s1 { left: -14px; top: 6px; font-size: 14px; }
+#winWindow .win-st.s2 { right: -16px; top: 22px; font-size: 11px; animation-delay: 0.45s; color: #E9D5FF; text-shadow: 0 0 6px #A855F7; }
+#winWindow .win-st.s3 { right: -2px; bottom: -8px; font-size: 12px; animation-delay: 0.9s; }
+#winWindow .win-title { font-size: clamp(34px, 11vw, 44px); line-height: 1; font-weight: 900; letter-spacing: 0.02em; text-transform: uppercase; margin-top: 2px;
+    background: linear-gradient(100deg, #FFFFFF 0%, #FFFFFF 30%, #FFE3C2 42%, #FFFFFF 54%, #FFFFFF 100%), linear-gradient(90deg, #FFFFFF 0%, #FFFFFF 20%, #FFB86B 70%, #FE7600 100%);
+    background-size: 260% 100%, 100% 100%; background-blend-mode: multiply; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    animation: rwpTitleShine 4.5s ease-in-out infinite; filter: drop-shadow(0 2px 10px rgba(254, 118, 0, 0.35)); }
+#winWindow .win-text { font-size: 12.5px; line-height: 1.45; font-weight: 600; color: rgba(214, 196, 245, 0.88); margin: 0; padding: 0 2px; }
+#winWindow .win-text b { color: #FFC53D; font-weight: 900; }
+#winWindow .win-pill { align-self: center; display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 7px; border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(254, 118, 0, 0.45); box-shadow: 0 0 16px rgba(254, 118, 0, 0.18); }
+#winWindow .win-pill-ring { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(120, 44, 233, 0.28); color: #FE7600; font-size: 17px; }
+#winWindow .win-pill-ring i { display: inline-block; animation: rwpDice 2.6s ease-in-out infinite; }
+#winWindow .win-pill-t { display: flex; flex-direction: column; text-align: left; line-height: 1.2; }
+#winWindow .win-pill-t span { font-size: 11.5px; font-weight: 700; color: #EDE5F8; }
+#winWindow .win-pill-t b { font-size: 15px; font-weight: 900; color: #FFC53D; }
+#winWindow .win-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+#winWindow .win-spin { position: relative; overflow: hidden; isolation: isolate;
+    background: linear-gradient(110deg, #FE7600 0%, #FF8C1A 35%, #FFB054 50%, #FF8C1A 65%, #FE7600 100%) 0 0 / 220% 100%;
+    animation: btnFlow 3.2s ease-in-out infinite, btnBreath 2.4s ease-in-out infinite; }
+#winWindow button[disabled] { opacity: 0.5; }
+/* конфетти поверх всего окна (не мешает нажатиям) */
+#winModal .win-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 5; }
+#winModal .wc { position: absolute; top: -24px; display: block; opacity: 0.95; will-change: transform;
+    animation: wcFall var(--d) linear var(--delay) infinite; }
+@keyframes wcFall {
+    0% { transform: translate3d(0, -30px, 0) rotate(0deg) rotateY(0deg); }
+    100% { transform: translate3d(var(--dx), calc(100dvh + 60px), 0) rotate(var(--r)) rotateY(720deg); }
+}
+@media (prefers-reduced-motion: reduce) { #winModal .wc { animation-duration: calc(var(--d) * 2); } }
 
 /* ===== Подтверждение «Начать заново» ===== */
 #resetConfirmModal .rc-ico { width: 48px; height: 48px; margin: 0 auto; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff;
@@ -67,12 +85,14 @@
 
 /* ===== Рулетка: крупнее, колесо синхронно с лентой, оранжевая стрелка ===== */
 #rwWindow .rwp-rotor { animation: none !important; transition: none; }
-#rwWindow .rwp-emblem { width: clamp(106px, 34vw, 138px); height: clamp(106px, 34vw, 138px); margin-bottom: 14px; }
-#rwWindow .rwp-emblem-glow { inset: -24px; }
-#rwWindow .rwp-core-ico { font-size: clamp(22px, 7vw, 28px); }
-#rwWindow .rwp-pin { top: -4px; border-left-width: 10px; border-right-width: 10px; border-top: 17px solid #FE7600; filter: drop-shadow(0 0 6px rgba(254, 118, 0, 0.85)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); }
-#rwWindow .rwp-title { font-size: clamp(25px, 8.4vw, 32px); }
-#rwWindow .rwp-sub { font-size: 12.5px !important; }
+#rwWindow .rwp-emblem { width: clamp(64px, 18vw, 80px); height: clamp(64px, 18vw, 80px); margin-bottom: 8px; }
+#rwWindow .rwp-emblem-glow { inset: -14px !important; }
+#rwWindow .rwp-ring { display: none !important; }   /* у всего окна — обычная светлая обводка; бегущий градиент только вокруг ленты с карточками */
+#rwWindow { border: 1.5px solid rgba(168, 120, 245, 0.38) !important; }
+#rwWindow .rwp-core-ico { font-size: clamp(15px, 4.4vw, 19px); }
+#rwWindow .rwp-pin { top: -4px; border-left-width: 8px; border-right-width: 8px; border-top: 13px solid #FE7600; filter: drop-shadow(0 0 6px rgba(254, 118, 0, 0.85)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); }
+#rwWindow .rwp-title { font-size: clamp(22px, 7vw, 27px); }
+#rwWindow .rwp-sub { font-size: 12px !important; margin-top: 6px !important; }
 
 /* выигрыш: затемнение, карточка вылетает в центр с переворотом, блёстки, плашка «Вы выиграли!» */
 #rwWindow > .rw-result.rw-result2 { flex-direction: column; justify-content: center; gap: 14px; background: rgba(13, 2, 26, 0); padding: 18px 16px; }
@@ -108,9 +128,6 @@
 .fly-label-tag i, #buffBar .buff-tag i { font-size: 10.5px !important; }
 .fly-label-tag svg, #buffBar .buff-tag svg { width: 12px !important; height: 12px !important; }
 
-/* окно «Победа» первые 3 с не реагирует на тапы — кнопки чуть приглушены */
-#winModal.win-locked button { opacity: 0.55; transition: opacity 0.3s; }
-#winModal button { transition: opacity 0.3s; }
 
 /* окно с карточками рулетки: бегущий градиентный контур (как у окна «Победа») вместо сплошной рамки */
 #rwWindow .rw-reel::after { box-shadow: none !important; }
@@ -119,3 +136,10 @@
         linear-gradient(rgb(76, 29, 149), rgb(76, 29, 149));
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
     animation: rwpRing 5s linear infinite; filter: drop-shadow(0 0 4px rgba(254, 118, 0, 0.55)); }
+
+/* рулетка: меньше отступов — больше места под ленту с карточками */
+#rwWindow .rwp-head { padding-top: 2px !important; }
+#rwWindow .rwp-head + .rw-reel { margin-top: 14px !important; }
+#rwWindow .rw-hint { margin-top: 8px !important; }
+#rwWindow .rw-spins-pill { margin-top: 10px !important; }
+#rwWindow .rw-btns { margin-top: 14px !important; }
