@@ -337,7 +337,7 @@ function update() {
                 updateStaminaHUD();
                 Haptics.powerup();
                 it.pendingFX = { target: 'stamina', text: `Макс. силы ${ADMIN_CFG.infiniteSec}с`, color: '#00F0FF', icon: 'svg-infinite-feather' };
-                if (maxUp) setTimeout(() => showGoldBanner('+20% к макс. силе', 'fa-feather-pointed', '#38BDF8'), 900);   // уведомление внизу, над панелью тем
+                if (maxUp) setTimeout(() => showGoldBanner('Макс. сила +20%', 'fa-feather-pointed', '#38BDF8'), 900);   // уведомление внизу, над панелью тем
             } else if (it.type === 'drink') {
                 AudioFX.playCollect(true);
                 stamina = Math.min(maxStamina, stamina + 10.0);
