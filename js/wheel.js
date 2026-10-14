@@ -63,7 +63,7 @@ function rwLayout() {
     }
     const W = reel.clientWidth || 280; rw.vw = W;
     const pad = RW_GAP * 1.2;   // лента чуть ниже
-    let cw = Math.min(W / 1.75, 210), ch = cw * 1.22;   // карточки крупнее — лента выше
+    let cw = Math.min(W / 1.6, 230), ch = cw * 1.22;   // карточки крупнее — лента выше
     const maxReel = Math.max(120, total - others - 6);
     if (ch + pad * 2 > maxReel) { ch = maxReel - pad * 2; cw = ch / 1.22; }
     cw = Math.max(cw, 76); ch = cw * 1.22;

@@ -1016,7 +1016,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 container.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('#rulesModal') || e.target.closest('#adminModal') || e.target.closest('#gameOverModal') || e.target.closest('#rouletteModal') || e.target.closest('#startScreen') || e.target.closest('#homeBtn') || e.target.closest('#musicToggleBtn')) return;
+    if (e.target.closest('#rulesModal') || e.target.closest('#adminModal') || e.target.closest('#gameOverModal') || e.target.closest('#rouletteModal') || e.target.closest('#winModal') || e.target.closest('#resetConfirmModal') || e.target.closest('#startScreen') || e.target.closest('#homeBtn') || e.target.closest('#musicToggleBtn')) return;
     if (!gameActive && !waitingFirstTap) return;
     handleTap(e);
 });

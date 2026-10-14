@@ -67,7 +67,7 @@
 
 /* ===== Рулетка: крупнее, колесо синхронно с лентой, оранжевая стрелка ===== */
 #rwWindow .rwp-rotor { animation: none !important; transition: none; }
-#rwWindow .rwp-emblem { width: clamp(96px, 30vw, 124px); height: clamp(96px, 30vw, 124px); margin-bottom: 14px; }
+#rwWindow .rwp-emblem { width: clamp(106px, 34vw, 138px); height: clamp(106px, 34vw, 138px); margin-bottom: 14px; }
 #rwWindow .rwp-emblem-glow { inset: -24px; }
 #rwWindow .rwp-core-ico { font-size: clamp(22px, 7vw, 28px); }
 #rwWindow .rwp-pin { top: -4px; border-left-width: 10px; border-right-width: 10px; border-top: 17px solid #FE7600; filter: drop-shadow(0 0 6px rgba(254, 118, 0, 0.85)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); }
@@ -104,10 +104,18 @@
 .attempt-banner .att-pill.hint-like span { font-size: calc(11px * var(--tb, 1)) !important; letter-spacing: 0.01em !important; }
 
 /* ===== Подсказки и таймеры — один размер (чуть крупнее прежнего), чтобы подсказка, улетая в таймер, не меняла размер ===== */
-.fly-label-tag, #buffBar .buff-tag { font-size: 11.5px !important; padding: 4px 7px !important; gap: 4px !important; border-radius: 10px !important; }
-.fly-label-tag i, #buffBar .buff-tag i { font-size: 11.5px !important; }
-.fly-label-tag svg, #buffBar .buff-tag svg { width: 13px !important; height: 13px !important; }
+.fly-label-tag, #buffBar .buff-tag { font-size: 10.5px !important; padding: 3.5px 6.5px !important; gap: 3.5px !important; border-radius: 10px !important; }
+.fly-label-tag i, #buffBar .buff-tag i { font-size: 10.5px !important; }
+.fly-label-tag svg, #buffBar .buff-tag svg { width: 12px !important; height: 12px !important; }
 
 /* окно «Победа» первые 3 с не реагирует на тапы — кнопки чуть приглушены */
 #winModal.win-locked button { opacity: 0.55; transition: opacity 0.3s; }
 #winModal button { transition: opacity 0.3s; }
+
+/* окно с карточками рулетки: бегущий градиентный контур (как у окна «Победа») вместо сплошной рамки */
+#rwWindow .rw-reel::after { box-shadow: none !important; }
+#rwReel .rw-reel-ring { position: absolute; inset: 0; z-index: 6; pointer-events: none; border-radius: 16px; padding: 3px;
+    background: conic-gradient(from var(--rwp-ang), rgba(254, 118, 0, 0.15) 0deg, rgba(254, 118, 0, 1) 40deg, rgba(255, 197, 61, 1) 70deg, rgba(254, 118, 0, 0.15) 115deg, rgba(168, 85, 247, 0.25) 185deg, rgba(196, 140, 255, 1) 245deg, rgba(168, 85, 247, 0.25) 300deg, rgba(254, 118, 0, 0.15) 360deg),
+        linear-gradient(rgb(76, 29, 149), rgb(76, 29, 149));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+    animation: rwpRing 5s linear infinite; filter: drop-shadow(0 0 4px rgba(254, 118, 0, 0.55)); }

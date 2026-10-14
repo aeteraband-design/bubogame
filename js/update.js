@@ -515,13 +515,14 @@ function sendTagToTimer(tag, key) {
         tag.style.width = w1 + 'px';
         setTimeout(() => {
             showTimer();
+            tag.style.animation = 'none';   // анимация появления держит opacity:1 и мешала спрятать подсказку — два свечения складывались
             if (alreadyShown) {   // эффект продлён: подсказка «вливается» в таймер, таймер вздрагивает
                 tag.style.transition = 'opacity 0.18s ease, transform 0.18s ease'; tag.style.transform = 'scale(0.7)'; tag.style.opacity = '0';
                 const t2 = document.querySelector(`#buffBar [data-key="${key}"]`);
                 if (t2) { t2.classList.remove('buff-pulse'); void t2.offsetWidth; t2.classList.add('buff-pulse'); setTimeout(() => t2.classList.remove('buff-pulse'), 500); }
             } else {
                 // подсказка уже выглядит ровно как таймер — убираем её сразу, без плавного угасания поверх таймера (иначе два свечения складываются и «мигают»)
-                tag.style.transition = 'none'; tag.style.opacity = '0';
+                tag.style.transition = 'none'; tag.style.opacity = '0'; tag.style.visibility = 'hidden';
             }
             setTimeout(() => { if (tag.parentNode) tag.parentNode.removeChild(tag); }, 230);
         }, 570);
