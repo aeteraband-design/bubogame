@@ -263,16 +263,20 @@ function rwShowResult(key) {
     const cw = rw.cw || 110, ch = rw.ch || 134;
     card.style.width = cw + 'px'; card.style.height = ch + 'px';
     stage.appendChild(card);
+    const pop = rwEl('rwResCard');
+    const big = Math.min(1.5, ((pop ? pop.clientWidth : win.clientWidth) * 0.5) / cw, (win.clientHeight * 0.36) / ch);
+    stage.style.height = Math.round(ch * big + 16) + 'px';
+    const shine = document.createElement('div'); shine.className = 'rw-shine'; card.appendChild(shine);
     const sr = stage.getBoundingClientRect();
     let fromX = 0, fromY = 0;
     if (src) { const r = src.getBoundingClientRect(); fromX = (r.left + r.width / 2 - (sr.left + sr.width / 2)) / z; fromY = (r.top + r.height / 2 - (sr.top + sr.height / 2)) / z; }
-    const big = Math.min(1.75, (win.clientWidth * 0.52) / cw);
-    card.animate([
-        { transform: `translate(${fromX}px,${fromY}px) rotateY(0deg) scale(1)`, opacity: 1 },
-        { transform: `translate(${fromX * 0.4}px,${fromY * 0.4 - 30}px) rotateY(200deg) scale(${(1 + big) / 2})`, opacity: 1, offset: 0.55 },
-        { transform: `translate(0,0) rotateY(360deg) scale(${big * 1.08})`, offset: 0.85 },
+    const anim = card.animate([
+        { transform: `translate(${fromX}px,${fromY}px) rotateY(0deg) scale(1)` },
+        { transform: `translate(${fromX * 0.4}px,${fromY * 0.4 - 24}px) rotateY(200deg) scale(${(1 + big) / 2})`, offset: 0.55 },
+        { transform: `translate(0,0) rotateY(360deg) scale(${big * 1.06})`, offset: 0.85 },
         { transform: `translate(0,0) rotateY(360deg) scale(${big})` }
-    ], { duration: 1100, easing: 'cubic-bezier(.3,.7,.3,1)', fill: 'forwards' });
+    ], { duration: 1000, easing: 'cubic-bezier(.3,.7,.3,1)', fill: 'forwards' });
+    anim.onfinish = () => card.classList.add('rw-glow');
     setTimeout(() => {
         // блёстки вокруг карточки
         for (let i = 0; i < 26; i++) {
@@ -288,7 +292,7 @@ function rwShowResult(key) {
             ], { duration: 1200 + Math.random() * 900, delay: Math.random() * 300, easing: 'cubic-bezier(.2,.7,.4,1)', fill: 'forwards' });
         }
         try { AudioFX.playLevelUp(); } catch (e) {}
-    }, 850);
+    }, 800);
     Haptics.powerup();
 }
 function claimRoulettePrize() {
