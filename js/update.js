@@ -337,7 +337,7 @@ function update() {
                 updateStaminaHUD();
                 Haptics.powerup();
                 it.pendingFX = { target: 'stamina', text: `Макс. силы ${ADMIN_CFG.infiniteSec}с`, color: '#00F0FF', icon: 'svg-infinite-feather' };
-                if (maxUp) setTimeout(() => showGoldBanner('+20% к макс. силе', 'fa-feather-pointed', '#00F0FF'), 900);   // уведомление внизу, над панелью тем
+                if (maxUp) setTimeout(() => showGoldBanner('+20% к макс. силе', 'fa-feather-pointed', '#38BDF8'), 900);   // уведомление внизу, над панелью тем
             } else if (it.type === 'drink') {
                 AudioFX.playCollect(true);
                 stamina = Math.min(maxStamina, stamina + 10.0);
@@ -363,7 +363,7 @@ function update() {
                     heartOverflow++;
                     if (heartOverflow >= 2) {
                         heartOverflow = 0; maxLives += 1; lives = maxLives;
-                        setTimeout(() => { try { AudioFX.playMaxStaminaChime(); } catch (e) {} showGoldBanner('Макс. жизнь +1', 'fa-heart-circle-plus', '#F43F5E'); }, 900);
+                        setTimeout(() => { try { AudioFX.playMaxStaminaChime(); } catch (e) {} showGoldBanner('Макс. жизнь +1', 'fa-heart', '#EF4444'); }, 900);
                     }
                 } else {
                     lives = Math.min(maxLives, Math.round((lives + 1.0) * 10) / 10);
