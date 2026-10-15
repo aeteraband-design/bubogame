@@ -4,12 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BUBOGAME</title>
+<meta name="theme-color" content="#140326">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>html,body{margin:0;height:100%;background:#07010f}</style>
 </head>
 <body>
 <script>
 // Постоянная ссылка: этот файл не меняется. Номер версии берём из version.json (без кэша) и грузим актуальный app.html.
 (function () {
+    if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {} }   // чтобы игру можно было установить как приложение
     fetch('version.json?t=' + Date.now(), { cache: 'no-store' })
         .then(function (r) { if (!r.ok) throw new Error('version ' + r.status); return r.json(); })
         .then(function (j) {
