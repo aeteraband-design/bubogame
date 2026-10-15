@@ -12,21 +12,21 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.11.21">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.11.22">
     <!-- Onest: локальные файлы -->
-    <link rel="stylesheet" href="css/fonts.css?v=0.11.21">
+    <link rel="stylesheet" href="css/fonts.css?v=0.11.22">
 
-    <script src="js/music-hold.js?v=0.11.21"></script>
-<script src="js/tailwind-config.js?v=0.11.21"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.11.21">
+    <script src="js/music-hold.js?v=0.11.22"></script>
+<script src="js/tailwind-config.js?v=0.11.22"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.11.22">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.11.21" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.11.22" id="adminStyle">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.11.21">
-    <link rel="stylesheet" href="css/features.css?v=0.11.21">
+    <link rel="stylesheet" href="css/boot.css?v=0.11.22">
+    <link rel="stylesheet" href="css/features.css?v=0.11.22">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -42,9 +42,9 @@
             </div>
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
-        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.11.21</div>
+        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.11.22</div>
     </div>
-    <script src="js/boot.js?v=0.11.21"></script>
+    <script src="js/boot.js?v=0.11.22"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 backdrop-blur-[7px] overflow-y-auto custom-scroll">
@@ -618,8 +618,8 @@
     <!-- ПОБЕДА (100% прохождение): промежуточное окно перед рулеткой, в стиле окна рулетки -->
     <div id="winModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 bg-[#140326]/30 backdrop-blur-[7px] text-center">
         <div id="winWindow" class="glass-panel w-full max-w-sm rounded-3xl flex flex-col shadow-2xl relative">
-            <div class="win-deco" aria-hidden="true"><div class="win-blob b1"></div><div class="win-blob b2"></div><div class="win-rays"></div></div>
-            <div class="win-emblem"><div class="win-emblem-glow"></div><div class="win-cup"><i class="fa-solid fa-trophy"></i></div><i class="win-st s1">✦</i><i class="win-st s2">✦</i><i class="win-st s3">✦</i></div>
+            <div class="win-deco" aria-hidden="true"><div class="win-blob b1"></div><div class="win-blob b2"></div></div>
+            <div class="win-emblem"><div class="win-rays" aria-hidden="true"></div><div class="win-emblem-glow"></div><div class="win-cup"><i class="fa-solid fa-trophy"></i></div><i class="win-st s1">✦</i><i class="win-st s2">✦</i><i class="win-st s3">✦</i></div>
             <div class="win-title">ПОБЕДА!</div>
             <p class="win-text">Поздравляем! Вы прошли игру на <b>100%</b> и собрали <b>все темы</b>! Ваша попытка не потрачена, а весь текущий прогресс и собранные бонусы сохранены. Вы можете испытать удачу в рулетке или сразу начать новую игру с этой же попытки!</p>
             <div class="rw-spins-pill has"><div class="rw-spins-ring"><i class="fa-solid fa-dice"></i></div><div class="rw-spins-text"><span>Попыток вращения:</span><b id="vicSpinsText">1</b></div></div>
@@ -709,18 +709,18 @@
         </div>
     </div>
 
-    <script src="js/audio.js?v=0.11.21"></script>
-    <script src="js/game-core.js?v=0.11.21"></script>
-    <script src="js/owl.js?v=0.11.21"></script>
-    <script src="js/hud.js?v=0.11.21"></script>
-    <script src="js/scenery.js?v=0.11.21"></script>
-    <script src="js/items.js?v=0.11.21"></script>
-    <script src="js/update.js?v=0.11.21"></script>
-    <script src="js/render.js?v=0.11.21"></script>
-    <script src="js/wheel.js?v=0.11.21"></script>
-    <script src="js/ui.js?v=0.11.21"></script>
-<script src="js/admin.js?v=0.11.21"></script>
-<script src="js/text-measure.js?v=0.11.21"></script>
-<script src="js/fullscreen.js?v=0.11.21"></script>
+    <script src="js/audio.js?v=0.11.22"></script>
+    <script src="js/game-core.js?v=0.11.22"></script>
+    <script src="js/owl.js?v=0.11.22"></script>
+    <script src="js/hud.js?v=0.11.22"></script>
+    <script src="js/scenery.js?v=0.11.22"></script>
+    <script src="js/items.js?v=0.11.22"></script>
+    <script src="js/update.js?v=0.11.22"></script>
+    <script src="js/render.js?v=0.11.22"></script>
+    <script src="js/wheel.js?v=0.11.22"></script>
+    <script src="js/ui.js?v=0.11.22"></script>
+<script src="js/admin.js?v=0.11.22"></script>
+<script src="js/text-measure.js?v=0.11.22"></script>
+<script src="js/fullscreen.js?v=0.11.22"></script>
 </body>
 </html>

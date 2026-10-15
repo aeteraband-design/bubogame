@@ -279,6 +279,12 @@ function rwShowResult(key) {
     const big = Math.min(1.5, ((pop ? pop.clientWidth : win.clientWidth) * 0.5) / cw, (win.clientHeight * 0.36) / ch);
     stage.style.height = Math.round(ch * big + 16) + 'px';
     const shine = document.createElement('div'); shine.className = 'rw-shine'; card.appendChild(shine);
+    // ореол и подсветка контура — отдельные слои под карточкой (у карточки тень запрещена стилями ленты)
+    const cwv = parseFloat(cs ? cs.getPropertyValue('--cw') : '') || cw;
+    const halo = document.createElement('div'); halo.className = 'rw-res-halo'; halo.style.setProperty('--c', p.col);
+    const glow = document.createElement('div'); glow.className = 'rw-res-glow';
+    glow.style.cssText = `--c:${p.col};width:${(cw * big).toFixed(1)}px;height:${(ch * big).toFixed(1)}px;border-radius:${(cwv * 0.12 * big).toFixed(1)}px`;
+    stage.insertBefore(glow, card); stage.insertBefore(halo, glow);
     const sr = stage.getBoundingClientRect();
     let fromX = 0, fromY = 0;
     if (src) { const r = src.getBoundingClientRect(); fromX = (r.left + r.width / 2 - (sr.left + sr.width / 2)) / z; fromY = (r.top + r.height / 2 - (sr.top + sr.height / 2)) / z; }
@@ -288,7 +294,16 @@ function rwShowResult(key) {
         { transform: `translate(0,0) rotateY(360deg) scale(${big * 1.06})`, offset: 0.85 },
         { transform: `translate(0,0) rotateY(360deg) scale(${big})` }
     ], { duration: 1000, easing: 'cubic-bezier(.3,.7,.3,1)', fill: 'forwards' });
-    anim.onfinish = () => card.classList.add('rw-glow');
+    anim.onfinish = () => {
+        card.classList.add('rw-glow'); halo.classList.add('on'); glow.classList.add('on');
+        // мерцающие звёздочки вокруг карточки
+        const hw = cw * big / 2, hh = ch * big / 2;
+        [[-1.25, -0.7], [1.22, -0.45], [-1.3, 0.35], [1.3, 0.7], [-0.6, -1.12], [0.75, -1.1], [-0.8, 1.12], [0.55, 1.14]].forEach(([kx, ky], i) => {
+            const t = document.createElement('i'); t.className = 'rw-res-tw';
+            t.style.cssText = `margin-left:${(kx * hw).toFixed(1)}px;margin-top:${(ky * hh).toFixed(1)}px;--s:${(8 + (i % 3) * 3)}px;--d:${(i * 0.31).toFixed(2)}s`;
+            stage.appendChild(t);
+        });
+    };
     setTimeout(() => {
         // блёстки вокруг карточки
         for (let i = 0; i < 26; i++) {
@@ -365,7 +380,7 @@ function initRouletteUI() {
                 const on = !card.classList.contains('rw-flipped');
                 card.classList.toggle('rw-flipped', on);
                 clearTimeout(card._flipT);
-                if (on) card._flipT = setTimeout(() => card.classList.remove('rw-flipped'), 4000);   // сама свернётся через 4 с
+                if (on) { card._flipT = setTimeout(() => card.classList.remove('rw-flipped'), 4000); rw.resumeAt = performance.now() + 4600; }   // сама свернётся через 4 с; лента пока стоит
             }
         });
         vp.addEventListener('pointerdown', () => { rw.lastInteract = performance.now(); });
