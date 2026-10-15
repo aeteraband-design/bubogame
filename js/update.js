@@ -504,6 +504,13 @@ function sendTagToTimer(tag, key) {
     };
     const startFly = () => {
         if (tag.__holdUntil && performance.now() < tag.__holdUntil) { setTimeout(startFly, tag.__holdUntil - performance.now()); return; }   // ждём, пока верхняя подсказка начнёт таять
+        if (!tag.__lifted && tag.parentNode) {   // сначала, как обычная подсказка, чуть поднимается вверх — и уже потом летит к таймеру
+            tag.__lifted = true;
+            const zz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fx')) || 1;
+            tag.style.transition = 'top 0.2s ease-out';
+            tag.style.top = (parseFloat(tag.style.top) - 12 * zz) + 'px';
+            setTimeout(startFly, 200); return;
+        }
         const el = document.querySelector(`#buffBar [data-key="${key}"]`);
         if (!el || !tag.parentNode) { if (tag.parentNode) tag.parentNode.removeChild(tag); showTimer(); return; }
         // превращение в надпись таймера: фиксируем ширину, меняем содержимое и плавно растягиваем до новой

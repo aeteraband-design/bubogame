@@ -297,7 +297,7 @@ function layoutHintTag(tag, sx, sy, isBonus, toTimer, targetType) {
     try {
         const cr = container.getBoundingClientRect(), bot = top + totalH;
         const tags = [...document.querySelectorAll('#buffBar .buff-tag')].map(t => t.getBoundingClientRect()).filter(r => r.width > 0);
-        const hit = tags.filter(r => (r.left - cr.left) < left + maxW + 4 && (r.bottom - cr.top) > top - 4 && (r.top - cr.top) < bot + 4);
+        const hit = tags.filter(r => (r.left - cr.left) < left + maxW + 4 && (r.right - cr.left) > left - 4 && (r.bottom - cr.top) > top - 4 && (r.top - cr.top) < bot + 4);
         if (hit.length) left = Math.min(left, Math.min(...hit.map(r => r.left - cr.left)) - 6 - maxW);
         left = Math.max(8, Math.min(left, cw - maxW - 8));
     } catch (e) {}

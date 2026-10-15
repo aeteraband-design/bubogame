@@ -127,7 +127,7 @@ const owl = {
             const shzOn = typeof shazamBusy === 'function' && shazamBusy();
             const boostOn = (typeof speedBoostTime !== 'undefined' && (speedBoostTime > 0 || shzOn) && gameActive && (currentFreezeFactor || 0) < 0.05) ? (shzOn ? 1.3 : 1) : 0;   // в ШАЗАМе поза ускорения ещё сильнее   // замёрзшая сова застывает как есть: без наклона, взгляда и клюва «вперёд»
             const boostLean = Math.min(0.42, 0.13 + 0.035 * lvl);   // устремление вперёд: сильнее на высоких уровнях, но без перебора
-            const leanT = gameActive ? (0.11 * lvl + boostLean * boostOn + (shz ? 0.24 * shz.k : 0)) * (1 - (currentFreezeFactor || 0)) : 0;   // в ШАЗАМе сова сильнее устремлена вперёд
+            const leanT = gameActive ? (0.11 * lvl + boostLean * Math.min(1, boostOn) + (shz ? 0.07 * shz.k : 0)) * (1 - (currentFreezeFactor || 0)) : 0;   // в ШАЗАМе сова сильнее устремлена вперёд
             this.lean = (this.lean || 0) + (leanT - (this.lean || 0)) * Math.min(1, 0.05 * dtMult);
             this.boostK = (this.boostK || 0) + (boostOn - (this.boostK || 0)) * Math.min(1, 0.07 * dtMult);
         }
@@ -137,6 +137,7 @@ const owl = {
         const OWL_CX = -1.1, OWL_CY = 2.7;
         ctx.translate(OWL_CX * bodyScale, OWL_CY * bodyScale);
         ctx.rotate(this.rotation + this.lean);
+        if (shz && shz.k > 0.01) ctx.scale(1 + 0.05 * shz.k, 1 - 0.1 * shz.k);   // в ШАЗАМе тело чуть приплюснуто и вытянуто вперёд — живот не вываливается
         ctx.translate(-OWL_CX * bodyScale, -OWL_CY * bodyScale);
         ctx.scale(bodyScale, bodyScale);
 
