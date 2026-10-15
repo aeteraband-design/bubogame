@@ -543,9 +543,9 @@ function fitTopHud() {
     const hud = document.getElementById('topHud'); if (!hud) return;
     const left = hud.firstElementChild, right = hud.lastElementChild; if (!left || !right || left === right) return;
     if (!left.offsetWidth) return;
-    // размер зависит только от ширины панели, числа сердец и разрядности счёта (ширина счёта зарезервирована на 3 цифры),
-    // поэтому при сборе вопросов ничего не прыгает: пересчёт только когда меняется один из этих параметров
-    const digits = Math.max(3, String(document.getElementById('scoreVal')?.textContent || '').length);
+    // размер зависит только от ширины панели, числа сердец и разрядности счёта 
+    // пересчёт только когда меняется один из этих параметров — внутри одного разряда ничего не прыгает
+    const digits = String(document.getElementById('scoreVal')?.textContent || '').length;
     const key = hud.offsetWidth + '|' + Math.ceil(maxLives) + '|' + digits;
     if (key === _hudFitKey) return;
     let k = 1; hud.style.setProperty('--hk', '1');
