@@ -58,7 +58,7 @@ function rwPickPrize() {
     for (const k of keys) { if (r < RL_PRIZES[k].w) return k; r -= RL_PRIZES[k].w; }
     return keys[0];
 }
-function rwCardInner(k) { const p = RL_PRIZES[k]; return `<div class="rw-top"><i class="fa-solid ${p.icon} rw-ico"></i></div><div class="rw-bot"><div class="rw-name">${p.card}</div><div class="rw-sub">${p.cardSub}</div></div><div class="rw-back"><div class="rw-back-txt">${RL_BACK[k] || p.desc}</div></div>`; }
+function rwCardInner(k) { const p = RL_PRIZES[k]; return `<div class="rw-flip"><div class="rw-front"><div class="rw-top"><i class="fa-solid ${p.icon} rw-ico"></i></div><div class="rw-bot"><div class="rw-name">${p.card}</div><div class="rw-sub">${p.cardSub}</div></div></div><div class="rw-back-face"><div class="rw-back-txt">${RL_BACK[k] || p.desc}</div></div></div>`; }
 function rwCardStyle(k) { const c = RL_PRIZES[k].col; return `--c:${c};--ct1:${c}D0;--ct2:${c}80;--ct3:${c}4D;--ct4:${c}26;--tt:${c}33;--tb:${c}52;--tt2:${c}4D;--tb2:${c}70;`; }
 function rwLayout() {
     const reel = rwEl('rwReel'), win = rwEl('rwWindow'); if (!reel || !win) return;
@@ -361,16 +361,14 @@ function initRouletteUI() {
         vp.addEventListener('click', (e) => {
             rw.lastInteract = performance.now();
             const card = e.target && e.target.closest && e.target.closest('.rw-card');
-            if (card && !rw.spinning && !rw.prize) card.classList.toggle('rw-flipped');
+            if (card && !rw.spinning && !rw.prize) {
+                const on = !card.classList.contains('rw-flipped');
+                card.classList.toggle('rw-flipped', on);
+                clearTimeout(card._flipT);
+                if (on) card._flipT = setTimeout(() => card.classList.remove('rw-flipped'), 4000);   // сама свернётся через 4 с
+            }
         });
         vp.addEventListener('pointerdown', () => { rw.lastInteract = performance.now(); });
-        // если никто не трогает рулетку 5 с — центральная карточка сама переворачивается и показывает описание
-        setInterval(() => {
-            const m = rwEl('rouletteModal');
-            if (!m || m.classList.contains('hidden') || rw.spinning || rw.prize || rw.drag) return;
-            const f = rw.focusEl;
-            if (f && !f.classList.contains('rw-flipped') && performance.now() - (rw.lastInteract || 0) > 5000) { f.classList.add('rw-flipped'); }
-        }, 400);
     }
     rwUpdateUI();
 }
