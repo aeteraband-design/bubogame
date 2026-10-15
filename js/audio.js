@@ -1012,6 +1012,58 @@ const AudioFX = {
             this.fadeTo(1, 1.0);
         }
     },
+    // ===== Погода: ветер и дождь (постоянный фон, громкость по силе грозы) и далёкий гром =====
+    _weatherInit() {
+        if (this._wx || !this.ctx) return;
+        const ctx = this.ctx;
+        this._ensureWindBuf();
+        const out = this.sfxGain || ctx.destination;
+        // дождь: шум без низов и верхов — ровный шелест
+        const rs = ctx.createBufferSource(); rs.buffer = this._windBuf; rs.loop = true;
+        const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1100;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6500;
+        const rg = ctx.createGain(); rg.gain.value = 0;
+        rs.connect(hp); hp.connect(lp); lp.connect(rg); rg.connect(out);
+        // ветер: низкая полоса шума, частота и громкость медленно «гуляют» — порывы
+        const ws = ctx.createBufferSource(); ws.buffer = this._windBuf; ws.loop = true;
+        const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 360; bp.Q.value = 0.9;
+        const gust = ctx.createGain(); gust.gain.value = 0.75;
+        const wg = ctx.createGain(); wg.gain.value = 0;
+        ws.connect(bp); bp.connect(gust); gust.connect(wg); wg.connect(out);
+        const l1 = ctx.createOscillator(); l1.frequency.value = 0.11; const l1g = ctx.createGain(); l1g.gain.value = 140; l1.connect(l1g); l1g.connect(bp.frequency);
+        const l2 = ctx.createOscillator(); l2.frequency.value = 0.17; const l2g = ctx.createGain(); l2g.gain.value = 0.25; l2.connect(l2g); l2g.connect(gust.gain);
+        const t = ctx.currentTime;
+        rs.start(t, 0.37); ws.start(t, 2.1); l1.start(t); l2.start(t);
+        this._wx = { rg, wg };
+    },
+    weatherSet(rain, wind) {
+        if (!this.ctx) return;
+        if (!this._wx) { if (rain <= 0 && wind <= 0) return; this._weatherInit(); }
+        const t = this.ctx.currentTime;
+        this._wx.rg.gain.setTargetAtTime(rain * 0.09, t, 0.8);
+        this._wx.wg.gain.setTargetAtTime(wind * 0.11, t, 1.0);
+    },
+    // далёкий гром: глухой низкий раскат с запаздыванием после вспышки (чем дальше, тем позже и тише)
+    playThunder(delay, power) {
+        const ctx = this.ctx; if (!ctx) return;
+        this._ensureWindBuf();
+        const t = ctx.currentTime + delay, v = 0.32 * power, dur = 3.6 + Math.random() * 1.2;
+        const src = ctx.createBufferSource(); src.buffer = this._windBuf; src.loop = true;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.6;
+        lp.frequency.setValueAtTime(260 + 160 * power, t); lp.frequency.exponentialRampToValueAtTime(70, t + dur);
+        const lp2 = ctx.createBiquadFilter(); lp2.type = 'lowpass'; lp2.frequency.value = 420;
+        const g = ctx.createGain(), G = g.gain;
+        G.setValueAtTime(0.0001, t);
+        G.linearRampToValueAtTime(v * 0.6, t + 0.18);
+        G.linearRampToValueAtTime(v, t + 0.42);
+        G.linearRampToValueAtTime(v * 0.5, t + 0.8);
+        G.linearRampToValueAtTime(v * 0.85, t + 1.1);
+        G.linearRampToValueAtTime(v * 0.38, t + 1.7);
+        G.linearRampToValueAtTime(v * 0.5, t + 2.1);
+        G.exponentialRampToValueAtTime(0.001, t + dur); G.linearRampToValueAtTime(0, t + dur + 0.02);
+        src.connect(lp); lp.connect(lp2); lp2.connect(g); g.connect(this.sfxGain || ctx.destination);
+        src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.05);
+    },
     // ===== ШАЗАМ: электрические звуки =====
     // треск: полоса шума, громкость которой скачет случайными ступеньками (как искрение)
     _crackle(t, dur, f0, f1, vol, q) {

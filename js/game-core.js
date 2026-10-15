@@ -22,6 +22,7 @@ const ADMIN_DEFAULTS = {
     drunkEvery: 6, drunkSec: 10,         // напитков до опьянения / его длительность
     freezeEvery: 3, freezeSec: 10,       // порций мороженого до заморозки / её длительность
     shieldSec: 10, slowSec: 10, speedSec: 10, compressSec: 10, infiniteSec: 10,   // длительности бонусов
+    stormTest: 0,                        // проверка погоды: 0 — по сложности, 10–100 — сила грозы вручную
     shazamEvery: 4,                      // какое по счёту взятое ускорение включает ШАЗАМ
     feathersForMax: 6,                   // волшебных перьев до роста максимума сил
     attempts: 2, questionsPerAttempt: 100,
@@ -30,7 +31,7 @@ const ADMIN_DEFAULTS = {
 const ADMIN_SPEC = {   // [минимум, максимум, шаг]
     overeatEvery: [1, 20, 1], overeatSec: [3, 60, 1], drunkEvery: [1, 30, 1], drunkSec: [3, 60, 1], freezeEvery: [1, 20, 1], freezeSec: [3, 60, 1],
     shieldSec: [3, 60, 1], slowSec: [3, 60, 1], speedSec: [3, 60, 1], compressSec: [3, 60, 1], infiniteSec: [3, 60, 1],
-    shazamEvery: [1, 20, 1], feathersForMax: [1, 30, 1], attempts: [1, 9, 1], questionsPerAttempt: [10, 500, 10], maxLives: [5, 6, 1], theme: [1, 99, 1]
+    stormTest: [0, 100, 10], shazamEvery: [1, 20, 1], feathersForMax: [1, 30, 1], attempts: [1, 9, 1], questionsPerAttempt: [10, 500, 10], maxLives: [5, 6, 1], theme: [1, 99, 1]
 };
 function normalizeAdminCfg(raw) {
     const out = JSON.parse(JSON.stringify(ADMIN_DEFAULTS));

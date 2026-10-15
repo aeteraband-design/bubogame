@@ -559,6 +559,7 @@ function drawMoon() {
         }, moonSprite);
     }
     ctx.drawImage(moonSprite, moonX - half, moonY - half, half * 2, half * 2);
+    window.__moonPos = [moonX - half, moonY - half, half * 2];   // для грозы: луна поверх туч
 }
 
 let cloudSprite = null;
@@ -585,8 +586,10 @@ function drawClouds() {
         cl.x -= cl.speed * dtMult;
         if (cl.x < -140) cl.x = width + 80;
         const k = cl.scale;
+        ctx.globalAlpha = 1 - 0.65 * stormSmooth(0, 1, Math.max(0, stormIntensity));   // в грозу лёгкие сиреневые облачка тают в тучах
         ctx.drawImage(cloudSprite, cl.x - CLOUD_OX * k, cl.y - CLOUD_OY * k, CLOUD_W * k, CLOUD_H * k);
     });
+    ctx.globalAlpha = 1;
 }
 
 // ===== Ускорение: из-за спины совы вылетают маленькие звёздочки =====

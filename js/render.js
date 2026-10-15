@@ -108,14 +108,8 @@ function drawParticleList(list) {
 function drawScene() {
     ctx.clearRect(0, 0, width, height);
     
-    if (!window.__skyGrad || window.__skyGradH !== height) {
-        const g = ctx.createLinearGradient(0, 0, 0, height);
-        g.addColorStop(0, '#1E0842');
-        g.addColorStop(0.5, '#140326');
-        g.addColorStop(1, '#090117');
-        window.__skyGrad = g; window.__skyGradH = height;
-    }
-    ctx.fillStyle = window.__skyGrad; ctx.fillRect(0, 0, width, height);
+    stormUpdate();
+    ctx.fillStyle = stormSkyGrad(); ctx.fillRect(0, 0, width, height);   // ночное небо; в грозу плавно уходит в сине-серые тона
 
     if (!window.__starGlow) {
         const c = document.createElement('canvas'); c.width = c.height = 32;
@@ -126,10 +120,12 @@ function drawScene() {
         window.__starGlow = c;
     }
     ctx.fillStyle = '#FFFFFF';
+    const starK = stormStarK();   // в грозу звёзды почти скрыты тучами
     for (const st of stars) {
         st.alpha += (Math.random() - 0.5) * 0.05 * dtMult;
         st.alpha = Math.max(0.2, Math.min(0.95, st.alpha));
-        ctx.globalAlpha = st.alpha;
+        ctx.globalAlpha = st.alpha * starK;
+        if (starK < 0.05) continue;
         if (st.size > 1.2 / WORLD_K && gfxQuality !== 'low') ctx.drawImage(window.__starGlow, st.x - 6 / WORLD_K, st.y - 6 / WORLD_K, 12 / WORLD_K, 12 / WORLD_K);   // свечение крупных звёзд — как на загрузке
         ctx.beginPath(); ctx.arc(st.x, st.y, st.size, 0, Math.PI * 2); ctx.fill();
     }
@@ -139,13 +135,16 @@ function drawScene() {
     const isStartMenuOpen = !dsEl.s.classList.contains('hidden');
     const isGameOverOpen = !dsEl.g.classList.contains('hidden');
     drawMoon();
+    stormDrawBack();      // гроза: тучи, зарницы и разряды — позади домов
     if (!gameActive) cityOffset += 0.5 * dtMult;   // в меню и на паузе город медленно плывёт
     drawCity();
+    stormDrawCityLight(); // мокрые крыши и подсветка фасадов вспышкой
     shazamDrawStreaks();
 
     if (gameActive || waitingFirstTap || isStartMenuOpen || isGameOverOpen) {
         drawClouds();
     }
+    stormDrawRain(false);   // дождь — за трубами и совой
 
     // камера: при эффекте ускорения чуть отдаляется (видно больше), при замедлении чуть приближается; от уровня сложности не зависит
     {
@@ -158,6 +157,7 @@ function drawScene() {
     const owlBehind = shazamOwlBehind();   // ШАЗАМ: сова пролетает за трубой — рисуем её до труб
     if (owlBehind) { drawSpeedStars(); owl.draw(); }
     pipes.forEach(drawPipe);
+    stormDrawPipeSplashes();
 
     items.forEach(it => {
         if ((it.type === 'stamina' || it.type === 'infinite') && it.trail && it.trail.length > 2) {
@@ -201,6 +201,7 @@ function drawScene() {
     shazamDrawFx();
     drawIceShards();
     ctx.restore();   // конец слоя камеры
+    stormDrawRain(true);    // редкие ближние капли поверх всего
 }
 
 let perfAvgDt = 16.7, perfSlowFrames = 0, perfCooldown = 240;
