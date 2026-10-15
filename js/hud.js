@@ -74,7 +74,7 @@ function showEffectHint(kind, text, color, icon, durMs) {
     showFxBanner(`<div class="glass-panel rounded-2xl px-4 py-3 flex items-center space-x-3" style="border-color:${color};box-shadow:0 0 26px ${color}88">
         <i class="fa-solid ${icon}" style="color:${color};font-size:24px"></i>
         <div class="text-left">
-            <div class="font-black" style="font-size:11.5px;letter-spacing:.16em;color:${color}">${kind}</div>
+            <div class="font-black" style="font-size:10px;letter-spacing:.16em;color:${color}">${kind}</div>
             <div class="text-white font-black" style="font-size:13px;line-height:1.25">${text}</div>
         </div></div>`, durMs || 2200);
 }
@@ -316,7 +316,7 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
         startY = ((startY - height / 2) * cz + height / 2) * SK;
     }
 
-    let iconHtml = `<i class="fa-solid ${faIcon} text-[11.5px]" style="color:${color}"></i>`;
+    let iconHtml = `<i class="fa-solid ${faIcon} text-[10px]" style="color:${color}"></i>`;
     if (faIcon === 'svg-compress') {
         iconHtml = `<svg class="w-3 h-3 inline-block shrink-0" viewBox="0 0 24 24" fill=\"none\" stroke=\"${color}\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5\"/></svg>`;
     } else if (faIcon === 'svg-infinite-feather') {
@@ -325,7 +325,7 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
 
     if (textLabel) {
         const tag = document.createElement('div');
-        tag.className = 'fly-label-tag text-[11.5px] font-black py-0.5 rounded-xl shadow-lg flex items-center border';
+        tag.className = 'fly-label-tag text-[10px] font-black py-0.5 rounded-xl shadow-lg flex items-center border';
         tag.style.padding = '3px 6px 3px 6px';
         tag.style.gap = '3px';
         tag.style.left = `${Math.min(container.clientWidth - 95, Math.max(12, startX - 45))}px`;
@@ -401,9 +401,9 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
     if (faIcon === 'svg-compress') {
         orb.innerHTML = `<svg class="w-2.5 h-2.5 inline-block shrink-0" viewBox="0 0 24 24" fill=\"none\" stroke=\"${color}\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5\"/></svg>`;
     } else if (faIcon === 'svg-infinite-feather') {
-        orb.innerHTML = `<div class="relative flex items-center justify-center w-3 h-3" style="color:${color}"><i class="fa-solid fa-feather-pointed text-[11.5px]"></i><span class="absolute -bottom-1 -right-1 text-[11.5px] font-black" style="color:#fff;text-shadow:0 0 3px #000">∞</span></div>`;
+        orb.innerHTML = `<div class="relative flex items-center justify-center w-3 h-3" style="color:${color}"><i class="fa-solid fa-feather-pointed text-[9px]"></i><span class="absolute -bottom-1 -right-1 text-[7px] font-black" style="color:#fff;text-shadow:0 0 3px #000">∞</span></div>`;
     } else {
-        orb.innerHTML = `<i class="fa-solid ${faIcon} text-[11.5px]" style="color:${color}"></i>`;
+        orb.innerHTML = `<i class="fa-solid ${faIcon} text-[9px]" style="color:${color}"></i>`;
     }
     
     fxLayer.appendChild(orb);
