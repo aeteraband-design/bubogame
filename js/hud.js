@@ -8,6 +8,8 @@ let clouds = [
     { x: 440, y: 180, scale: 0.8, speed: 0.32, alpha: 0.32 }
 ];
 
+let __uiFx = 0;
+function uiFx() { return __uiFx || (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fx')) || 1); }
 function resize() {
     const cw = container.clientWidth, ch = container.clientHeight;
     // На телефоне масштаб 1, на большом экране мир увеличивается по высоте окна
@@ -20,7 +22,9 @@ function resize() {
     document.documentElement.style.setProperty('--ui-zoom', String(phone ? pz.toFixed(3) : Math.max(1, Math.min(1.8, viewScale * 1.12)).toFixed(3)));
     // единый множитель для подсказок, летящих шариков и таймеров: один и тот же на любом телефоне и в любом браузере
     // (раньше подсказки масштабировались transform, а таймеры — zoom, и браузеры по-разному считали их размер и позицию)
-    document.documentElement.style.setProperty('--fx', String(Math.min(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom')) || 1, 1.25).toFixed(3)));
+    const fxStr = String(Math.min(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom')) || 1, 1.25).toFixed(3));
+    document.documentElement.style.setProperty('--fx', fxStr);
+    __uiFx = parseFloat(fxStr) || 1;   // запоминаем — чтобы не спрашивать у браузера стили на каждом подборе
     // нижняя плашка с темами на ПК растёт меньше, чтобы не занимать много места
     document.documentElement.style.setProperty('--hud-zoom', String(phone ? pz.toFixed(3) : Math.max(1, Math.min(1.3, viewScale)).toFixed(3)));
     width = cw / (viewScale * WORLD_K);
@@ -98,7 +102,7 @@ function triggerMaxStaminaUp() {
     Haptics.powerup();
     const badge = document.getElementById('staminaBadge');
     if (badge) {
-        badge.classList.remove('stamina-up'); void badge.offsetWidth; badge.classList.add('stamina-up');
+        restartClass(badge, ['stamina-up'], 'stamina-up');
         setTimeout(() => badge.classList.remove('stamina-up'), 1300);
     }
     StorageManager.save();
@@ -147,10 +151,10 @@ function triggerDiffLevelUp(info) {
         const card = document.getElementById(dId(prefix, 'Card'));
         if (!card || card.offsetParent === null) return;
         card.style.setProperty('--lvl', info.color);
-        card.classList.remove('levelup'); void card.offsetWidth; card.classList.add('levelup');
+        restartClass(card, ['levelup'], 'levelup');
         setTimeout(() => card.classList.remove('levelup'), 1500);
         const label = document.getElementById(dId(prefix, 'Label'));
-        if (label) { label.classList.remove('diff-label-pop'); void label.offsetWidth; label.classList.add('diff-label-pop'); }
+        if (label) restartClass(label, ['diff-label-pop'], 'diff-label-pop');
         const bar = card.querySelector('.diff-bar');
         if (bar) {
             for (let i = 0; i < 2; i++) {
@@ -241,7 +245,7 @@ function spawnCollectionStarBurst(x, y, color) {
 // и не улетает далеко вправо. Если подсказок сразу несколько (подобрали + возник эффект / попытка / рост силы) — они встают столбиком,
 // с таким же зазором, как у таймеров: снизу то, что подобрали, над ним — следствие (бонус).
 function layoutHintTag(tag, sx, sy, isBonus, toTimer, targetType) {
-    const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fx')) || 1;
+    const z = uiFx();
     const cw = container.clientWidth, nowT = performance.now();
     const gap = 4 * z;
     // в столбик берём и подсказки, которые ещё стоят на месте перед полётом в таймер (первые 0,45 с)
@@ -319,6 +323,32 @@ function sentenceCase(s) {
     const i = s.search(/[a-zа-яё]/i);
     return i < 0 ? s : s.slice(0, i) + s[i].toUpperCase() + s.slice(i + 1);
 }
+function findArrivalTarget(targetType) {
+    let targetElem = null;
+    let isThemeBadge = false;
+
+    // Шарик летит ровно в иконку: вопрос — в значок вопроса, силы/перо — в значок пера, жизнь — в то сердечко, которое наполняется,
+    // тема — в значок этой темы в нижней панели
+    if (targetType === 'score') {
+        targetElem = document.getElementById('scoreIcon') || document.getElementById('scoreBadge');
+    } else if (targetType === 'stamina') {
+        targetElem = document.getElementById('staminaIcon') || document.getElementById('staminaBadge');
+    } else if (targetType === 'heart') {
+        const cont = document.getElementById('livesContainer');
+        if (cont && cont.classList.contains('lives-compact')) targetElem = cont.querySelector('.lives-compact-heart') || cont;
+        else if (cont && cont.children.length) {
+            const hi = Math.max(0, Math.min(cont.children.length - 1, Math.ceil(lives - 0.001) - 1));   // 3-я жизнь → 3-е сердце, 6-я → 6-е
+            targetElem = cont.children[hi];
+        } else targetElem = cont;
+    } else if (targetType === 'attempts') {
+        targetElem = document.getElementById('attemptsVal');
+    } else if (['music', 'logic', 'kino', 'series', 'cartoons', 'fun'].includes(targetType)) {
+        targetElem = document.getElementById(`icon_${targetType}`) || document.getElementById(`badge-${targetType}`);
+        isThemeBadge = true;
+    }
+
+    return { targetElem, isThemeBadge };
+}
 function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIcon, isBonus) {
     if (!fxLayer) return;
     // координаты мира → экран: учитываем увеличение мира и приближение камеры, иначе подсказка и шарик появляются левее и выше нужного места
@@ -328,6 +358,12 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
         startY = ((startY - height / 2) * cz + height / 2) * SK;
     }
 
+    // цель шарика меряем В САМОМ НАЧАЛЕ, до того как добавим подсказку: тогда браузеру не приходится пересчитывать вёрстку лишний раз
+    let preTarget = null;
+    if (targetType && targetType !== 'other') {
+        preTarget = findArrivalTarget(targetType);
+        if (preTarget.targetElem) { preTarget.targetRect = preTarget.targetElem.getBoundingClientRect(); preTarget.containerRect = container.getBoundingClientRect(); }
+    }
     let iconHtml = `<i class="fa-solid ${faIcon} text-[10px]" style="color:${color}"></i>`;
     if (faIcon === 'svg-compress') {
         iconHtml = `<svg class="w-3 h-3 inline-block shrink-0" viewBox="0 0 24 24" fill=\"none\" stroke=\"${color}\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5\"/></svg>`;
@@ -367,35 +403,12 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
 
     if (targetType === 'other' || !targetType) return;
 
-    let targetElem = null;
-    let isThemeBadge = false;
-
-    // Шарик летит ровно в иконку: вопрос — в значок вопроса, силы/перо — в значок пера, жизнь — в то сердечко, которое наполняется,
-    // тема — в значок этой темы в нижней панели
-    if (targetType === 'score') {
-        targetElem = document.getElementById('scoreIcon') || document.getElementById('scoreBadge');
-    } else if (targetType === 'stamina') {
-        targetElem = document.getElementById('staminaIcon') || document.getElementById('staminaBadge');
-    } else if (targetType === 'heart') {
-        const cont = document.getElementById('livesContainer');
-        if (cont && cont.classList.contains('lives-compact')) targetElem = cont.querySelector('.lives-compact-heart') || cont;
-        else if (cont && cont.children.length) {
-            const hi = Math.max(0, Math.min(cont.children.length - 1, Math.ceil(lives - 0.001) - 1));   // 3-я жизнь → 3-е сердце, 6-я → 6-е
-            targetElem = cont.children[hi];
-        } else targetElem = cont;
-    } else if (targetType === 'attempts') {
-        targetElem = document.getElementById('attemptsVal');
-    } else if (['music', 'logic', 'kino', 'series', 'cartoons', 'fun'].includes(targetType)) {
-        targetElem = document.getElementById(`icon_${targetType}`) || document.getElementById(`badge-${targetType}`);
-        isThemeBadge = true;
-    }
-
+    const { targetElem, isThemeBadge } = preTarget || { targetElem: null, isThemeBadge: false };
     if (!targetElem) return;
     const hudG = hudGroup(targetType);
     hudPending[hudG] = (hudPending[hudG] || 0) + 1;
 
-    const targetRect = targetElem.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
+    const { targetRect, containerRect } = preTarget;
 
     const endX = targetRect.left - containerRect.left + targetRect.width / 2;
     const endY = targetRect.top - containerRect.top + targetRect.height / 2;
@@ -422,8 +435,7 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
 
     // полёт — через transform, и каждый кадр шарик целится в ТЕКУЩУЮ позицию иконки (она может сдвигаться или пульсировать),
     // поэтому прилетает точно в иконку. Смещение переводим в систему самого шарика (его масштаб scale: --ui-zoom).
-    const orbSc = getComputedStyle(orb).scale;
-    const orbZ = (orbSc && orbSc !== 'none' && parseFloat(orbSc)) || 1;
+    const orbZ = uiFx();   // шарик масштабирован тем же множителем (scale: var(--fx)) — без запроса стилей у браузера
     orb.style.transition = 'none';   // полёт ведём сами по кадрам — без CSS-перехода
     const flyT0 = performance.now(), FLY_MS = 480;   // полёт заканчивается чуть раньше момента прилёта (500 мс), когда обновляется панель
     let flyStop = false;
@@ -459,7 +471,7 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
         if (targetType === 'attempts') {
             // попытка долетела: цифра обновляется и «подпрыгивает»
             updateAttemptsHUD();
-            targetElem.classList.remove('attempt-pop'); void targetElem.offsetWidth; targetElem.classList.add('attempt-pop');
+            restartClass(targetElem, ['attempt-pop'], 'attempt-pop');
         } else if (isThemeBadge) {
             triggerBadgeAnimation(targetType);
         } else {
@@ -495,10 +507,8 @@ function triggerTopHUDPop(type) {
     }
 
     if (elem) {
-        elem.classList.remove('hud-pop-score', 'hud-pop-stamina', 'hud-pop-heart');
-        void elem.offsetWidth;
-        elem.classList.add(animClass);
-        setTimeout(() => { elem.classList.remove(animClass); }, 450);
+        restartClass(elem, ['hud-pop-score', 'hud-pop-stamina', 'hud-pop-heart'], animClass);
+        setTimeout(() => { elem.classList.remove(animClass); }, 480);
     }
 
     if (iconElem) {
@@ -607,18 +617,19 @@ function renderLivesHUD() {
         }
         window.__livesShown = lives;
     }
-    cont.innerHTML = '';
+    let html = '';   // собираем строку и вставляем один раз (раньше сердечки вставлялись по одному — страница перестраивалась 5–6 раз)
     for (let i = 1; i <= Math.ceil(maxLives); i++) {
         const rem = Math.round((lives - (i - 1)) * 10) / 10;
         if (rem >= 1.0) {
-            cont.innerHTML += '<div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-red-500 text-[12px] filter drop-shadow-[0_0_4px_rgba(239,68,68,0.9)]"></i></div>';
+            html += '<div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-red-500 text-[12px] filter drop-shadow-[0_0_4px_rgba(239,68,68,0.9)]"></i></div>';
         } else if (rem >= 0.5) {
             // половинка: маленькое красное сердце ровно вдвое меньше целого
-            cont.innerHTML += '<div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-red-500 half-heart filter drop-shadow-[0_0_3px_rgba(239,68,68,0.9)]"></i></div>';
+            html += '<div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-red-500 half-heart filter drop-shadow-[0_0_3px_rgba(239,68,68,0.9)]"></i></div>';
         } else {
-            cont.innerHTML += '<div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-[12px]" style="color: rgba(196, 167, 255, 0.2)"></i></div>';
+            html += '<div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-[12px]" style="color: rgba(196, 167, 255, 0.2)"></i></div>';
         }
     }
+    if (cont.innerHTML !== html) cont.innerHTML = html;
 }
 
 function renderStaminaHUD() {
@@ -663,15 +674,13 @@ function triggerBadgeAnimation(key, isLoss) {
     const icon = document.getElementById(`icon_${key}`);
     const col = (CATEGORIES[key] && CATEGORIES[key].color) || '#FE7600';
     if (el) {
-        el.classList.remove('badge-animate', 'badge-pop', 'badge-loss');
-        void el.offsetWidth;
         if (isLoss) {
-            el.classList.add('badge-loss');
-            setTimeout(() => el.classList.remove('badge-loss'), 650);
+            restartClass(el, ['badge-animate', 'badge-pop', 'badge-loss'], 'badge-loss');
+            setTimeout(() => el.classList.remove('badge-loss'), 680);
         } else {
             el.style.setProperty('--pop-col', col);
-            el.classList.add('badge-pop');
-            setTimeout(() => el.classList.remove('badge-pop'), 450);
+            restartClass(el, ['badge-animate', 'badge-pop', 'badge-loss'], 'badge-pop');
+            setTimeout(() => el.classList.remove('badge-pop'), 480);
         }
     }
     if (icon && !isLoss) {
@@ -699,9 +708,7 @@ function triggerBadgeAnimation(key, isLoss) {
     }
     const menuEl = document.getElementById(`menu-badge-${key}`);
     if (menuEl) {
-        menuEl.classList.remove('badge-animate');
-        void menuEl.offsetWidth;
-        menuEl.classList.add('badge-animate');
+        restartClass(menuEl, ['badge-animate'], 'badge-animate');
     }
 }
 
@@ -1060,10 +1067,12 @@ container.addEventListener('pointerdown', (e) => {
 });
 
 // Луна и облака не меняются — рисуем их один раз в готовые картинки и дальше просто ставим на экран
-function makeSprite(w, h, k, paint) {
-    const c = document.createElement('canvas');
-    c.width = Math.ceil(w * k); c.height = Math.ceil(h * k);
+function makeSprite(w, h, k, paint, reuse) {
+    const W = Math.ceil(w * k), H = Math.ceil(h * k);
+    const c = (reuse && reuse.width === W && reuse.height === H) ? reuse : document.createElement('canvas');
+    if (c !== reuse) { c.width = W; c.height = H; }
     const g = c.getContext('2d');
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
     g.scale(k, k);
     paint(g);
     return c;

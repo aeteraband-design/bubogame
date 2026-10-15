@@ -331,6 +331,7 @@ function startOrResumeFlight() {
     updateHUDAll(); StorageManager.save();
     gameActive = false;
     waitingFirstTap = true;
+    if (typeof prewarmTokenSprites === 'function') prewarmTokenSprites();   // заготовки значков — заранее, пока сова ждёт первого касания
 }
 
 // Новый поход после победы: все темы собираются заново, а вопросы и оставшиеся попытки сохраняются

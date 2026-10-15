@@ -67,7 +67,14 @@ function drawSecretStar(c, t, ph) {
 // Тень (shadowBlur) — самая тяжёлая операция на телефоне. Неподвижные части жетона (тёмный круг с кольцом и светом, иконка со свечением)
 // рисуются один раз в отдельный маленький холст в разрешении экрана и дальше просто копируются — вид тот же, а нагрузки в разы меньше.
 const __tokSpr = new Map();
-function tokDevScale(c, div) { if (!c.getTransform) return Math.max(0.5, Math.round(viewScale * renderScale * WORLD_K / (div || 1) * 10) / 10); const m = c.getTransform(); return Math.max(0.5, Math.round(Math.hypot(m.a, m.b) / (div || 1) * 10) / 10); }   // сколько пикселей экрана в одной единице мира (с шагом 0,1)
+// Разрешение заготовки: пикселей экрана на единицу мира. Берём базовый масштаб игры (без плавного приближения камеры при ускорении/замедлении),
+// иначе во время наезда камеры заготовки пересоздавались бы на каждом шаге. Если холст рисуется совсем в другом масштабе (предпросмотр в админке) — берём его.
+function tokDevScale(c, div, mul) {
+    const base = viewScale * renderScale * WORLD_K * (mul || 1);
+    let s = base;
+    if (c.getTransform) { const m = c.getTransform(), t = Math.hypot(m.a, m.b) / (div || 1); if (t > base * 1.3 || t < base / 1.3) s = t; }
+    return Math.max(0.5, Math.round(s * 10) / 10);
+}
 function tokSprite(key, R, hw, hh, paint) {
     let s = __tokSpr.get(key);
     if (s) return s;
@@ -114,7 +121,7 @@ function drawToken(item) {
         ctx.globalAlpha = 1;
     }
     const sBlur = isThematic ? 19 : 11, lowQ = gfxQuality === 'low';
-    const devR = tokDevScale(ctx, currentScale);   // разрешение заготовки — как у жетона обычного размера
+    const devR = tokDevScale(ctx, currentScale, 1.05);   // разрешение заготовки — как у жетона обычного размера
     {
         // тёмный круг с цветным кольцом и светом вокруг — из заготовки
         const rad = item.radius, pad = rad + (lowQ ? 2 : (sBlur * 2 + 4) / devR), bk = lowQ ? -devR : devR;
@@ -293,4 +300,18 @@ function drawToken(item) {
     ctx.restore();   // конец группы покачивания
     if (item.type === 'speedup' && typeof shazamNextCharged === 'function' && shazamNextCharged()) shazamDrawItemCharge(item);   // это ускорение включит ШАЗАМ
     ctx.restore();
+}
+
+// Заготовки всех жетонов и шляпки трубы готовим заранее (при старте полёта), чтобы первый подбор/появление нового значка не создавал их посреди игры
+function prewarmTokenSprites() {
+    try {
+        if (!tokFontsReady()) return;
+        const c = document.createElement('canvas'); c.width = c.height = 4;
+        const g = c.getContext('2d'), main = ctx, fr = frame, S = viewScale * renderScale * WORLD_K;
+        ctx = g;
+        try {
+            for (const t of Object.keys(CATEGORIES)) { g.setTransform(S, 0, 0, S, 0, 0); drawToken({ x: 0, y: 0, radius: 26, type: t, floatOffset: 0, scale: 1 }); }
+            g.setTransform(S, 0, 0, S, 0, 0); drawPipe({ x: 0, width: 86, top: 200, gap: 220, bottom: 200 });
+        } finally { ctx = main; frame = fr; }
+    } catch (e) {}
 }

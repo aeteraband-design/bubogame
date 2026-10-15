@@ -464,7 +464,7 @@ const buffRefreshed = {};
 function pulseBuff(key) {
     const t = document.querySelector(`#buffBar [data-key="${key}"]`);
     if (!t) return;
-    t.classList.remove('buff-pulse'); void t.offsetWidth; t.classList.add('buff-pulse');
+    restartClass(t, ['buff-pulse'], 'buff-pulse');
     setTimeout(() => t.classList.remove('buff-pulse'), 520);
 }
 // есть ли у какого-то подобранного предмета ещё не показанная подсказка для этого таймера
@@ -506,7 +506,7 @@ function sendTagToTimer(tag, key) {
         if (tag.__holdUntil && performance.now() < tag.__holdUntil) { setTimeout(startFly, tag.__holdUntil - performance.now()); return; }   // ждём, пока верхняя подсказка начнёт таять
         if (!tag.__lifted && tag.parentNode) {   // сначала, как обычная подсказка, чуть поднимается вверх — и уже потом летит к таймеру
             tag.__lifted = true;
-            const zz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fx')) || 1;
+            const zz = uiFx();
             tag.style.transition = 'top 0.2s ease-out';
             tag.style.top = (parseFloat(tag.style.top) - 12 * zz) + 'px';
             setTimeout(startFly, 200); return;
@@ -531,7 +531,7 @@ function sendTagToTimer(tag, key) {
             if (alreadyShown) {   // эффект продлён: подсказка «вливается» в таймер, таймер вздрагивает
                 tag.style.transition = 'opacity 0.18s ease, transform 0.18s ease'; tag.style.transform = 'scale(0.7)'; tag.style.opacity = '0';
                 const t2 = document.querySelector(`#buffBar [data-key="${key}"]`);
-                if (t2) { t2.classList.remove('buff-pulse'); void t2.offsetWidth; t2.classList.add('buff-pulse'); setTimeout(() => t2.classList.remove('buff-pulse'), 500); }
+                if (t2) { restartClass(t2, ['buff-pulse'], 'buff-pulse'); setTimeout(() => t2.classList.remove('buff-pulse'), 500); }
             } else {
                 // подсказка уже выглядит ровно как таймер — убираем её сразу, без плавного угасания поверх таймера (иначе два свечения складываются и «мигают»)
                 tag.style.transition = 'none'; tag.style.opacity = '0'; tag.style.visibility = 'hidden';
@@ -642,9 +642,23 @@ function makeBuffEl(b) {
     return el;
 }
 function renderBuffBar(bar, list) {
-    const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fx')) || 1;   // панель таймеров масштабируется transform: scale(--fx)
+    const z = uiFx();   // панель таймеров масштабируется transform: scale(--fx)
     const els = new Map();
     [...bar.children].forEach(el => { if (!el.dataset.leaving) els.set(el.dataset.key, el); });
+    // те же таймеры в том же порядке — меняются только секунды: обновляем текст и ничего не меряем и не переставляем
+    {
+        const cur = [...els.keys()];
+        if (cur.length === list.length && list.every((b, i) => b.key === cur[i])) {
+            list.forEach((b) => {
+                const el = els.get(b.key);
+                const txt = el.querySelector('.buff-txt'); const t = sentenceCase(b.text);
+                if (txt && txt.textContent !== t) txt.textContent = t;
+                const hidden = !!(buffArrive[b.key] && performance.now() < buffArrive[b.key]);
+                if (hidden) { el.style.transition = 'opacity 0.12s'; el.style.opacity = '0'; } else if (el.style.opacity === '0' && !buffArrive[b.key]) el.style.opacity = '1';
+            });
+            return;
+        }
+    }
     const before = new Map();
     els.forEach((el, k) => before.set(k, el.getBoundingClientRect().top));
     const keep = new Set(list.map(b => b.key));

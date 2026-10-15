@@ -69,6 +69,15 @@ function buildDiffBars() {
 }
 buildDiffBars();
 
+// Перезапуск CSS-анимации без принудительного пересчёта всей вёрстки (раньше: remove → offsetWidth → add, на каждом подборе).
+// Класс снимается сразу, а ставится через два кадра — анимация начинается на долю кадра позже, зато без подтормаживания.
+function restartClass(el, removeList, addCls) {
+    if (!el) return;
+    el.classList.remove(...removeList);
+    const tok = (el.__rcTok = (el.__rcTok || 0) + 1);
+    requestAnimationFrame(() => requestAnimationFrame(() => { if (el.__rcTok === tok) el.classList.add(addCls); }));
+}
+
 // ===== Отложенное обновление цифр на плашках =====
 // Игра засчитывает подбор сразу, а цифры на плашках меняются только когда долетит анимация.
 const HUD_THEME_KEYS = ['music', 'logic', 'kino', 'series', 'cartoons', 'fun'];
@@ -126,7 +135,7 @@ function flashAttemptsBadge() {
         setTimeout(() => {   // шарик долетел: плашка «ПОПЫТКИ» вспыхивает золотом, стрелка делает оборот, число переливается
             const ab = document.getElementById('attemptsBadge');
             if (ab) {
-                ab.classList.remove('attempts-up'); void ab.offsetWidth; ab.classList.add('attempts-up'); setTimeout(() => ab.classList.remove('attempts-up'), 1400);
+                restartClass(ab, ['attempts-up'], 'attempts-up'); setTimeout(() => ab.classList.remove('attempts-up'), 1400);
                 // свечение рисуем отдельно поверх всего интерфейса — его ничто не обрезает
                 try {
                     const layer = document.getElementById('hudFxLayer') || fxLayer, lr = layer.getBoundingClientRect(), r = ab.getBoundingClientRect();

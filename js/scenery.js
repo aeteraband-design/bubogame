@@ -501,7 +501,9 @@ function drawMoon() {
     const target = moonPhaseTarget();
     if (moonPhase < 0) moonPhase = target;
     else moonPhase += (target - moonPhase) * Math.min(1, 0.02 * dtMult);
-    if (!moonSprite || Math.abs(moonPhase - moonRendered) > 0.003) {
+    // луна перерисовывается, когда фаза заметно сдвинулась (шаг 0,007 — раньше 0,003: после каждой темы луна перерисовывалась 4–5 раз подряд,
+    // и каждая перерисовка с большим мягким свечением давала подёргивание). Холст луны используется повторно, новый не создаётся
+    if (!moonSprite || Math.abs(moonPhase - moonRendered) > 0.007 || (Math.abs(target - moonPhase) < 0.0005 && Math.abs(moonPhase - moonRendered) > 0.0005)) {
         moonRendered = moonPhase;
         const f = moonPhase;
         moonSprite = makeSprite(half * 2, half * 2, S, (c) => {
@@ -549,7 +551,7 @@ function drawMoon() {
             c.beginPath(); c.arc(mx + 14, my - 10, 5, 0, Math.PI * 2); c.fill();
             c.beginPath(); c.arc(mx - 8, my + 14, 4, 0, Math.PI * 2); c.fill();
             c.restore();
-        });
+        }, moonSprite);
     }
     ctx.drawImage(moonSprite, moonX - half, moonY - half, half * 2, half * 2);
 }

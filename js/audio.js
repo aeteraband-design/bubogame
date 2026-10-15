@@ -238,17 +238,22 @@ const AudioFX = {
 
     // Шумовой «свист» с плавным движением частоты — основа звуков ускорения, замедления и сжатия труб (идёт по шине эффектов, музыка ни при чём)
     _whoosh(t, dur, f0, f1, vol) {
-        const ctx = this.ctx, n = Math.floor(ctx.sampleRate * dur);
-        const buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
-        for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-        const src = ctx.createBufferSource(); src.buffer = buf;
+        const ctx = this.ctx;
+        // белый шум готовим один раз (3 с) и берём из него случайный кусок — раньше шум генерировался заново на каждый подбор
+        if (!this._whiteBuf || this._whiteBuf.sampleRate !== ctx.sampleRate) {
+            const wb = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 3), ctx.sampleRate), wd = wb.getChannelData(0);
+            for (let i = 0; i < wd.length; i++) wd[i] = Math.random() * 2 - 1;
+            this._whiteBuf = wb;
+        }
+        const src = ctx.createBufferSource(); src.buffer = this._whiteBuf;
+        const wOff = Math.random() * Math.max(0, 3 - dur - 0.05);
         const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.3;
         bp.frequency.setValueAtTime(f0, t); bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
         const g = ctx.createGain();
         g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + dur * 0.25);
         g.gain.exponentialRampToValueAtTime(0.001, t + dur); g.gain.linearRampToValueAtTime(0, t + dur + 0.01);
         src.connect(bp); bp.connect(g); g.connect(this.sfxGain || ctx.destination);
-        src.start(t); src.stop(t + dur + 0.02);
+        src.start(t, wOff); src.stop(t + dur + 0.02);
     },
     _glide(t, dur, f0, f1, vol, type) {
         const ctx = this.ctx, osc = ctx.createOscillator(), g = ctx.createGain();
