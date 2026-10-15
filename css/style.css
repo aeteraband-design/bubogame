@@ -208,7 +208,7 @@
         * { -webkit-tap-highlight-color: transparent; }
         .restart-big { padding: 16px 12px !important; font-size: 17px !important; border-radius: 18px !important; letter-spacing: .06em; color: #fff !important; }
         .restart-big i, .restart-big span { font-size: 17px !important; color: #fff !important; }
-        .collection-theme-label { font-size: var(--label-fs, 8px) !important; line-height: 1 !important; white-space: nowrap; }
+        .collection-theme-label { font-size: var(--label-fs, 11.5px) !important; line-height: 1 !important; white-space: nowrap; }
         .collection-badge-slot {
             padding-top: 7px;
             padding-bottom: 7px;
@@ -382,7 +382,7 @@
         .vic-medal-wrap .vic-medal i { font-size: 28px; }
         .vic-medal-wrap .vic-halo { width: 92px; height: 92px; margin: -46px 0 0 -46px; }
         .vic-medal-wrap .vic-orbit { width: 90px; height: 90px; margin: -45px 0 0 -45px; }
-        .vic-medal-wrap .vic-orbit span { font-size: 11px; }
+        .vic-medal-wrap .vic-orbit span { font-size: 11.5px; }
         .vic-medal-rays { position: absolute; left: 50%; top: 50%; width: 2200px; height: 2200px; margin: -1100px 0 0 -1100px; border-radius: 50%; pointer-events: none; z-index: -1;
             background: repeating-conic-gradient(rgba(150, 105, 255, 0.15) 0deg 11deg, transparent 11deg 30deg);
             -webkit-mask-image: radial-gradient(circle, #000 0, rgba(0, 0, 0, 0.6) 230px, transparent 560px); mask-image: radial-gradient(circle, #000 0, rgba(0, 0, 0, 0.6) 230px, transparent 560px);
@@ -465,8 +465,8 @@
         .att-pill { position: relative; display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 10px; white-space: nowrap;
             background: rgba(24, 8, 44, 0.93); border: 1.5px solid #FFD35A;
             box-shadow: 0 0 10px rgba(255, 200, 70, 0.6), 0 0 22px rgba(255, 170, 40, 0.3); }
-        .att-pill i { color: #FFD35A; font-size: 10px; }
-        .att-pill span { font-weight: 900; font-size: 9px; letter-spacing: 0.04em; color: #FFD35A; }
+        .att-pill i { color: #FFD35A; font-size: 11.5px; }
+        .att-pill span { font-weight: 900; font-size: 11.5px; letter-spacing: 0.04em; color: #FFD35A; }
         .att-flash { position: absolute; left: 50%; top: 50%; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; pointer-events: none;
             background: radial-gradient(circle, rgba(255, 240, 170, 0.9), rgba(255, 200, 70, 0) 65%); animation: attFlash 0.7s ease-out forwards; }
         @keyframes attFlash { 0% { opacity: 0; transform: scale(0.3); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
@@ -478,10 +478,10 @@
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.02)); border: 1px solid rgba(255, 255, 255, 0.14);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
             backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-        .rl-cap { display: flex; align-items: center; gap: 10px; padding: 0 16px 8px; font-size: 9px; letter-spacing: 0.3em; font-weight: 900; color: #c4a1ff; }
+        .rl-cap { display: flex; align-items: center; gap: 10px; padding: 0 16px 8px; font-size: 11.5px; letter-spacing: 0.3em; font-weight: 900; color: #c4a1ff; }
         .rl-cap::before, .rl-cap::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(196, 161, 255, 0.55)); }
         .rl-cap::after { transform: scaleX(-1); }
-        .rl-hint { padding: 8px 16px 0; font-size: 9px; font-weight: 600; color: rgba(196, 161, 255, 0.7); letter-spacing: 0.04em; }
+        .rl-hint { padding: 8px 16px 0; font-size: 11.5px; font-weight: 600; color: rgba(196, 161, 255, 0.7); letter-spacing: 0.04em; }
         /* карточки выплывают из темноты по краям окна */
         .rl-viewport { position: relative; padding: 20px 0; overflow: hidden;
             -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 20%, #000 80%, transparent 100%);
@@ -547,7 +547,7 @@
             font-size: 38px; color: var(--c); background: rgba(13, 2, 26, 0.9); box-shadow: 0 0 22px var(--c), inset 0 0 16px rgba(0, 0, 0, 0.5); }
         .rl-reveal-ico i { filter: drop-shadow(0 0 10px var(--c)); }
         .rl-reveal-ico::after { content: ''; position: absolute; inset: -9px; border-radius: 50%; border: 2px dashed var(--c); opacity: 0.7; animation: vicSpin 9s linear infinite; }
-        .rl-reveal-kicker { font-size: 9px; letter-spacing: 0.32em; font-weight: 900; color: #c4a1ff; }
+        .rl-reveal-kicker { font-size: 11.5px; letter-spacing: 0.32em; font-weight: 900; color: #c4a1ff; }
         .rl-reveal-title { margin-top: 5px; font-size: 21px; line-height: 1.1; font-weight: 900; color: var(--c); text-shadow: 0 0 12px var(--ca); }
         .rl-reveal-sub { margin-top: 4px; font-size: 14px; font-weight: 800; color: #fff; opacity: 0.8; }
         .rl-reveal-desc { margin: 14px 0 18px; font-size: 13px; line-height: 1.4; font-weight: 500; color: #d8c9f5; }
@@ -768,7 +768,7 @@
         .rl-viewport::after { background: linear-gradient(90deg, #0a0319 0, rgba(10, 3, 25, 0.55) 9%, rgba(10, 3, 25, 0) 26%, rgba(10, 3, 25, 0) 74%, rgba(10, 3, 25, 0.55) 91%, #0a0319 100%) !important; }
         @media (max-width: 900px), (pointer: coarse) { #victoryModal > .glass-panel::after, .rl-frame::before { animation: none !important; } }
         /* ===== Знак бесконечности у волшебного пера: на телефоне мельче, на компьютере крупнее ===== */
-        .inf-sign { font-size: 8px !important; }
+        .inf-sign { font-size: 11.5px !important; }
         @media (min-width: 900px) { .inf-sign { font-size: 11.5px !important; } }
         /* ===== Плитки тем, подсказки, рулетка: финальные подгонки ===== */
         .fly-label-tag, .flying-orb { scale: var(--fx, 1); }
@@ -790,19 +790,19 @@
         @media (max-width: 767px) { #bottomHud { zoom: var(--phone-zoom, 1); } }
         #tapToStartMsg > div { zoom: var(--phone-zoom, 1); }
         #bootLoader .bl-mid, #bootLoader .bl-go { zoom: var(--menu-zoom, 1); }
-        #topHud [class*="text-[10px]"] { font-size: calc(10px * var(--tb, 1)) !important; }
-        #topHud [class*="text-[11px]"] { font-size: calc(11px * var(--tb, 1)) !important; }
+        #topHud [class*="text-[11.5px]"] { font-size: calc(11.5px * var(--tb, 1)) !important; }
+        #topHud [class*="text-[11.5px]"] { font-size: calc(11.5px * var(--tb, 1)) !important; }
         #topHud [class*="text-[12px]"], #topHud .text-xs { font-size: calc(12px * var(--tb, 1)) !important; }
         #topHud [class*="text-[14px]"] { font-size: calc(14px * var(--tb, 1)) !important; }
-        #bottomHud [class*="text-[8px]"] { font-size: calc(8px * var(--tb, 1)) !important; }
+        #bottomHud [class*="text-[11.5px]"] { font-size: calc(11.5px * var(--tb, 1)) !important; }
         #bottomHud [class*="text-[12px]"] { font-size: calc(12px * var(--tb, 1)) !important; }
         #tapToStartMsg .text-xs { font-size: calc(12px * var(--tb, 1)) !important; }
         #tapToStartMsg .text-sm { font-size: calc(14px * var(--tb, 1)) !important; }
 
-        .attempt-banner .att-pill i { font-size: calc(10px * var(--tb, 1)); }
-        .attempt-banner .att-pill span { font-size: calc(9px * var(--tb, 1)); }
+        .attempt-banner .att-pill i { font-size: calc(11.5px * var(--tb, 1)); }
+        .attempt-banner .att-pill span { font-size: calc(11.5px * var(--tb, 1)); }
         /* Половинка жизни: красное сердечко ровно вдвое меньше целого, по центру пустого */
-        #livesContainer .half-heart { line-height: 1; font-size: calc(7px * var(--tb, 1)) !important; }   /* половинка чуть крупнее (+~17%) */
+        #livesContainer .half-heart { line-height: 1; font-size: calc(11.5px * var(--tb, 1)) !important; }   /* половинка чуть крупнее (+~17%) */
         #livesContainer > * + * { margin-left: 5px !important; }   /* сердечки: расстояние (5px) */
         #livesContainer { padding-left: 12px !important; padding-right: 12px !important; }   /* по бокам столько же воздуха, сколько сверху и снизу */
 
@@ -812,7 +812,7 @@
 .rw-note {
     padding: 8px 10px;
     border-radius: 12px;
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 700;
     color: rgb(255, 255, 255);
     text-align: center;
@@ -923,7 +923,7 @@
 }
 
 .rw-res-kicker {
-    font-size: 9px;
+    font-size: 11.5px;
     letter-spacing: 0.3em;
     font-weight: 900;
     color: rgb(196, 161, 255);
@@ -939,7 +939,7 @@
 
 .rw-res-sub {
     margin-top: 3px;
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 800;
     color: rgb(255, 255, 255);
     opacity: 0.8;
@@ -988,7 +988,7 @@
     height: 20px;
     padding: 0px 5px;
     border-radius: 10px;
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 900;
     color: rgb(255, 255, 255);
     background: rgb(254, 118, 0);
@@ -1064,7 +1064,7 @@
     z-index: 6;
     text-align: center;
     pointer-events: none;
-    font-size: 10px;
+    font-size: 11.5px;
     font-weight: 600;
 }
 
@@ -1211,7 +1211,7 @@
     right: -7px;
     min-width: 17px;
     height: 17px;
-    font-size: 10px;
+    font-size: 11.5px;
     padding: 0px 4px;
 }
 
@@ -1237,13 +1237,13 @@
 
 .rw-name {
     font-weight: 600 !important;
-    font-size: clamp(11px, calc(var(--cw, 120px) * 0.095), 17px) !important;
+    font-size: clamp(11.5px, calc(var(--cw, 120px) * 0.095), 17px) !important;
     letter-spacing: 0.02em !important;
 }
 
 .rw-sub {
     font-weight: 500 !important;
-    font-size: clamp(9px, calc(var(--cw, 120px) * 0.072), 13px) !important;
+    font-size: clamp(11.5px, calc(var(--cw, 120px) * 0.072), 13px) !important;
 }
 
 .rw-card.rw-win {
@@ -1427,7 +1427,7 @@
 
 .rw-hint {
     text-align: center;
-    font-size: 9.5px;
+    font-size: 11.5px;
     font-weight: 600;
     line-height: 1.1;
     color: rgba(196, 172, 235, 0.75);

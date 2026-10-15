@@ -615,7 +615,7 @@ function updateBuffHUD() {
 function makeBuffEl(b) {
     const el = document.createElement('div');
     el.dataset.key = b.key;
-    el.className = 'buff-tag text-[10px] font-black rounded-xl shadow-lg flex items-center';
+    el.className = 'buff-tag text-[11.5px] font-black rounded-xl shadow-lg flex items-center';
     el.style.cssText = `transition: opacity 0.2s; padding: 3px 6px 3px 6px; gap: 3px; background-color: rgba(20, 3, 38, 0.95); border: 1.5px solid ${b.color}; box-shadow: 0 0 12px ${b.color}88; color: ${b.color};`;
     el.innerHTML = `<span style="display:inline-flex;min-width:11px;height:14px;justify-content:center;align-items:center;flex-shrink:0">${b.svgIcon ? b.svgIcon : `<i class="fa-solid ${b.icon}" style="color: ${b.color};"></i>`}</span><span class="buff-txt" style="font-weight:900!important;">${sentenceCase(b.text)}</span>`;
     return el;
