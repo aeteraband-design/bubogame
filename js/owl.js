@@ -128,8 +128,13 @@ const owl = {
             const boostOn = (typeof speedBoostTime !== 'undefined' && (speedBoostTime > 0 || shzOn) && gameActive && (currentFreezeFactor || 0) < 0.05) ? (shzOn ? 1.3 : 1) : 0;   // в ШАЗАМе поза ускорения ещё сильнее   // замёрзшая сова застывает как есть: без наклона, взгляда и клюва «вперёд»
             const boostLean = Math.min(0.42, 0.13 + 0.035 * lvl);   // устремление вперёд: сильнее на высоких уровнях, но без перебора
             const leanT = gameActive ? (0.11 * lvl + boostLean * Math.min(1, boostOn) + (shz ? 0.07 * shz.k : 0)) * (1 - (currentFreezeFactor || 0)) : 0;   // в ШАЗАМе сова сильнее устремлена вперёд
-            this.lean = (this.lean || 0) + (leanT - (this.lean || 0)) * Math.min(1, 0.05 * dtMult);
-            this.boostK = (this.boostK || 0) + (boostOn - (this.boostK || 0)) * Math.min(1, 0.07 * dtMult);
+            // после ШАЗАМа сова выходит из сильного наклона медленно и плавно (около 1,5 с), а не «выпрямляется» рывком
+            if (this.__shzWas && !shzOn) this.shzRelax = 100;
+            this.__shzWas = shzOn;
+            if (this.shzRelax > 0) this.shzRelax -= dtMult;
+            const relax = this.shzRelax > 0 ? 0.022 : 0;
+            this.lean = (this.lean || 0) + (leanT - (this.lean || 0)) * Math.min(1, (relax && leanT < this.lean ? relax : 0.05) * dtMult);
+            this.boostK = (this.boostK || 0) + (boostOn - (this.boostK || 0)) * Math.min(1, (relax && boostOn < this.boostK ? relax : 0.07) * dtMult);
         }
         const bodyScale = 1.29 * (1 + 0.16 * easeFactor(currentOvereatFactor)) * (shz ? (1 - 0.2 * shz.depthBack + 0.06 * shz.depthFront) : 1);   // за трубой сова «отдаляется», перед трубой — чуть ближе   // сова немного меньше (было 1.36)
         // Визуальный центр совы (в единицах тела): по замеру рисунка (центр габаритов и центр «массы»). Вокруг него сова вращается,

@@ -278,7 +278,20 @@ function shazamTest() { if (speedBoostTime <= 0) { speedBoostTime = ADMIN_CFG.sp
 function shazamMagnet(it) {
     if (SHZ.state !== 'active' || it.collected) return;
     const dx = owl.x - it.x, dy = owl.y - it.y, d = Math.hypot(dx, dy);
-    if (d > 165 || it.x < owl.x - 30) { it.mag = 0; return; }   // притягивает, только когда сова подлетела поближе
+    if (it.x < owl.x - 30 || it.x > owl.x + width * 0.95) { it.mag = 0; return; }
+    if (d > 165) {
+        // значок уже виден, но ещё далеко: он стоит на месте, а от него к сове понемногу тянутся звёздочки — чем ближе, тем больше
+        it.mag = 0;
+        const near = Math.max(0, Math.min(1, 1 - (d - 165) / Math.max(60, width * 0.95 - 165)));
+        it.shzSpT = (it.shzSpT || 0) - dtMult;
+        if (it.shzSpT <= 0 && SHZ.sparks.length < 110) {
+            it.shzSpT = 14 - 10 * near + Math.random() * 4;
+            const side = (Math.random() - 0.5) * it.radius * 1.2, nx = -dy / d, ny = dx / d;
+            shazamAddSpark(it.x + nx * side, it.y + ny * side, dx / d, dy / d, 0.8 + 0.8 * near, 0.45 + 0.55 * near);
+        }
+        SHZ.magOn = Math.max(SHZ.magOn, near > 0.5 ? 3 : 0);
+        return;
+    }
     it.mag = Math.min(1, (it.mag || 0) + 0.035 * dtMult);
     const step = Math.min(d, (0.8 + 6.5 * it.mag * it.mag) * dtMult);   // разгоняется к сове плавно
     const mx = dx / (d || 1) * step, my = dy / (d || 1) * step;
@@ -294,10 +307,10 @@ function shazamMagnet(it) {
     }
     SHZ.magOn = 6;   // пока хоть что-то притягивается — вокруг совы тоже стягиваются искры
 }
-function shazamAddSpark(x, y, ux, uy, sp) {
-    SHZ.sparks.push({
+function shazamAddSpark(x, y, ux, uy, sp, al) {
+    SHZ.sparks.push({ a: al || 1,
         x, y, vx: ux * sp + (Math.random() - 0.5) * 0.8, vy: uy * sp + (Math.random() - 0.5) * 0.8,
-        s: 3 + Math.random() * 2.6, life: 1, rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.25,
+        s: 2 + Math.random() * 1.8, life: 1, rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.25,
         c: Math.random() < 0.55 ? '#FFF1D6' : '#FFB25C'
     });
 }
@@ -330,7 +343,7 @@ function shazamDrawSparks() {
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     for (const p of sp) {
         const k = p.life, tw = 0.75 + 0.25 * Math.sin(p.rot * 9), s = p.s * (0.5 + 0.5 * k) * tw, w = s * 0.22;
-        ctx.globalAlpha = Math.min(1, k * 2) * 0.95;
+        ctx.globalAlpha = Math.min(1, k * 2) * 0.95 * (p.a || 1);
         if (typeof tokenHalo === 'function') { const g = s * 2.6; ctx.globalAlpha *= 0.55; ctx.drawImage(tokenHalo('#FF8A1F'), p.x - g, p.y - g, g * 2, g * 2); ctx.globalAlpha /= 0.55; }
         ctx.fillStyle = p.c;
         const c = Math.cos(p.rot), si = Math.sin(p.rot);
