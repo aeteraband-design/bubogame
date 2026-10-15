@@ -28,7 +28,7 @@
 #bootLoader .bl-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }   /* подпись и проценты стоят на одной нижней линии */
 #bootLoader .bl-name { font-size: 20px; font-weight: 800; letter-spacing: 0.01em; color: #8f84b3; transition: color 0.4s; }
 #bootLoader .bl-name.done { color: #34D399; }
-#bootLoader .bl-pct { font-size: 52px; font-weight: 900; line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums;
+#bootLoader .bl-pct { font-size: 52px; font-weight: 900; line-height: 1; letter-spacing: -0.01em;
     background: linear-gradient(90deg, #FE7600 0%, #A855F7 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 #bootLoader .bl-bar { position: relative; height: 4px; width: 100%; margin-top: 14px; border-radius: 9999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
 #bootLoader .bl-mask { position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: 9999px; background: linear-gradient(90deg, #FE7600, #A855F7); box-shadow: 0 0 10px rgba(254, 118, 0, 0.6); }
