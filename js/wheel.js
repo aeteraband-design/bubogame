@@ -401,7 +401,7 @@ function openVictoryModal() {
     const m = rwEl('winModal'); if (!m) return;
     vicUpdate(); vicConfetti(true);
     // кнопки срабатывают не сразу: игрок ещё тапает по экрану после полёта и мог случайно нажать «Вращать рулетку»
-    m.__lockUntil = performance.now() + 3000;   // кнопки выглядят как обычно, но первые 3 с не нажимаются
+    m.__lockUntil = performance.now() + 1000;   // кнопки выглядят как обычно, но первую 1 с не нажимаются
     m.classList.remove('hidden');
     m.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 450, easing: 'ease-out' });
 }

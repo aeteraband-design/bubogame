@@ -904,9 +904,9 @@ function spawnPipe(startX) {
                 else if (r < 0.126) itemType = 'stamina';
                 else if (r < 0.62) itemType = 'question';
                 else if (r < 0.71) itemType = 'secret';
-                else if (r < 0.87 && (canSpawnFood || Math.random() < 0.25)) {
-                    // при полном запасе прилетают только сердца — ими прокачивается максимум жизней
-                    const hRoll = canSpawnFood ? Math.random() : 0;
+                else if (r < 0.87 && canSpawnFood) {
+                    // сердца и еда (лечат жизнь) — только пока жизней меньше максимума; при полном запасе на пути их нет совсем
+                    const hRoll = Math.random();
                     if (hRoll < 0.25) itemType = 'heart';
                     else if (hRoll < 0.50) itemType = 'pizza';
                     else if (hRoll < 0.75) itemType = 'burger';
