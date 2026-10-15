@@ -45,15 +45,15 @@ let MAX_ATTEMPTS = ADMIN_CFG.attempts; // сколько попыток в но�
 // Уровни сложности (шкала делится на 6 равных частей)
 const DIFF_LEVELS = [
     { name: 'СУПЕРЛАЙТ', color: '#22C55E', speedMult: 0.92, targetSqueeze: 0,    musicTempoMult: 0.95, negChance: 0.20 },
-    { name: 'ЛАЙТ',      color: '#84CC16', speedMult: 1.00, targetSqueeze: 7,    musicTempoMult: 1.00, negChance: 0.32 },
-    { name: 'МЕДИУМ',    color: '#FACC15', speedMult: 1.08, targetSqueeze: 14,    musicTempoMult: 1.08, negChance: 0.44 },
-    { name: 'МЕДИУМ+',   color: '#FB923C', speedMult: 1.16, targetSqueeze: 21,   musicTempoMult: 1.16, negChance: 0.56 },
-    { name: 'ХАРД',      color: '#EF4444', speedMult: 1.24, targetSqueeze: 24,   musicTempoMult: 1.24, negChance: 0.68 },
+    { name: 'ЛАЙТ',      color: '#84CC16', speedMult: 1.00, targetSqueeze: 5,    musicTempoMult: 1.00, negChance: 0.32 },
+    { name: 'МЕДИУМ',    color: '#FACC15', speedMult: 1.08, targetSqueeze: 11,    musicTempoMult: 1.08, negChance: 0.44 },
+    { name: 'МЕДИУМ+',   color: '#FB923C', speedMult: 1.16, targetSqueeze: 16,   musicTempoMult: 1.16, negChance: 0.56 },
+    { name: 'ХАРД',      color: '#EF4444', speedMult: 1.24, targetSqueeze: 22,   musicTempoMult: 1.24, negChance: 0.68 },
     { name: 'ХАРД+',     color: '#E11D48', speedMult: 1.32, targetSqueeze: 27,   musicTempoMult: 1.32, negChance: 0.80 }
 ];
 // Сжатие от сложности растёт постепенно, но на Хард и Хард+ дополнительное сжатие от полёта (до 32 → 24) чуть слабее,
 // чтобы проём при максимальном сжатии оставался проходимым для совы (радиус 25)
-function compressionMaxForLevel() { return getDifficultyIndex() >= 4 ? 24 : 32; }
+function compressionMaxForLevel() { return 32 - 1.6 * getDifficultyIndex(); }   // 32 → 24 плавно, по уровням
 // Цвет шкалы по мере заполнения: зелёный → салатовый → жёлтый → красный
 const DIFF_STOPS = [[0, [34, 197, 94]], [0.22, [34, 197, 94]], [0.52, [163, 230, 53]], [0.76, [251, 191, 36]], [1, [244, 63, 94]]];
 function dId(prefix, name) { return (prefix ? 'menuDiff' : 'diff') + name; }
@@ -297,7 +297,7 @@ function shieldBump(ang, power) {
 }
 let pipesSinceIceCream = 0;
 let pipesSinceTheme = 0;   // сколько труб прошло с последней темы
-let pipesSinceCompress = 99, pipesSinceShield = 99;   // сколько труб прошло с последнего сжатия и щита (чтобы они не сыпались подряд)
+let pipesSinceCompress = 99, pipesSinceShield = 99, pipesSinceSpeed = 99, pipesSinceSlow = 99;   // сколько труб прошло с последнего сжатия и щита (чтобы они не сыпались подряд)
 let lastThemeKey = '';     // какая тема была последней
 
 const CATEGORIES = {

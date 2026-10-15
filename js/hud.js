@@ -847,6 +847,8 @@ function spawnPipe(startX) {
     pipesSinceTheme++;
     pipesSinceCompress++;
     pipesSinceShield++;
+    pipesSinceSpeed++;
+    pipesSinceSlow++;
 
     if (stamina < 30) {
         const sRoll = Math.random();
@@ -879,48 +881,44 @@ function spawnPipe(startX) {
             pipesSinceTheme = 0;
             lastThemeKey = themeKey;
         } else {
-            // Обычные предметы (без тем)
-            const u = Math.random() * 0.64;
-            const roll = u < 0.32 ? u : u + 0.36;
-            // Сжатие: не раньше чем через 10 труб после прошлого, дальше — с вероятностью, которая падает от Суперлайта к Хард+ (но не до нуля)
-            const compressP = [0.07, 0.06, 0.05, 0.04, 0.03, 0.02][getDifficultyIndex()] || 0.02;
-            if (pipesSinceCompress >= 10 && Math.random() < compressP) {
-                itemType = 'compress';
-                lastCompressSpawnTime = frame;
-                pipesSinceCompress = 0;
-            }
-            else if (roll < 0.028) {
-                itemType = 'infinite';
-            }
-            else if (roll < 0.08) {
-                itemType = 'stamina';
-            }
-            else if (roll < 0.32) {
-                itemType = 'question';
-            }
-            else if (roll < 0.74) {
-                itemType = 'secret';
-            }
-            else if (roll < 0.84 && (canSpawnFood || Math.random() < 0.25)) {
-                // при полном запасе прилетают только сердца — ими прокачивается максимум жизней
-                const hRoll = canSpawnFood ? Math.random() : 0;
-                if (hRoll < 0.25) itemType = 'heart';
-                else if (hRoll < 0.50) itemType = 'pizza';
-                else if (hRoll < 0.75) itemType = 'burger';
-                else itemType = 'hotdog';
-            }
-            else if (roll < 0.92) {
-                // Щит реже и не подряд: между двумя щитами минимум 6 труб
-                const buffRoll = Math.random();
-                if (buffRoll < 0.30 && pipesSinceShield >= 6) { itemType = 'shield'; pipesSinceShield = 0; }
-                else if (buffRoll < 0.65) itemType = 'speedup';
-                else itemType = 'slowmo';
-            }
-            else {
-                const bRoll = Math.random();
-                if (bRoll < 0.40) itemType = 'drink';
-                else if (bRoll < 0.70) itemType = 'mocktail';
-                else itemType = 'icecream';
+            // Обычные предметы (без тем). Сжатие, ускорение, замедление и щит идут по своим счётчикам труб:
+            // между двумя одинаковыми проходит минимум несколько труб, а шанс на каждую трубу плавно падает от Суперлайта к Хард+ (но не до нуля)
+            const lv = getDifficultyIndex();
+            const pickLv = (arr) => arr[Math.min(arr.length - 1, lv)];
+            const specials = [
+                { t: 'compress', since: pipesSinceCompress, gap: 10, p: pickLv([0.06, 0.055, 0.05, 0.045, 0.04, 0.035]) },
+                { t: 'speedup', since: pipesSinceSpeed, gap: 6, p: pickLv([0.045, 0.04, 0.035, 0.03, 0.025, 0.02]) },
+                { t: 'slowmo', since: pipesSinceSlow, gap: 6, p: pickLv([0.035, 0.03, 0.025, 0.02, 0.018, 0.015]) },
+                { t: 'shield', since: pipesSinceShield, gap: 6, p: pickLv([0.035, 0.03, 0.025, 0.02, 0.018, 0.015]) }
+            ];
+            const hit = specials.find(s => s.since >= s.gap && Math.random() < s.p);
+            if (hit) {
+                itemType = hit.t;
+                if (hit.t === 'compress') { lastCompressSpawnTime = frame; pipesSinceCompress = 0; }
+                else if (hit.t === 'speedup') pipesSinceSpeed = 0;
+                else if (hit.t === 'slowmo') pipesSinceSlow = 0;
+                else pipesSinceShield = 0;
+            } else {
+                const r = Math.random();
+                if (r < 0.044) itemType = 'infinite';
+                else if (r < 0.126) itemType = 'stamina';
+                else if (r < 0.62) itemType = 'question';
+                else if (r < 0.71) itemType = 'secret';
+                else if (r < 0.87 && (canSpawnFood || Math.random() < 0.25)) {
+                    // при полном запасе прилетают только сердца — ими прокачивается максимум жизней
+                    const hRoll = canSpawnFood ? Math.random() : 0;
+                    if (hRoll < 0.25) itemType = 'heart';
+                    else if (hRoll < 0.50) itemType = 'pizza';
+                    else if (hRoll < 0.75) itemType = 'burger';
+                    else itemType = 'hotdog';
+                }
+                else if (r < 0.87) itemType = 'question';
+                else {
+                    const bRoll = Math.random();
+                    if (bRoll < 0.40) itemType = 'drink';
+                    else if (bRoll < 0.70) itemType = 'mocktail';
+                    else itemType = 'icecream';
+                }
             }
         }
     }
