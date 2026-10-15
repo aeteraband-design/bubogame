@@ -845,10 +845,6 @@ function spawnPipe(startX) {
     let itemType = 'question';
     const canSpawnFood = lives < maxLives;
     pipesSinceTheme++;
-    pipesSinceCompress++;
-    pipesSinceShield++;
-    pipesSinceSpeed++;
-    pipesSinceSlow++;
 
     if (stamina < 30) {
         const sRoll = Math.random();
@@ -883,21 +879,27 @@ function spawnPipe(startX) {
         } else {
             // Обычные предметы (без тем). Сжатие, ускорение, замедление и щит идут по своим счётчикам труб:
             // между двумя одинаковыми проходит минимум несколько труб, а шанс на каждую трубу плавно падает от Суперлайта к Хард+ (но не до нуля)
+            // Время между одинаковыми эффектами — в секундах игры (frame: 60 = 1 с): сжатие реже всего и не раньше
+            // чем через ~30–66 с (от Суперлайта к Хард+), ускорение/замедление/щит — через 14–44 с. После отсчёта шанс
+            // на каждую трубу небольшой, так что выпадает не ровно по таймеру, а «когда-нибудь после» — и подряд эффекты не идут.
             const lv = getDifficultyIndex();
             const pickLv = (arr) => arr[Math.min(arr.length - 1, lv)];
+            const sec = (s) => s * 60;
+            const SPECIAL_TYPES = ['compress', 'speedup', 'slowmo', 'shield'];
             const specials = [
-                { t: 'compress', since: pipesSinceCompress, gap: 10, p: pickLv([0.06, 0.055, 0.05, 0.045, 0.04, 0.035]) },
-                { t: 'speedup', since: pipesSinceSpeed, gap: 6, p: pickLv([0.045, 0.04, 0.035, 0.03, 0.025, 0.02]) },
-                { t: 'slowmo', since: pipesSinceSlow, gap: 6, p: pickLv([0.035, 0.03, 0.025, 0.02, 0.018, 0.015]) },
-                { t: 'shield', since: pipesSinceShield, gap: 6, p: pickLv([0.035, 0.03, 0.025, 0.02, 0.018, 0.015]) }
+                { t: 'compress', since: frame - lastCompressSpawnTime, gap: sec(pickLv([30, 36, 42, 50, 58, 66])), p: 0.2 },
+                { t: 'speedup', since: frame - lastSpeedSpawnTime, gap: sec(pickLv([14, 16, 18, 20, 22, 24])), p: 0.14 },
+                { t: 'slowmo', since: frame - lastSlowSpawnTime, gap: sec(pickLv([18, 20, 22, 24, 26, 28])), p: 0.14 },
+                { t: 'shield', since: frame - lastShieldSpawnTime, gap: sec(pickLv([24, 28, 32, 36, 40, 44])), p: 0.1 }
             ];
-            const hit = specials.find(s => s.since >= s.gap && Math.random() < s.p);
+            const afterSpecial = SPECIAL_TYPES.includes(lastSpawnedItemType);   // после эффекта следующий эффект не сразу
+            const hit = afterSpecial ? null : specials.find(s => s.since >= s.gap && Math.random() < s.p);
             if (hit) {
                 itemType = hit.t;
-                if (hit.t === 'compress') { lastCompressSpawnTime = frame; pipesSinceCompress = 0; }
-                else if (hit.t === 'speedup') pipesSinceSpeed = 0;
-                else if (hit.t === 'slowmo') pipesSinceSlow = 0;
-                else pipesSinceShield = 0;
+                if (hit.t === 'compress') lastCompressSpawnTime = frame;
+                else if (hit.t === 'speedup') lastSpeedSpawnTime = frame;
+                else if (hit.t === 'slowmo') lastSlowSpawnTime = frame;
+                else lastShieldSpawnTime = frame;
             } else {
                 const r = Math.random();
                 if (r < 0.044) itemType = 'infinite';

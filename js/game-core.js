@@ -297,7 +297,10 @@ function shieldBump(ang, power) {
 }
 let pipesSinceIceCream = 0;
 let pipesSinceTheme = 0;   // сколько труб прошло с последней темы
-let pipesSinceCompress = 99, pipesSinceShield = 99, pipesSinceSpeed = 99, pipesSinceSlow = 99;   // сколько труб прошло с последнего сжатия и щита (чтобы они не сыпались подряд)
+// момент (в кадрах игры, 60 = 1 с) последнего выпадения сжатия / ускорения / замедления / щита — чтобы между ними проходило время
+let lastSpeedSpawnTime = -99999, lastSlowSpawnTime = -99999, lastShieldSpawnTime = -99999;
+// при новой игре отсчёт времени между эффектами начинается заново (первое сжатие — не сразу)
+function resetSpecialTimers() { lastCompressSpawnTime = frame; lastSpeedSpawnTime = frame; lastSlowSpawnTime = frame; lastShieldSpawnTime = frame; }
 let lastThemeKey = '';     // какая тема была последней
 
 const CATEGORIES = {
