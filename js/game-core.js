@@ -249,6 +249,7 @@ let iceCreamCount = 0;
 let freezeTime = 0;
 let currentFreezeFactor = 0.0;
 function registerIceCream() {
+    if (typeof shazamBusy === 'function' && shazamBusy()) return null;   // в ШАЗАМе не мёрзнем
     iceCreamCount++;
     if (iceCreamCount >= FREEZE_TRIGGER) {
         iceCreamCount = 0;

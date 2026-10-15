@@ -53,6 +53,7 @@ function shazamTap() {
 // ускорение взяли: каждое N-е само включает ШАЗАМ
 const SHZ_EVERY = 2;
 function shazamOnSpeedup() {
+    if (shazamBusy()) { speedBoostTime = 0; return false; }   // во время ШАЗАМа ускорения не считаются
     SHZ.count++;
     if (SHZ.count % SHZ_EVERY === 0 && SHZ.state === 'idle') { shazamStart(); return true; }
     return false;
@@ -90,6 +91,7 @@ function shazamDrawItemCharge(it) {
 
 function shazamStart() {
     SHZ.state = 'intro'; SHZ.t = 0;
+    shazamClearEffects();   // ШАЗАМ отменяет все текущие эффекты — их таймеры тают
     try { AudioFX.playShazamCharge(); Haptics.powerup(); } catch (e) {}
     shazamSyncBtn();
 }
@@ -127,8 +129,18 @@ function shazamAddStreak(burst) {
         len: 40 + Math.random() * 90, v: 18 + Math.random() * 14, a: (burst ? 0.35 : 0.18) * (0.5 + Math.random() * 0.5) });
 }
 
+// все таймерные эффекты — в ноль (в ШАЗАМе он один)
+function shazamClearEffects() {
+    shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0;
+    speedBoostTime = 0; slowMotionTime = 0; overeatTime = 0; drunkTime = 0; freezeTime = 0;
+}
+// эти значки во время ШАЗАМа не появляются на пути, а взятые — не дают эффекта
+const SHZ_BLOCKED = ['shield', 'slowmo', 'compress', 'speedup', 'icecream'];
+function shazamBlockedType(t) { return shazamBusy() && SHZ_BLOCKED.includes(t); }
+
 function shazamUpdate() {
     if (!gameActive) { shazamSyncBtn(); return; }
+    if (shazamBusy()) shazamClearEffects();   // и всё, что могло прийти во время ШАЗАМа (например из рулетки), тоже не действует
     const st = SHZ.state;
     if ((st === 'ready' || st === 'armed') && speedBoostTime <= 0) { SHZ.state = 'idle'; }   // ускорение кончилось — кнопка уходит
     if (st === 'armed' && performance.now() > SHZ.armUntil) SHZ.state = 'ready';
@@ -165,16 +177,19 @@ function shazamUpdate() {
     // трубы: по очереди — за трубой, перед трубой
     SHZ.depthBack = 0; SHZ.depthFront = 0;
     if (on) {
-        let best = null, bd = 1e9;
+        // облёт только когда сова реально летит в тело трубы; в проём — летит как обычно
+        const r = owl.radius * 0.8;
         for (const p of pipes) {
-            if (!p.shzSide && p.x < owl.x + 220 && p.x + p.width > owl.x - 20) p.shzSide = (SHZ.sideN++ % 2 === 0) ? 'back' : 'front';
-            const d = Math.abs(p.x + p.width / 2 - owl.x);
-            if (p.shzSide && d < bd) { bd = d; best = p; }
-        }
-        if (best) {
-            const W = best.width / 2 + owl.radius + 46;
-            let w = Math.max(0, 1 - bd / W); w = w * w * (3 - 2 * w);
-            if (best.shzSide === 'back') SHZ.depthBack = w; else SHZ.depthFront = w;
+            if (p.x > owl.x + 200 || p.x + p.width < owl.x - owl.radius - 30) { p.shzW = 0; continue; }
+            const ahead = Math.max(0, p.x - owl.x) / Math.max(1, 2.24 * gameSpeedFactor);   // кадров до трубы
+            const y = owl.y + owl.vy * Math.min(ahead, 10);   // чуть смотрим вперёд по траектории
+            const hit = (y - r < p.top) || (y + r > p.top + p.gap) || (owl.y - r < p.top) || (owl.y + r > p.top + p.gap);
+            if (hit && !p.shzSide) p.shzSide = (SHZ.sideN++ % 2 === 0) ? 'back' : 'front';
+            p.shzW = (p.shzW || 0) + ((hit ? 1 : 0) - (p.shzW || 0)) * Math.min(1, 0.3 * dtMult);
+            if (!p.shzSide) continue;
+            const d = Math.abs(p.x + p.width / 2 - owl.x), W = p.width / 2 + owl.radius + 46;
+            let w = Math.max(0, 1 - d / W); w = w * w * (3 - 2 * w); w *= p.shzW;
+            if (p.shzSide === 'back') SHZ.depthBack = Math.max(SHZ.depthBack, w); else SHZ.depthFront = Math.max(SHZ.depthFront, w);
         }
     }
 

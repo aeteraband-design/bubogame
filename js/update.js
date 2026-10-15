@@ -314,7 +314,11 @@ function update() {
 
             const oldDiffLevel = getDifficultyMultipliers().level;
 
-            if (it.type === 'question') {
+            const shzBlock = shazamBusy() && ['shield', 'slowmo', 'compress', 'infinite'].includes(it.type);
+            if (shzBlock) {
+                AudioFX.playCollect(true);   // в ШАЗАМе эффект не включается
+                if (it.type === 'infinite') { stamina = maxStamina; updateStaminaHUD(); it.pendingFX = { target: 'stamina', text: '+100% Сил', color: '#00F0FF', icon: 'fa-feather-pointed' }; }
+            } else if (it.type === 'question') {
                 AudioFX.playCollect(false);
                 score++; scheduleHud('score');
                 StorageManager.save();
@@ -400,10 +404,11 @@ function update() {
             } else if (it.type === 'speedup') {
                 AudioFX.playStarCollect();
                 slowMotionTime = 0;
+                const shzWas = shazamBusy();
                 speedBoostTime = ADMIN_CFG.speedSec * 60; const shz = shazamOnSpeedup();
                 AudioFX.onSpeedChanged();
                 Haptics.powerup();
-                it.pendingFX = shz ? { target: 'other', text: `ШАЗАМ ${Math.round(SHZ.DUR / 60)}с`, color: '#FF7A00', icon: 'fa-bolt' }
+                if (!shzWas) it.pendingFX = shz ? { target: 'other', text: `ШАЗАМ ${Math.round(SHZ.DUR / 60)}с`, color: '#FF7A00', icon: 'fa-bolt' }
                                    : { target: 'other', text: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#F59E0B', icon: 'fa-bolt' };
             } else if (it.type === 'slowmo') {
                 AudioFX.playStarCollect();
@@ -667,6 +672,7 @@ function renderBuffBar(bar, list) {
 }
 
 function registerJunkFood() {
+    if (shazamBusy()) return null;   // в ШАЗАМе не считается
     junkFoodCount++;
     if (junkFoodCount >= OVEREAT_TRIGGER) {
         junkFoodCount = 0;
@@ -679,6 +685,7 @@ function registerJunkFood() {
 }
 
 function registerDrink() {
+    if (shazamBusy()) return null;   // в ШАЗАМе не пьянеем и не считаем
     drinkCount++;
     if (drinkCount >= DRUNK_TRIGGER) {
         drinkCount = 0;

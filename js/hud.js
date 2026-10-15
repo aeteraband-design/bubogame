@@ -976,6 +976,7 @@ function spawnPipe(startX) {
         }
         if (itemType === 'icecream') pipesSinceIceCream = 0;
     }
+    if (typeof shazamBlockedType === 'function' && shazamBlockedType(itemType)) itemType = 'question';   // в ШАЗАМе щит, заморозка и т.п. на пути не появляются
     lastSpawnedItemType = itemType;
     const tokenRadius = 26;
 
