@@ -285,7 +285,7 @@ function startOrResumeFlight() {
         lastKnownDiffIdx = getDifficultyIndex();
         pausedSnapshot = null;
         speedStars = [];
-        pipesSinceTheme = 0; lastThemeKey = '';
+        pipesSinceTheme = 0; lastThemeKey = ''; pipesSinceCompress = 99; pipesSinceShield = 99;
         frame = 0; 
         pipeDistanceTracker = 0;
         owl.visible = true;
@@ -361,6 +361,7 @@ function resetEntireGame(opts) {
     currentDifficultySqueeze = 0;
     pipesSinceTheme = 0; lastThemeKey = '';
     collected = { music: 0, logic: 0, kino: 0, series: 0, cartoons: 0, fun: 0 };
+    pipesSinceCompress = 99; pipesSinceShield = 99;
     shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal'; invulnerableTime = 0;
     resetOvereatDrunk();
     pipes = []; items = []; particles = [];

@@ -297,6 +297,7 @@ function shieldBump(ang, power) {
 }
 let pipesSinceIceCream = 0;
 let pipesSinceTheme = 0;   // сколько труб прошло с последней темы
+let pipesSinceCompress = 99, pipesSinceShield = 99;   // сколько труб прошло с последнего сжатия и щита (чтобы они не сыпались подряд)
 let lastThemeKey = '';     // какая тема была последней
 
 const CATEGORIES = {

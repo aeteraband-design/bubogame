@@ -845,6 +845,8 @@ function spawnPipe(startX) {
     let itemType = 'question';
     const canSpawnFood = lives < maxLives;
     pipesSinceTheme++;
+    pipesSinceCompress++;
+    pipesSinceShield++;
 
     if (stamina < 30) {
         const sRoll = Math.random();
@@ -880,10 +882,12 @@ function spawnPipe(startX) {
             // Обычные предметы (без тем)
             const u = Math.random() * 0.64;
             const roll = u < 0.32 ? u : u + 0.36;
-            const canSpawnCompress = (frame - lastCompressSpawnTime >= 60 * 120) && (lastSpawnedItemType !== 'compress');
-            if (canSpawnCompress && roll < 0.02) {
+            // Сжатие: не раньше чем через 10 труб после прошлого, дальше — с вероятностью, которая падает от Суперлайта к Хард+ (но не до нуля)
+            const compressP = [0.07, 0.06, 0.05, 0.04, 0.03, 0.02][getDifficultyIndex()] || 0.02;
+            if (pipesSinceCompress >= 10 && Math.random() < compressP) {
                 itemType = 'compress';
                 lastCompressSpawnTime = frame;
+                pipesSinceCompress = 0;
             }
             else if (roll < 0.028) {
                 itemType = 'infinite';
@@ -906,9 +910,10 @@ function spawnPipe(startX) {
                 else itemType = 'hotdog';
             }
             else if (roll < 0.92) {
+                // Щит реже и не подряд: между двумя щитами минимум 6 труб
                 const buffRoll = Math.random();
-                if (buffRoll < 0.45) itemType = 'shield';
-                else if (buffRoll < 0.75) itemType = 'speedup';
+                if (buffRoll < 0.30 && pipesSinceShield >= 6) { itemType = 'shield'; pipesSinceShield = 0; }
+                else if (buffRoll < 0.65) itemType = 'speedup';
                 else itemType = 'slowmo';
             }
             else {
