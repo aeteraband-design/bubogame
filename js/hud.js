@@ -539,24 +539,9 @@ function renderLivesHUD() {
     // 5 жизней — рамка мягко светится красным; 1–1.5 жизни — рамка медленно мигает
     cont.classList.toggle('lives-max', lives >= maxLives);
     cont.classList.toggle('lives-danger', lives > 0 && lives <= 1.5);
-    // 6 и больше сердец: ряд сжимается в одно сердечко со счётчиком «❤ х 4/6»
-    if (maxLives >= 6) {
-        const prev = window.__livesShown;
-        const fmt = (v) => (Math.round(v * 10) / 10).toString().replace('.', ',');
-        let heart = cont.querySelector('.lives-compact-heart');
-        if (!cont.classList.contains('lives-compact')) {
-            cont.classList.add('lives-compact');
-            cont.innerHTML = '<div class="w-3.5 h-3.5 flex items-center justify-center shrink-0 lives-compact-heart"><i class="fa-solid fa-heart text-red-500 text-[12px] filter drop-shadow-[0_0_4px_rgba(239,68,68,0.9)]"></i></div><span class="lives-compact-txt"></span>';
-            heart = cont.querySelector('.lives-compact-heart');
-            cont.animate([{ transform: 'scale(0.85)', opacity: 0.4 }, { transform: 'scale(1)', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.34,1.56,.64,1)' });
-        }
-        if (typeof prev === 'number' && lives < prev - 0.01 && heart) spawnHeartBreak(heart, lives < prev - 0.6 ? 12 : 6.5);
-        window.__livesShown = lives;
-        const txt = cont.querySelector('.lives-compact-txt');
-        if (txt) txt.innerHTML = `${fmt(Math.max(0, lives))}/${fmt(maxLives)}`;
-        return;
-    }
-    if (cont.classList.contains('lives-compact')) { cont.classList.remove('lives-compact'); }
+    // 6 сердец (только из рулетки): ряд остаётся сердечками, но чуть плотнее — класс lives-six
+    cont.classList.toggle('lives-six', maxLives >= 6);
+    cont.classList.remove('lives-compact');
     // жизнь потеряна: сердечко (целое или половинка) раскалывается и падает вниз
     {
         const prev = window.__livesShown;
@@ -746,7 +731,7 @@ function checkVictoryCondition() {
 
 function updateMenuVisibility() {
     try { rwUpdateUI(); } catch (e) {}
-    try { const sb = document.getElementById('startBtnSub'); if (sb) sb.innerText = attempts > 0 ? 'ОСТАЛОСЬ ПОПЫТОК: ' + attempts : 'НОВАЯ ПОПЫТКА — ЗАВТРА (ПРОГРЕСС СГОРИТ)'; } catch (e) {}
+    try { const sb = document.getElementById('startBtnSub'); if (sb) sb.innerText = attempts > 0 ? 'ОСТАЛОСЬ ПОПЫТОК: ' + attempts : 'НОВАЯ ИГРА — ' + MAX_ATTEMPTS + ' ПОПЫТКИ (ПРОГРЕСС СГОРИТ)'; } catch (e) {}
     try { const sbt = document.getElementById('startBtn'); if (sbt) sbt.classList.toggle('no-attempts', attempts <= 0); } catch (e) {}
     const statsCard = document.getElementById('statsCard');
     const menuDiffCard = document.getElementById('menuDiffCard');
@@ -760,7 +745,7 @@ function updateMenuVisibility() {
     const hasProgress = hasStartedCampaign || score > 0 || total > 0 || attempts < MAX_ATTEMPTS || isFlightPaused;
 
     if (startBtnLabel) {
-        startBtnLabel.innerText = (attempts <= 0) ? 'ПОПЫТКИ ЗАКОНЧИЛИСЬ' : (hasWonGame ? 'НАЧАТЬ НОВЫЙ ПОЛЕТ' : (hasProgress ? 'ПРОДОЛЖИТЬ ПОЛЕТ' : 'НАЧАТЬ ПОЛЕТ'));
+        startBtnLabel.innerText = (attempts <= 0) ? 'НАЧАТЬ НОВУЮ ИГРУ' : (hasWonGame ? 'НАЧАТЬ НОВЫЙ ПОЛЕТ' : (hasProgress ? 'ПРОДОЛЖИТЬ ПОЛЕТ' : 'НАЧАТЬ ПОЛЕТ'));
     }
 
     if (statsCard) {

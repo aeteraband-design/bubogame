@@ -84,7 +84,7 @@ function flushHud() {
         if (g === 'heart') renderLivesHUD();
         else if (g === 'stamina') renderStaminaHUD();
         else if (g === 'theme') renderCollectionHUD();
-        else if (g === 'score') { const el = document.getElementById('scoreVal'); if (el) el.innerText = `${score}`; }
+        else if (g === 'score') { const el = document.getElementById('scoreVal'); if (el) el.innerText = `${score}`; const sb = document.getElementById('scoreBadge'); if (sb) sb.classList.toggle('score-wide', String(score).length >= 3); }
     }
 }
 function scheduleHud(g) {
@@ -398,7 +398,6 @@ const StorageManager = {
 
     async init() {
         this.loadLocal();
-        try { checkDailyReset(); } catch (e) {}
         updateMenuVisibility();
         updateHUDAll();
 

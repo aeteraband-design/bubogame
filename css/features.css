@@ -151,3 +151,14 @@
 #rwWindow .rw-hint { margin-top: 8px !important; }
 #rwWindow .rw-spins-pill { margin-top: 10px !important; }
 #rwWindow .rw-btns { margin-top: 14px !important; }
+
+/* ===== Верхняя панель: 6 сердец (рулетка) и трёхзначный счёт ===== */
+#topHud #livesContainer.lives-six { padding-left: 8px !important; padding-right: 8px !important; }
+#topHud #livesContainer.lives-six > * { width: 11px !important; height: 11px !important; }
+#topHud #livesContainer.lives-six > * + * { margin-left: 2px !important; }
+#topHud #livesContainer.lives-six i.fa-heart:not(.half-heart) { font-size: 9.5px !important; }
+#topHud #livesContainer.lives-six .half-heart { font-size: 6px !important; }
+#topHud #scoreBadge.score-wide { padding-left: 6px !important; padding-right: 6px !important; }
+#topHud #scoreBadge.score-wide > * + * { margin-left: 3px !important; }
+#topHud #scoreBadge.score-wide #scoreVal { font-size: 9px !important; }
+#topHud #scoreBadge.score-wide #scoreIcon { font-size: 10px !important; }

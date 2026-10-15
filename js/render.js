@@ -248,8 +248,8 @@ function initMenuScenery() {
 }
 
 function startOrResumeFlight() {
+    // попытки закончились — стартуем новую игру с полным набором попыток
     try { checkDailyReset(); } catch (e) {}
-    // попыток нет — сегодня играть нельзя: новая попытка начислится завтра
     if (attempts <= 0) { returnToHome(); return; }
     // после победы — новый поход с первого уровня (иначе несколько секунд играла бы музыка и светила луна прошлого прохождения)
     if (hasWonGame) startNewQuestKeepScore();
@@ -368,20 +368,12 @@ function resetEntireGame(opts) {
     updateHUDAll(); StorageManager.save();
 }
 
-// Ежедневная попытка: если вчера (или раньше) попытки закончились — сегодня 1 бесплатная попытка, но весь прошлый прогресс сгорает
+// Попытки закончились — новая игра: прогресс сбрасывается, снова MAX_ATTEMPTS попыток (без ожидания до завтра)
 function checkDailyReset() {
     if (attempts > 0) { if (zeroDay) { zeroDay = ''; StorageManager.saveLocal(); } return false; }
-    const today = todayKey();
-    if (!zeroDay) { zeroDay = today; StorageManager.saveLocal(); return false; }
-    if (today <= zeroDay) return false;
-    resetEntireGame({ attempts: 1 });
-    try { localStorage.setItem('bubo_daily_reset', today); } catch (e) {}
+    resetEntireGame({ attempts: MAX_ATTEMPTS });
     return true;
 }
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) return;
-    try { if (!gameActive && checkDailyReset()) { updateHUDAll(); } } catch (e) {}
-});
 
 // Пауза: запоминаем, где именно были сова, трубы и предметы (только до закрытия вкладки)
 let pausedSnapshot = null;

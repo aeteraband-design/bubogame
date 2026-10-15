@@ -358,16 +358,8 @@ function update() {
                 it.extraFX = registerIceCream();
             } else if (it.type === 'heart') {
                 AudioFX.playStarCollect();
-                if (lives >= maxLives - 0.001) {
-                    // все сердца целы: каждые 2 пойманных сердца — +1 к максимуму жизней (без потолка)
-                    heartOverflow++;
-                    if (heartOverflow >= 2) {
-                        heartOverflow = 0; maxLives += 1; lives = maxLives; it.__maxUp = true;
-                        setTimeout(() => { try { AudioFX.playMaxStaminaChime(); } catch (e) {} showGoldBanner('Макс. жизнь +1', 'fa-heart', '#EF4444'); }, 900);
-                    }
-                } else {
-                    lives = Math.min(maxLives, Math.round((lives + 1.0) * 10) / 10);
-                }
+                // максимум сердец фиксирован (5); 6 — только из рулетки. Полный запас — сердце не копится
+                lives = Math.min(maxLives, Math.round((lives + 1.0) * 10) / 10);
                 updateLivesHUD(); StorageManager.save();
                 // при прокачке максимума маленькой подсказки нет — только крупное уведомление внизу
                 it.pendingFX = { target: 'heart', text: it.__maxUp ? '' : '+1.0 Жизнь', color: '#EF4444', icon: 'fa-heart' };
@@ -979,7 +971,7 @@ function showGameOverScreen(reason) {
         info.classList.toggle('go-warn', !has);
         info.innerHTML = has
             ? `<i class="fa-solid fa-floppy-disk"></i><div><b>Прогресс сохранён.</b> Можно продолжить с текущего этапа${lvlName ? ` (сложность <span class="go-lvl">${lvlName}</span>)` : ''}: вопросы, темы, перья и силы остаются.</div>`
-            : `<i class="fa-solid fa-triangle-exclamation"></i><div><b>Попыток больше нет.</b> Если сегодня не заработать попытку (в рулетке или за 100 вопросов), завтра будет начислена 1 новая попытка, но <b>весь прогресс сгорит</b> и игра начнётся с нуля.</div>`;
+            : `<i class="fa-solid fa-triangle-exclamation"></i><div><b>Попыток больше нет.</b> Нажмите «Начать новую игру»: прогресс сбросится, снова будет ${MAX_ATTEMPTS} попытки.</div>`;
     }
     const contBtn = $('continueAttemptBtn'), restartBtn = $('restartFromGameOverBtn'), homeBtn = $('gameOverHomeBtn'), okBtn = $('gameOverOkBtn');
     if (contBtn) contBtn.classList.toggle('hidden', !has);
