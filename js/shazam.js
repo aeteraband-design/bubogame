@@ -9,7 +9,7 @@ const SHZ = {
     k: 0, shieldK: 0, blur: 0, slow: 1, dx: 0,
     depthBack: 0, depthFront: 0, sideN: 0,
     b: null, lastHalf: 0,
-    streaks: [], rings: [], bolts: [], boltT: 0
+    streaks: [], rings: [], bolts: [], boltT: 0, sparks: []
 };
 function shazamActive() { return SHZ.state === 'active'; }
 function shazamBusy() { return SHZ.state === 'intro' || SHZ.state === 'active'; }
@@ -55,15 +55,15 @@ function shazamTap() {
 }
 
 // ускорение взяли: каждое N-е само включает ШАЗАМ
-const SHZ_EVERY = 2;
+function shzEvery() { return Math.max(1, (typeof ADMIN_CFG !== 'undefined' && ADMIN_CFG.shazamEvery) || 5); }   // меняется в админке
 function shazamOnSpeedup() {
     if (shazamBusy()) { speedBoostTime = 0; return false; }   // во время ШАЗАМа ускорения не считаются
     SHZ.count++;
-    if (SHZ.count % SHZ_EVERY === 0 && SHZ.state === 'idle') { shazamStart(); return true; }
+    if (SHZ.count % shzEvery() === 0 && SHZ.state === 'idle') { shazamStart(); return true; }
     return false;
 }
 // следующее взятое ускорение включит ШАЗАМ — такие значки на пути искрят молниями
-function shazamNextCharged() { return SHZ.state === 'idle' && gameActive && (SHZ.count + 1) % SHZ_EVERY === 0; }
+function shazamNextCharged() { return SHZ.state === 'idle' && gameActive && (SHZ.count + 1) % shzEvery() === 0; }
 function shazamDrawItemCharge(it) {
     // искры внутри значка, вокруг молнии
     const R = it.radius * 0.62, now = performance.now();
@@ -76,8 +76,6 @@ function shazamDrawItemCharge(it) {
             for (let k = 0; k <= 5; k++) pts.push([a0 + len * k / 5, (Math.random() - 0.5) * 3.5]);
             it.shzBolts.push(pts);
         }
-        it.shzSparks = [];
-        for (let i = 0; i < 4; i++) { const a = Math.random() * Math.PI * 2, rr = it.radius * (0.35 + Math.random() * 0.4); it.shzSparks.push([Math.cos(a) * rr, Math.sin(a) * rr, 0.8 + Math.random() * 1.1]); }
     }
     ctx.save();
     ctx.shadowColor = '#FF7A00'; ctx.shadowBlur = 7;
@@ -88,8 +86,6 @@ function shazamDrawItemCharge(it) {
         pts.forEach(([a, j], k) => { const rr = R + j; const x = Math.cos(a) * rr, y = Math.sin(a) * rr; if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
         ctx.stroke();
     }
-    ctx.fillStyle = '#FFD08A';
-    for (const [x, y, s] of it.shzSparks) { ctx.globalAlpha = 0.5 + 0.5 * Math.random(); ctx.beginPath(); ctx.arc(x, y, s, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
 }
 
@@ -120,7 +116,7 @@ function shazamEnd() {
 
 function shazamReset() {
     SHZ.state = 'idle'; SHZ.t = 0; SHZ.left = 0; SHZ.k = 0; SHZ.shieldK = 0; SHZ.blur = 0; SHZ.slow = 1; SHZ.dx = 0;
-    SHZ.depthBack = SHZ.depthFront = 0; SHZ.streaks.length = 0; SHZ.rings.length = 0; SHZ.bolts.length = 0;
+    SHZ.depthBack = SHZ.depthFront = 0; SHZ.streaks.length = 0; SHZ.rings.length = 0; SHZ.bolts.length = 0; SHZ.sparks.length = 0;
     shazamSyncBtn();
 }
 
@@ -201,6 +197,7 @@ function shazamUpdate() {
     if (SHZ.blur > 0.05 && Math.random() < 0.35 * SHZ.blur * dtMult) shazamAddStreak(false);
     for (let i = SHZ.streaks.length - 1; i >= 0; i--) { const s = SHZ.streaks[i]; s.x -= s.v * dtMult; if (s.x + s.len < 0) SHZ.streaks.splice(i, 1); }
     for (let i = SHZ.rings.length - 1; i >= 0; i--) { const r = SHZ.rings[i]; r.r += (r.slow ? 3 : 5.5) * dtMult; r.a -= 0.045 * dtMult; if (r.a <= 0) SHZ.rings.splice(i, 1); }
+    shazamUpdateSparks();
     shazamSyncBtn();
 }
 
@@ -217,6 +214,7 @@ function shazamDrawStreaks() {
 }
 // кольца рывка — поверх совы
 function shazamDrawFx() {
+    shazamDrawSparks();
     if (!SHZ.rings.length) return;
     ctx.save();
     for (const r of SHZ.rings) {
@@ -271,4 +269,47 @@ function shazamMagnet(it) {
     const mx = dx / (d || 1) * step, my = dy / (d || 1) * step;
     it.x += mx; it.y += my; it.baseY = (it.baseY || it.y) + my;
     it.centerX = it.x; it.centerY = it.y;
+    // за притянутым значком тянется хвост из мерцающих звёздочек
+    it.shzSpT = (it.shzSpT || 0) - dtMult;
+    if (it.shzSpT <= 0 && SHZ.sparks.length < 70) {
+        it.shzSpT = 2.2 - 1.2 * it.mag;
+        const a = Math.random() * Math.PI * 2, rr = it.radius * (0.5 + Math.random() * 0.5);
+        SHZ.sparks.push({
+            x: it.x + Math.cos(a) * rr, y: it.y + Math.sin(a) * rr,
+            vx: -mx / Math.max(dtMult, 0.01) * 0.15 + (Math.random() - 0.5) * 0.6,
+            vy: -my / Math.max(dtMult, 0.01) * 0.15 + (Math.random() - 0.5) * 0.6,
+            s: 2.2 + Math.random() * 2.2, life: 1, rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.2,
+            c: Math.random() < 0.6 ? '#FFE6C2' : '#FFB25C'
+        });
+    }
+}
+function shazamUpdateSparks() {
+    const sp = SHZ.sparks;
+    for (let i = sp.length - 1; i >= 0; i--) {
+        const p = sp[i];
+        p.x += p.vx * dtMult; p.y += p.vy * dtMult; p.rot += p.vr * dtMult;
+        p.vx *= 0.96; p.vy *= 0.96;
+        p.life -= 0.035 * dtMult;
+        if (p.life <= 0) { sp[i] = sp[sp.length - 1]; sp.pop(); }
+    }
+}
+// звёздочка с четырьмя лучами (без кружков), мерцает и тает
+function shazamDrawSparks() {
+    const sp = SHZ.sparks; if (!sp.length) return;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (const p of sp) {
+        const k = p.life, tw = 0.75 + 0.25 * Math.sin(p.rot * 9), s = p.s * (0.5 + 0.5 * k) * tw, w = s * 0.22;
+        ctx.globalAlpha = Math.min(1, k * 1.4) * 0.9;
+        ctx.fillStyle = p.c;
+        const c = Math.cos(p.rot), si = Math.sin(p.rot);
+        ctx.beginPath();
+        for (let j = 0; j < 8; j++) {
+            const a = j * Math.PI / 4, r = (j % 2 === 0) ? s : w;
+            const x = Math.cos(a) * r, y = Math.sin(a) * r;
+            const X = p.x + x * c - y * si, Y = p.y + x * si + y * c;
+            if (j) ctx.lineTo(X, Y); else ctx.moveTo(X, Y);
+        }
+        ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
 }

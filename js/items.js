@@ -73,7 +73,7 @@ function tokDevScale(c, div, mul) {
     const base = viewScale * renderScale * WORLD_K * (mul || 1);
     let s = base;
     if (c.getTransform) { const m = c.getTransform(), t = Math.hypot(m.a, m.b) / (div || 1); if (t > base * 1.3 || t < base / 1.3) s = t; }
-    return Math.max(0.5, Math.round(s * 10) / 10);
+    return Math.max(0.5, Math.round(s * __tokHoldK * 10) / 10);
 }
 function tokSprite(key, R, hw, hh, paint) {
     let s = __tokSpr.get(key);

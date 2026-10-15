@@ -43,7 +43,7 @@ const GFX_TEXT = {
     medium: { name: 'Средняя', hint: 'Баланс чёткости и скорости' },
     high: { name: 'Высокая', hint: 'Максимальная чёткость и все эффекты' }
 };
-function applyGfxQuality() {
+function applyGfxQuality(soft) {
     if (gfxQuality === 'low') {
         // на низкой графике тени не рисуются вообще (самая тяжёлая часть отрисовки)
         Object.defineProperty(ctx, 'shadowBlur', { configurable: true, get() { return 0; }, set(v) { _shadowBlurDesc.set.call(this, 0); } });
@@ -51,7 +51,10 @@ function applyGfxQuality() {
         delete ctx.shadowBlur;
     }
     document.documentElement.classList.toggle('gfx-low', gfxQuality === 'low');
-    resize();
+    const rs0 = renderScale;
+    resize(soft);
+    // мягкое понижение (автоматически, во время полёта): готовые заготовки значков и труб остаются прежней чёткости — не пересоздаются
+    __tokHoldK = soft ? Math.max(1, __tokHoldK * rs0 / (renderScale || 1)) : 1;
     const slider = document.getElementById('gfxSlider');
     if (slider) slider.value = String(GFX_LEVELS.indexOf(gfxQuality));
     const lbl = document.getElementById('gfxLabel');

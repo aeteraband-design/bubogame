@@ -229,7 +229,7 @@ function gameLoop(timestamp) {
         else if (perfAvgDt > 22 && gfxQuality !== 'low') {
             if (++perfSlowFrames > 150) {
                 gfxQuality = gfxQuality === 'high' ? 'medium' : 'low';
-                applyGfxQuality();
+                applyGfxQuality(true);   // мягко: без пересборки города и заготовок — без рывка
                 perfSlowFrames = 0; perfCooldown = 360; perfAvgDt = 16.7;
             }
         } else perfSlowFrames = Math.max(0, perfSlowFrames - 2);

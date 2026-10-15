@@ -349,6 +349,11 @@ function fwGlowLayer(L, off, y0, lights, far) {
 function drawCity() {
     const S = Math.max(1, viewScale * renderScale);
     const key = `${Math.round(height)}|${S.toFixed(2)}|${gfxQuality}`;
+    // автоматическое понижение качества: высота та же, а чёткость ниже — уже готовый город просто рисуется как есть (без пересборки и рывка)
+    if (citySprites && citySpritesKey !== key && __gfxSoft && citySpritesKey.split('|')[0] === String(Math.round(height)) && S <= parseFloat(citySpritesKey.split('|')[1])) {
+        if (gfxQuality === 'low' && citySprites.length > 1) citySprites = [citySprites[citySprites.length - 1]];
+        citySpritesKey = key;
+    }
     if (!citySprites || citySpritesKey !== key) {
         citySpritesKey = key;
         const tileW = 1400;

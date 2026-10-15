@@ -10,7 +10,8 @@ let clouds = [
 
 let __uiFx = 0;
 function uiFx() { return __uiFx || (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fx')) || 1); }
-function resize() {
+function resize(soft) {
+    soft = soft === true;   // из события resize приходит объект события — это не мягкий режим
     const cw = container.clientWidth, ch = container.clientHeight;
     // На телефоне масштаб 1, на большом экране мир увеличивается по высоте окна
     // На ПК мир и интерфейс заметно крупнее (ноутбук ~800px по высоте → ×1.33, большой монитор → до ×2)
@@ -32,9 +33,12 @@ function resize() {
     renderScale = computeRenderScale();
     canvas.width = Math.round(cw * renderScale);
     canvas.height = Math.round(ch * renderScale);
-    try { moonSprite = null; cloudSprite = null; } catch (e) {} // перерисуются в нужном качестве
-
-    {
+    __gfxSoft = !!soft;
+    if (!soft) { __tokHoldK = 1; try { moonSprite = null; cloudSprite = null; } catch (e) {} } // перерисуются в нужном качестве
+    if (soft) {   // мягкое понижение качества: звёзды не перекладываем, лишние просто убираем
+        const n = Math.round((gfxQuality === 'low' ? 45 : 75) * Math.max(1, (width * height) / 356000));
+        if (stars.length > n) stars.length = n;
+    } else {
         stars.length = 0;
         for (let i = 0; i < Math.round((gfxQuality === 'low' ? 45 : 75) * Math.max(1, (width * height) / 356000)); i++) {
             stars.push({
