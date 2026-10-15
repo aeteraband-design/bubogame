@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta charset="UTF-8">
+    <meta name="color-scheme" content="only light">
+    <meta name="supported-color-schemes" content="only light">
+    <meta name="theme-color" content="#140326">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BUBOGAME v0.10</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <!-- Font Awesome 6 Free -->
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.11.5">
+    <!-- Google Fonts: Onest -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <script src="js/music-hold.js?v=0.11.5"></script>
+<script src="js/tailwind-config.js?v=0.11.5"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.11.5">
+    
+    
+<link rel="stylesheet" href="css/admin.css?v=0.11.5" id="adminStyle">
+</head>
+<body class="flex items-center justify-center h-full w-full">
+    <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
+    <link rel="stylesheet" href="css/boot.css?v=0.11.5">
+    <link rel="stylesheet" href="css/features.css?v=0.11.5">
+    <div id="bootLoader">
+        <div id="buildTag" style="position:fixed;top:6px;left:0;right:0;text-align:center;z-index:5;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.11.5</div>
+        <canvas class="bl-stars" id="blStars"></canvas>
+        <div class="bl-haze"></div>
+        <div class="bl-logo" id="blLogo">
+            <div class="bl-ico"><i class="fa-solid fa-gamepad"></i></div>
+            <div class="bl-txt"><span style="color:#FE7600">BUBO</span><span style="color:#A855F7">GAME</span></div>
+        </div>
+        <div class="bl-owlbox"><canvas class="bl-owlcv" id="blOwlCv"></canvas></div>
+        <div class="bl-foot">
+            <div class="bl-prog" id="blProg">
+                <div class="bl-row"><div class="bl-name" id="blLabel">Загрузка</div><div class="bl-pct" id="blPct">0%</div></div>
+                <div class="bl-bar"><div class="bl-mask" id="blFill"></div></div>
+            </div>
+            <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
+        </div>
+    </div>
+    <script src="js/boot.js?v=0.11.5"></script>
+    <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
+        <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
+        <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 backdrop-blur-[7px] overflow-y-auto custom-scroll">
+            <button id="openRouletteBtn" class="rw-menu-btn h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 shrink-0" title="Рулетка призов">
+                <i class="fa-solid fa-dice text-xs"></i>
+                <span id="rwMenuBadge" class="rw-badge hidden">0</span>
+            </button>
+            <button id="openAdminBtn" class="rw-menu-btn h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 shrink-0" title="Админка">
+                <i class="fa-solid fa-sliders text-xs"></i>
+            </button>
+            
+            <div class="pt-[30px] px-1 w-full flex items-center justify-center">
+                <div class="flex items-center space-x-2.5 filter drop-shadow-[0_2px_20px_rgba(254,118,0,0.65)]">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FE7600] to-[#782CE9] flex items-center justify-center shadow-lg border border-white/30 shrink-0">
+                        <i class="fa-solid fa-gamepad text-white text-lg"></i>
+                    </div>
+                    <div class="text-2xl sm:text-3xl tracking-tight font-black leading-none flex items-center space-x-1.5">
+                        <span class="text-[#FE7600] font-black">BUBO</span>
+                        <span class="text-[#A855F7] font-black">GAME</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full space-y-2 my-auto py-1">
+                <div id="menuDiffCard" class="diff-card hidden glass-panel-menu border-[#782CE9]/60 rounded-2xl p-3 shadow-xl space-y-1">
+                    <div class="flex justify-between items-center text-[10px] font-black text-purple-200">
+                        <div class="flex items-center space-x-1 text-cyan-400 uppercase tracking-tight">
+                            <i class="fa-solid fa-gauge-high text-[10px]"></i>
+                            <span>СЛОЖНОСТЬ: <strong id="menuDiffLabel" class="diff-label text-emerald-400 font-black">СУПЕРЛАЙТ</strong></span>
+                        </div>
+                        <div id="menuDiffPercent" class="text-purple-300 font-black">0%</div>
+                    </div>
+                    <div class="diff-bar" data-prefix="menu"></div>
+                </div>
+
+                <div id="statsCard" class="hidden glass-panel-menu border-[#FE7600]/45 rounded-2xl p-3.5 shadow-xl text-left space-y-2">
+                    <div class="flex justify-between items-center text-[11px] text-[#FE7600] font-black">
+                        <span class="uppercase tracking-wider font-black"><i class="fa-solid fa-chart-line mr-1"></i> Прогресс</span>
+                        <div id="menuAttempts" class="flex items-center space-x-1 text-purple-300 uppercase tracking-tight shrink-0"><i class="fa-solid fa-rotate-right text-[10px] text-[#FE7600]"></i><span class="text-[10px] font-black">ПОПЫТКИ: <strong id="menuAttemptsVal" class="text-white font-black text-[12px]">2</strong></span></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-purple-200">
+                        <div class="bg-[#140326]/80 px-2.5 py-1 rounded-xl border border-purple-900/50 flex justify-between items-center whitespace-nowrap">
+                            <span class="text-[11px] text-purple-300">Вопросы:</span>
+                            <span id="menuScore" class="text-white text-[13px] font-black ml-1">0</span>
+                        </div>
+                        <div class="bg-[#140326]/80 px-2.5 py-1 rounded-xl border border-purple-900/50 flex justify-between items-center whitespace-nowrap">
+                            <span class="text-[11px] text-purple-300">Темы:</span>
+                            <span id="menuTokens" class="text-[#FE7600] text-[13px] font-black ml-1">0 / 70</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-6 gap-1 pt-1 pb-0.5">
+                        <div id="menu-badge-music" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between">
+                            <i id="menu-icon_music" class="fa-solid fa-music text-gray-500 text-[12px] leading-none"></i>
+                            <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Музыка</span>
+                            <span id="menu-cnt_music" class="text-[8px] text-gray-300 font-black leading-none">0/20</span>
+                        </div>
+                        <div id="menu-badge-logic" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between">
+                            <i id="menu-icon_logic" class="fa-solid fa-brain text-gray-500 text-[12px] leading-none"></i>
+                            <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Обо всём</span>
+                            <span id="menu-cnt_logic" class="text-[8px] text-gray-300 font-black leading-none">0/15</span>
+                        </div>
+                        <div id="menu-badge-kino" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between">
+                            <i id="menu-icon_kino" class="fa-solid fa-film text-gray-500 text-[12px] leading-none"></i>
+                            <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Кино</span>
+                            <span id="menu-cnt_kino" class="text-[8px] text-gray-300 font-black leading-none">0/10</span>
+                        </div>
+                        <div id="menu-badge-series" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between">
+                            <i id="menu-icon_series" class="fa-solid fa-clapperboard text-gray-500 text-[12px] leading-none"></i>
+                            <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Сериалы</span>
+                            <span id="menu-cnt_series" class="text-[8px] text-gray-300 font-black leading-none">0/10</span>
+                        </div>
+                        <div id="menu-badge-cartoons" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between">
+                            <i id="menu-icon_cartoons" class="fa-solid fa-paw text-gray-500 text-[12px] leading-none"></i>
+                            <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Мультики</span>
+                            <span id="menu-cnt_cartoons" class="text-[8px] text-gray-300 font-black leading-none">0/10</span>
+                        </div>
+                        <div id="menu-badge-fun" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between">
+                            <i id="menu-icon_fun" class="fa-solid fa-hat-wizard text-gray-500 text-[12px] leading-none"></i>
+                            <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Фан-дом</span>
+                            <span id="menu-cnt_fun" class="text-[8px] text-gray-300 font-black leading-none">0/5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel-menu border-[#782CE9]/60 rounded-2xl p-3.5 shadow-xl text-left space-y-2">
+                    <div class="flex items-center space-x-2 text-[12px] uppercase tracking-wider text-[#FE7600] font-black">
+                        <i class="fa-solid fa-bullseye text-sm"></i>
+                        <span class="font-black">Цель полёта</span>
+                    </div>
+                    <p class="text-[11px] text-purple-100 leading-snug font-medium">
+                        Лети между труб и собирай значки тем. Нужно собрать все <span class="text-white font-black">70 тем</span> ( <span style="color:#E056FD" class="font-black">Музыка (20)</span>, <span style="color:#4ADE80" class="font-black">Обо всём (15)</span>, <span style="color:#00D2FF" class="font-black">Кино (10)</span>, <span style="color:#F43F5E" class="font-black">Сериалы (10)</span>, <span style="color:#38BDF8" class="font-black">Мультики (10)</span>, <span style="color:#2DD4BF" class="font-black">Фан-дом (5)</span>) — тогда ты сможешь крутить рулетку призов!
+                    </p>
+                    <p class="text-[10px] text-purple-300 leading-snug font-medium">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1.5 text-[9px]"></i>Остерегайтесь труб и следите за силами совы — подбирайте перья и напитки, чтобы не выбиться из сил!
+                    </p>
+                </div>
+            </div>
+
+            <div class="w-full space-y-2 pt-1 pb-1">
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="openRulesBtn" class="w-full py-3 rounded-2xl bg-[#240a42]/80 hover:bg-[#2d0e52] border border-[#FE7600]/40 text-purple-200 text-[11px] flex items-center justify-center space-x-1.5 transition-all shadow-md active:scale-95 font-black">
+                        <i class="fa-solid fa-circle-question text-[#FE7600] text-xs"></i>
+                        <span class="font-black">ПРАВИЛА</span>
+                    </button>
+                    <button id="openSettingsBtn" class="w-full py-3 rounded-2xl bg-[#240a42]/80 hover:bg-[#2d0e52] border border-[#782CE9]/60 text-purple-200 text-[11px] flex items-center justify-center space-x-1.5 transition-all shadow-md active:scale-95 font-black">
+                        <i class="fa-solid fa-gear text-[#FE7600] text-xs"></i>
+                        <span class="font-black">НАСТРОЙКИ</span>
+                    </button>
+                </div>
+
+                <button id="startBtn" class="btn-bubo w-full py-2 px-3 rounded-2xl flex flex-col items-center justify-center shadow-2xl active:scale-95 transition-all">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-play text-[11px] text-white font-black"></i>
+                        <span id="startBtnLabel" class="text-[15px] font-black tracking-wider uppercase text-white">НАЧАТЬ ПОЛЕТ</span>
+                    </div>
+                    <span id="startBtnSub" class="text-[9px] font-bold text-white/85 mt-0.5 tracking-tight uppercase">ОСТАЛОСЬ ПОПЫТОК: 2</span>
+                </button>
+
+                <button id="resetProgressBtn" class="hidden btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black">
+                    <i class="fa-solid fa-rotate-left text-xs"></i>
+                    <span class="font-black">ЗАНОВО</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ИГРОВОЙ ХОД И ИГРОВОЙ ЭКРАН -->
+        <div id="topHud" class="hidden absolute top-3 left-3.5 right-3.5 z-20 flex justify-between items-center pointer-events-none">
+            <div class="flex items-center space-x-1.5">
+                <div id="livesContainer" class="h-9 bg-[#1d0936]/90 border border-red-500/60 px-[10px] rounded-xl flex items-center space-x-1 shadow-lg backdrop-blur-md justify-center transition-all shrink-0">
+                    <div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-red-500 text-[12px]"></i></div>
+                    <div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-red-500 text-[12px]"></i></div>
+                    <div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-red-500 text-[12px]"></i></div>
+                    <div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-[12px]" style="color: rgba(196, 167, 255, 0.2)"></i></div>
+                    <div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-[12px]" style="color: rgba(196, 167, 255, 0.2)"></i></div>
+                </div>
+                <div id="staminaBadge" class="h-9 w-[70px] bg-[#1d0936]/90 border border-[#22c55e]/60 px-2 rounded-xl flex items-center space-x-1.5 shadow-lg backdrop-blur-md justify-center transition-all shrink-0">
+                    <i id="staminaIcon" class="fa-solid fa-feather-pointed text-[#22c55e] text-[12px] shrink-0"></i>
+                    <span id="staminaVal" class="text-white text-[10px] font-black">100%</span>
+                </div>
+                <div id="scoreBadge" class="h-9 bg-[#1d0936]/90 border border-[#FE7600]/60 px-2.5 rounded-xl flex items-center space-x-1.5 shadow-lg backdrop-blur-md justify-center transition-all shrink-0">
+                    <i id="scoreIcon" class="fa-solid fa-circle-question text-[#FE7600] text-[12px] shrink-0"></i>
+                    <span id="scoreVal" class="text-white text-[10px] font-black">0</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-1.5 pointer-events-auto">
+                <button id="musicToggleBtn" class="h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 relative shrink-0">
+                    <i id="musicToggleIcon" class="fa-solid fa-music text-xs"></i>
+                    <i id="musicMuteSlash" class="fa-solid fa-slash absolute text-red-400 text-xs hidden"></i>
+                </button>
+                <button id="homeBtn" class="h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 shrink-0">
+                    <i class="fa-solid fa-pause text-[14px]"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="buffBar" style="z-index:25" class="absolute top-14 left-3.5 z-15 flex flex-col items-start space-y-1 pointer-events-none transition-all duration-300">
+        </div>
+
+        <canvas id="gameCanvas" class="w-full h-full"></canvas>
+
+        <div id="tapToStartMsg" class="hidden absolute inset-0 z-25 flex items-center justify-center pointer-events-none transition-opacity duration-300">
+            <div class="glass-panel border-[#FE7600] px-5 py-2.5 rounded-2xl shadow-[0_0_24px_rgba(254,118,0,0.65)] flex items-center space-x-2.5 animate-bounce">
+                <i class="fa-solid fa-hand-pointer text-[#FE7600] text-sm"></i>
+                <span class="text-white text-xs font-black uppercase tracking-wider">ТАПНИ, ЧТОБЫ ЛЕТЕТЬ!</span>
+            </div>
+        </div>
+
+        <div id="hudFxLayer" class="absolute inset-0 pointer-events-none z-35 overflow-hidden"></div>
+
+        <div id="bottomHud" class="hidden absolute left-3.5 right-3.5 bottom-3.5 z-20 space-y-2">
+            <div id="diffCard" class="diff-card glass-panel border-[#782CE9]/60 rounded-2xl p-2 shadow-xl space-y-1">
+                <div class="flex justify-between items-center text-[8px] font-black text-purple-200">
+                    <div class="flex items-center space-x-1 text-cyan-400 uppercase tracking-tight">
+                        <i class="fa-solid fa-gauge-high text-[8px]"></i>
+                        <span>СЛОЖНОСТЬ: <strong id="diffLabel" class="diff-label text-emerald-400 font-black">СУПЕРЛАЙТ</strong></span>
+                    </div>
+                    <div id="diffPercent" class="text-purple-300 font-black">0%</div>
+                </div>
+                <div class="diff-bar" data-prefix=""></div>
+            </div>
+
+            <div class="glass-panel border-[#782CE9]/60 rounded-2xl p-2 shadow-2xl space-y-1">
+                <div class="flex justify-between items-center text-[8px] font-black text-purple-200 border-b border-[#782CE9]/30 pb-1 px-0.5 whitespace-nowrap overflow-hidden">
+                    <div class="flex items-center space-x-1 text-[#FE7600] uppercase tracking-tight shrink-0">
+                        <i class="fa-solid fa-trophy text-[8px]"></i>
+                        <span class="truncate font-black">ВАША КОЛЛЕКЦИЯ ТЕМ</span>
+                    </div>
+                    <div id="attemptsBadge" class="flex items-center space-x-1 text-purple-300 uppercase tracking-tight shrink-0 ml-1">
+                        <i class="fa-solid fa-rotate-right text-[8px] text-[#FE7600]"></i>
+                        <span class="font-black">ПОПЫТКИ: <strong id="attemptsVal" class="text-white font-black">2</strong></span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-6 gap-1 pt-0.5 pb-0.5">
+                    <div id="badge-music" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between transition-all duration-300">
+                        <i id="icon_music" class="fa-solid fa-music text-gray-500 text-[12px] leading-none"></i>
+                        <span id="label_music" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Музыка</span>
+                        <span id="cnt_music" class="text-[8px] text-gray-300 font-black leading-none">0/20</span>
+                    </div>
+                    <div id="badge-logic" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between transition-all duration-300">
+                        <i id="icon_logic" class="fa-solid fa-brain text-gray-500 text-[12px] leading-none"></i>
+                        <span id="label_logic" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Обо всём</span>
+                        <span id="cnt_logic" class="text-[8px] text-gray-300 font-black leading-none">0/15</span>
+                    </div>
+                    <div id="badge-kino" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between transition-all duration-300">
+                        <i id="icon_kino" class="fa-solid fa-film text-gray-500 text-[12px] leading-none"></i>
+                        <span id="label_kino" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Кино</span>
+                        <span id="cnt_kino" class="text-[8px] text-gray-300 font-black leading-none">0/10</span>
+                    </div>
+                    <div id="badge-series" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between transition-all duration-300">
+                        <i id="icon_series" class="fa-solid fa-clapperboard text-gray-500 text-[12px] leading-none"></i>
+                        <span id="label_series" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Сериалы</span>
+                        <span id="cnt_series" class="text-[8px] text-gray-300 font-black leading-none">0/10</span>
+                    </div>
+                    <div id="badge-cartoons" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between transition-all duration-300">
+                        <i id="icon_cartoons" class="fa-solid fa-paw text-gray-500 text-[12px] leading-none"></i>
+                        <span id="label_cartoons" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Мультики</span>
+                        <span id="cnt_cartoons" class="text-[8px] text-gray-300 font-black leading-none">0/10</span>
+                    </div>
+                    <div id="badge-fun" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between transition-all duration-300">
+                        <i id="icon_fun" class="fa-solid fa-hat-wizard text-gray-500 text-[12px] leading-none"></i>
+                        <span id="label_fun" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Фан-дом</span>
+                        <span id="cnt_fun" class="text-[8px] text-gray-300 font-black leading-none">0/5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ПРАВИЛ -->
+        <!-- АДМИНКА: настройки игры -->
+        <div id="adminModal" class="hidden">
+            <div class="adm-panel">
+                <div class="adm-head">
+                    <div class="adm-title"><i class="fa-solid fa-sliders"></i><span>Админка</span></div>
+                    <button id="admClose" class="adm-x" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div id="admTabs" class="adm-tabs"></div>
+                <div id="admBody" class="adm-body"></div>
+                <div class="adm-foot">
+                    <button id="admReset" class="adm-btn adm-btn-2"><i class="fa-solid fa-rotate-left"></i><span>Сбросить</span></button>
+                    <button id="admDone" class="adm-btn adm-btn-1">Сохранить</button>
+                </div>
+            </div>
+        </div>
+
+    <div id="rulesModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-[#140326]/20 backdrop-blur-[7px]">
+        <div class="glass-panel w-full max-w-sm rounded-3xl p-4 sm:p-5 flex flex-col max-h-[90vh] border-[#FE7600]/40 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-[#782CE9]/30 pb-3 shrink-0">
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm sm:text-base text-white uppercase tracking-wider font-black">Правила и бонусы</span>
+                </div>
+                <button id="closeRulesBtn" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#782CE9]/30 hover:bg-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center transition-all">
+                    <i class="fa-solid fa-xmark text-lg sm:text-xl font-black"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 overflow-y-auto custom-scroll pr-2 text-left font-medium">
+                <div class="p-3.5 sm:p-4 rounded-2xl bg-[#1c0802] border-2 border-[#FE7600]/30 space-y-2 shadow-md">
+                    <div class="flex items-center space-x-3 text-sm sm:text-base text-[#FE7600] uppercase font-black">
+                        <i class="fa-solid fa-trophy text-sm sm:text-base font-black w-6 text-center"></i>
+                        <span class="font-black">Главная цель</span>
+                    </div>
+                    <p class="text-xs sm:text-sm text-purple-100 leading-snug font-medium pl-9">
+                        <span id="rulesGoalText">Лети между труб и собирай значки тем.</span>
+                    </p>
+                </div>
+                <div class="space-y-2.5">
+                    <div class="text-xs sm:text-sm uppercase tracking-wider font-black flex items-center space-x-3" style="color:#FE7600">
+                        <i class="fa-solid fa-hand-pointer text-base sm:text-lg font-black w-6 text-center"></i>
+                        <span class="font-black text-xs sm:text-sm">Как играть</span>
+                    </div>
+                    <div class="space-y-2 bg-[#140326]/70 p-3 sm:p-3.5 rounded-2xl border border-white/5">
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FE760026;border-color:#FE76004D;color:#FE7600"><i class="fa-solid fa-hand-pointer text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Нажимай на экран:</strong> сова взмахнёт крыльями и полетит вверх. Если не нажимать, она падает.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#F43F5E26;border-color:#F43F5E4D;color:#F43F5E"><i class="fa-solid fa-triangle-exclamation text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Не врезайся:</strong> трубы, земля и верхний край экрана отнимают одно сердце.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FE760026;border-color:#FE76004D;color:#FE7600"><i class="fa-solid fa-rotate-right text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Попытки:</strong> в начале их <span data-num="attempts">2</span>. Закончились сердца — сгорает попытка, но темы остаются. Закончились попытки — игра начинается заново.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FE760026;border-color:#FE76004D;color:#FE7600"><i class="fa-solid fa-circle-question text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Вопросы:</strong> собирай их, они идут в счёт. Каждые <span data-num="questionsPerAttempt">100</span> вопросов дают +1 попытку. Вопросы копятся, пока остаются попытки, и сгорают, когда игра начинается заново.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#A855F726;border-color:#A855F74D;color:#A855F7"><i class="fa-solid fa-layer-group text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Темы:</strong> собирай значки тем. Полностью собранная тема больше не встречается.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-2.5">
+                    <div class="text-xs sm:text-sm uppercase tracking-wider font-black flex items-center space-x-3" style="color:#FB7185">
+                        <i class="fa-solid fa-heart text-base sm:text-lg font-black w-6 text-center"></i>
+                        <span class="font-black text-xs sm:text-sm">Сердца</span>
+                    </div>
+                    <div class="space-y-2 bg-[#140326]/70 p-3 sm:p-3.5 rounded-2xl border border-white/5">
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#EF444426;border-color:#EF44444D;color:#EF4444"><i class="fa-solid fa-heart text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Сердце:</strong> даёт +1 сердце.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FB923C26;border-color:#FB923C4D;color:#FB923C"><i class="fa-solid fa-pizza-slice text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Пицца, бургер, хот-дог:</strong> каждая порция даёт половинку сердца.</span>
+                        </div>
+                        <p class="text-[11px] sm:text-xs text-purple-400 leading-snug font-medium">Максимум 5 сердец. Половинку сердца использовать нельзя: засчитываются только целые сердца. Если осталась только половинка, следующий удар закончит полёт.</p>
+                    </div>
+                </div>
+                <div class="space-y-2.5">
+                    <div class="text-xs sm:text-sm uppercase tracking-wider font-black flex items-center space-x-3" style="color:#67E8F9">
+                        <i class="fa-solid fa-feather-pointed text-base sm:text-lg font-black w-6 text-center"></i>
+                        <span class="font-black text-xs sm:text-sm">Силы совы</span>
+                    </div>
+                    <div class="space-y-2 bg-[#140326]/70 p-3 sm:p-3.5 rounded-2xl border border-white/5">
+                        <p class="text-[11px] sm:text-xs text-purple-300 leading-snug font-medium">Сова устаёт от взмахов и со временем: чем чаще машешь крыльями, тем быстрее уходят силы, а объевшейся или замёрзшей сове взмахи даются тяжелее. Когда силы закончатся, она потеряет сердце.</p>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#67E8F926;border-color:#67E8F94D;color:#67E8F9"><i class="fa-solid fa-feather-pointed text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#67E8F9">Перо силы:</strong> возвращает 50% сил.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#00F0FF26;border-color:#00F0FF4D;color:#00F0FF"><div class="relative flex items-center justify-center w-5 h-5"><i class="fa-solid fa-feather-pointed text-base font-black"></i><span class="absolute -bottom-1 -right-1 text-[9px] font-black">∞</span></div></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#00F0FF">Макс. силы (<span data-pl="infiniteSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> силы не тратятся и всё время полные. Каждый раз, когда соберёшь ещё <span data-pl="feathersForMax" data-forms="волшебное перо|волшебных пера|волшебных перьев">6 волшебных перьев</span>, максимальный запас сил растёт на 20%.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#B5E4FF26;border-color:#B5E4FF4D;color:#B5E4FF"><i class="fa-solid fa-ice-cream text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#E3F5FF">Мороженое:</strong> возвращает 10% сил.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#2DD4BF26;border-color:#2DD4BF4D;color:#2DD4BF"><i class="fa-solid fa-martini-glass-citrus text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#5EEAD4">Коктейль и пиво:</strong> возвращают по 5% сил.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-2.5">
+                    <div class="text-xs sm:text-sm uppercase tracking-wider font-black flex items-center space-x-3" style="color:#FACC15">
+                        <i class="fa-solid fa-stopwatch text-base sm:text-lg font-black w-6 text-center"></i>
+                        <span class="font-black text-xs sm:text-sm">Бонусы и штрафы</span>
+                    </div>
+                    <div class="space-y-2 bg-[#140326]/70 p-3 sm:p-3.5 rounded-2xl border border-white/5">
+                        <p class="text-[11px] sm:text-xs text-purple-300 leading-snug font-medium">Особые предметы дают бонус, штраф или эффект на ограниченное время.</p>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#22C55E26;border-color:#22C55E4D;color:#22C55E"><i class="fa-solid fa-shield-halved text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#4ADE80">Щит (<span data-pl="shieldSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> сердца не теряются, но сквозь трубы не пролететь: сова от них отскакивает.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#38BDF826;border-color:#38BDF84D;color:#38BDF8"><i class="fa-solid fa-hourglass-half text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#7DD3FC">Замедление (<span data-pl="slowSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> игра идёт медленнее, лететь легче.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#F59E0B26;border-color:#F59E0B4D;color:#F59E0B"><i class="fa-solid fa-bolt text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#FCD34D">Ускорение (<span data-pl="speedSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> игра идёт быстрее.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#D946EF26;border-color:#D946EF4D;color:#D946EF"><svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5"/></svg></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#E879F9">Сжатие (<span data-pl="compressSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> проходы между трубами становятся уже.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FB923C26;border-color:#FB923C4D;color:#FB923C"><i class="fa-solid fa-burger text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#FDBA74">Переедание (<span data-pl="overeatSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> если съесть <span data-pl="overeatEvery" data-forms="порцию|порции|порций">4 порции</span> еды (пицца, бургер, хот-дог), сова становится больше и тяжелее.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#2DD4BF26;border-color:#2DD4BF4D;color:#2DD4BF"><i class="fa-solid fa-martini-glass-citrus text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#5EEAD4">Опьянение (<span data-pl="drunkSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> если выпить <span data-pl="drunkEvery" data-forms="коктейль или кружку пива|коктейля или кружки пива|коктейлей или кружек пива">7 коктейлей или кружек пива</span>, сову начнёт шатать, а картинка закачается.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#B5E4FF26;border-color:#B5E4FF4D;color:#B5E4FF"><i class="fa-solid fa-snowflake text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#E3F5FF">Замерзание (<span data-pl="freezeSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> если съесть <span data-pl="freezeEvery" data-forms="порцию|порции|порций">3 порции</span> мороженого, сова замерзает: синеет, кувыркается, как ледышка, и слушается с трудом.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FFD70026;border-color:#FFD7004D;color:#FFD700"><i class="fa-solid fa-star text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#FDE047">Секретная звезда:</strong> внутри случайный сюрприз. Штраф может отнять сердце, силы или собранную тему. Чем выше сложность, тем чаще штраф: в начале — 3 раза из 10, на Хард+ — всегда.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-2.5">
+                    <div class="text-xs sm:text-sm uppercase tracking-wider font-black flex items-center space-x-3" style="color:#A855F7">
+                        <i class="fa-solid fa-gauge-high text-base sm:text-lg font-black w-6 text-center"></i>
+                        <span class="font-black text-xs sm:text-sm">Уровни сложности</span>
+                    </div>
+                    <div class="space-y-2 bg-[#140326]/70 p-3 sm:p-3.5 rounded-2xl border border-white/5">
+                        <p class="text-[11px] sm:text-xs text-purple-300 leading-snug font-medium">Чем больше тем собрано, тем выше уровень сложности. Текущий уровень видно на шкале внизу экрана.</p>
+                        <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded-lg text-[10px] font-black border" style="color:#22C55E;border-color:#22C55E80;background:#22C55E1A">СУПЕРЛАЙТ</span><span class="px-2 py-0.5 rounded-lg text-[10px] font-black border" style="color:#84CC16;border-color:#84CC1680;background:#84CC161A">ЛАЙТ</span><span class="px-2 py-0.5 rounded-lg text-[10px] font-black border" style="color:#FACC15;border-color:#FACC1580;background:#FACC151A">МЕДИУМ</span><span class="px-2 py-0.5 rounded-lg text-[10px] font-black border" style="color:#FB923C;border-color:#FB923C80;background:#FB923C1A">МЕДИУМ+</span><span class="px-2 py-0.5 rounded-lg text-[10px] font-black border" style="color:#EF4444;border-color:#EF444480;background:#EF44441A">ХАРД</span><span class="px-2 py-0.5 rounded-lg text-[10px] font-black border" style="color:#E11D48;border-color:#E11D4880;background:#E11D481A">ХАРД+</span></div>
+                        <div class="rounded-xl bg-purple-500/10 border border-purple-500/30 p-2.5 space-y-1"><div class="text-[11px] sm:text-xs text-purple-100 font-black">С каждым новым уровнем:</div><div class="text-[11px] sm:text-xs text-purple-200 leading-snug font-medium">• сова летит быстрее;<br>• силы тратятся быстрее;<br>• проходы между трубами уже;<br>• в секретной звезде чаще штрафы.</div></div>
+                        <p class="text-[11px] sm:text-xs text-purple-400 leading-snug font-medium">Если потерять тему, уровень может снизиться.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <button id="understoodRulesBtn" class="btn-bubo w-full py-3.5 rounded-2xl text-xs sm:text-sm uppercase tracking-wider shrink-0 font-black shadow-lg">
+                <span class="font-black">ПОНЯТНО, В ПОЛЕТ!</span>
+            </button>
+            <button id="rulesBackBtn" onclick="event.stopPropagation(); document.getElementById('closeRulesBtn').click();" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider shrink-0 font-black flex items-center justify-center space-x-2" style="margin-top:8px">
+                <i class="fa-solid fa-arrow-left text-xs font-black"></i>
+                <span class="font-black">ВЕРНУТЬСЯ В МЕНЮ</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО НАСТРОЕК -->
+    <div id="settingsModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-[#140326]/20 backdrop-blur-[7px]">
+        <div class="glass-panel w-full max-w-xs rounded-3xl p-4 flex flex-col max-h-[90vh] border-[#782CE9]/60 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-[#782CE9]/30 pb-3 shrink-0">
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm sm:text-base text-white uppercase tracking-wider font-black">Настройки</span>
+                </div>
+                <button id="closeSettingsBtn" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#782CE9]/30 hover:bg-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center transition-all">
+                    <i class="fa-solid fa-xmark text-lg sm:text-xl font-black"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3.5 overflow-y-auto custom-scroll pr-2 min-h-0">
+            <div class="space-y-3.5 text-left font-medium text-xs text-purple-100">
+                <!-- Музыка -->
+                <div class="bg-[#140326]/70 p-3 rounded-2xl border border-white/5 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="flex items-center space-x-2 text-white font-black">
+                            <i class="fa-solid fa-music text-[#FE7600]"></i>
+                            <span>Музыка</span>
+                        </span>
+                        <button id="settingsMusicToggle" class="w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors">
+                            <div id="settingsMusicThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-5 transition-transform"></div>
+                        </button>
+                    </div>
+                    <div class="space-y-1 pt-1">
+                        <div class="flex justify-between text-[10px] text-purple-300 font-medium">
+                            <span>Громкость музыки</span>
+                            <span id="musicVolLabel" class="font-black">38%</span>
+                        </div>
+                        <input id="musicVolumeSlider" type="range" min="0" max="100" value="38" class="w-full accent-[#FE7600] cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- Звуки игры -->
+                <div class="bg-[#140326]/70 p-3 rounded-2xl border border-white/5 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="flex items-center space-x-2 text-white font-black">
+                            <i class="fa-solid fa-volume-high text-[#00D2FF]"></i>
+                            <span>Звуки игры</span>
+                        </span>
+                        <button id="settingsSfxToggle" class="w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors">
+                            <div id="settingsSfxThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-5 transition-transform"></div>
+                        </button>
+                    </div>
+                    <div class="space-y-1 pt-1">
+                        <div class="flex justify-between text-[10px] text-purple-300 font-medium">
+                            <span>Громкость звуков</span>
+                            <span id="sfxVolLabel" class="font-black">100%</span>
+                        </div>
+                        <input id="sfxVolumeSlider" type="range" min="0" max="100" value="100" class="w-full accent-[#00D2FF] cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- Вибрация -->
+                <div class="bg-[#140326]/70 p-3 rounded-2xl border border-white/5 flex justify-between items-center">
+                    <span class="flex items-center space-x-2 text-white font-black">
+                        <i class="fa-solid fa-mobile-screen-button text-[#22C55E]"></i>
+                        <span>Виброотдача</span>
+                    </span>
+                    <button id="settingsVibeToggle" class="w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors">
+                        <div id="settingsVibeThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-5 transition-transform"></div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Графика -->
+            <div class="bg-[#140326]/70 p-3 rounded-2xl border border-white/5 space-y-2 text-left text-xs">
+                <div class="flex justify-between items-center">
+                    <span class="flex items-center space-x-2 text-white font-black">
+                        <i class="fa-solid fa-display text-[#A855F7]"></i>
+                        <span>Графика</span>
+                    </span>
+                    <span id="gfxLabel" class="text-[10px] font-black text-[#C4A1FF]">Средняя</span>
+                </div>
+                <input id="gfxSlider" type="range" min="0" max="2" step="1" value="1" class="w-full accent-[#A855F7] cursor-pointer">
+                <div class="flex justify-between text-[9px] font-black">
+                    <span class="gfx-tick" data-q="low">Низкая</span>
+                    <span class="gfx-tick" data-q="medium">Средняя</span>
+                    <span class="gfx-tick" data-q="high">Высокая</span>
+                </div>
+                <div id="gfxHint" class="text-[10px] text-purple-300 font-medium leading-snug">Баланс чёткости и скорости</div>
+            </div>
+
+                        <!-- Полноэкранный режим -->
+            <div class="flex justify-between items-center">
+                <span class="flex items-center space-x-2 text-white font-black">
+                    <i class="fa-solid fa-expand text-[#FE7600]"></i>
+                    <span>Во весь экран</span>
+                </span>
+                <button id="fullscreenBtn" type="button" class="w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors">
+                    <div id="fullscreenThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-0 transition-transform"></div>
+                </button>
+            </div>
+
+</div>
+            <button id="saveSettingsBtn" class="btn-bubo w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider shrink-0 font-black shadow-lg">
+                <span id="saveSettingsLabel" class="font-black">СОХРАНИТЬ</span>
+            </button>
+            <button id="settingsBackBtn" onclick="event.stopPropagation(); document.getElementById('closeSettingsBtn').click();" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider shrink-0 font-black flex items-center justify-center space-x-2" style="margin-top:8px">
+                <i class="fa-solid fa-arrow-left text-xs font-black"></i>
+                <span class="font-black">ВЕРНУТЬСЯ В МЕНЮ</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ПОРАЖЕНИЯ -->
+    <div id="gameOverModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-4 bg-[#140326]/20 backdrop-blur-[7px] text-center">
+        <div class="glass-panel w-full max-w-xs rounded-3xl p-4 border-red-500/50 shadow-2xl space-y-3">
+            <div class="flex items-center justify-center space-x-2 filter drop-shadow-[0_2px_15px_rgba(254,118,0,0.5)] pt-1 pb-0.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FE7600] to-[#782CE9] flex items-center justify-center shadow-lg border border-white/30 shrink-0">
+                    <i class="fa-solid fa-gamepad text-white text-sm"></i>
+                </div>
+                <div class="text-xl tracking-tight font-black leading-none flex items-center space-x-1.5">
+                    <span class="text-[#FE7600] font-black">BUBO</span>
+                    <span class="text-[#A855F7] font-black">GAME</span>
+                </div>
+            </div>
+
+            <div class="space-y-0.5">
+                <h2 id="gameOverTitle" class="text-base text-white font-black">ЗАБЕГ ОКОНЧЕН</h2>
+                <p id="gameOverSubtext" class="text-[10px] text-purple-200 font-medium">Списана 1 попытка</p>
+            </div>
+
+            <div class="go-reason"><i class="fa-solid fa-skull-crossbones"></i><div><span class="go-reason-k">ПРИЧИНА</span><span id="gameOverReason">Сова врезалась в трубу.</span></div></div>
+            <div id="gameOverInfo" class="go-info"></div>
+
+            <div class="bg-[#140326]/80 p-2.5 rounded-2xl border border-[#782CE9]/30 space-y-1.5 text-[11px] font-medium">
+                <div class="flex justify-between text-purple-300">
+                    <span>Осталось попыток:</span>
+                    <span id="finalAttempts" class="text-white font-black">1</span>
+                </div>
+                <div class="flex justify-between text-purple-300">
+                    <span>Темы:</span>
+                    <span id="finalTokens" class="text-[#FE7600] font-black">0 / 70</span>
+                </div>
+                <div class="flex justify-between text-purple-300">
+                    <span>Вопросов в забеге:</span>
+                    <span id="finalScore" class="text-white font-black">0</span>
+                </div>
+            </div>
+
+            <div class="space-y-2 pt-0.5">
+                <button id="continueAttemptBtn" class="btn-bubo w-full py-2 px-3 rounded-2xl flex flex-col items-center justify-center shadow-xl active:scale-95 transition-all">
+                    <div class="flex items-center space-x-2">
+                        <i id="continueAttemptIcon" class="fa-solid fa-play text-sm text-white font-black"></i>
+                        <span id="continueAttemptTitle" class="text-xs font-black tracking-wider uppercase text-white">ПРОДОЛЖИТЬ</span>
+                    </div>
+                    <span id="continueAttemptSub" class="text-[9px] font-bold text-white/85 mt-0.5 tracking-tight uppercase">ОСТАЛОСЬ ПОПЫТОК: 1</span>
+                </button>
+                <button id="restartFromGameOverBtn" class="btn-secondary w-full py-2 rounded-xl text-[10px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black">
+                    <i class="fa-solid fa-rotate-left text-xs font-black"></i>
+                    <span class="font-black">ЗАНОВО</span>
+                </button>
+                <button id="gameOverOkBtn" class="hidden btn-green w-full py-3 rounded-2xl text-[12px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black shadow-xl active:scale-95 transition-all">
+                    <i class="fa-solid fa-check text-sm font-black"></i>
+                    <span class="font-black">ПОНЯТНО</span>
+                </button>
+                <button id="gameOverHomeBtn" class="w-full py-2 rounded-xl text-[10px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black bg-[#2d0e52]/90 hover:bg-[#381267] border border-[#a855f7]/50 text-purple-300 shadow-md active:scale-95 transition-all">
+                    <i class="fa-solid fa-house text-xs font-black text-[#FE7600]"></i>
+                    <span class="font-black text-white">В ГЛАВНОЕ МЕНЮ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ПОБЕДА (100% прохождение): промежуточное окно перед рулеткой, в стиле окна рулетки -->
+    <div id="winModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 bg-[#140326]/30 backdrop-blur-[7px] text-center">
+        <div id="winWindow" class="glass-panel w-full max-w-sm rounded-3xl flex flex-col shadow-2xl relative">
+            <div class="win-deco" aria-hidden="true"><div class="win-blob b1"></div><div class="win-blob b2"></div><div class="win-rays"></div></div>
+            <div class="win-emblem"><div class="win-emblem-glow"></div><div class="win-cup"><i class="fa-solid fa-trophy"></i></div><i class="win-st s1">✦</i><i class="win-st s2">✦</i><i class="win-st s3">✦</i></div>
+            <div class="win-title">ПОБЕДА!</div>
+            <p class="win-text">Поздравляем! Вы прошли игру на <b>100%</b> и собрали <b>все темы</b>! Ваша попытка не потрачена, а весь текущий прогресс и собранные бонусы сохранены. Вы можете испытать удачу в рулетке или сразу начать новую игру с этой же попытки!</p>
+            <div class="win-pill"><div class="win-pill-ring"><i class="fa-solid fa-dice"></i></div><div class="win-pill-t"><span>Вам доступно вращение в рулетке!</span><b id="vicSpinsText">1 вращение</b></div></div>
+            <div class="win-btns">
+                <button id="vicSpinBtn" class="btn-bubo win-spin w-full py-3.5 rounded-2xl text-[13px] uppercase tracking-wider flex items-center justify-center space-x-2 shadow-2xl font-black">
+                    <i class="fa-solid fa-rocket text-sm text-white font-black"></i><span id="vicSpinLabel" class="font-black text-white">ВРАЩАТЬ РУЛЕТКУ (ДОСТУПНО: 1)</span>
+                </button>
+                <button id="vicNewGameBtn" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider font-black flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-play text-xs font-black text-[#FE7600]"></i><span class="font-black text-white">НАЧАТЬ НОВУЮ ИГРУ</span>
+                </button>
+                <button id="vicHomeBtn" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider font-black flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-house text-xs font-black text-[#FE7600]"></i><span class="font-black text-white">В ГЛАВНОЕ МЕНЮ</span>
+                </button>
+            </div>
+        </div>
+        <div id="vicConfetti" class="win-confetti" aria-hidden="true"></div>
+    </div>
+
+    <!-- ПОДТВЕРЖДЕНИЕ «НАЧАТЬ ЗАНОВО» -->
+    <div id="resetConfirmModal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-[#140326]/40 backdrop-blur-[7px] text-center">
+        <div class="glass-panel w-full max-w-xs rounded-3xl p-5 border-red-500/50 shadow-2xl space-y-3">
+            <div class="rc-ico"><i class="fa-solid fa-rotate-left"></i></div>
+            <h2 class="text-[15px] leading-snug text-white font-black">Вы точно хотите сбросить текущий прогресс и начать новую игру?</h2>
+            <p class="text-[11px] text-purple-200 font-semibold">Весь текущий прогресс будет безвозвратно потерян:</p>
+            <ul id="resetLossList" class="rc-list"></ul>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button id="resetYesBtn" class="btn-green py-3 rounded-2xl text-[12px] uppercase tracking-wider font-black shadow-xl">ДА</button>
+                <button id="resetNoBtn" class="btn-red py-3 rounded-2xl text-[12px] uppercase tracking-wider font-black shadow-xl">НЕТ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- РУЛЕТКА ПРИЗОВ (окно в стиле остальных меню) -->
+    <div id="rouletteModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-[#140326]/20 backdrop-blur-[7px]">
+        <div id="rwWindow" class="glass-panel w-full max-w-sm rounded-3xl p-4 sm:p-5 flex flex-col border-[#782CE9]/60 shadow-2xl space-y-4 relative">
+            <div class="rwp-deco" aria-hidden="true"><div class="rwp-blob b1"></div><div class="rwp-blob b2"></div><div class="rwp-ring"></div><i class="rwp-spark" style="left:30%;top:6%;--d:0.00s;--s:10px"></i><i class="rwp-spark" style="left:70%;top:6%;--d:0.37s;--s:9px"></i><i class="rwp-spark" style="left:24%;top:14%;--d:0.74s;--s:8px"></i><i class="rwp-spark" style="left:77%;top:14%;--d:1.11s;--s:11px"></i><i class="rwp-spark" style="left:33%;top:20%;--d:1.48s;--s:7px"></i><i class="rwp-spark" style="left:67%;top:20%;--d:1.85s;--s:8px"></i><i class="rwp-spark" style="left:8%;top:8%;--d:2.22s;--s:8px"></i><i class="rwp-spark" style="left:92%;top:24%;--d:0.19s;--s:8px"></i><i class="rwp-spark" style="left:12%;top:22%;--d:0.56s;--s:7px"></i><i class="rwp-spark" style="left:20%;top:4%;--d:0.93s;--s:6px"></i><i class="rwp-spark" style="left:80%;top:3%;--d:1.30s;--s:6px"></i><i class="rwp-spark" style="left:88%;top:14%;--d:1.67s;--s:7px"></i></div>
+            <button id="closeRouletteBtn" class="absolute right-3 top-3 z-10 w-8 h-8 rounded-xl bg-[#782CE9]/30 hover:bg-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center transition-all">
+                <i class="fa-solid fa-xmark text-base font-black"></i>
+            </button>
+
+            <div class="rwp-head">
+                <div class="rwp-emblem"><div class="rwp-emblem-glow"></div><svg class="rwp-wheel" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="rwpRim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,255,255,0.30)"/><stop offset="1" stop-color="rgba(255,255,255,0.08)"/></linearGradient><radialGradient id="rwpEdge" cx="50" cy="50" r="40" gradientUnits="userSpaceOnUse"><stop offset="0.72" stop-color="rgba(0,0,0,0)"/><stop offset="1" stop-color="rgba(10,2,25,0.35)"/></radialGradient><radialGradient id="rwpCoreG" cx="42%" cy="36%" r="70%"><stop offset="0" stop-color="#FFFFFF"/><stop offset="0.7" stop-color="#F1E9FF"/><stop offset="1" stop-color="#D9C9F7"/></radialGradient><linearGradient id="rwpShine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,255,255,0.35)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/></linearGradient></defs><circle cx="50" cy="50" r="49" fill="url(#rwpRim)" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/><circle cx="50" cy="50" r="40.8" fill="#1d0936"/><g class="rwp-rotor"><path d="M39.65 11.36 A40 40 0 0 1 60.35 11.36 L58.02 20.06 A31 31 0 0 0 41.98 20.06 Z" fill="#e96c00"/><path d="M41.98 20.06 A31 31 0 0 1 58.02 20.06 L55.44 29.72 A21 21 0 0 0 44.56 29.72 Z" fill="#9d4900"/><path d="M60.35 11.36 A40 40 0 0 1 78.28 21.72 L71.92 28.08 A31 31 0 0 0 58.02 20.06 Z" fill="#7f54e2"/><path d="M58.02 20.06 A31 31 0 0 1 71.92 28.08 L64.85 35.15 A21 21 0 0 0 55.44 29.72 Z" fill="#563998"/><path d="M78.28 21.72 A40 40 0 0 1 88.64 39.65 L79.94 41.98 A31 31 0 0 0 71.92 28.08 Z" fill="#ce4fe8"/><path d="M71.92 28.08 A31 31 0 0 1 79.94 41.98 L70.28 44.56 A21 21 0 0 0 64.85 35.15 Z" fill="#8a359c"/><path d="M88.64 39.65 A40 40 0 0 1 88.64 60.35 L79.94 58.02 A31 31 0 0 0 79.94 41.98 Z" fill="#29c3af"/><path d="M79.94 41.98 A31 31 0 0 1 79.94 58.02 L70.28 55.44 A21 21 0 0 0 70.28 44.56 Z" fill="#1b8376"/><path d="M88.64 60.35 A40 40 0 0 1 78.28 78.28 L71.92 71.92 A31 31 0 0 0 79.94 58.02 Z" fill="#33ade4"/><path d="M79.94 58.02 A31 31 0 0 1 71.92 71.92 L64.85 64.85 A21 21 0 0 0 70.28 55.44 Z" fill="#227599"/><path d="M78.28 78.28 A40 40 0 0 1 60.35 88.64 L58.02 79.94 A31 31 0 0 0 71.92 71.92 Z" fill="#e03956"/><path d="M71.92 71.92 A31 31 0 0 1 58.02 79.94 L55.44 70.28 A21 21 0 0 0 64.85 64.85 Z" fill="#97273a"/><path d="M60.35 88.64 A40 40 0 0 1 39.65 88.64 L41.98 79.94 A31 31 0 0 0 58.02 79.94 Z" fill="#e96c00"/><path d="M58.02 79.94 A31 31 0 0 1 41.98 79.94 L44.56 70.28 A21 21 0 0 0 55.44 70.28 Z" fill="#9d4900"/><path d="M39.65 88.64 A40 40 0 0 1 21.72 78.28 L28.08 71.92 A31 31 0 0 0 41.98 79.94 Z" fill="#7f54e2"/><path d="M41.98 79.94 A31 31 0 0 1 28.08 71.92 L35.15 64.85 A21 21 0 0 0 44.56 70.28 Z" fill="#563998"/><path d="M21.72 78.28 A40 40 0 0 1 11.36 60.35 L20.06 58.02 A31 31 0 0 0 28.08 71.92 Z" fill="#ce4fe8"/><path d="M28.08 71.92 A31 31 0 0 1 20.06 58.02 L29.72 55.44 A21 21 0 0 0 35.15 64.85 Z" fill="#8a359c"/><path d="M11.36 60.35 A40 40 0 0 1 11.36 39.65 L20.06 41.98 A31 31 0 0 0 20.06 58.02 Z" fill="#29c3af"/><path d="M20.06 58.02 A31 31 0 0 1 20.06 41.98 L29.72 44.56 A21 21 0 0 0 29.72 55.44 Z" fill="#1b8376"/><path d="M11.36 39.65 A40 40 0 0 1 21.72 21.72 L28.08 28.08 A31 31 0 0 0 20.06 41.98 Z" fill="#33ade4"/><path d="M20.06 41.98 A31 31 0 0 1 28.08 28.08 L35.15 35.15 A21 21 0 0 0 29.72 44.56 Z" fill="#227599"/><path d="M21.72 21.72 A40 40 0 0 1 39.65 11.36 L41.98 20.06 A31 31 0 0 0 28.08 28.08 Z" fill="#e03956"/><path d="M28.08 28.08 A31 31 0 0 1 41.98 20.06 L44.56 29.72 A21 21 0 0 0 35.15 35.15 Z" fill="#97273a"/></g><circle cx="50" cy="50" r="40" fill="url(#rwpEdge)"/><circle cx="50" cy="51.2" r="22.4" fill="rgba(10,2,25,0.45)"/><circle cx="50" cy="50" r="21" fill="url(#rwpCoreG)"/><path d="M17 40 A35 35 0 0 1 83 40 C70 31 30 31 17 40 Z" fill="url(#rwpShine)"/></svg><i class="fa-solid fa-gamepad rwp-core-ico"></i><div class="rwp-pin"></div></div>
+                <div class="rwp-title"><span class="rwp-t1">Рулетка</span> <span class="rwp-t2">призов</span></div>
+                <div class="rwp-sub">Крути рулетку и забирай подарки — от бонусов для полёта до бесплатных проходок на игру!</div>
+            </div>
+
+            <div id="rwReel" class="rw-reel">
+                <div id="rwTrack" class="rw-track"></div>
+                <div class="rw-pointer"></div>
+                <div class="rw-reel-ring" aria-hidden="true"></div>
+            </div>
+            <div class="rw-hint">Потяни ленту, чтобы посмотреть все призы</div>
+
+            <div id="rwSpinsPill" class="rw-spins-pill">
+                <div class="rw-spins-ring"><i class="fa-solid fa-dice"></i></div>
+                <div class="rw-spins-text"><span>Попыток вращения:</span><b id="rwSpins">0</b></div>
+            </div>
+
+            <div class="rw-btns space-y-2">
+                <button id="rwSpinBtn" class="btn-bubo rw-spin-btn w-full py-3.5 rounded-2xl text-[13px] uppercase tracking-wider flex items-center justify-center space-x-2 shadow-2xl font-black shrink-0">
+                    <i class="fa-solid fa-rocket text-sm text-white font-black"></i>
+                    <span id="rwSpinLabel" class="font-black text-white">КРУТИТЬ РУЛЕТКУ</span>
+                </button>
+                <button id="rwLaterBtn" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider shrink-0 font-black flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-house text-xs font-black text-[#FE7600]"></i>
+                    <span id="rwLaterLabel" class="font-black text-white">В ГЛАВНОЕ МЕНЮ</span>
+                </button>
+            </div>
+
+            <!-- выпавший приз: затемнение, карточка вылетает в центр с переворотом и блёстками -->
+            <div id="rwResult" class="hidden rw-result rw-result2">
+                <div id="rwResCard" class="rw-res-pop">
+                    <div class="rw-res-stage" id="rwResStage"></div>
+                    <div class="rw-res-text">
+                        <div class="rw-res-kicker2">ВЫ ВЫИГРАЛИ!</div>
+                        <div class="rw-res-title" id="rwResTitle"></div>
+                        <div class="rw-res-sub" id="rwResSub"></div>
+                        <p class="rw-res-desc" id="rwResDesc"></p>
+                        <button id="rwClaimBtn" class="btn-bubo w-full py-3 rounded-2xl text-[12px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black">
+                            <i class="fa-solid fa-gift font-black"></i>
+                            <span class="font-black">ЗАБРАТЬ ПРИЗ</span>
+                        </button>
+                    </div>
+                </div>
+                <span id="rwResIco" class="hidden"></span>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/audio.js?v=0.11.5"></script>
+    <script src="js/game-core.js?v=0.11.5"></script>
+    <script src="js/owl.js?v=0.11.5"></script>
+    <script src="js/hud.js?v=0.11.5"></script>
+    <script src="js/scenery.js?v=0.11.5"></script>
+    <script src="js/items.js?v=0.11.5"></script>
+    <script src="js/update.js?v=0.11.5"></script>
+    <script src="js/render.js?v=0.11.5"></script>
+    <script src="js/wheel.js?v=0.11.5"></script>
+    <script src="js/ui.js?v=0.11.5"></script>
+<script src="js/admin.js?v=0.11.5"></script>
+<script src="js/text-measure.js?v=0.11.5"></script>
+<script src="js/fullscreen.js?v=0.11.5"></script>
+</body>
+</html>
