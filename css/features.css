@@ -25,8 +25,8 @@
 #gameOverModal .go-info.go-warn > i { color: #FE7600; }
 
 /* ===== Окно «Победа» — в стиле окна рулетки ===== */
-#winModal > #winWindow { zoom: var(--menu-zoom, 1); max-height: calc((100dvh - 24px) / var(--menu-zoom, 1)); overflow: hidden; position: relative;
-    padding: 26px 20px 20px; gap: 14px; border: 1.5px solid rgba(168, 120, 245, 0.38) !important; background: rgba(29, 9, 54, 0.96); }
+#winModal > #winWindow { zoom: var(--menu-zoom, 1); height: calc((100dvh - 24px) / var(--menu-zoom, 1)); max-height: calc((100dvh - 24px) / var(--menu-zoom, 1)); overflow: hidden; position: relative; justify-content: space-evenly;
+    padding: 24px 20px 24px; gap: 14px; border: 1.5px solid rgba(168, 120, 245, 0.38) !important; background: rgba(29, 9, 54, 0.96); }
 #winWindow > *:not(.win-deco) { position: relative; z-index: 1; }
 #winWindow .win-deco { position: absolute; inset: 0; z-index: 0; pointer-events: none; border-radius: inherit; overflow: hidden; }
 #winWindow .win-blob { position: absolute; border-radius: 50%; filter: blur(38px); opacity: 0.55; }
@@ -36,7 +36,7 @@
     background: repeating-conic-gradient(rgba(255, 197, 61, 0.10) 0deg 9deg, transparent 9deg 24deg);
     -webkit-mask-image: radial-gradient(circle, #000 0, rgba(0,0,0,0.5) 120px, transparent 250px); mask-image: radial-gradient(circle, #000 0, rgba(0,0,0,0.5) 120px, transparent 250px);
     animation: vicSpin 40s linear infinite; }
-#winWindow .win-emblem { position: relative; width: 86px; height: 86px; margin: 0 auto; }
+#winWindow .win-emblem { position: relative; width: 86px; height: 86px; margin: 14px auto 0; }
 #winWindow .win-emblem-glow { position: absolute; inset: -22px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 197, 61, 0.45) 0%, rgba(254, 118, 0, 0.18) 45%, rgba(168, 85, 247, 0) 70%); animation: rwpGlow 3.2s ease-in-out infinite; }
 #winWindow .win-cup { position: relative; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center;
     background: radial-gradient(circle at 35% 30%, #FFF6C2 0%, #FFC531 35%, #FE7600 75%, #B84A00 100%);
@@ -65,15 +65,15 @@
     background: linear-gradient(110deg, #FE7600 0%, #FF8C1A 35%, #FFB054 50%, #FF8C1A 65%, #FE7600 100%) 0 0 / 220% 100%;
     animation: btnFlow 3.2s ease-in-out infinite, btnBreath 2.4s ease-in-out infinite; }
 #winWindow button[disabled] { opacity: 0.5; }
-/* конфетти поверх всего окна (не мешает нажатиям) */
-#winModal .win-confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 5; }
-#winModal .wc { position: absolute; top: -24px; display: block; opacity: 0.95; will-change: transform;
+/* конфетти на весь экран (слой переносится в body из wheel.js, не мешает нажатиям) */
+#vicConfetti { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 60; }
+#vicConfetti .wc { position: absolute; top: -24px; display: block; opacity: 0.95; will-change: transform;
     animation: wcFall var(--d) linear var(--delay) infinite; }
 @keyframes wcFall {
     0% { transform: translate3d(0, -30px, 0) rotate(0deg) rotateY(0deg); }
     100% { transform: translate3d(var(--dx), calc(100dvh + 60px), 0) rotate(var(--r)) rotateY(720deg); }
 }
-@media (prefers-reduced-motion: reduce) { #winModal .wc { animation-duration: calc(var(--d) * 2); } }
+@media (prefers-reduced-motion: reduce) { #vicConfetti .wc { animation-duration: calc(var(--d) * 2); } }
 
 /* ===== Подтверждение «Начать заново» ===== */
 #resetConfirmModal .rc-ico { width: 56px; height: 56px; margin: 0 auto; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff;
@@ -171,3 +171,8 @@
 .rw-card .rw-back { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 8px 10px; box-sizing: border-box; text-align: center; border-radius: inherit; background: rgba(20, 3, 38, 0.97); border: 1px solid var(--c, #fff); transform: rotateY(-180deg); opacity: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.3, 1), opacity 0.6s ease; pointer-events: none; }
 .rw-card.rw-flipped .rw-back { transform: rotateY(0deg); opacity: 1; }
 .rw-card .rw-back-txt { font-size: 10px; font-weight: 700; line-height: 1.3; color: #EDE5F8; }
+
+/* плашка «Попыток вращения» в окне победы — как в рулетке */
+#winWindow .rw-spins-pill { margin: 0 auto !important; }
+#winWindow .rw-spins-pill.has b, #winWindow #vicSpinsText { color: #FFC53D !important; }
+#winWindow .rw-spins-pill.has .rw-spins-ring i { animation: rwpDice 2.6s ease-in-out infinite; display: inline-block; }

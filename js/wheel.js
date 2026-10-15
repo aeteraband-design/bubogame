@@ -403,12 +403,13 @@ function triggerVictory() {
 function vicSpinsWord(n) { return n + ' ' + ruPlural(n, ['вращение', 'вращения', 'вращений']); }
 function vicUpdate() {
     const n = rouletteSpins, btn = rwEl('vicSpinBtn');
-    if (rwEl('vicSpinsText')) rwEl('vicSpinsText').innerText = vicSpinsWord(n);
+    if (rwEl('vicSpinsText')) rwEl('vicSpinsText').innerText = String(n);
     if (rwEl('vicSpinLabel')) rwEl('vicSpinLabel').innerText = 'ВРАЩАТЬ РУЛЕТКУ (ДОСТУПНО: ' + n + ')';
     if (btn) { btn.disabled = n <= 0; btn.classList.toggle('opacity-50', n <= 0); }
 }
 function vicConfetti(on) {
     const layer = rwEl('vicConfetti'); if (!layer) return;
+    if (layer.parentNode !== document.body) document.body.appendChild(layer);   // на весь экран, а не только в колонку игры
     layer.innerHTML = '';
     if (!on) return;
     const cols = ['#FE7600', '#FFD35A', '#A855F7', '#38BDF8', '#F43F5E', '#4ADE80', '#FFFFFF'];
