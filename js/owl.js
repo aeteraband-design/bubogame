@@ -137,7 +137,6 @@ const owl = {
         const OWL_CX = -1.1, OWL_CY = 2.7;
         ctx.translate(OWL_CX * bodyScale, OWL_CY * bodyScale);
         ctx.rotate(this.rotation + this.lean);
-        if (shz && shz.k > 0.01) ctx.scale(1 + 0.05 * shz.k, 1 - 0.1 * shz.k);   // в ШАЗАМе тело чуть приплюснуто и вытянуто вперёд — живот не вываливается
         ctx.translate(-OWL_CX * bodyScale, -OWL_CY * bodyScale);
         ctx.scale(bodyScale, bodyScale);
 

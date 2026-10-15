@@ -258,3 +258,10 @@
 /* Таймеры эффектов — справа, под жизнями: прижаты к правому краю, при смене секунд плашка растёт и сжимается влево */
 #buffBar { left: auto !important; right: calc(0.875rem * var(--fx, 1)) !important; transform-origin: right top !important; align-items: flex-end !important; }
 #buffBar .buff-tag { align-self: flex-end !important; }
+
+/* Окно «Начать заново?»: кнопки с обводкой, надпись в цвет обводки */
+#resetYesBtn, #resetNoBtn { background: rgba(20, 3, 38, 0.6) !important; box-shadow: none !important; border: 2px solid currentColor !important; }
+#resetYesBtn { color: #22C55E !important; }
+#resetNoBtn { color: #EF4444 !important; }
+#resetYesBtn:hover { background: rgba(34, 197, 94, 0.12) !important; }
+#resetNoBtn:hover { background: rgba(239, 68, 68, 0.12) !important; }
