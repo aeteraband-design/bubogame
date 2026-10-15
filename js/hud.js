@@ -18,6 +18,9 @@ function resize() {
     document.documentElement.style.setProperty('--tb', (phone ? Math.max(1, Math.min(1.4, TEXT_TARGET / (measureTextScale() * pgz))) : 1).toFixed(3));
     viewScale = phone ? pz : Math.max(1, Math.min(2.0, ch / 600));
     document.documentElement.style.setProperty('--ui-zoom', String(phone ? pz.toFixed(3) : Math.max(1, Math.min(1.8, viewScale * 1.12)).toFixed(3)));
+    // единый множитель для подсказок, летящих шариков и таймеров: один и тот же на любом телефоне и в любом браузере
+    // (раньше подсказки масштабировались transform, а таймеры — zoom, и браузеры по-разному считали их размер и позицию)
+    document.documentElement.style.setProperty('--fx', String(Math.min(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom')) || 1, 1.25).toFixed(3)));
     // нижняя плашка с темами на ПК растёт меньше, чтобы не занимать много места
     document.documentElement.style.setProperty('--hud-zoom', String(phone ? pz.toFixed(3) : Math.max(1, Math.min(1.3, viewScale)).toFixed(3)));
     width = cw / (viewScale * WORLD_K);
@@ -226,7 +229,7 @@ function spawnCollectionStarBurst(x, y, color) {
 // и не улетает далеко вправо. Если подсказок сразу несколько (подобрали + возник эффект / попытка / рост силы) — они встают столбиком,
 // с таким же зазором, как у таймеров: снизу то, что подобрали, над ним — следствие (бонус).
 function layoutHintTag(tag, sx, sy, isBonus, toTimer, targetType) {
-    const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom')) || 1;
+    const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fx')) || 1;
     const cw = container.clientWidth, nowT = performance.now();
     const gap = 4 * z;
     // в столбик берём и подсказки, которые ещё стоят на месте перед полётом в таймер (первые 0,45 с)

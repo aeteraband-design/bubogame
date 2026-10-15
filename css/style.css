@@ -771,10 +771,10 @@
         .inf-sign { font-size: 8px !important; }
         @media (min-width: 900px) { .inf-sign { font-size: 11.5px !important; } }
         /* ===== Плитки тем, подсказки, рулетка: финальные подгонки ===== */
-        .fly-label-tag, .flying-orb { scale: min(var(--ui-zoom, 1), 1.25); }
-        #buffBar { zoom: min(var(--ui-zoom, 1), 1.25); }
+        .fly-label-tag, .flying-orb { scale: var(--fx, 1); }
+        #buffBar { zoom: var(--fx, 1); }
         /* ===== Таймеры под панелью жизней: отступ как положено на компьютере и на телефоне; знак ∞ крупнее на компьютере ===== */
-        #buffBar { top: calc((3.5rem * var(--ui-zoom, 1) + 8px) / min(var(--ui-zoom, 1), 1.25)) !important; }
+        #buffBar { top: calc((3.5rem * var(--ui-zoom, 1) + 8px) / var(--fx, 1)) !important; }
         @media (min-width: 900px) { .inf-sign { font-size: 14px !important; } }
         @keyframes buffTagIntro { 0% { opacity: 0; transform: translate3d(calc(50% * 0.12), 6px, 0) scale(0.88); } 26% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } 100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }   /* появляется так же, как обычные подсказки, и стоит на месте — не наезжает на соседнюю */
         #buffBar { position: absolute; display: flex !important; flex-direction: column; align-items: flex-start; gap: 4px; }
