@@ -189,7 +189,7 @@ function update() {
         }
     }
 
-    const activeSqueeze = currentDifficultySqueeze + (currentCompressionFactor * 32);
+    const activeSqueeze = currentDifficultySqueeze + (currentCompressionFactor * compressionMaxForLevel());
 
     for (let i = pipes.length - 1; i >= 0; i--) {
         const p = pipes[i];

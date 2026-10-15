@@ -742,7 +742,7 @@ function drawPipe(pipe) {
     ctx.save();
     ctx.translate(pipe.x, 0);   // рисуем в системе координат трубы: градиенты одинаковы для всех труб и создаются один раз
 
-    const activeSqueeze = currentDifficultySqueeze + (currentCompressionFactor * 32);
+    const activeSqueeze = currentDifficultySqueeze + (currentCompressionFactor * compressionMaxForLevel());
 
     const effectiveTop = pipe.top + activeSqueeze;
     const effectiveBottom = pipe.bottom + activeSqueeze;
