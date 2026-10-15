@@ -621,7 +621,7 @@ function makeBuffEl(b) {
     return el;
 }
 function renderBuffBar(bar, list) {
-    const z = parseFloat(getComputedStyle(bar).zoom) || 1;
+    const z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fx')) || 1;   // панель таймеров масштабируется transform: scale(--fx)
     const els = new Map();
     [...bar.children].forEach(el => { if (!el.dataset.leaving) els.set(el.dataset.key, el); });
     const before = new Map();

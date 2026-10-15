@@ -772,12 +772,10 @@
         @media (min-width: 900px) { .inf-sign { font-size: 11.5px !important; } }
         /* ===== Плитки тем, подсказки, рулетка: финальные подгонки ===== */
         .fly-label-tag, .flying-orb { scale: var(--fx, 1); }
-        /* Таймеры больше не масштабируются через zoom (на iPhone zoom и измерение позиций расходятся, из-за чего таймеры дёргались и были мельче подсказок):
-           их размер задаётся через --fx, как у подсказок, а позиции меряются в обычных пикселях */
-        #buffBar { zoom: 1; }
-        #buffBar .buff-tag { font-size: calc(11.5px * var(--fx, 1)) !important; padding: calc(3px * var(--fx, 1)) calc(7px * var(--fx, 1)) !important; gap: calc(4px * var(--fx, 1)) !important; border-radius: calc(10px * var(--fx, 1)) !important; }
-        #buffBar .buff-tag i { font-size: calc(11.5px * var(--fx, 1)) !important; }
-        #buffBar .buff-tag svg { width: calc(13px * var(--fx, 1)) !important; height: calc(13px * var(--fx, 1)) !important; }
+        /* Таймеры и подсказки масштабируются ОДИНАКОВО: обе плашки имеют одну и ту же вёрстку (features.css: шрифт, отступы, рамка, иконки в обычных px),
+           а увеличение — один и тот же transform scale(--fx). Не zoom (на iPhone он считается иначе) и не пересчёт размеров шрифта (рамка и иконки не росли бы вместе с ним).
+           Поэтому подсказка, долетая до таймера, не меняет размер, на любом телефоне и в любом браузере */
+        #buffBar { zoom: 1; transform: scale(var(--fx, 1)); transform-origin: left top; left: calc(0.875rem * var(--fx, 1)); }
         /* ===== Таймеры под панелью жизней: отступ как положено на компьютере и на телефоне; знак ∞ крупнее на компьютере ===== */
         #buffBar { top: calc(3.5rem * var(--ui-zoom, 1) + 8px) !important; }
         @media (min-width: 900px) { .inf-sign { font-size: 14px !important; } }
