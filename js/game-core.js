@@ -44,12 +44,12 @@ let MAX_ATTEMPTS = ADMIN_CFG.attempts; // сколько попыток в но�
 
 // Уровни сложности (шкала делится на 6 равных частей)
 const DIFF_LEVELS = [
-    { name: 'СУПЕРЛАЙТ', color: '#22C55E', speedMult: 0.92, targetSqueeze: 0,    musicTempoMult: 0.95, negChance: 0.30 },
-    { name: 'ЛАЙТ',      color: '#84CC16', speedMult: 1.00, targetSqueeze: 7,    musicTempoMult: 1.00, negChance: 0.44 },
-    { name: 'МЕДИУМ',    color: '#FACC15', speedMult: 1.08, targetSqueeze: 14,    musicTempoMult: 1.08, negChance: 0.58 },
-    { name: 'МЕДИУМ+',   color: '#FB923C', speedMult: 1.16, targetSqueeze: 21,   musicTempoMult: 1.16, negChance: 0.72 },
-    { name: 'ХАРД',      color: '#EF4444', speedMult: 1.24, targetSqueeze: 28,   musicTempoMult: 1.24, negChance: 0.86 },
-    { name: 'ХАРД+',     color: '#E11D48', speedMult: 1.32, targetSqueeze: 35,   musicTempoMult: 1.32, negChance: 1.00 }
+    { name: 'СУПЕРЛАЙТ', color: '#22C55E', speedMult: 0.92, targetSqueeze: 0,    musicTempoMult: 0.95, negChance: 0.20 },
+    { name: 'ЛАЙТ',      color: '#84CC16', speedMult: 1.00, targetSqueeze: 7,    musicTempoMult: 1.00, negChance: 0.32 },
+    { name: 'МЕДИУМ',    color: '#FACC15', speedMult: 1.08, targetSqueeze: 14,    musicTempoMult: 1.08, negChance: 0.44 },
+    { name: 'МЕДИУМ+',   color: '#FB923C', speedMult: 1.16, targetSqueeze: 21,   musicTempoMult: 1.16, negChance: 0.56 },
+    { name: 'ХАРД',      color: '#EF4444', speedMult: 1.24, targetSqueeze: 28,   musicTempoMult: 1.24, negChance: 0.68 },
+    { name: 'ХАРД+',     color: '#E11D48', speedMult: 1.32, targetSqueeze: 35,   musicTempoMult: 1.32, negChance: 0.80 }
 ];
 // Цвет шкалы по мере заполнения: зелёный → салатовый → жёлтый → красный
 const DIFF_STOPS = [[0, [34, 197, 94]], [0.22, [34, 197, 94]], [0.52, [163, 230, 53]], [0.76, [251, 191, 36]], [1, [244, 63, 94]]];
