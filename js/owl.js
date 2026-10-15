@@ -53,7 +53,7 @@ const owl = {
     wing: 0,
     visible: true,
     flap() {
-        this.vy = this.jump;
+        this.vy = this.jump * ((typeof SHZ !== 'undefined' && SHZ.state === 'active') ? 0.9 : 1);   // в ШАЗАМе взмах мягче — управлять приятнее на скорости
         if (currentFreezeFactor > 0) {
             // замёрзшие крылья слушаются с трудом: взмах слабее и непредсказуемее, сова раскручивается
             const weak = Math.random() < 0.3 ? 0.55 : 0.75;
@@ -73,6 +73,9 @@ const owl = {
         const isSnow = (currentFreezeFactor > 0.3 || (freezeTime > 0 && currentFreezeFactor > 0.05)), isBubble = drunkTime > 0;
         const flapKind = (isSnow && isBubble) ? 'both' : (isSnow ? 'snow' : (isBubble ? 'bubble' : null));
         spawnFlapParticles(this.x, this.y, flapKind, particles);
+        if (typeof SHZ !== 'undefined' && SHZ.state === 'active') {
+            for (let i = 0; i < 3; i++) particles.push({ x: this.x - 12, y: this.y + 6 + Math.random() * 6, vx: -2 - Math.random() * 1.5, vy: 0.4 + Math.random() * 0.8, color: i ? '#FF9A3C' : '#FFD08A', alpha: 0.85, size: 2.6 + Math.random() * 1.4, decay: 0.05, isStar: true });
+        }
     },
     update() {
         const oe = easeFactor(currentOvereatFactor);
@@ -86,7 +89,7 @@ const owl = {
             return;
         }
         // «Тяжёлая» сова: гравитация сильнее на 30% при переедании
-        this.vy += this.gravity * (1 + 0.3 * oe) * (1 + 0.15 * currentFreezeFactor) * dtMult;
+        this.vy += this.gravity * (1 + 0.3 * oe) * (1 + 0.15 * currentFreezeFactor) * ((typeof SHZ !== 'undefined' && SHZ.state === 'active') ? 0.82 : 1) * dtMult;
         this.y += this.vy * dtMult;
         this.rotation = Math.min(0.48, Math.max(-0.38, this.vy * 0.055));
         // Замерзание: сова кувыркается, как брошенная ледышка
@@ -115,18 +118,19 @@ const owl = {
     draw() {
         if (!this.visible) return;
         ctx.save();
-        ctx.translate(this.x, this.y);
+        const shz = (typeof SHZ !== 'undefined') ? SHZ : null;
+        ctx.translate(this.x + (shz ? shz.dx : 0), this.y);
         // Наклон вперёд: чуть-чуть с каждым уровнем сложности (к Хард+ около 6°) и ещё немного при ускорении (до ~14° вместе)
         {
             let lvl = 0;
             try { lvl = getDifficultyIndex() / Math.max(1, DIFF_LEVELS.length - 1); } catch (e) {}
             const boostOn = (typeof speedBoostTime !== 'undefined' && speedBoostTime > 0 && gameActive && (currentFreezeFactor || 0) < 0.05) ? 1 : 0;   // замёрзшая сова застывает как есть: без наклона, взгляда и клюва «вперёд»
             const boostLean = Math.min(0.42, 0.13 + 0.035 * lvl);   // устремление вперёд: сильнее на высоких уровнях, но без перебора
-            const leanT = gameActive ? (0.11 * lvl + boostLean * boostOn) * (1 - (currentFreezeFactor || 0)) : 0;
+            const leanT = gameActive ? (0.11 * lvl + boostLean * boostOn + (shz ? 0.24 * shz.k : 0)) * (1 - (currentFreezeFactor || 0)) : 0;   // в ШАЗАМе сова сильнее устремлена вперёд
             this.lean = (this.lean || 0) + (leanT - (this.lean || 0)) * Math.min(1, 0.05 * dtMult);
             this.boostK = (this.boostK || 0) + (boostOn - (this.boostK || 0)) * Math.min(1, 0.07 * dtMult);
         }
-        const bodyScale = 1.29 * (1 + 0.16 * easeFactor(currentOvereatFactor));   // сова немного меньше (было 1.36)
+        const bodyScale = 1.29 * (1 + 0.16 * easeFactor(currentOvereatFactor)) * (shz ? (1 - 0.2 * shz.depthBack + 0.06 * shz.depthFront) : 1);   // за трубой сова «отдаляется», перед трубой — чуть ближе   // сова немного меньше (было 1.36)
         // Визуальный центр совы (в единицах тела): по замеру рисунка (центр габаритов и центр «массы»). Вокруг него сова вращается,
         // в нём же центрируются щит и свечение пера — сова внутри них по центру, а кувыркание при заморозке без «перекоса»
         const OWL_CX = -1.1, OWL_CY = 2.7;
@@ -135,6 +139,14 @@ const owl = {
         ctx.translate(-OWL_CX * bodyScale, -OWL_CY * bodyScale);
         ctx.scale(bodyScale, bodyScale);
 
+        if (shz && shz.k > 0.02) {   // ШАЗАМ: тёплое оранжевое свечение вокруг совы
+            ctx.save(); ctx.translate(OWL_CX, OWL_CY);
+            const gp = 0.85 + 0.15 * Math.sin(frame * 0.2), gR = 34 * gp;
+            const gg = ctx.createRadialGradient(0, 0, 6, 0, 0, gR);
+            gg.addColorStop(0, 'rgba(255, 196, 120, 0.55)'); gg.addColorStop(0.45, 'rgba(255, 122, 0, 0.28)'); gg.addColorStop(1, 'rgba(255, 122, 0, 0)');
+            ctx.globalAlpha = shz.k; ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(0, 0, gR, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
         if (shieldTime > 0) {
             let auraAlpha = 1.0;
             if (shieldTime <= 120) {
@@ -159,13 +171,14 @@ const owl = {
             // круг щита остаётся на месте, а штрихи плавно удлиняются и сжимаются (от коротких до чуть более длинных), цикл около 2.4 секунды
             const arcMax = notchAngle * 0.50 + 0.02, arcMin = notchAngle * 0.50 - 0.07;   // штрихи плавно короче — длиннее   // сжимаются до точки (круглые концы дают точку) и раскрываются обратно
             const notchArc = arcMin + (arcMax - arcMin) * (0.5 + 0.5 * Math.sin(shTsec * Math.PI * 2 / 2.4));
-            const rotAngle = frame * 0.028;
+            const rotAngle = frame * 0.028 * (1 + (shz ? 2.2 * shz.shieldK : 0));
             const notchRadius = shieldRadius + 2.5;
 
-            ctx.strokeStyle = '#22C55E';
+            const shCol = (shz && shz.shieldK > 0.01) ? shazamShieldColor() : '#22C55E';   // в ШАЗАМе щит рыжеет
+            ctx.strokeStyle = shCol;
             ctx.lineWidth = 1.6;
             ctx.lineCap = 'round';   // концы штрихов щита закруглены
-            ctx.shadowColor = '#22C55E';
+            ctx.shadowColor = shCol;
             ctx.shadowBlur = 19;
 
             // при ударе щит вминается в сторону трубы и упруго выправляется
@@ -192,7 +205,8 @@ const owl = {
                     const a = startAng + notchArc * k / 6;
                     let d = (a - dentLocal) % (Math.PI * 2);
                     if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2;
-                    const rr = notchRadius * (1 - 0.58 * shieldDent * Math.exp(-(d * d) / 0.6));   // прогиб глубже и шире — щит «мягче»
+                    let rr = notchRadius * (1 - 0.58 * shieldDent * Math.exp(-(d * d) / 0.6));
+                    if (shz && shz.shieldK > 0.01) rr = shazamShieldR(rr, a + this.rotation + (this.lean || 0));   // спереди шире, сзади уже (по направлению полёта)   // прогиб глубже и шире — щит «мягче»
                     if (k === 3 && shieldHitPower > 0.05) {
                         // дуги рядом с ударом светлеют и становятся толще
                         const near = Math.exp(-(d * d) / 0.5) * shieldHitPower;
@@ -202,6 +216,7 @@ const owl = {
                 }
                 ctx.stroke();
             }
+            if (shz && shz.shieldK > 0.05) shazamDrawShieldBolts(notchRadius, 1, this.rotation + (this.lean || 0));   // молнии поверх пунктира
 
 
             ctx.restore();

@@ -396,7 +396,7 @@ const AudioFX = {
     // Плавное изменение темпа/высоты музыки (около 1–1.5 с): ускорение до 1.3, замедление всего до 0.8
     updateSpeedFactor() {
         const now = performance.now();
-        const target = speedBoostTime > 0 ? 1.3 : (slowMotionTime > 0 ? 0.88 : 1.0);
+        const target = (speedBoostTime > 0 || (typeof shazamActive === 'function' && shazamActive())) ? 1.3 : (slowMotionTime > 0 ? 0.88 : 1.0);
         if (this.factorTarget !== target) {
             this.factorFrom = (this.speedFactor === undefined) ? 1 : this.speedFactor;
             this.factorTarget = target;
@@ -1006,6 +1006,56 @@ const AudioFX = {
         } else {
             this.fadeTo(1, 1.0);
         }
+    },
+    // ===== ШАЗАМ: электрические звуки =====
+    // треск: полоса шума, громкость которой скачет случайными ступеньками (как искрение)
+    _crackle(t, dur, f0, f1, vol, q) {
+        const ctx = this.ctx;
+        this._ensureWindBuf();
+        const src = ctx.createBufferSource(); src.buffer = this._windBuf; src.loop = true;
+        const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = q || 1.4;
+        bp.frequency.setValueAtTime(f0, t); bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
+        const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t);
+        let tt = t;
+        while (tt < t + dur) {
+            const k = (tt - t) / dur, env = Math.sin(Math.PI * Math.min(1, k * 1.15)) ;
+            g.gain.setValueAtTime(Math.max(0.0001, vol * env * (Math.random() < 0.35 ? 0.08 : 0.4 + Math.random() * 0.6)), tt);
+            tt += 0.012 + Math.random() * 0.03;
+        }
+        g.gain.setValueAtTime(0.0001, t + dur);
+        src.connect(bp); bp.connect(g); g.connect(this.sfxGain || ctx.destination);
+        src.start(t, Math.random() * 3); src.stop(t + dur + 0.03);
+    },
+    // гудящий разряд: пила с быстрым дрожанием высоты
+    _buzz(t, dur, f0, f1, vol, cut) {
+        const ctx = this.ctx, o = ctx.createOscillator(), lfo = ctx.createOscillator(), lg = ctx.createGain(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+        lfo.type = 'square'; lfo.frequency.value = 37; lg.gain.value = f0 * 0.08; lfo.connect(lg); lg.connect(o.frequency);
+        lp.type = 'lowpass'; lp.frequency.value = cut || 1800; lp.Q.value = 3;
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + Math.min(0.05, dur * 0.2)); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+        o.connect(lp); lp.connect(g); g.connect(this.sfxGain || ctx.destination);
+        o.start(t); lfo.start(t); o.stop(t + dur + 0.03); lfo.stop(t + dur + 0.03);
+    },
+    playShazamArm() {     // первое нажатие: кнопка «заряжена» — короткий щелчок-искра
+        try { if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime; this._crackle(t, 0.16, 2600, 4200, 0.12, 2); this._buzz(t, 0.14, 420, 640, 0.05, 2200); } catch (e) {}
+    },
+    playShazamCharge() {  // зарядка (1,6 с): треск нарастает, гул поднимается
+        try {
+            if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime;
+            this._crackle(t, 1.6, 900, 5200, 0.16, 1.2); this._buzz(t, 1.6, 70, 260, 0.07, 900); this._toneSweep(t, 1.6, 110, 440, 300, 2400, 0.05, 'square', 0.85);
+        } catch (e) {}
+    },
+    playShazamZap() {     // удар щита о трубу во время зарядки
+        try { if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime; this._crackle(t, 0.1, 3000, 1800, 0.14, 2.5); } catch (e) {}
+    },
+    playShazamLaunch() {  // рывок вперёд: удар разряда и свист
+        try {
+            if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime;
+            this._buzz(t, 0.5, 220, 55, 0.14, 2600); this._crackle(t, 0.45, 5000, 900, 0.2, 1); this._noiseBand(t, 0.9, 500, 2400, 1.2, 0.1, 0.15);
+        } catch (e) {}
+    },
+    playShazamEnd() {     // эффект закончился: разряд стихает
+        try { if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime; this._crackle(t, 0.6, 3200, 600, 0.1, 1.2); this._buzz(t, 0.6, 260, 60, 0.06, 900); } catch (e) {}
     },
     playShieldBump() {
         try {

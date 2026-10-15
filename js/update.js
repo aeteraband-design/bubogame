@@ -25,6 +25,7 @@ function update() {
         }
     }
 
+    shazamUpdate();
     if (!gameActive) return;
     frame += dtMult;
 
@@ -141,11 +142,11 @@ function update() {
 
     let currentSpeed = baseSpeed;
     // Плавный разгон/торможение игры (~0.9 с), синхронно с музыкой
-    const gsTarget = speedBoostTime > 0 ? 1.30 : (slowMotionTime > 0 ? 0.70 : 1.0);
+    const gsTarget = shazamGsTarget() || (speedBoostTime > 0 ? 1.30 : (slowMotionTime > 0 ? 0.70 : 1.0));
     if (gsTarget !== gameSpeedTarget) { gameSpeedFrom = gameSpeedFactor; gameSpeedTarget = gsTarget; gameSpeedT = 0; }
     gameSpeedT = Math.min(1, gameSpeedT + dtMult / 54);
     gameSpeedFactor = gameSpeedFrom + (gsTarget - gameSpeedFrom) * (gameSpeedT * gameSpeedT * (3 - 2 * gameSpeedT));
-    currentSpeed *= gameSpeedFactor;
+    currentSpeed *= gameSpeedFactor * shazamSpeedMul();   // ШАЗАМ: на зарядке игра почти замирает
     if (gsTarget !== spacingTarget) { spacingFrom = spacingFactor; spacingTarget = gsTarget; spacingT = 0; }
     spacingT = Math.min(1, spacingT + dtMult / SPACING_RAMP_FRAMES);
     spacingFactor = spacingFrom + (gsTarget - spacingFrom) * (spacingT * spacingT * (3 - 2 * spacingT));
@@ -195,7 +196,9 @@ function update() {
         const p = pipes[i];
         p.x -= currentSpeed * dtMult;
 
-        if (shieldTime <= 0 && invulnerableTime <= 0) {
+        if (shazamBusy()) {
+            // ШАЗАМ: сова пролетает трубы насквозь (то за трубой, то перед ней)
+        } else if (shieldTime <= 0 && invulnerableTime <= 0) {
             const effectiveTop = p.top + activeSqueeze;
             const effectiveBottom = p.bottom + activeSqueeze;
             if (owl.x + owl.radius > p.x && owl.x - owl.radius < p.x + p.width && (owl.y - owl.radius < effectiveTop || owl.y + owl.radius > height - effectiveBottom)) {
@@ -383,9 +386,10 @@ function update() {
                 it.extraFX = registerJunkFood();
             } else if (it.type === 'shield') {
                 AudioFX.playShieldCollect();
-                shieldTime = ADMIN_CFG.shieldSec * 60;
+                shieldTime = Math.max(shieldTime, ADMIN_CFG.shieldSec * 60);
                 shieldAppearAnim = 12;
                 Haptics.powerup();
+                shazamOnShield();
                 it.pendingFX = { target: 'other', text: `Щит ${ADMIN_CFG.shieldSec}с`, color: '#22C55E', icon: 'fa-shield-halved' };
             } else if (it.type === 'compress') {
                 AudioFX.playCompressStart();
@@ -527,13 +531,14 @@ function updateBuffHUD() {
     const bar = document.getElementById('buffBar');
     if (!bar) return;
     const sig = Math.ceil(shieldTime / 60) + Math.ceil(infiniteStaminaTime / 60) * 31 + Math.ceil(compressionTime / 60) * 961 + Math.ceil(speedBoostTime / 60) * 29791 +
-                Math.ceil(slowMotionTime / 60) * 923521 + Math.ceil(overeatTime / 60) * 28629151 + Math.ceil(freezeTime / 60) * 887503681 + Math.ceil(drunkTime / 60) * 27512614111;
+                Math.ceil(slowMotionTime / 60) * 923521 + Math.ceil(overeatTime / 60) * 28629151 + Math.ceil(freezeTime / 60) * 887503681 + Math.ceil(drunkTime / 60) * 27512614111 + '|' + shazamSecLeft() + (shazamBusy() ? 'b' : '');
     if (sig === lastBuffSig && lastBuffStateKey !== '') return;   // ни одна секунда не сменилась — нечего перерисовывать
     // (при продлении эффекта секунда подскакивает вверх — это тоже смена, проверка ниже сработает сразу)
     lastBuffSig = sig;
 
     const activeBuffs = [];
-    if (shieldTime > 0) {
+    if (shazamActive()) activeBuffs.push({ key: 'shazam', left: 1e9, text: `ШАЗАМ: ${shazamSecLeft()}с`, color: '#FF7A00', icon: 'fa-bolt' });
+    if (shieldTime > 0 && !shazamBusy()) {
         activeBuffs.push({
             key: 'shield', left: shieldTime, text: `ЩИТ: ${Math.ceil(shieldTime / 60)}с`,
             color: '#22C55E',
@@ -615,7 +620,7 @@ function updateBuffHUD() {
 function makeBuffEl(b) {
     const el = document.createElement('div');
     el.dataset.key = b.key;
-    el.className = 'buff-tag text-[10px] font-black rounded-xl shadow-lg flex items-center';
+    el.className = 'buff-tag text-[10px] font-black rounded-xl shadow-lg flex items-center' + (b.key === 'shazam' ? ' buff-shazam' : '');
     el.style.cssText = `transition: opacity 0.2s; padding: 3px 6px 3px 6px; gap: 3px; background-color: rgba(20, 3, 38, 0.95); border: 1.5px solid ${b.color}; box-shadow: 0 0 12px ${b.color}88; color: ${b.color};`;
     el.innerHTML = `<span style="display:inline-flex;min-width:11px;height:14px;justify-content:center;align-items:center;flex-shrink:0">${b.svgIcon ? b.svgIcon : `<i class="fa-solid ${b.icon}" style="color: ${b.color};"></i>`}</span><span class="buff-txt" style="font-weight:900!important;">${sentenceCase(b.text)}</span>`;
     return el;
@@ -810,8 +815,9 @@ function handleSecretRoulette(originX, originY) {
             return { label: 'Бонус: +0.5 Жизни', color: '#F97316', icon: 'fa-pizza-slice', isScoreAdd: false, target: 'heart' };
         } },
         { w: 18, run() {
-            shieldTime = ADMIN_CFG.shieldSec * 60;
+            shieldTime = Math.max(shieldTime, ADMIN_CFG.shieldSec * 60);
             shieldAppearAnim = 12;
+            shazamOnShield();
             AudioFX.playShieldCollect();
             Haptics.powerup();
             return { label: `Щит ${ADMIN_CFG.shieldSec}с`, color: '#22C55E', icon: 'fa-shield-halved', isScoreAdd: false };

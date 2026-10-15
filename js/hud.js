@@ -1039,6 +1039,7 @@ function handleTap(e) {
         return;
     }
     if (!gameActive) return;
+    if (typeof shazamBlocksTap === 'function' && shazamBlocksTap()) return;   // на зарядке ШАЗАМа сова скачет сама
     owl.flap();
 }
 

@@ -401,6 +401,18 @@ function drawCity() {
                 }
             }
             ctx.globalCompositeOperation = 'source-over';
+            // ШАЗАМ: город чуть смазан скоростью — два полупрозрачных «следа» позади домов
+            const sb = (typeof SHZ !== 'undefined') ? SHZ.blur : 0;
+            if (sb > 0.03) {
+                for (const [gx, ga] of [[6 + 6 * li, 0.22], [14 + 10 * li, 0.1]]) {
+                    ctx.globalAlpha = ga * sb;
+                    for (let x = -off; x < width; x += L.tileW) {
+                        const d0 = Math.max(0, x), d1 = Math.min(width, x + L.tileW);
+                        if (d1 <= d0) continue;
+                        ctx.drawImage(L.canvas, (d0 - x) * k, 0, (d1 - d0) * k, L.canvas.height, d0 + gx * sb, y0, d1 - d0, L.H);
+                    }
+                }
+            }
             ctx.globalAlpha = 1;
             if (moonLit > 0.03 && L.bodies) {                       // светлые боковые грани домов становятся ярче на 2–3% к последнему уровню
                 ctx.fillStyle = `rgba(200, 175, 255, ${(0.03 * moonLit).toFixed(4)})`;
@@ -596,7 +608,7 @@ const OWL_BODY_PTS = { closed: true, p: [[10.00, -3.00], [9.29, -4.32], [8.52, -
 const OWL_BREAST_PTS = { closed: false, p: [[8.50, -2.00], [9.35, -1.02], [10.15, 0.02], [10.87, 1.10], [11.50, 2.24], [12.01, 3.43], [12.40, 4.68], [12.62, 5.96], [12.67, 7.26], [12.54, 8.55], [12.23, 9.82], [11.77, 11.03], [11.18, 12.19], [10.52, 13.31], [9.74, 14.35], [8.81, 15.26], [7.73, 15.99], [6.54, 16.52], [5.28, 16.85], [3.99, 17.00], [2.69, 17.00], [1.40, 16.87], [0.11, 16.64], [-1.15, 16.32], [-2.35, 15.82], [-3.42, 15.08], [-4.26, 14.10], [-4.82, 12.93], [-5.09, 11.66], [-5.13, 10.36], [-5.01, 9.06], [-4.77, 7.78], [-4.45, 6.52], [-4.04, 5.29], [-3.51, 4.09], [-2.88, 2.96], [-2.13, 1.89], [-1.28, 0.91], [-0.32, 0.02], [0.72, -0.75], [1.83, -1.43], [3.00, -2.00]] };
 let speedRamp = 0;   // плавная «громкость» звёздочек: 0 → 1 при ускорении и 1 → 0 после, без резких скачков
 function updateSpeedStars() {
-    const target = (speedBoostTime > 0 && gameActive && owl.visible) ? 1 : 0;
+    const target = ((speedBoostTime > 0 || (typeof shazamActive === 'function' && shazamActive())) && gameActive && owl.visible) ? 1 : 0;
     speedRamp += (target - speedRamp) * Math.min(1, (target > speedRamp ? 0.03 : 0.07) * dtMult);   // вверх плавно, вниз быстрее
     if (speedRamp < 0.002) speedRamp = 0;
     if (speedRamp > 0 && owl.visible) {
@@ -613,7 +625,7 @@ function updateSpeedStars() {
                 vx: -(2.0 + Math.random() * 1.8) * k, vy: off * 0.2 * k,
                 size: (1.2 + 2.8 * mid + Math.random() * 0.7) * k, rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.2,
                 life: 1, decay: 0.022 + Math.random() * 0.015,
-                color: Math.random() < 0.6 ? '#FDE68A' : '#FBBF24'
+                color: (typeof shazamActive === 'function' && shazamActive()) ? (Math.random() < 0.5 ? '#FFB347' : '#FF7A00') : (Math.random() < 0.6 ? '#FDE68A' : '#FBBF24')
             });
         }
     } else {

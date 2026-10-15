@@ -140,6 +140,7 @@ function drawScene() {
     drawMoon();
     if (!gameActive) cityOffset += 0.5 * dtMult;   // в меню и на паузе город медленно плывёт
     drawCity();
+    shazamDrawStreaks();
 
     if (gameActive || waitingFirstTap || isStartMenuOpen || isGameOverOpen) {
         drawClouds();
@@ -147,12 +148,14 @@ function drawScene() {
 
     // камера: при эффекте ускорения чуть отдаляется (видно больше), при замедлении чуть приближается; от уровня сложности не зависит
     {
-        const zt = (gameActive && speedBoostTime > 0) ? 0.95 : ((gameActive && slowMotionTime > 0) ? 1.07 : 1);
+        const zt = (gameActive && (speedBoostTime > 0 || shazamActive())) ? 0.95 : ((gameActive && slowMotionTime > 0) ? 1.07 : 1);
         camZoom += (zt - camZoom) * Math.min(1, 0.02 * dtMult);
         if (Math.abs(zt - camZoom) < 0.0005) camZoom = zt;
     }
     ctx.save();
     if (Math.abs(camZoom - 1) > 0.0005) { ctx.translate(width / 2, height / 2); ctx.scale(camZoom, camZoom); ctx.translate(-width / 2, -height / 2); }
+    const owlBehind = shazamOwlBehind();   // ШАЗАМ: сова пролетает за трубой — рисуем её до труб
+    if (owlBehind) { drawSpeedStars(); owl.draw(); }
     pipes.forEach(drawPipe);
 
     items.forEach(it => {
@@ -189,8 +192,11 @@ function drawScene() {
 
     drawParticleList(particles);
 
-    drawSpeedStars();
-    if (currentFreezeFactor > 0.01 && owl.visible) drawFrozenOwl(); else owl.draw();
+    if (!owlBehind) {
+        drawSpeedStars();
+        if (currentFreezeFactor > 0.01 && owl.visible) drawFrozenOwl(); else owl.draw();
+    }
+    shazamDrawFx();
     drawIceShards();
     ctx.restore();   // конец слоя камеры
 }
