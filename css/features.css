@@ -170,7 +170,6 @@
 #topHud #scoreBadge > * + * { margin-left: calc(6px * var(--hk, 1)) !important; }
 #topHud > div:first-child > * + * { margin-left: calc(6px * var(--hk, 1)) !important; }
 /* плашка по ширине счёта: растёт только когда прибавляется разряд; ширина не анимируется */
-#topHud #scoreVal { font-variant-numeric: tabular-nums; }
 #topHud #scoreBadge, #topHud #livesContainer, #topHud #staminaBadge { transition-property: color, background-color, border-color, box-shadow, opacity !important; }
 
 /* ===== Рулетка: переворачивается вся карточка (3D), сзади — текст в цвет карточки.
