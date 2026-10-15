@@ -227,14 +227,16 @@
 
 /* ===== ШАЗАМ (тестовая фишка): кнопка над нижней панелью и таймер ===== */
 @property --shz-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
-.shz-btn { position: absolute; left: 50%; bottom: calc(100% + 14px); margin: 0 !important; z-index: 5; height: 40px; padding: 0 20px; display: flex; align-items: center; gap: 8px;
-    border-radius: 14px; border: 1.5px solid rgba(255, 122, 0, 0.5); background: linear-gradient(180deg, rgba(58, 20, 52, 0.92), rgba(34, 9, 40, 0.92));
-    color: #FFB27A; font-weight: 900; font-size: 13px; letter-spacing: 0.14em; white-space: nowrap; line-height: 1;
+.shz-btn { position: absolute; left: 50%; bottom: calc(100% + 14px); margin: 0 !important; z-index: 5; width: 60px; height: 60px; padding: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    border-radius: 17px; border: 1.5px solid rgba(255, 122, 0, 0.5); background: linear-gradient(180deg, rgba(58, 20, 52, 0.92), rgba(34, 9, 40, 0.92));
+    color: #FFB27A; font-weight: 900; line-height: 1;
     box-shadow: 0 0 12px rgba(255, 122, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(8px) scale(0.92); transition: opacity 0.35s ease, transform 0.35s ease, color 0.25s, background 0.25s, border-color 0.25s, box-shadow 0.25s;
     touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.shz-btn .shz-lbl { font-size: 8.5px; letter-spacing: 0.08em; white-space: nowrap; }
 .shz-btn.show { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
-.shz-btn i { color: #FF8A1F; font-size: 14px; filter: drop-shadow(0 0 4px rgba(255, 122, 0, 0.6)); }
+.shz-btn i { color: #FF8A1F; font-size: 22px; filter: drop-shadow(0 0 4px rgba(255, 122, 0, 0.6)); }
 .shz-btn.show:not(.armed) i { animation: shzIdle 2.6s ease-in-out infinite; }
 .shz-btn.armed { color: #FFF4E6; border-color: #FF7A00; background: linear-gradient(180deg, rgba(104, 38, 14, 0.94), rgba(58, 14, 32, 0.94)); box-shadow: 0 0 16px rgba(255, 122, 0, 0.55); }
 .shz-btn.armed i { color: #FFD08A; }

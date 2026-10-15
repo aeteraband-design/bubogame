@@ -144,12 +144,13 @@ function update() {
     // Плавный разгон/торможение игры (~0.9 с), синхронно с музыкой
     const gsTarget = shazamGsTarget() || (speedBoostTime > 0 ? 1.30 : (slowMotionTime > 0 ? 0.70 : 1.0));
     if (gsTarget !== gameSpeedTarget) { gameSpeedFrom = gameSpeedFactor; gameSpeedTarget = gsTarget; gameSpeedT = 0; }
-    gameSpeedT = Math.min(1, gameSpeedT + dtMult / 54);
+    gameSpeedT = Math.min(1, gameSpeedT + dtMult / (shazamActive() ? 80 : 54));   // в ШАЗАМ разгон чуть дольше и мягче
     gameSpeedFactor = gameSpeedFrom + (gsTarget - gameSpeedFrom) * (gameSpeedT * gameSpeedT * (3 - 2 * gameSpeedT));
     currentSpeed *= gameSpeedFactor * shazamSpeedMul();   // ШАЗАМ: на зарядке игра почти замирает
-    if (gsTarget !== spacingTarget) { spacingFrom = spacingFactor; spacingTarget = gsTarget; spacingT = 0; }
+    const spTarget = shazamActive() ? 1.0 : gsTarget;   // в ШАЗАМе трубы не расходятся шире — скорость чувствуется
+    if (spTarget !== spacingTarget) { spacingFrom = spacingFactor; spacingTarget = spTarget; spacingT = 0; }
     spacingT = Math.min(1, spacingT + dtMult / SPACING_RAMP_FRAMES);
-    spacingFactor = spacingFrom + (gsTarget - spacingFrom) * (spacingT * spacingT * (3 - 2 * spacingT));
+    spacingFactor = spacingFrom + (spTarget - spacingFrom) * (spacingT * spacingT * (3 - 2 * spacingT));
 
     pipeDistanceTracker += currentSpeed * dtMult;
     cityOffset += currentSpeed * dtMult;   // ночной город уезжает назад вместе с полётом (медленнее — он далеко)

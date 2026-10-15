@@ -1,11 +1,11 @@
 // ===== ШАЗАМ (тестовая фишка) =====
 // Каждое второе взятое ускорение даёт кнопку «ШАЗАМ» (пока идёт это ускорение). 1-й тап — «ПУСК», 2-й — запуск. Щит не участвует.
-// Зарядка 1,6 с: игра почти замирает, сова дрожит и набирает энергию (искры стягиваются к ней, вокруг молнии).
+// Зарядка 0,9 с: игра почти замирает, сова дрожит и набирает энергию (искры стягиваются к ней, вокруг молнии).
 // Потом рывок вперёд, и 10 секунд сова мчится заметно быстрее обычного ускорения, пролетает трубы то за ними, то перед ними,
 // а все значки впереди сами притягиваются к ней, как магнитом.
 const SHZ = {
     count: 0, state: 'idle', t: 0, left: 0, armUntil: 0,
-    INTRO: 96, DUR: 600,               // кадры (60 в секунду): 1,6 с зарядки и 10 с эффекта
+    INTRO: 54, DUR: 600,               // кадры (60 в секунду): 0,9 с зарядки и 10 с эффекта
     k: 0, shieldK: 0, blur: 0, slow: 1, dx: 0,
     depthBack: 0, depthFront: 0, sideN: 0,
     b: null, lastHalf: 0,
@@ -65,7 +65,7 @@ function shazamStart() {
 
 function shazamLaunch() {
     SHZ.state = 'active'; SHZ.left = SHZ.DUR; SHZ.t = 0; SHZ.sideN = 0;
-    owl.vy = -1.6; SHZ.dx = 18;
+    owl.vy = -0.8;
     SHZ.rings.push({ x: owl.x, y: owl.y, r: owl.radius * 1.2, a: 0.9 }, { x: owl.x, y: owl.y, r: owl.radius * 0.8, a: 0.6, slow: 1 });
     for (let i = 0; i < 14; i++) {
         const a = Math.PI * (0.55 + Math.random() * 0.9), v = 2 + Math.random() * 3.5;
@@ -115,11 +115,11 @@ function shazamUpdate() {
                 color: Math.random() < 0.5 ? '#FFD08A' : '#FF7A00', alpha: 0.95, size: 2 + Math.random() * 2, decay: 0.06, isStar: true });
         }
         SHZ.slow += (0.1 - SHZ.slow) * Math.min(1, 0.18 * dtMult);   // игра почти замирает
-        SHZ.dx += (-10 * Math.min(1, SHZ.t / 40) - SHZ.dx) * Math.min(1, 0.15 * dtMult);   // сова чуть оттягивается назад перед рывком
+        SHZ.dx += (-8 * Math.min(1, SHZ.t / 30) - SHZ.dx) * Math.min(1, 0.15 * dtMult);   // сова чуть оттягивается назад перед рывком
         if (SHZ.t >= SHZ.INTRO) shazamLaunch();
     } else {
-        SHZ.slow += (1 - SHZ.slow) * Math.min(1, 0.12 * dtMult);
-        SHZ.dx += (0 - SHZ.dx) * Math.min(1, 0.06 * dtMult);
+        SHZ.slow += (1 - SHZ.slow) * Math.min(1, 0.035 * dtMult);   // после зарядки игра разгоняется плавно, без рывка
+        SHZ.dx += (0 - SHZ.dx) * Math.min(1, 0.03 * dtMult);
     }
     if (SHZ.state === 'active') {
         SHZ.left -= dtMult; SHZ.t += dtMult;
@@ -216,9 +216,11 @@ function shazamTest() { if (speedBoostTime <= 0) { speedBoostTime = ADMIN_CFG.sp
 // магнит: в ШАЗАМе все значки впереди сами летят к сове
 function shazamMagnet(it) {
     if (SHZ.state !== 'active' || it.collected) return;
-    if (it.x < owl.x - 40 || it.x > owl.x + width * 0.75) return;
-    it.mag = Math.min(1, (it.mag || 0) + 0.05 * dtMult);
-    const f = Math.min(1, 0.16 * it.mag * dtMult), dx = (owl.x - it.x) * f, dy = (owl.y - it.y) * f;
-    it.x += dx; it.y += dy; it.baseY = (it.baseY || it.y) + dy;
+    const dx = owl.x - it.x, dy = owl.y - it.y, d = Math.hypot(dx, dy);
+    if (d > 165 || it.x < owl.x - 30) { it.mag = 0; return; }   // притягивает, только когда сова подлетела поближе
+    it.mag = Math.min(1, (it.mag || 0) + 0.035 * dtMult);
+    const step = Math.min(d, (0.8 + 6.5 * it.mag * it.mag) * dtMult);   // разгоняется к сове плавно
+    const mx = dx / (d || 1) * step, my = dy / (d || 1) * step;
+    it.x += mx; it.y += my; it.baseY = (it.baseY || it.y) + my;
     it.centerX = it.x; it.centerY = it.y;
 }
