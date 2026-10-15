@@ -538,11 +538,17 @@ function spawnHeartBreak(slot, glyphPx) {
 
 // Левый блок HUD (сердца, сила, вопросы) не должен доходить до кнопок справа: если не помещается
 // (6 сердец, трёхзначный счёт) — всё в нём пропорционально уменьшается через --hk, высота плашек та же.
+let _hudFitKey = '';
 function fitTopHud() {
     const hud = document.getElementById('topHud'); if (!hud) return;
     const left = hud.firstElementChild, right = hud.lastElementChild; if (!left || !right || left === right) return;
-    let k = 1; hud.style.setProperty('--hk', '1');
     if (!left.offsetWidth) return;
+    // размер зависит только от ширины панели, числа сердец и разрядности счёта (ширина счёта зарезервирована на 3 цифры),
+    // поэтому при сборе вопросов ничего не прыгает: пересчёт только когда меняется один из этих параметров
+    const digits = Math.max(3, String(document.getElementById('scoreVal')?.textContent || '').length);
+    const key = hud.offsetWidth + '|' + Math.ceil(maxLives) + '|' + digits;
+    if (key === _hudFitKey) return;
+    let k = 1; hud.style.setProperty('--hk', '1');
     // меряем в координатах самой панели (offset*): у панели свой zoom, getBoundingClientRect тут врёт
     const last = left.lastElementChild || left;
     const gap = () => right.offsetLeft - (last.offsetLeft + last.offsetWidth);
@@ -550,6 +556,7 @@ function fitTopHud() {
         k = Math.max(0.7, k - 0.03); hud.style.setProperty('--hk', k.toFixed(2));
         if (k <= 0.7) break;
     }
+    _hudFitKey = key;
 }
 (function () {
     const hud = document.getElementById('topHud'); if (!hud || typeof ResizeObserver === 'undefined') return;

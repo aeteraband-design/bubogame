@@ -53,7 +53,8 @@ function rwUpdateUI() {
     const later = rwEl('rwLaterLabel'); if (later) later.innerText = 'В ГЛАВНОЕ МЕНЮ';
 }
 function rwPickPrize() {
-    const keys = Object.keys(RL_PRIZES), total = keys.reduce((a, k) => a + RL_PRIZES[k].w, 0);
+    // сердечные призы не выпадают, когда уже всё полно: +1 жизнь — при полных сердцах, «6 жизней» — если максимум уже 6
+    const keys = Object.keys(RL_PRIZES).filter(k => !((k === 'life' && lives >= maxLives) || (k === 'hearts' && maxLives >= 6))), total = keys.reduce((a, k) => a + RL_PRIZES[k].w, 0);
     let r = Math.random() * total;
     for (const k of keys) { if (r < RL_PRIZES[k].w) return k; r -= RL_PRIZES[k].w; }
     return keys[0];

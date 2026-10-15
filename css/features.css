@@ -169,6 +169,9 @@
 #topHud #scoreBadge { padding-left: calc(10px * var(--hk, 1)) !important; padding-right: calc(10px * var(--hk, 1)) !important; }
 #topHud #scoreBadge > * + * { margin-left: calc(6px * var(--hk, 1)) !important; }
 #topHud > div:first-child > * + * { margin-left: calc(6px * var(--hk, 1)) !important; }
+/* ширина счёта зарезервирована на 3 цифры и не анимируется — плашки не пульсируют при сборе вопросов */
+#topHud #scoreVal { display: inline-block; min-width: 3ch; text-align: left; font-variant-numeric: tabular-nums; }
+#topHud #scoreBadge, #topHud #livesContainer, #topHud #staminaBadge { transition-property: color, background-color, border-color, box-shadow, opacity !important; }
 
 /* ===== Рулетка: переворачивается вся карточка (3D), сзади — текст в цвет карточки.
    У самой карточки нет ни фона, ни подсветки — всё нарисовано на двух сторонах, поэтому при повороте ничего не остаётся на месте. */
@@ -197,12 +200,12 @@
 
 /* окно выигрыша: карточка спокойно светится — мягкий круглый ореол за ней (как у колеса рулетки), ровная подсветка по контуру
    и мерцающие звёздочки вокруг. Без бегущих бликов и вспышек. */
-.rw-result2 .rw-fly .rw-ico { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--c) 80%, transparent)); }
+.rw-result2 .rw-fly .rw-ico { filter: none; }
 .rw-result2 .rw-res-halo { position: absolute; left: 50%; top: 50%; width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%; pointer-events: none; z-index: 0; opacity: 0;
-    background: radial-gradient(circle, color-mix(in srgb, var(--c) 50%, transparent) 0%, color-mix(in srgb, var(--c) 20%, transparent) 35%, transparent 66%); transition: opacity 0.8s ease; }
+    background: none; transition: opacity 0.8s ease; }
 .rw-result2 .rw-res-halo.on { opacity: 1; animation: rwpGlow 3.2s ease-in-out infinite; }
 .rw-result2 .rw-res-glow { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; pointer-events: none; opacity: 0; transition: opacity 0.8s ease;
-    box-shadow: 0 0 22px color-mix(in srgb, var(--c) 75%, transparent), 0 0 54px color-mix(in srgb, var(--c) 40%, transparent); }
+    box-shadow: none; }
 .rw-result2 .rw-res-glow.on { opacity: 1; }
 .rw-result2 .rw-res-tw { position: absolute; left: 50%; top: 50%; width: var(--s, 10px); height: var(--s, 10px); z-index: 3; pointer-events: none; opacity: 0; animation: rwpTwinkle 2.8s ease-in-out infinite; animation-delay: var(--d, 0s); }
 .rw-result2 .rw-res-tw::before { content: ''; position: absolute; inset: 0; background: #FFD98A; clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); filter: drop-shadow(0 0 4px rgba(255, 197, 61, 1)); }
