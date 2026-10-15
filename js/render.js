@@ -284,7 +284,7 @@ function startOrResumeFlight() {
     if (lives <= 0.5) { lives = startLives; stamina = maxStamina; }
 
     if (!isFlightPaused) {
-        invulnerableTime = 0; shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal';
+        invulnerableTime = 0; if (typeof shazamReset === 'function') shazamReset(); shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal';
         lastBuffStateKey = '';
         resetOvereatDrunk();
         lowStaminaSoundTimer = 0;
@@ -368,7 +368,7 @@ function resetEntireGame(opts) {
     pipesSinceTheme = 0; lastThemeKey = '';
     collected = { music: 0, logic: 0, kino: 0, series: 0, cartoons: 0, fun: 0 };
     resetSpecialTimers();
-    shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal'; invulnerableTime = 0;
+    if (typeof shazamReset === 'function') shazamReset(); shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal'; invulnerableTime = 0;
     resetOvereatDrunk();
     pipes = []; items = []; particles = [];
     snapProgressVisuals();

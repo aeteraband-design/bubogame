@@ -1,7 +1,8 @@
 // ===== ШАЗАМ (тестовая фишка) =====
-// Каждый второй взятый щит даёт кнопку «ШАЗАМ». 1-й тап — кнопка заряжается («ПУСК»), 2-й — запуск.
-// Зарядка 1,6 с: игра почти замирает, сова в щите скачет, как мячик, между краями труб, щит рыжеет и вытягивается.
-// Потом рывок вперёд, и 10 секунд сова летит на 30% быстрее обычного ускорения и пролетает трубы то за ними, то перед ними.
+// Каждое второе взятое ускорение даёт кнопку «ШАЗАМ» (пока идёт это ускорение). 1-й тап — «ПУСК», 2-й — запуск. Щит не участвует.
+// Зарядка 1,6 с: игра почти замирает, сова дрожит и набирает энергию (искры стягиваются к ней, вокруг молнии).
+// Потом рывок вперёд, и 10 секунд сова мчится заметно быстрее обычного ускорения, пролетает трубы то за ними, то перед ними,
+// а все значки впереди сами притягиваются к ней, как магнитом.
 const SHZ = {
     count: 0, state: 'idle', t: 0, left: 0, armUntil: 0,
     INTRO: 96, DUR: 600,               // кадры (60 в секунду): 1,6 с зарядки и 10 с эффекта
@@ -49,25 +50,15 @@ function shazamTap() {
     shazamSyncBtn();
 }
 
-// щит взяли: каждый второй даёт кнопку
-function shazamOnShield() {
+// ускорение взяли: каждое второе даёт кнопку
+function shazamOnSpeedup() {
     SHZ.count++;
     if (SHZ.count % 2 === 0 && SHZ.state === 'idle') { SHZ.state = 'ready'; shazamSyncBtn(); }
 }
 
 function shazamStart() {
     SHZ.state = 'intro'; SHZ.t = 0;
-    shieldTime = Math.max(shieldTime, SHZ.INTRO + SHZ.DUR + 60);   // щит держится весь эффект
-    // границы «мячика»: края ближайшей трубы (оранжевые наконечники), иначе — небольшой размах вокруг совы
-    const r = owl.radius * 1.15, sq = currentDifficultySqueeze + (currentCompressionFactor * compressionMaxForLevel());
-    let top = owl.y - 60, bot = owl.y + 60;
-    let best = null, bd = 1e9;
-    for (const p of pipes) { const c = p.x + p.width / 2, d = Math.abs(c - owl.x); if (d < bd && d < p.width / 2 + 140) { bd = d; best = p; } }
-    if (best) { top = best.top + sq + r; bot = height - (best.bottom + sq) - r; }
-    top = Math.max(r, top); bot = Math.min(height - r, bot);
-    if (bot - top < 50) { const m = (top + bot) / 2; top = m - 25; bot = m + 25; }
-    const ph0 = Math.max(0, Math.min(1, (owl.y - top) / (bot - top)));
-    SHZ.b = { top, bot, ph0 }; SHZ.lastHalf = 0;
+    SHZ.b = { y0: Math.max(owl.radius * 2, Math.min(height - owl.radius * 2, owl.y)) };   // сова зависает на месте и заряжается
     try { AudioFX.playShazamCharge(); Haptics.powerup(); } catch (e) {}
     shazamSyncBtn();
 }
@@ -86,9 +77,8 @@ function shazamLaunch() {
 
 function shazamEnd() {
     SHZ.state = 'idle'; SHZ.left = 0;
-    shieldTime = Math.min(shieldTime, 120);   // щит отдал силу эффекту — коротко мигает и гаснет
-    // если эффект кончился, когда сова внутри трубы, — щит пропускает её насквозь
-    for (const p of pipes) if (owl.x + owl.radius > p.x && owl.x - owl.radius < p.x + p.width) p.shieldPass = true;
+    // если эффект кончился, когда сова внутри трубы, — даём секунду неуязвимости, чтобы спокойно вылететь
+    for (const p of pipes) if (owl.x + owl.radius > p.x && owl.x - owl.radius < p.x + p.width) { invulnerableTime = Math.max(invulnerableTime, 60); p.shieldPass = true; }
     try { AudioFX.playShazamEnd(); AudioFX.onSpeedChanged(); } catch (e) {}
 }
 
@@ -100,7 +90,7 @@ function shazamReset() {
 
 // множитель скорости игры на время зарядки (почти стоп) и цель ускорения на время эффекта
 function shazamSpeedMul() { return SHZ.slow; }
-function shazamGsTarget() { return SHZ.state === 'active' ? 1.30 * 1.30 : 0; }
+function shazamGsTarget() { return SHZ.state === 'active' ? 2.0 : 0; }   // обычное ускорение — 1,3
 
 function shazamAddStreak(burst) {
     SHZ.streaks.push({ x: width + Math.random() * width * (burst ? 0.6 : 0.2), y: height * (0.08 + Math.random() * 0.84),
@@ -110,28 +100,19 @@ function shazamAddStreak(burst) {
 function shazamUpdate() {
     if (!gameActive) { shazamSyncBtn(); return; }
     const st = SHZ.state;
-    if ((st === 'ready' || st === 'armed') && shieldTime <= 0) { SHZ.state = 'idle'; }
+    if ((st === 'ready' || st === 'armed') && speedBoostTime <= 0) { SHZ.state = 'idle'; }   // ускорение кончилось — кнопка уходит
     if (st === 'armed' && performance.now() > SHZ.armUntil) SHZ.state = 'ready';
-    if ((st === 'intro' || st === 'active') && shieldTime <= 0) { shazamReset(); return; }   // щит сбросили (потеря попытки и т.п.)
 
     if (st === 'intro') {
         SHZ.t += dtMult;
-        const T = SHZ.t / 60, b = SHZ.b;
-        // мячик: всё чаще отскакивает от верхнего и нижнего края
-        const ph = b.ph0 + 1.2 * T + 1.9 * T * T, half = Math.floor(ph), f = ph - half;
-        const pos = (half % 2 === 0) ? f : 1 - f;
-        owl.y = b.top + (b.bot - b.top) * pos; owl.vy = 0;
-        if (half !== SHZ.lastHalf) {
-            SHZ.lastHalf = half;
-            const hitTop = (half % 2 === 0);   // закончился подъём — удар о верхний край
-            const ang = hitTop ? -Math.PI / 2 : Math.PI / 2;
-            shieldDent = Math.max(shieldDent, 0.55 + 0.35 * Math.min(1, SHZ.t / SHZ.INTRO)); shieldHitPower = 1; shieldDentAng = ang;
-            const R = owl.radius * 1.4, cx = owl.x + Math.cos(ang) * R, cy = owl.y + Math.sin(ang) * R;
-            for (let i = 0; i < 5; i++) {
-                const a = ang + Math.PI + (Math.random() - 0.5) * 1.6, v = 1.5 + Math.random() * 2;
-                particles.push({ x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, color: Math.random() < 0.5 ? '#FFD08A' : '#FF7A00', alpha: 0.9, size: 2.4 + Math.random() * 1.8, decay: 0.06, isStar: true });
-            }
-            try { AudioFX.playShazamZap(); Haptics.vibrate(8); } catch (e) {}
+        const T = Math.min(1, SHZ.t / SHZ.INTRO);
+        // зарядка: сова висит и мелко дрожит всё сильнее, искры со всех сторон стягиваются к ней
+        owl.vy = 0;
+        owl.y = SHZ.b.y0 + Math.sin(SHZ.t * 0.9) * (0.6 + 2.2 * T);
+        if (Math.random() < (0.35 + 0.9 * T) * dtMult) {
+            const a = Math.random() * Math.PI * 2, R = 60 + Math.random() * 50, sp = 0.06 + 0.05 * T;
+            particles.push({ x: owl.x + Math.cos(a) * R, y: owl.y + Math.sin(a) * R, vx: -Math.cos(a) * R * sp, vy: -Math.sin(a) * R * sp,
+                color: Math.random() < 0.5 ? '#FFD08A' : '#FF7A00', alpha: 0.95, size: 2 + Math.random() * 2, decay: 0.06, isStar: true });
         }
         SHZ.slow += (0.1 - SHZ.slow) * Math.min(1, 0.18 * dtMult);   // игра почти замирает
         SHZ.dx += (-10 * Math.min(1, SHZ.t / 40) - SHZ.dx) * Math.min(1, 0.15 * dtMult);   // сова чуть оттягивается назад перед рывком
@@ -148,8 +129,8 @@ function shazamUpdate() {
     // плавные величины для рисования
     const on = SHZ.state === 'active', intro = SHZ.state === 'intro';
     const ease = (v, tgt, sp) => v + (tgt - v) * Math.min(1, sp * dtMult);
-    SHZ.k = ease(SHZ.k, on ? 1 : (intro ? 0.6 : 0), on || intro ? 0.06 : 0.04);
-    SHZ.shieldK = ease(SHZ.shieldK, (on || intro) ? (intro ? Math.min(1, SHZ.t / 70) : 1) : 0, 0.12);
+    SHZ.k = ease(SHZ.k, on ? 1 : (intro ? 0.35 + 0.65 * Math.min(1, SHZ.t / SHZ.INTRO) : 0), on || intro ? 0.08 : 0.04);
+    SHZ.shieldK = 0;   // щит в ШАЗАМе не меняется
     SHZ.blur = ease(SHZ.blur, on ? (SHZ.t < 50 ? 1 : 0.55) : 0, on ? 0.1 : 0.04);
 
     // трубы: по очереди — за трубой, перед трубой
@@ -199,7 +180,7 @@ function shazamDrawFx() {
 
 // молнии по контуру щита (в координатах совы, вокруг центра щита)
 function shazamDrawShieldBolts(R, alpha, rotOff) {
-    if (SHZ.shieldK < 0.05) return;
+    if (SHZ.k < 0.05) return;
     SHZ.boltT -= dtMult;
     if (SHZ.boltT <= 0 || !SHZ.bolts.length) {
         SHZ.boltT = 3 + Math.random() * 3;
@@ -212,11 +193,11 @@ function shazamDrawShieldBolts(R, alpha, rotOff) {
         }
     }
     ctx.save();
-    ctx.globalAlpha = alpha * SHZ.shieldK * (0.6 + 0.4 * Math.random());
+    ctx.globalAlpha = alpha * SHZ.k * (0.6 + 0.4 * Math.random());
     ctx.strokeStyle = '#FFE6C2'; ctx.lineWidth = 1.1; ctx.lineJoin = 'round'; ctx.shadowColor = '#FF7A00'; ctx.shadowBlur = 8;
     for (const pts of SHZ.bolts) {
         ctx.beginPath();
-        pts.forEach(([a, j], k) => { const rr = shazamShieldR(R, a + (rotOff || 0)) + j; const x = Math.cos(a) * rr, y = Math.sin(a) * rr; if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
+        pts.forEach(([a, j], k) => { const rr = R + j; const x = Math.cos(a) * rr, y = Math.sin(a) * rr; if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
         ctx.stroke();
     }
     ctx.restore();
@@ -230,4 +211,14 @@ function shazamShieldColor() {
 }
 
 // для проверки из консоли: shazamTest() — сразу даёт кнопку (со щитом)
-function shazamTest() { if (shieldTime <= 0) { shieldTime = ADMIN_CFG.shieldSec * 60; shieldAppearAnim = 12; } SHZ.state = 'ready'; shazamSyncBtn(); }
+function shazamTest() { if (speedBoostTime <= 0) { speedBoostTime = ADMIN_CFG.speedSec * 60; AudioFX.onSpeedChanged(); } SHZ.state = 'ready'; shazamSyncBtn(); }
+
+// магнит: в ШАЗАМе все значки впереди сами летят к сове
+function shazamMagnet(it) {
+    if (SHZ.state !== 'active' || it.collected) return;
+    if (it.x < owl.x - 40 || it.x > owl.x + width * 0.75) return;
+    it.mag = Math.min(1, (it.mag || 0) + 0.05 * dtMult);
+    const f = Math.min(1, 0.16 * it.mag * dtMult), dx = (owl.x - it.x) * f, dy = (owl.y - it.y) * f;
+    it.x += dx; it.y += dy; it.baseY = (it.baseY || it.y) + dy;
+    it.centerX = it.x; it.centerY = it.y;
+}

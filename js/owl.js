@@ -145,6 +145,7 @@ const owl = {
             const gg = ctx.createRadialGradient(0, 0, 6, 0, 0, gR);
             gg.addColorStop(0, 'rgba(255, 196, 120, 0.55)'); gg.addColorStop(0.45, 'rgba(255, 122, 0, 0.28)'); gg.addColorStop(1, 'rgba(255, 122, 0, 0)');
             ctx.globalAlpha = shz.k; ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(0, 0, gR, 0, Math.PI * 2); ctx.fill();
+            shazamDrawShieldBolts(22, 1, 0);   // молнии вокруг совы
             ctx.restore();
         }
         if (shieldTime > 0) {
@@ -216,7 +217,6 @@ const owl = {
                 }
                 ctx.stroke();
             }
-            if (shz && shz.shieldK > 0.05) shazamDrawShieldBolts(notchRadius, 1, this.rotation + (this.lean || 0));   // молнии поверх пунктира
 
 
             ctx.restore();

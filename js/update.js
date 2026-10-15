@@ -120,7 +120,7 @@ function update() {
     // Ограничение полёта (потолок и пол)
     if (owl.y + owl.radius > height) {
         owl.y = height - owl.radius;
-        if (shieldTime <= 0 && invulnerableTime <= 0) {
+        if (shieldTime <= 0 && invulnerableTime <= 0 && !shazamBusy()) {
             handleHit('Сова упала на землю — это была последняя жизнь.');
         } else {
             if (shieldTime > 0 && owl.vy > 0.5) shieldBump(Math.PI / 2, owl.vy / 8);
@@ -128,7 +128,7 @@ function update() {
         }
     } else if (owl.y - owl.radius < 0) {
         owl.y = owl.radius;
-        if (shieldTime <= 0 && invulnerableTime <= 0) {
+        if (shieldTime <= 0 && invulnerableTime <= 0 && !shazamBusy()) {
             handleHit('Сова вылетела за верхний край экрана — это была последняя жизнь.');
             owl.vy = 2.0; // Отталкиваем вниз
         } else {
@@ -299,6 +299,7 @@ function update() {
             it.centerX = it.x;
             it.centerY = it.y;
         }
+        shazamMagnet(it);   // ШАЗАМ: значки притягиваются к сове
 
         if (Math.hypot(owl.x - it.x, owl.y - it.y) < owl.radius + it.radius && !it.collected) {
             it.collected = true;
@@ -389,7 +390,6 @@ function update() {
                 shieldTime = Math.max(shieldTime, ADMIN_CFG.shieldSec * 60);
                 shieldAppearAnim = 12;
                 Haptics.powerup();
-                shazamOnShield();
                 it.pendingFX = { target: 'other', text: `Щит ${ADMIN_CFG.shieldSec}с`, color: '#22C55E', icon: 'fa-shield-halved' };
             } else if (it.type === 'compress') {
                 AudioFX.playCompressStart();
@@ -399,7 +399,7 @@ function update() {
             } else if (it.type === 'speedup') {
                 AudioFX.playStarCollect();
                 slowMotionTime = 0;
-                speedBoostTime = ADMIN_CFG.speedSec * 60;
+                speedBoostTime = ADMIN_CFG.speedSec * 60; shazamOnSpeedup();
                 AudioFX.onSpeedChanged();
                 Haptics.powerup();
                 it.pendingFX = { target: 'other', text: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#F59E0B', icon: 'fa-bolt' };
@@ -538,7 +538,7 @@ function updateBuffHUD() {
 
     const activeBuffs = [];
     if (shazamActive()) activeBuffs.push({ key: 'shazam', left: 1e9, text: `ШАЗАМ: ${shazamSecLeft()}с`, color: '#FF7A00', icon: 'fa-bolt' });
-    if (shieldTime > 0 && !shazamBusy()) {
+    if (shieldTime > 0) {
         activeBuffs.push({
             key: 'shield', left: shieldTime, text: `ЩИТ: ${Math.ceil(shieldTime / 60)}с`,
             color: '#22C55E',
@@ -700,6 +700,7 @@ function resetOvereatDrunk() {
 }
 
 function clearAllBuffs() {
+    if (typeof shazamReset === 'function') shazamReset();
     resetOvereatDrunk();
     shieldTime = 0;
     shieldAppearAnim = 0;
@@ -781,7 +782,7 @@ function handleSecretRoulette(originX, originY) {
             { w: 14, run() {
                 AudioFX.playStarCollect();
                 slowMotionTime = 0;
-                speedBoostTime = ADMIN_CFG.speedSec * 60;
+                speedBoostTime = ADMIN_CFG.speedSec * 60; shazamOnSpeedup();
                 AudioFX.onSpeedChanged();
                 Haptics.powerup();
                 return { label: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#F59E0B', icon: 'fa-bolt', isScoreAdd: false };
@@ -817,7 +818,6 @@ function handleSecretRoulette(originX, originY) {
         { w: 18, run() {
             shieldTime = Math.max(shieldTime, ADMIN_CFG.shieldSec * 60);
             shieldAppearAnim = 12;
-            shazamOnShield();
             AudioFX.playShieldCollect();
             Haptics.powerup();
             return { label: `Щит ${ADMIN_CFG.shieldSec}с`, color: '#22C55E', icon: 'fa-shield-halved', isScoreAdd: false };
