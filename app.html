@@ -12,21 +12,21 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.11.35">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.11.36">
     <!-- Onest: локальные файлы -->
-    <link rel="stylesheet" href="css/fonts.css?v=0.11.35">
+    <link rel="stylesheet" href="css/fonts.css?v=0.11.36">
 
-    <script src="js/music-hold.js?v=0.11.35"></script>
-<script src="js/tailwind-config.js?v=0.11.35"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.11.35">
+    <script src="js/music-hold.js?v=0.11.36"></script>
+<script src="js/tailwind-config.js?v=0.11.36"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.11.36">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.11.35" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.11.36" id="adminStyle">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.11.35">
-    <link rel="stylesheet" href="css/features.css?v=0.11.35">
+    <link rel="stylesheet" href="css/boot.css?v=0.11.36">
+    <link rel="stylesheet" href="css/features.css?v=0.11.36">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -42,9 +42,9 @@
             </div>
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
-        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.11.35</div>
+        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.11.36</div>
     </div>
-    <script src="js/boot.js?v=0.11.35"></script>
+    <script src="js/boot.js?v=0.11.36"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 backdrop-blur-[7px] overflow-y-auto custom-scroll">
@@ -172,7 +172,25 @@
 
         <!-- ИГРОВОЙ ХОД И ИГРОВОЙ ЭКРАН -->
         <div id="topHud" class="hidden absolute top-3 left-3.5 right-3.5 z-20 flex justify-between items-center pointer-events-none">
-            <div class="flex items-center space-x-1.5">
+            <div class="flex items-center space-x-1.5 pointer-events-auto">
+                <button id="homeBtn" class="h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 shrink-0">
+                    <i class="fa-solid fa-pause text-[14px]"></i>
+                </button>
+                <button id="musicToggleBtn" class="h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 relative shrink-0">
+                    <i id="musicToggleIcon" class="fa-solid fa-music text-xs"></i>
+                    <i id="musicMuteSlash" class="fa-solid fa-slash absolute text-red-400 text-xs hidden"></i>
+                </button>
+            </div>
+
+            <div id="topHudStats" class="flex items-center space-x-1.5">
+                <div id="scoreBadge" class="h-9 bg-[#1d0936]/90 border border-[#FE7600]/60 px-2.5 rounded-xl flex items-center space-x-1.5 shadow-lg backdrop-blur-md justify-center transition-all shrink-0">
+                    <i id="scoreIcon" class="fa-solid fa-circle-question text-[#FE7600] text-[12px] shrink-0"></i>
+                    <span id="scoreVal" class="text-white text-[10px] font-black">0</span>
+                </div>
+                <div id="staminaBadge" class="h-9 w-[70px] bg-[#1d0936]/90 border border-[#22c55e]/60 px-2 rounded-xl flex items-center space-x-1.5 shadow-lg backdrop-blur-md justify-center transition-all shrink-0">
+                    <i id="staminaIcon" class="fa-solid fa-feather-pointed text-[#22c55e] text-[12px] shrink-0"></i>
+                    <span id="staminaVal" class="text-white text-[10px] font-black">100%</span>
+                </div>
                 <div id="livesContainer" class="h-9 bg-[#1d0936]/90 border border-red-500/60 px-[10px] rounded-xl flex items-center space-x-1 shadow-lg backdrop-blur-md justify-center transition-all shrink-0">
                     <div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-red-500 text-[12px]"></i></div>
                     <div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-red-500 text-[12px]"></i></div>
@@ -180,24 +198,6 @@
                     <div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-[12px]" style="color: rgba(196, 167, 255, 0.2)"></i></div>
                     <div class="w-3.5 h-3.5 flex items-center justify-center shrink-0"><i class="fa-solid fa-heart text-[12px]" style="color: rgba(196, 167, 255, 0.2)"></i></div>
                 </div>
-                <div id="staminaBadge" class="h-9 w-[70px] bg-[#1d0936]/90 border border-[#22c55e]/60 px-2 rounded-xl flex items-center space-x-1.5 shadow-lg backdrop-blur-md justify-center transition-all shrink-0">
-                    <i id="staminaIcon" class="fa-solid fa-feather-pointed text-[#22c55e] text-[12px] shrink-0"></i>
-                    <span id="staminaVal" class="text-white text-[10px] font-black">100%</span>
-                </div>
-                <div id="scoreBadge" class="h-9 bg-[#1d0936]/90 border border-[#FE7600]/60 px-2.5 rounded-xl flex items-center space-x-1.5 shadow-lg backdrop-blur-md justify-center transition-all shrink-0">
-                    <i id="scoreIcon" class="fa-solid fa-circle-question text-[#FE7600] text-[12px] shrink-0"></i>
-                    <span id="scoreVal" class="text-white text-[10px] font-black">0</span>
-                </div>
-            </div>
-
-            <div class="flex items-center space-x-1.5 pointer-events-auto">
-                <button id="musicToggleBtn" class="h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 relative shrink-0">
-                    <i id="musicToggleIcon" class="fa-solid fa-music text-xs"></i>
-                    <i id="musicMuteSlash" class="fa-solid fa-slash absolute text-red-400 text-xs hidden"></i>
-                </button>
-                <button id="homeBtn" class="h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 shrink-0">
-                    <i class="fa-solid fa-pause text-[14px]"></i>
-                </button>
             </div>
         </div>
 
@@ -709,19 +709,19 @@
         </div>
     </div>
 
-    <script src="js/audio.js?v=0.11.35"></script>
-    <script src="js/game-core.js?v=0.11.35"></script>
-    <script src="js/owl.js?v=0.11.35"></script>
-    <script src="js/hud.js?v=0.11.35"></script>
-    <script src="js/scenery.js?v=0.11.35"></script>
-    <script src="js/items.js?v=0.11.35"></script>
-    <script src="js/shazam.js?v=0.11.35"></script>
-    <script src="js/update.js?v=0.11.35"></script>
-    <script src="js/render.js?v=0.11.35"></script>
-    <script src="js/wheel.js?v=0.11.35"></script>
-    <script src="js/ui.js?v=0.11.35"></script>
-<script src="js/admin.js?v=0.11.35"></script>
-<script src="js/text-measure.js?v=0.11.35"></script>
-<script src="js/fullscreen.js?v=0.11.35"></script>
+    <script src="js/audio.js?v=0.11.36"></script>
+    <script src="js/game-core.js?v=0.11.36"></script>
+    <script src="js/owl.js?v=0.11.36"></script>
+    <script src="js/hud.js?v=0.11.36"></script>
+    <script src="js/scenery.js?v=0.11.36"></script>
+    <script src="js/items.js?v=0.11.36"></script>
+    <script src="js/shazam.js?v=0.11.36"></script>
+    <script src="js/update.js?v=0.11.36"></script>
+    <script src="js/render.js?v=0.11.36"></script>
+    <script src="js/wheel.js?v=0.11.36"></script>
+    <script src="js/ui.js?v=0.11.36"></script>
+<script src="js/admin.js?v=0.11.36"></script>
+<script src="js/text-measure.js?v=0.11.36"></script>
+<script src="js/fullscreen.js?v=0.11.36"></script>
 </body>
 </html>

@@ -562,8 +562,7 @@ function fitTopHud() {
     if (key === _hudFitKey) return;
     let k = 1; hud.style.setProperty('--hk', '1');
     // меряем в координатах самой панели (offset*): у панели свой zoom, getBoundingClientRect тут врёт
-    const last = left.lastElementChild || left;
-    const gap = () => right.offsetLeft - (last.offsetLeft + last.offsetWidth);
+    const gap = () => right.offsetLeft - (left.offsetLeft + left.offsetWidth);   // зазор между группами (кнопки слева, показатели справа)
     for (let i = 0; i < 12 && gap() < 8; i++) {
         k = Math.max(0.7, k - 0.03); hud.style.setProperty('--hk', k.toFixed(2));
         if (k <= 0.7) break;
