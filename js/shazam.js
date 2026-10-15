@@ -1,11 +1,11 @@
 // ===== ШАЗАМ (тестовая фишка) =====
-// Каждое второе взятое ускорение даёт кнопку «ШАЗАМ» (пока идёт это ускорение). 1-й тап — «ПУСК», 2-й — запуск. Щит не участвует.
-// Зарядка 0,9 с: игра почти замирает, сова дрожит и набирает энергию (искры стягиваются к ней, вокруг молнии).
-// Потом рывок вперёд, и 10 секунд сова мчится заметно быстрее обычного ускорения, пролетает трубы то за ними, то перед ними,
+// Каждое второе взятое ускорение само включает ШАЗАМ (без кнопки). Щит не участвует.
+// Зарядка ~1 с прямо в полёте: сова летит как обычно (тапать можно), искры стягиваются к ней, игра плавно разгоняется.
+// Потом вспышка, и 15 секунд сова мчится заметно быстрее обычного ускорения, пролетает трубы то за ними, то перед ними,
 // а все значки впереди сами притягиваются к ней, как магнитом.
 const SHZ = {
     count: 0, state: 'idle', t: 0, left: 0, armUntil: 0,
-    INTRO: 54, DUR: 600,               // кадры (60 в секунду): 0,9 с зарядки и 10 с эффекта
+    INTRO: 60, DUR: 900,               // кадры (60 в секунду): 1 с зарядки и 15 с эффекта
     k: 0, shieldK: 0, blur: 0, slow: 1, dx: 0,
     depthBack: 0, depthFront: 0, sideN: 0,
     b: null, lastHalf: 0,
@@ -13,8 +13,8 @@ const SHZ = {
 };
 function shazamActive() { return SHZ.state === 'active'; }
 function shazamBusy() { return SHZ.state === 'intro' || SHZ.state === 'active'; }
-function shazamBlocksTap() { return SHZ.state === 'intro'; }
-function shazamSecLeft() { return SHZ.state === 'active' ? Math.ceil(SHZ.left / 60) : 0; }
+function shazamBlocksTap() { return false; }   // сова всегда слушается тапов
+function shazamSecLeft() { return SHZ.state === 'active' ? Math.ceil(SHZ.left / 60) : (SHZ.state === 'intro' ? Math.ceil(SHZ.DUR / 60) : 0); }
 function shazamOwlBehind() { return SHZ.depthBack > 0.02; }
 
 // ---- кнопка ----
@@ -33,7 +33,7 @@ function shazamBtnEl() {
 }
 function shazamSyncBtn() {
     const b = shazamBtnEl(); if (!b) return;
-    const show = gameActive && (SHZ.state === 'ready' || SHZ.state === 'armed');
+    const show = false;   // кнопка пока не используется — ШАЗАМ включается сам
     b.classList.toggle('show', show);
     b.classList.toggle('armed', SHZ.state === 'armed');
     const lbl = b.querySelector('.shz-lbl'), txt = SHZ.state === 'armed' ? 'ПУСК' : 'ШАЗАМ';
@@ -50,22 +50,50 @@ function shazamTap() {
     shazamSyncBtn();
 }
 
-// ускорение взяли: каждое второе даёт кнопку
+// ускорение взяли: каждое N-е само включает ШАЗАМ
+const SHZ_EVERY = 2;
 function shazamOnSpeedup() {
     SHZ.count++;
-    if (SHZ.count % 2 === 0 && SHZ.state === 'idle') { SHZ.state = 'ready'; shazamSyncBtn(); }
+    if (SHZ.count % SHZ_EVERY === 0 && SHZ.state === 'idle') { shazamStart(); return true; }
+    return false;
+}
+// следующее взятое ускорение включит ШАЗАМ — такие значки на пути искрят молниями
+function shazamNextCharged() { return SHZ.state === 'idle' && gameActive && (SHZ.count + 1) % SHZ_EVERY === 0; }
+function shazamDrawItemCharge(it) {
+    const R = it.radius * 1.25, now = performance.now();
+    if (!it.shzBolts || now > (it.shzBoltT || 0)) {
+        it.shzBoltT = now + 50 + Math.random() * 60;
+        it.shzBolts = [];
+        const n = 2 + (Math.random() < 0.5 ? 1 : 0);
+        for (let i = 0; i < n; i++) {
+            const a0 = Math.random() * Math.PI * 2, len = 0.8 + Math.random() * 1.0, pts = [];
+            for (let k = 0; k <= 7; k++) pts.push([a0 + len * k / 7, (Math.random() - 0.5) * 6]);
+            it.shzBolts.push(pts);
+        }
+    }
+    ctx.save();
+    const pulse = 0.5 + 0.5 * Math.sin(now / 140);
+    ctx.globalAlpha = 0.25 + 0.2 * pulse;
+    ctx.strokeStyle = '#FF7A00'; ctx.lineWidth = 2; ctx.shadowColor = '#FF7A00'; ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 0.65 + 0.35 * Math.random();
+    ctx.strokeStyle = '#FFE6C2'; ctx.lineWidth = 1.3; ctx.lineJoin = 'round'; ctx.shadowBlur = 9;
+    for (const pts of it.shzBolts) {
+        ctx.beginPath();
+        pts.forEach(([a, j], k) => { const rr = R + j; const x = Math.cos(a) * rr, y = Math.sin(a) * rr; if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
+        ctx.stroke();
+    }
+    ctx.restore();
 }
 
 function shazamStart() {
     SHZ.state = 'intro'; SHZ.t = 0;
-    SHZ.b = { y0: Math.max(owl.radius * 2, Math.min(height - owl.radius * 2, owl.y)) };   // сова зависает на месте и заряжается
     try { AudioFX.playShazamCharge(); Haptics.powerup(); } catch (e) {}
     shazamSyncBtn();
 }
 
 function shazamLaunch() {
     SHZ.state = 'active'; SHZ.left = SHZ.DUR; SHZ.t = 0; SHZ.sideN = 0;
-    owl.vy = -0.8;
     SHZ.rings.push({ x: owl.x, y: owl.y, r: owl.radius * 1.2, a: 0.9 }, { x: owl.x, y: owl.y, r: owl.radius * 0.8, a: 0.6, slow: 1 });
     for (let i = 0; i < 14; i++) {
         const a = Math.PI * (0.55 + Math.random() * 0.9), v = 2 + Math.random() * 3.5;
@@ -106,21 +134,20 @@ function shazamUpdate() {
     if (st === 'intro') {
         SHZ.t += dtMult;
         const T = Math.min(1, SHZ.t / SHZ.INTRO);
-        // зарядка: сова висит и мелко дрожит всё сильнее, искры со всех сторон стягиваются к ней
-        owl.vy = 0;
-        owl.y = SHZ.b.y0 + Math.sin(SHZ.t * 0.9) * (0.6 + 2.2 * T);
+        // зарядка в полёте: искры со всех сторон стягиваются к сове, сзади тянется огненный хвост, игра уже разгоняется
         if (Math.random() < (0.35 + 0.9 * T) * dtMult) {
-            const a = Math.random() * Math.PI * 2, R = 60 + Math.random() * 50, sp = 0.06 + 0.05 * T;
-            particles.push({ x: owl.x + Math.cos(a) * R, y: owl.y + Math.sin(a) * R, vx: -Math.cos(a) * R * sp, vy: -Math.sin(a) * R * sp,
+            const a = Math.random() * Math.PI * 2, R = 55 + Math.random() * 45, sp = 0.07 + 0.05 * T;
+            particles.push({ x: owl.x + Math.cos(a) * R, y: owl.y + Math.sin(a) * R, vx: -Math.cos(a) * R * sp - 1, vy: -Math.sin(a) * R * sp + owl.vy * 0.5,
                 color: Math.random() < 0.5 ? '#FFD08A' : '#FF7A00', alpha: 0.95, size: 2 + Math.random() * 2, decay: 0.06, isStar: true });
         }
-        SHZ.slow += (0.1 - SHZ.slow) * Math.min(1, 0.18 * dtMult);   // игра почти замирает
-        SHZ.dx += (-8 * Math.min(1, SHZ.t / 30) - SHZ.dx) * Math.min(1, 0.15 * dtMult);   // сова чуть оттягивается назад перед рывком
+        if (Math.random() < (0.3 + 0.7 * T) * dtMult) {
+            particles.push({ x: owl.x - owl.radius * 0.8, y: owl.y + (Math.random() - 0.5) * owl.radius, vx: -2 - Math.random() * 3 * T, vy: (Math.random() - 0.5) * 0.6,
+                color: Math.random() < 0.5 ? '#FFB347' : '#FF7A00', alpha: 0.85, size: 2 + Math.random() * 2.5, decay: 0.045, isStar: true });
+        }
+        if (Math.random() < 0.25 * T * dtMult) shazamAddStreak(false);
         if (SHZ.t >= SHZ.INTRO) shazamLaunch();
-    } else {
-        SHZ.slow += (1 - SHZ.slow) * Math.min(1, 0.035 * dtMult);   // после зарядки игра разгоняется плавно, без рывка
-        SHZ.dx += (0 - SHZ.dx) * Math.min(1, 0.03 * dtMult);
     }
+    SHZ.slow = 1; SHZ.dx = 0;   // сова не замирает и не дёргается
     if (SHZ.state === 'active') {
         SHZ.left -= dtMult; SHZ.t += dtMult;
         if (SHZ.left <= 0) shazamEnd();

@@ -144,10 +144,10 @@ function update() {
     // Плавный разгон/торможение игры (~0.9 с), синхронно с музыкой
     const gsTarget = shazamGsTarget() || (speedBoostTime > 0 ? 1.30 : (slowMotionTime > 0 ? 0.70 : 1.0));
     if (gsTarget !== gameSpeedTarget) { gameSpeedFrom = gameSpeedFactor; gameSpeedTarget = gsTarget; gameSpeedT = 0; }
-    gameSpeedT = Math.min(1, gameSpeedT + dtMult / (shazamActive() ? 80 : 54));   // в ШАЗАМ разгон чуть дольше и мягче
+    gameSpeedT = Math.min(1, gameSpeedT + dtMult / (shazamBusy() ? 100 : 54));   // в ШАЗАМ разгон плавный, начинается ещё на зарядке
     gameSpeedFactor = gameSpeedFrom + (gsTarget - gameSpeedFrom) * (gameSpeedT * gameSpeedT * (3 - 2 * gameSpeedT));
     currentSpeed *= gameSpeedFactor * shazamSpeedMul();   // ШАЗАМ: на зарядке игра почти замирает
-    const spTarget = shazamActive() ? 1.0 : gsTarget;   // в ШАЗАМе трубы не расходятся шире — скорость чувствуется
+    const spTarget = shazamBusy() ? 1.0 : gsTarget;   // в ШАЗАМе трубы не расходятся шире — скорость чувствуется
     if (spTarget !== spacingTarget) { spacingFrom = spacingFactor; spacingTarget = spTarget; spacingT = 0; }
     spacingT = Math.min(1, spacingT + dtMult / SPACING_RAMP_FRAMES);
     spacingFactor = spacingFrom + (spTarget - spacingFrom) * (spacingT * spacingT * (3 - 2 * spacingT));
@@ -400,10 +400,11 @@ function update() {
             } else if (it.type === 'speedup') {
                 AudioFX.playStarCollect();
                 slowMotionTime = 0;
-                speedBoostTime = ADMIN_CFG.speedSec * 60; shazamOnSpeedup();
+                speedBoostTime = ADMIN_CFG.speedSec * 60; const shz = shazamOnSpeedup();
                 AudioFX.onSpeedChanged();
                 Haptics.powerup();
-                it.pendingFX = { target: 'other', text: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#F59E0B', icon: 'fa-bolt' };
+                it.pendingFX = shz ? { target: 'other', text: `ШАЗАМ ${Math.round(SHZ.DUR / 60)}с`, color: '#FF7A00', icon: 'fa-bolt' }
+                                   : { target: 'other', text: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#F59E0B', icon: 'fa-bolt' };
             } else if (it.type === 'slowmo') {
                 AudioFX.playStarCollect();
                 speedBoostTime = 0;
@@ -476,7 +477,8 @@ function buffKeyForLabel(t) {
     if (/^Щит \d+с$/i.test(t)) return 'shield';
     if (/^Макс\. силы \d+с$/i.test(t)) return 'infinite';
     if (/^Сжатие \d+с$/i.test(t)) return 'compress';
-    if (/^Ускорение \d+с$/i.test(t)) return 'speed';
+    if (/^Ускорение \d+с$/i.test(t)) return shazamBusy() ? 'shazam' : 'speed';   
+    if (/^ШАЗАМ \d+с$/i.test(t)) return 'shazam';   // в ШАЗАМе подсказка улетает в таймер ШАЗАМа
     if (/^Замедление \d+с$/i.test(t)) return 'slow';
     if (/переели/i.test(t)) return 'overeat';
     if (/замёрзли|замерзли/i.test(t)) return 'freeze';
@@ -538,7 +540,7 @@ function updateBuffHUD() {
     lastBuffSig = sig;
 
     const activeBuffs = [];
-    if (shazamActive()) activeBuffs.push({ key: 'shazam', left: 1e9, text: `ШАЗАМ: ${shazamSecLeft()}с`, color: '#FF7A00', icon: 'fa-bolt' });
+    if (shazamBusy()) activeBuffs.push({ key: 'shazam', left: 1e9, text: `ШАЗАМ: ${shazamSecLeft()}с`, color: '#FF7A00', icon: 'fa-bolt' });
     if (shieldTime > 0) {
         activeBuffs.push({
             key: 'shield', left: shieldTime, text: `ЩИТ: ${Math.ceil(shieldTime / 60)}с`,
@@ -560,7 +562,7 @@ function updateBuffHUD() {
             svgIcon: `<svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="#D946EF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5"/></svg>`
         });
     }
-    if (speedBoostTime > 0) {
+    if (speedBoostTime > 0 && !shazamBusy()) {   // в ШАЗАМе вместо ускорения в таймере ШАЗАМ
         activeBuffs.push({
             key: 'speed', left: speedBoostTime, text: `УСКОРЕНИЕ: ${Math.ceil(speedBoostTime / 60)}с`,
             color: '#F59E0B',
@@ -783,7 +785,8 @@ function handleSecretRoulette(originX, originY) {
             { w: 14, run() {
                 AudioFX.playStarCollect();
                 slowMotionTime = 0;
-                speedBoostTime = ADMIN_CFG.speedSec * 60; shazamOnSpeedup();
+                speedBoostTime = ADMIN_CFG.speedSec * 60;
+                if (shazamOnSpeedup()) { AudioFX.onSpeedChanged(); Haptics.powerup(); return { label: `ШАЗАМ ${Math.round(SHZ.DUR / 60)}с`, color: '#FF7A00', icon: 'fa-bolt', isScoreAdd: false }; }
                 AudioFX.onSpeedChanged();
                 Haptics.powerup();
                 return { label: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#F59E0B', icon: 'fa-bolt', isScoreAdd: false };

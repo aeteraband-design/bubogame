@@ -241,5 +241,6 @@ function drawToken(item) {
         }
     }
     ctx.restore();   // конец группы покачивания
+    if (item.type === 'speedup' && typeof shazamNextCharged === 'function' && shazamNextCharged()) shazamDrawItemCharge(item);   // это ускорение включит ШАЗАМ
     ctx.restore();
 }
