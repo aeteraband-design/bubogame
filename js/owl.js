@@ -124,7 +124,8 @@ const owl = {
         {
             let lvl = 0;
             try { lvl = getDifficultyIndex() / Math.max(1, DIFF_LEVELS.length - 1); } catch (e) {}
-            const boostOn = (typeof speedBoostTime !== 'undefined' && speedBoostTime > 0 && gameActive && (currentFreezeFactor || 0) < 0.05) ? 1 : 0;   // замёрзшая сова застывает как есть: без наклона, взгляда и клюва «вперёд»
+            const shzOn = typeof shazamBusy === 'function' && shazamBusy();
+            const boostOn = (typeof speedBoostTime !== 'undefined' && (speedBoostTime > 0 || shzOn) && gameActive && (currentFreezeFactor || 0) < 0.05) ? (shzOn ? 1.3 : 1) : 0;   // в ШАЗАМе поза ускорения ещё сильнее   // замёрзшая сова застывает как есть: без наклона, взгляда и клюва «вперёд»
             const boostLean = Math.min(0.42, 0.13 + 0.035 * lvl);   // устремление вперёд: сильнее на высоких уровнях, но без перебора
             const leanT = gameActive ? (0.11 * lvl + boostLean * boostOn + (shz ? 0.24 * shz.k : 0)) * (1 - (currentFreezeFactor || 0)) : 0;   // в ШАЗАМе сова сильнее устремлена вперёд
             this.lean = (this.lean || 0) + (leanT - (this.lean || 0)) * Math.min(1, 0.05 * dtMult);

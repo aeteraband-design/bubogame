@@ -514,7 +514,8 @@ function sendTagToTimer(tag, key) {
         void tag.offsetWidth;
         const er = el.getBoundingClientRect(), tr = tag.getBoundingClientRect();
         tag.style.transition = 'left 0.55s cubic-bezier(0.22, 1, 0.36, 1), top 0.55s cubic-bezier(0.22, 1, 0.36, 1), width 0.35s ease';
-        tag.style.left = (parseFloat(tag.style.left) + (er.left - tr.left)) + 'px';
+        const fx = tr.width / Math.max(1, w0);   // подсказка масштабирована (scale --fx) от центра
+        tag.style.left = (parseFloat(tag.style.left) + (er.right - tr.right) - (w1 - w0) * (1 + fx) / 2) + 'px';   // таймеры прижаты вправо: совпадают правые края
         tag.style.top = (parseFloat(tag.style.top) + ((er.top + er.height / 2) - (tr.top + tr.height / 2))) + 'px';
         tag.style.width = w1 + 'px';
         setTimeout(() => {
@@ -644,8 +645,8 @@ function renderBuffBar(bar, list) {
     els.forEach((el, k) => {
         if (keep.has(k)) return;
         el.dataset.leaving = '1';
-        const ol = el.offsetLeft, ot = el.offsetTop;   // запоминаем место ДО отрыва от потока — иначе таймер прыгает наверх
-        el.style.position = 'absolute'; el.style.left = ol + 'px'; el.style.top = ot + 'px';
+        const orr = bar.clientWidth - el.offsetLeft - el.offsetWidth, ot = el.offsetTop;   // запоминаем место ДО отрыва от потока — иначе таймер прыгает наверх
+        el.style.position = 'absolute'; el.style.left = 'auto'; el.style.right = orr + 'px'; el.style.top = ot + 'px';   // таймеры прижаты вправо
         el.style.transition = 'opacity 0.25s ease, transform 0.25s ease'; el.style.opacity = '0'; el.style.transform = 'scale(0.9)';
         setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 270);
     });
