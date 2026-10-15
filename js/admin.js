@@ -32,7 +32,7 @@
         bonus: [
             rowDef('shieldSec', 'Щит', '', 'fa-shield-halved', '#22C55E', unitSec),
             rowDef('slowSec', 'Замедление', '', 'fa-hourglass-half', '#38BDF8', unitSec),
-            rowDef('speedSec', 'Ускорение', '', 'fa-bolt', '#F59E0B', unitSec),
+            rowDef('speedSec', 'Ускорение', '', 'fa-bolt', '#FACC15', unitSec),
             rowDef('shazamEvery', 'До ШАЗАМа', '', 'fa-bolt-lightning', '#FF7A00', (n) => ruPlural(n, ['ускорение', 'ускорения', 'ускорений'])),
             rowDef('compressSec', 'Сжатие', '', 'fa-compress', '#D946EF', unitSec),
             rowDef('infiniteSec', 'Макс. силы', '', 'fa-feather-pointed', '#00F0FF', unitSec),

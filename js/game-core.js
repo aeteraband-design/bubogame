@@ -334,7 +334,7 @@ const CATEGORIES = {
     pizza:        { name: 'Пицца',      color: '#F97316', iconCode: '\uf818', faClass: 'fa-pizza-slice' },
     burger:       { name: 'Бургер',     color: '#F59E0B', iconCode: '\uf805', faClass: 'fa-burger' },
     hotdog:       { name: 'Хот-дог',    color: '#FB923C', iconCode: '\uf80f', faClass: 'fa-hotdog' },
-    speedup:      { name: 'Ускорение',  color: '#F59E0B', iconCode: '\uf0e7', faClass: 'fa-bolt' },
+    speedup:      { name: 'Ускорение',  color: '#FACC15', iconCode: '\uf0e7', faClass: 'fa-bolt' },
     slowmo:       { name: 'Замедление', color: '#38BDF8', iconCode: '\uf252', faClass: 'fa-hourglass-half' },
     question:     { name: 'Вопрос',     color: '#FE7600', iconCode: '\uf128', faClass: 'fa-circle-question' }
 };

@@ -253,6 +253,9 @@ if (resetProgressBtn) resetProgressBtn.addEventListener('click', (e) => {
     e.stopPropagation(); openResetConfirm();
 });
 
+// все начертания шрифта загружаем сразу: иначе редкое (например, полужирное в окне «Начать заново») догружалось при открытии окна,
+// и текст сначала показывался запасным шрифтом, а потом перестраивался — содержимое окна дёргалось
+try { if (document.fonts && document.fonts.load) [500, 600, 700, 800, 900].forEach((w) => document.fonts.load(w + ' 16px Onest', 'АаZz0')); } catch (e) {}
 // Подтверждение «Начать заново»: что именно будет потеряно
 function openResetConfirm() {
     const m = document.getElementById('resetConfirmModal'), list = document.getElementById('resetLossList');

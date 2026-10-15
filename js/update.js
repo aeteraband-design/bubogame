@@ -409,7 +409,7 @@ function update() {
                 AudioFX.onSpeedChanged();
                 Haptics.powerup();
                 if (!shzWas) it.pendingFX = shz ? { target: 'other', text: `ШАЗАМ ${Math.round(SHZ.DUR / 60)}с`, color: '#FF7A00', icon: 'fa-bolt-lightning' }
-                                   : { target: 'other', text: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#F59E0B', icon: 'fa-bolt' };
+                                   : { target: 'other', text: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#FACC15', icon: 'fa-bolt' };
             } else if (it.type === 'slowmo') {
                 AudioFX.playStarCollect();
                 speedBoostTime = 0;
@@ -578,7 +578,7 @@ function updateBuffHUD() {
     if (speedBoostTime > 0 && !shazamBusy()) {   // в ШАЗАМе вместо ускорения в таймере ШАЗАМ
         activeBuffs.push({
             key: 'speed', left: speedBoostTime, text: `УСКОРЕНИЕ: ${Math.ceil(speedBoostTime / 60)}с`,
-            color: '#F59E0B',
+            color: '#FACC15',
             icon: 'fa-bolt'
         });
     }
@@ -822,7 +822,7 @@ function handleSecretRoulette(originX, originY) {
                 if (shazamOnSpeedup()) { AudioFX.onSpeedChanged(); Haptics.powerup(); return { label: `ШАЗАМ ${Math.round(SHZ.DUR / 60)}с`, color: '#FF7A00', icon: 'fa-bolt-lightning', isScoreAdd: false }; }
                 AudioFX.onSpeedChanged();
                 Haptics.powerup();
-                return { label: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#F59E0B', icon: 'fa-bolt', isScoreAdd: false };
+                return { label: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#FACC15', icon: 'fa-bolt', isScoreAdd: false };
             } }
         ]).run();
     }

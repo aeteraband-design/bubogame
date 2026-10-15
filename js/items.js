@@ -112,7 +112,8 @@ function drawToken(item) {
     ctx.scale(currentScale * 1.05, currentScale * 1.05);   // кружки с иконками на 5% крупнее (вместе с содержимым)
 
     // ускорение, которое включит ШАЗАМ, выглядит как значок ШАЗАМа (оранжевая молния, как в правилах)
-    const shzCharged = item.type === 'speedup' && (item.__forceShz || (typeof shazamNextCharged === 'function' && shazamNextCharged()));
+    // взятый значок доигрывает анимацию тем же видом, что был до подбора (иначе на миг мелькала обычная иконка ускорения)
+    const shzCharged = item.type === 'speedup' && (item.__forceShz || (item.collected ? !!item.__shzLatch : (item.__shzLatch = typeof shazamNextCharged === 'function' && shazamNextCharged())));
     const cat = shzCharged ? SHZ_TOKEN : (CATEGORIES[item.type] || CATEGORIES.question);
     const col = cat.color;
     const isThematic = TOKEN_THEMATIC.has(item.type);
