@@ -887,10 +887,10 @@ function spawnPipe(startX) {
             const sec = (s) => s * 60;
             const SPECIAL_TYPES = ['compress', 'speedup', 'slowmo', 'shield'];
             const specials = [
-                { t: 'compress', since: frame - lastCompressSpawnTime, gap: sec(pickLv([30, 36, 42, 50, 58, 66])), p: 0.2 },
-                { t: 'speedup', since: frame - lastSpeedSpawnTime, gap: sec(pickLv([14, 16, 18, 20, 22, 24])), p: 0.14 },
-                { t: 'slowmo', since: frame - lastSlowSpawnTime, gap: sec(pickLv([18, 20, 22, 24, 26, 28])), p: 0.14 },
-                { t: 'shield', since: frame - lastShieldSpawnTime, gap: sec(pickLv([24, 28, 32, 36, 40, 44])), p: 0.1 }
+                { t: 'compress', since: frame - lastCompressSpawnTime, gap: sec(pickLv([30, 33, 36, 40, 44, 48])), p: 0.25 },
+                { t: 'speedup', since: frame - lastSpeedSpawnTime, gap: sec(pickLv([12, 13, 14, 15, 16, 17])), p: 0.2 },
+                { t: 'slowmo', since: frame - lastSlowSpawnTime, gap: sec(pickLv([16, 17, 18, 19, 20, 21])), p: 0.2 },
+                { t: 'shield', since: frame - lastShieldSpawnTime, gap: sec(pickLv([22, 24, 26, 28, 30, 32])), p: 0.15 }
             ];
             const afterSpecial = SPECIAL_TYPES.includes(lastSpawnedItemType);   // после эффекта следующий эффект не сразу
             const hit = afterSpecial ? null : specials.find(s => s.since >= s.gap && Math.random() < s.p);

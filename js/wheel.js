@@ -23,6 +23,18 @@ const RL_PRIZES = {
     discTeam:{ icon: 'fa-ticket', col: '#A78BFA', w: 4, card: '−50%', cardSub: 'скидка на<br>всю команду',
                title: 'СКИДКА 50% НА ВСЮ КОМАНДУ', sub: 'Почти легендарный приз', desc: 'Скидка 50% на проходки для всей твоей команды! Скоро здесь появится переход в чат, где ты сможешь её забрать.' }
 };
+// короткий текст на обратной стороне карточки (переворачивается по нажатию или само через 5 с бездействия)
+const RL_BACK = {
+    stamina: 'Максимум силы +20%. Бонус сохранится до сброса прогресса.',
+    hearts: 'Максимум жизней становится 6. Полёт начинается с 4 из 6 сердец.',
+    life: 'Плюс 1 жизнь: дополнительное сердце уже добавлено к твоим жизням.',
+    a1: 'Плюс 1 попытка: она уже добавлена к твоим попыткам.',
+    bar: 'Сертификат в бар на 1 000 ₽. Скоро здесь появится чат, где его забрать.',
+    pass: 'Проходка на игру для одного человека. Скоро здесь появится чат, где её забрать.',
+    pass4: 'Проходки на игру для 4 человек из твоей команды. Скоро здесь появится чат.',
+    passTeam: 'Проходки на игру для всей команды — самый редкий приз. Скоро здесь появится чат.',
+    discTeam: 'Скидка 50% на проходки для всей твоей команды. Скоро здесь появится чат.'
+};
 const RL_PATTERN = ['a1', 'hearts', 'bar', 'life', 'pass', 'stamina', 'a1', 'pass4', 'life', 'discTeam', 'hearts', 'a1', 'stamina', 'passTeam', 'life', 'bar'];
 const RW_GAP = 14;     // промежуток между карточками
 let rouletteSpins = 0;   // попытки вращения рулетки: даются за победу и как приз «ещё одно вращение»
@@ -46,7 +58,7 @@ function rwPickPrize() {
     for (const k of keys) { if (r < RL_PRIZES[k].w) return k; r -= RL_PRIZES[k].w; }
     return keys[0];
 }
-function rwCardInner(k) { const p = RL_PRIZES[k]; return `<div class="rw-top"><i class="fa-solid ${p.icon} rw-ico"></i></div><div class="rw-bot"><div class="rw-name">${p.card}</div><div class="rw-sub">${p.cardSub}</div></div>`; }
+function rwCardInner(k) { const p = RL_PRIZES[k]; return `<div class="rw-top"><i class="fa-solid ${p.icon} rw-ico"></i></div><div class="rw-bot"><div class="rw-name">${p.card}</div><div class="rw-sub">${p.cardSub}</div></div><div class="rw-back"><div class="rw-back-txt">${RL_BACK[k] || p.desc}</div></div>`; }
 function rwCardStyle(k) { const c = RL_PRIZES[k].col; return `--c:${c};--ct1:${c}D0;--ct2:${c}80;--ct3:${c}4D;--ct4:${c}26;--tt:${c}33;--tb:${c}52;--tt2:${c}4D;--tb2:${c}70;`; }
 function rwLayout() {
     const reel = rwEl('rwReel'), win = rwEl('rwWindow'); if (!reel || !win) return;
@@ -138,7 +150,7 @@ function rwSyncWheel(pos) {
 }
 function rwUpdateFocus(pos) {
     const el = rwCenterSlot(pos);
-    if (el !== rw.focusEl) { if (rw.focusEl) rw.focusEl.classList.remove('rw-focus'); if (el) el.classList.add('rw-focus'); rw.focusEl = el; }
+    if (el !== rw.focusEl) { if (rw.focusEl) rw.focusEl.classList.remove('rw-focus', 'rw-flipped'); if (el) el.classList.add('rw-focus'); rw.focusEl = el; rw.lastInteract = performance.now(); }
 }
 function rwCenterSlot(pos) {
     const idx = Math.floor((pos + rw.vw / 2) / rw.pitch), N = rw.N;
@@ -346,6 +358,19 @@ function initRouletteUI() {
             rw.resumeAt = performance.now() + 1800;
         };
         vp.addEventListener('pointerup', endDrag); vp.addEventListener('pointercancel', endDrag); vp.addEventListener('lostpointercapture', endDrag);
+        vp.addEventListener('click', (e) => {
+            rw.lastInteract = performance.now();
+            const card = e.target && e.target.closest && e.target.closest('.rw-card');
+            if (card && !rw.spinning && !rw.prize) card.classList.toggle('rw-flipped');
+        });
+        vp.addEventListener('pointerdown', () => { rw.lastInteract = performance.now(); });
+        // если никто не трогает рулетку 5 с — центральная карточка сама переворачивается и показывает описание
+        setInterval(() => {
+            const m = rwEl('rouletteModal');
+            if (!m || m.classList.contains('hidden') || rw.spinning || rw.prize || rw.drag) return;
+            const f = rw.focusEl;
+            if (f && !f.classList.contains('rw-flipped') && performance.now() - (rw.lastInteract || 0) > 5000) { f.classList.add('rw-flipped'); }
+        }, 400);
     }
     rwUpdateUI();
 }

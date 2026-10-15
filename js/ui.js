@@ -256,10 +256,8 @@ function openResetConfirm() {
         const total = getTotalCollectedThemes();
         const rows = [];
         if (maxStamina > 100) rows.push(['fa-feather-pointed', '#67E8F9', `Сила: +${Math.round(maxStamina - 100)}% к стартовым 100%`]);
-        if (maxLives > ADMIN_CFG.maxLives) rows.push(['fa-heart', '#EF4444', `Сердца: +${Math.round((maxLives - ADMIN_CFG.maxLives) * 10) / 10} к стартовым ${ADMIN_CFG.maxLives}`]);
         if (total > 0) rows.push(['fa-layer-group', '#A855F7', `Собранные темы: ${total} / ${TOTAL_THEMES}`]);
         if (score > 0) rows.push(['fa-circle-question', '#FE7600', `Собранные вопросы: ${score} шт.`]);
-        if (magicFeathersCaught > 0) rows.push(['fa-feather', '#C084FC', `Перья и бонусы: ${magicFeathersCaught} ${ruPlural(magicFeathersCaught, ['перо', 'пера', 'перьев'])}`]);
         list.innerHTML = rows.map(r => `<li><i class="fa-solid ${r[0]}" style="color:${r[1]}"></i><span>${r[2]}</span></li>`).join('');
         list.classList.toggle('hidden', rows.length === 0);
         const intro = document.getElementById('resetLossIntro');
