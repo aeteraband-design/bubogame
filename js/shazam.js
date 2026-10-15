@@ -55,7 +55,7 @@ function shazamTap() {
 }
 
 // ускорение взяли: каждое N-е само включает ШАЗАМ
-function shzEvery() { return Math.max(1, (typeof ADMIN_CFG !== 'undefined' && ADMIN_CFG.shazamEvery) || 5); }   // меняется в админке
+function shzEvery() { return Math.max(1, (typeof ADMIN_CFG !== 'undefined' && ADMIN_CFG.shazamEvery) || 4); }   // меняется в админке
 function shazamOnSpeedup() {
     if (shazamBusy()) { speedBoostTime = 0; return false; }   // во время ШАЗАМа ускорения не считаются
     SHZ.count++;
