@@ -246,9 +246,10 @@
     background: conic-gradient(from var(--shz-a), transparent 0deg 200deg, #FFD08A 250deg, #FF7A00 290deg, transparent 330deg 360deg);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
     animation: shzSpin 1.1s linear infinite; }
-.shz-btn.armed::after, .buff-shazam::after { content: ''; position: absolute; inset: -5px; border-radius: inherit; pointer-events: none;
+.shz-btn.armed::after { content: ''; position: absolute; inset: -5px; border-radius: inherit; pointer-events: none;
     box-shadow: 0 0 9px 1px rgba(255, 140, 40, 0.65), 0 0 2px 0 rgba(255, 230, 190, 0.9); animation: shzFlicker 0.9s steps(1) infinite; }
 .buff-shazam { position: relative; color: #FFB347 !important; background-color: rgba(42, 10, 22, 0.96) !important; border-color: #FF7A00 !important; box-shadow: 0 0 14px rgba(255, 122, 0, 0.55) !important; }
+.buff-shazam::before { inset: -1.5px; padding: 1.5px; }   /* искрящая обводка ложится прямо на рамку — одна обводка */
 .buff-shazam i { color: #FFD08A !important; filter: drop-shadow(0 0 3px rgba(255, 122, 0, 0.9)); }
 @keyframes shzSpin { to { --shz-a: 360deg; } }
 @keyframes shzFlicker { 0% { opacity: 0.9; } 12% { opacity: 0.25; } 20% { opacity: 1; } 38% { opacity: 0.4; } 46% { opacity: 0.85; } 63% { opacity: 0.2; } 71% { opacity: 1; } 88% { opacity: 0.5; } }

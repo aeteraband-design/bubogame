@@ -60,29 +60,31 @@ function shazamOnSpeedup() {
 // следующее взятое ускорение включит ШАЗАМ — такие значки на пути искрят молниями
 function shazamNextCharged() { return SHZ.state === 'idle' && gameActive && (SHZ.count + 1) % SHZ_EVERY === 0; }
 function shazamDrawItemCharge(it) {
-    const R = it.radius * 1.25, now = performance.now();
+    // искры внутри значка, вокруг молнии
+    const R = it.radius * 0.62, now = performance.now();
     if (!it.shzBolts || now > (it.shzBoltT || 0)) {
-        it.shzBoltT = now + 50 + Math.random() * 60;
+        it.shzBoltT = now + 60 + Math.random() * 70;
         it.shzBolts = [];
-        const n = 2 + (Math.random() < 0.5 ? 1 : 0);
+        const n = 1 + (Math.random() < 0.6 ? 1 : 0);
         for (let i = 0; i < n; i++) {
-            const a0 = Math.random() * Math.PI * 2, len = 0.8 + Math.random() * 1.0, pts = [];
-            for (let k = 0; k <= 7; k++) pts.push([a0 + len * k / 7, (Math.random() - 0.5) * 6]);
+            const a0 = Math.random() * Math.PI * 2, len = 0.6 + Math.random() * 0.7, pts = [];
+            for (let k = 0; k <= 5; k++) pts.push([a0 + len * k / 5, (Math.random() - 0.5) * 3.5]);
             it.shzBolts.push(pts);
         }
+        it.shzSparks = [];
+        for (let i = 0; i < 4; i++) { const a = Math.random() * Math.PI * 2, rr = it.radius * (0.35 + Math.random() * 0.4); it.shzSparks.push([Math.cos(a) * rr, Math.sin(a) * rr, 0.8 + Math.random() * 1.1]); }
     }
     ctx.save();
-    const pulse = 0.5 + 0.5 * Math.sin(now / 140);
-    ctx.globalAlpha = 0.25 + 0.2 * pulse;
-    ctx.strokeStyle = '#FF7A00'; ctx.lineWidth = 2; ctx.shadowColor = '#FF7A00'; ctx.shadowBlur = 12;
-    ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.stroke();
-    ctx.globalAlpha = 0.65 + 0.35 * Math.random();
-    ctx.strokeStyle = '#FFE6C2'; ctx.lineWidth = 1.3; ctx.lineJoin = 'round'; ctx.shadowBlur = 9;
+    ctx.shadowColor = '#FF7A00'; ctx.shadowBlur = 7;
+    ctx.globalAlpha = 0.7 + 0.3 * Math.random();
+    ctx.strokeStyle = '#FFE6C2'; ctx.lineWidth = 1.1; ctx.lineJoin = 'round';
     for (const pts of it.shzBolts) {
         ctx.beginPath();
         pts.forEach(([a, j], k) => { const rr = R + j; const x = Math.cos(a) * rr, y = Math.sin(a) * rr; if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
         ctx.stroke();
     }
+    ctx.fillStyle = '#FFD08A';
+    for (const [x, y, s] of it.shzSparks) { ctx.globalAlpha = 0.5 + 0.5 * Math.random(); ctx.beginPath(); ctx.arc(x, y, s, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
 }
 
