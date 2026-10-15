@@ -1040,8 +1040,9 @@ const AudioFX = {
         if (!this.ctx) return;
         if (!this._wx) { if (rain <= 0 && wind <= 0) return; this._weatherInit(); }
         const t = this.ctx.currentTime;
-        this._wx.rg.gain.setTargetAtTime(rain * 0.09, t, 0.8);
-        this._wx.wg.gain.setTargetAtTime(wind * 0.11, t, 1.0);
+        this._wx.rg.gain.cancelScheduledValues(t); this._wx.wg.gain.cancelScheduledValues(t);
+        this._wx.rg.gain.setTargetAtTime(rain < 0.015 ? 0 : rain * 0.09, t, 0.25);
+        this._wx.wg.gain.setTargetAtTime(wind < 0.015 ? 0 : wind * 0.11, t, 0.35);
     },
     // далёкий гром: глухой низкий раскат с запаздыванием после вспышки (чем дальше, тем позже и тише)
     playThunder(delay, power) {

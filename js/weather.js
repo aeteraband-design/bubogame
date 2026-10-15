@@ -88,8 +88,10 @@ function stormUpdate() {
     if ((STORM.sndT -= dtMult) <= 0) {
         STORM.sndT = 12;
         const on = gameActive && !document.hidden;
-        const r = on ? rainK : 0, w = on ? stormSmooth(0.08, 1, si) : 0;
-        if (Math.abs(r - STORM.sndRain) > 0.01 || Math.abs(w - STORM.sndWind) > 0.01) {
+        // звук затихает вместе с видимым дождём: почти нет капель — звука нет совсем
+        const dropsK = Math.min(1, STORM.drops.length / 40);
+        const r = on ? rainK * dropsK : 0, w = on ? stormSmooth(0.2, 1, si) * Math.min(1, dropsK + (si > 0.5 ? 1 : 0)) : 0;
+        if (Math.abs(r - STORM.sndRain) > 0.002 || Math.abs(w - STORM.sndWind) > 0.002 || (r === 0 && STORM.sndRain !== 0)) {
             STORM.sndRain = r; STORM.sndWind = w;
             try { AudioFX.weatherSet(r, w); } catch (e) {}
         }

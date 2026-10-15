@@ -904,7 +904,27 @@ function drawPipe(pipe) {
 
     drawPipeCap(capX, bottomY, capW, capH, capRadius, 2.5, pipe.width);
 
+    // капельки дождя на верхней грани обеих шляпок (у верхней трубы шляпка перевёрнута — капли всё равно сверху)
+    if (STORM.wet > 0.03) { drawCapDrops(pipe, topCapY, capX, capW); drawCapDrops(pipe, bottomY, capX, capW); }
+
     ctx.restore();
+}
+// мелкие капли на верхней кромке шляпки: появляются по мере намокания, высыхают вместе с ним
+function drawCapDrops(pipe, edgeY, capX, capW) {
+    if (!pipe._ds) pipe._ds = 1 + Math.floor(Math.random() * 2147483000);
+    let s = pipe._ds + Math.round(edgeY) * 7;
+    const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    const wet = STORM.wet, N = 7;
+    for (let i = 0; i < N; i++) {
+        const x = capX + 4 + rnd() * (capW - 8), r = 0.9 + rnd() * 1.1, th = rnd() * 0.85;
+        if (wet <= th) continue;
+        const a = Math.min(1, (wet - th) * 5);
+        ctx.globalAlpha = 0.7 * a; ctx.fillStyle = 'rgb(170, 205, 245)';
+        ctx.beginPath(); ctx.ellipse(x, edgeY, r, r * 1.15, 0, Math.PI, 0); ctx.ellipse(x, edgeY, r, r * 0.45, 0, 0, Math.PI); ctx.fill();   // капля-бусинка сидит на кромке
+        ctx.globalAlpha = 0.9 * a; ctx.fillStyle = '#F2FAFF';
+        ctx.fillRect(x - r * 0.45, edgeY - r * 0.8, Math.max(0.6, r * 0.45), Math.max(0.6, r * 0.45));
+    }
+    ctx.globalAlpha = 1;
 }
 
 function drawSparkleStar(cx, cy, spikes, outerRadius, innerRadius, color, alpha) {
