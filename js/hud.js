@@ -41,6 +41,18 @@ function resize() {
     }
 }
 window.addEventListener('resize', resize);
+// На iPhone Safari размеры страницы меняются без события resize (адресная строка, загрузка, поворот) — холст тогда растягивался.
+// Следим за реальным размером колонки и пересчитываем, как только он изменился.
+(function () {
+    let lw = 0, lh = 0;
+    const chk = () => { try { const w = container.clientWidth, h = container.clientHeight; if (w && h && (w !== lw || h !== lh)) { lw = w; lh = h; resize(); } } catch (e) {} };
+    try { if (window.ResizeObserver) new ResizeObserver(chk).observe(container); } catch (e) {}
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', chk);
+    window.addEventListener('orientationchange', () => setTimeout(chk, 250));
+    window.addEventListener('pageshow', chk);
+    setInterval(chk, 700);
+    chk();
+})();
 resize();
 
 function getTotalCollectedThemes() {

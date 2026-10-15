@@ -87,7 +87,7 @@
                 var r = m.getBoundingClientRect();
                 if (!r.width || !r.height) return;
                 if (!clone) {
-                    cloneWrap = document.createElement('div'); cloneWrap.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none;';
+                    cloneWrap = document.createElement('div'); cloneWrap.style.cssText = 'position:absolute;left:0;right:0;top:0;display:flex;justify-content:center;pointer-events:none;';   // по центру экрана, как логотип меню: не зависит от того, как браузер (iPhone) считает размеры при zoom
                     clone = m.cloneNode(true); clone.removeAttribute('id');
                     cloneWrap.appendChild(clone); el.appendChild(cloneWrap);
                     logo.style.display = 'none';
@@ -95,7 +95,7 @@
                 var z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;
                 const LZ = 1.17;   // логотип на экране загрузки: на 10% меньше, чем было (крупнее на 17% от обычного)
                 clone.style.zoom = z * LZ;
-                cloneWrap.style.left = (r.left - r.width * (LZ - 1) / 2) + 'px'; cloneWrap.style.top = (r.top - r.height * (LZ - 1) / 2) + 'px';   // увеличиваем от центра
+                cloneWrap.style.transform = 'translateY(-50%)'; cloneWrap.style.top = (r.top + r.height / 2) + 'px';   // увеличиваем от центра
             }
             var dismissed = false;
             function dismiss() {
