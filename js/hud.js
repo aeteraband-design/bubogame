@@ -536,6 +536,27 @@ function spawnHeartBreak(slot, glyphPx) {
     } catch (e) {}
 }
 
+// Левый блок HUD (сердца, сила, вопросы) не должен доходить до кнопок справа: если не помещается
+// (6 сердец, трёхзначный счёт) — всё в нём пропорционально уменьшается через --hk, высота плашек та же.
+function fitTopHud() {
+    const hud = document.getElementById('topHud'); if (!hud) return;
+    const left = hud.firstElementChild, right = hud.lastElementChild; if (!left || !right || left === right) return;
+    let k = 1; hud.style.setProperty('--hk', '1');
+    if (!left.offsetWidth) return;
+    // меряем в координатах самой панели (offset*): у панели свой zoom, getBoundingClientRect тут врёт
+    const last = left.lastElementChild || left;
+    const gap = () => right.offsetLeft - (last.offsetLeft + last.offsetWidth);
+    for (let i = 0; i < 12 && gap() < 8; i++) {
+        k = Math.max(0.7, k - 0.03); hud.style.setProperty('--hk', k.toFixed(2));
+        if (k <= 0.7) break;
+    }
+}
+(function () {
+    const hud = document.getElementById('topHud'); if (!hud || typeof ResizeObserver === 'undefined') return;
+    let raf = 0; const run = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; fitTopHud(); }); };
+    const ro = new ResizeObserver(run); ro.observe(hud); [...hud.querySelectorAll('#livesContainer, #scoreBadge, #scoreVal')].forEach(e => ro.observe(e));
+})();
+
 function renderLivesHUD() {
     const cont = document.getElementById('livesContainer');
     if (!cont) return;

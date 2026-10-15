@@ -278,7 +278,6 @@ function rwShowResult(key) {
     const pop = rwEl('rwResCard');
     const big = Math.min(1.5, ((pop ? pop.clientWidth : win.clientWidth) * 0.5) / cw, (win.clientHeight * 0.36) / ch);
     stage.style.height = Math.round(ch * big + 16) + 'px';
-    const shine = document.createElement('div'); shine.className = 'rw-shine'; card.appendChild(shine);
     // ореол и подсветка контура — отдельные слои под карточкой (у карточки тень запрещена стилями ленты)
     const cwv = parseFloat(cs ? cs.getPropertyValue('--cw') : '') || cw;
     const halo = document.createElement('div'); halo.className = 'rw-res-halo'; halo.style.setProperty('--c', p.col);
@@ -288,38 +287,22 @@ function rwShowResult(key) {
     const sr = stage.getBoundingClientRect();
     let fromX = 0, fromY = 0;
     if (src) { const r = src.getBoundingClientRect(); fromX = (r.left + r.width / 2 - (sr.left + sr.width / 2)) / z; fromY = (r.top + r.height / 2 - (sr.top + sr.height / 2)) / z; }
+    // карточка плавно перелетает из ленты в центр и чуть увеличивается — без переворотов
     const anim = card.animate([
-        { transform: `translate(${fromX}px,${fromY}px) rotateY(0deg) scale(1)` },
-        { transform: `translate(${fromX * 0.4}px,${fromY * 0.4 - 24}px) rotateY(200deg) scale(${(1 + big) / 2})`, offset: 0.55 },
-        { transform: `translate(0,0) rotateY(360deg) scale(${big * 1.06})`, offset: 0.85 },
-        { transform: `translate(0,0) rotateY(360deg) scale(${big})` }
-    ], { duration: 1000, easing: 'cubic-bezier(.3,.7,.3,1)', fill: 'forwards' });
+        { transform: `translate(${fromX}px,${fromY}px) scale(1)` },
+        { transform: `translate(0,0) scale(${big})` }
+    ], { duration: 750, easing: 'cubic-bezier(.22,.8,.24,1)', fill: 'forwards' });
     anim.onfinish = () => {
-        card.classList.add('rw-glow'); halo.classList.add('on'); glow.classList.add('on');
-        // мерцающие звёздочки вокруг карточки
+        halo.classList.add('on'); glow.classList.add('on');
+        // мерцающие звёздочки вокруг карточки — как у колеса рулетки
         const hw = cw * big / 2, hh = ch * big / 2;
         [[-1.25, -0.7], [1.22, -0.45], [-1.3, 0.35], [1.3, 0.7], [-0.6, -1.12], [0.75, -1.1], [-0.8, 1.12], [0.55, 1.14]].forEach(([kx, ky], i) => {
             const t = document.createElement('i'); t.className = 'rw-res-tw';
-            t.style.cssText = `margin-left:${(kx * hw).toFixed(1)}px;margin-top:${(ky * hh).toFixed(1)}px;--s:${(8 + (i % 3) * 3)}px;--d:${(i * 0.31).toFixed(2)}s`;
+            t.style.cssText = `margin-left:${(kx * hw).toFixed(1)}px;margin-top:${(ky * hh).toFixed(1)}px;--s:${(8 + (i % 3) * 3)}px;--d:${(i * 0.35).toFixed(2)}s`;
             stage.appendChild(t);
         });
-    };
-    setTimeout(() => {
-        // блёстки вокруг карточки
-        for (let i = 0; i < 26; i++) {
-            const sp = document.createElement('i');
-            sp.className = 'rw-res-spark';
-            const a = Math.random() * Math.PI * 2, d = 70 + Math.random() * 110, sz = 5 + Math.random() * 8;
-            sp.style.cssText = `width:${sz}px;height:${sz}px;--c:${Math.random() < 0.5 ? p.col : '#FFD98A'}`;
-            stage.appendChild(sp);
-            sp.animate([
-                { transform: 'translate(-50%,-50%) scale(0.2) rotate(0deg)', opacity: 0 },
-                { transform: `translate(calc(-50% + ${Math.cos(a) * d * 0.6}px), calc(-50% + ${Math.sin(a) * d * 0.6}px)) scale(1.2) rotate(90deg)`, opacity: 1, offset: 0.3 },
-                { transform: `translate(calc(-50% + ${Math.cos(a) * d}px), calc(-50% + ${Math.sin(a) * d + 20}px)) scale(0.4) rotate(220deg)`, opacity: 0 }
-            ], { duration: 1200 + Math.random() * 900, delay: Math.random() * 300, easing: 'cubic-bezier(.2,.7,.4,1)', fill: 'forwards' });
-        }
         try { AudioFX.playLevelUp(); } catch (e) {}
-    }, 800);
+    };
     Haptics.powerup();
 }
 function claimRoulettePrize() {
