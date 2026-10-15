@@ -63,9 +63,35 @@ function drawSecretStar(c, t, ph) {
     }
 }
 
+// ===== Заготовленные картинки (спрайты) для жетонов =====
+// Тень (shadowBlur) — самая тяжёлая операция на телефоне. Неподвижные части жетона (тёмный круг с кольцом и светом, иконка со свечением)
+// рисуются один раз в отдельный маленький холст в разрешении экрана и дальше просто копируются — вид тот же, а нагрузки в разы меньше.
+const __tokSpr = new Map();
+function tokDevScale(c, div) { if (!c.getTransform) return Math.max(0.5, Math.round(viewScale * renderScale * WORLD_K / (div || 1) * 10) / 10); const m = c.getTransform(); return Math.max(0.5, Math.round(Math.hypot(m.a, m.b) / (div || 1) * 10) / 10); }   // сколько пикселей экрана в одной единице мира (с шагом 0,1)
+function tokSprite(key, R, hw, hh, paint) {
+    let s = __tokSpr.get(key);
+    if (s) return s;
+    if (__tokSpr.size > 400) __tokSpr.clear();   // предметы держат ссылку на свою заготовку сами — очистка безопасна
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.ceil(hw * 2 * R)); c.height = Math.max(1, Math.ceil(hh * 2 * R));
+    const g = c.getContext('2d');
+    g.setTransform(R, 0, 0, R, c.width / 2, c.height / 2);
+    paint(g);
+    s = { c, x: -c.width / 2 / R, y: -c.height / 2 / R, w: c.width / R, h: c.height / R };
+    __tokSpr.set(key, s);
+    return s;
+}
+const __faReady = { ok: false };
+function tokFontsReady() {
+    if (__faReady.ok) return true;
+    try { if (document.fonts && document.fonts.check('900 23px "Font Awesome 6 Free"')) __faReady.ok = true; } catch (e) {}
+    return __faReady.ok;
+}
+
 // Оптический центр каждой иконки (в основном по её габаритам, с небольшой поправкой на «центр тяжести»): иконку сдвигаем на эту величину назад, чтобы она визуально стояла ровно в центре круга
 const TOKEN_OPTICAL = { music: [0.49, 0.03], logic: [-0.02, 0.16], kino: [-0.01, 0.07], series: [-0.07, 0.46], cartoons: [-0.08, 0.35], fun: [0.13, 0.92], secret: [-0.06, 0.38], shield: [-0.39, -0.2], stamina: [0.46, -0.31], drink: [-0.19, -0.36], mocktail: [0.25, -0.02], icecream: [-0.06, -0.47], heart: [-0.06, -0.15], pizza: [-0.18, 0.18], burger: [-0.06, 0.22], hotdog: [-0.07, 0.07], speedup: [-0.06, 0.07], slowmo: [-0.06, 0.19], question: [-0.02, 0.14] };
 
+const TOKEN_THEMATIC = new Set(['music', 'logic', 'kino', 'series', 'cartoons', 'fun', 'secret']);
 function drawToken(item) {
     ctx.save();
     ctx.translate(item.x, item.y);
@@ -79,7 +105,7 @@ function drawToken(item) {
 
     const cat = CATEGORIES[item.type] || CATEGORIES.question;
     const col = cat.color;
-    const isThematic = ['music', 'logic', 'kino', 'series', 'cartoons', 'fun', 'secret'].includes(item.type);
+    const isThematic = TOKEN_THEMATIC.has(item.type);
 
     {
         const R = item.radius * (isThematic ? 1.5 : 1.43);   // свечение выходит за кольцо вдвое меньше
@@ -87,19 +113,28 @@ function drawToken(item) {
         ctx.drawImage(tokenHalo(col), -R, -R, R * 2, R * 2);
         ctx.globalAlpha = 1;
     }
+    const sBlur = isThematic ? 19 : 11, lowQ = gfxQuality === 'low';
+    const devR = tokDevScale(ctx, currentScale);   // разрешение заготовки — как у жетона обычного размера
+    {
+        // тёмный круг с цветным кольцом и светом вокруг — из заготовки
+        const rad = item.radius, pad = rad + (lowQ ? 2 : (sBlur * 2 + 4) / devR), bk = lowQ ? -devR : devR;
+        const spr = (item.__bk === bk && item.__bs) ? item.__bs : (item.__bk = bk, item.__bs = tokSprite(`b|${col}|${rad}|${sBlur}|${devR}|${lowQ ? 1 : 0}`, devR, pad, pad, (g) => {
+            if (!lowQ) { g.shadowColor = col; g.shadowBlur = sBlur; }
+            const bgGrad = g.createRadialGradient(-2, -2, 2, 0, 0, rad);
+            bgGrad.addColorStop(0, '#361163');
+            bgGrad.addColorStop(0.7, '#1b0735');
+            bgGrad.addColorStop(1, '#0e021c');
+            g.fillStyle = bgGrad;
+            g.beginPath(); g.arc(0, 0, rad, 0, Math.PI * 2); g.fill();
+            g.lineWidth = 2.0;
+            g.strokeStyle = col;
+            g.beginPath(); g.arc(0, 0, rad, 0, Math.PI * 2); g.stroke();
+        }));
+        ctx.shadowBlur = 0;
+        ctx.drawImage(spr.c, spr.x, spr.y, spr.w, spr.h);
+    }
     ctx.shadowColor = col;
-    ctx.shadowBlur = isThematic ? 19 : 11;
-
-    const bgGrad = ctx.createRadialGradient(-2, -2, 2, 0, 0, item.radius);
-    bgGrad.addColorStop(0, '#361163');
-    bgGrad.addColorStop(0.7, '#1b0735');
-    bgGrad.addColorStop(1, '#0e021c');
-    ctx.fillStyle = bgGrad;
-    ctx.beginPath(); ctx.arc(0, 0, item.radius, 0, Math.PI * 2); ctx.fill();
-
-    ctx.lineWidth = 2.0;
-    ctx.strokeStyle = col;
-    ctx.beginPath(); ctx.arc(0, 0, item.radius, 0, Math.PI * 2); ctx.stroke();
+    ctx.shadowBlur = sBlur;   // искорки вокруг тематических жетонов светятся, как раньше
 
     if (isThematic) {
         const sparkles = [
@@ -178,6 +213,21 @@ function drawToken(item) {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         if (item.type === 'secret') drawSecretStar(ctx, frame / 60, item.floatOffset || 0);
+        else if (tokFontsReady()) {
+            // иконка со свечением — из заготовки (шрифт уже загружен)
+            const code = cat.iconCode, pad = 16 + (lowQ ? 1 : 24 / devR), gk = lowQ ? -devR : devR;
+            const spr = (item.__gk === gk && item.__gs) ? item.__gs : (item.__gk = gk, item.__gs = tokSprite(`g|${item.type}|${code}|${col}|${devR}|${lowQ ? 1 : 0}`, devR, pad, pad, (g) => {
+                if (!lowQ) { g.shadowBlur = 10; g.shadowColor = col; }
+                g.fillStyle = col;
+                g.font = '900 23px "Font Awesome 6 Free"';
+                g.textAlign = 'center';
+                g.textBaseline = 'middle';
+                drawGlyph(g, code, 0, 0.5);
+            }));
+            ctx.shadowBlur = 0;
+            ctx.drawImage(spr.c, spr.x, spr.y, spr.w, spr.h);
+            ctx.shadowBlur = 10;
+        }
         else drawGlyph(ctx, cat.iconCode, 0, 0.5);
         if (item.type === 'drink' || item.type === 'mocktail') {
             const ph = item.floatOffset || 0, n = gfxQuality === 'low' ? 3 : 6;

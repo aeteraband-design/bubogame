@@ -461,9 +461,28 @@ const StorageManager = {
         } catch(e) {}
     },
 
+    // Во время полёта сохранение собирается в одно раз в ~1,5 с (запись в память браузера и обновление скрытого меню
+    // на каждый подобранный вопрос давали подёргивания). Плашки в игре обновляются сразу, как раньше.
+    _saveTimer: 0,
+    flushPending() {
+        if (!this._saveTimer) return;
+        clearTimeout(this._saveTimer); this._saveTimer = 0;
+        this.saveLocal();
+    },
     async save() {
+        let inFlight = false;
+        try { inFlight = gameActive; } catch (e) {}
+        if (inFlight) {
+            try { updateCollectionHUD(); updateAttemptsHUD(); } catch (e) {}
+            if (!this._saveTimer) this._saveTimer = setTimeout(() => { this._saveTimer = 0; this.saveLocal(); this.saveRemote(); }, 1500);
+            return;
+        }
+        if (this._saveTimer) { clearTimeout(this._saveTimer); this._saveTimer = 0; }
         this.saveLocal();
         updateMenuVisibility();
+        return this.saveRemote();
+    },
+    async saveRemote() {
         if (!this.db || !this.userId) return;
         try {
             const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");

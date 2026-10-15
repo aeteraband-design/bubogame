@@ -31,7 +31,11 @@ function shazamBtnEl() {
     host.appendChild(shzBtn);
     return shzBtn;
 }
+let shzBtnSig = '';
 function shazamSyncBtn() {
+    const sig = SHZ.state;
+    if (sig === shzBtnSig && shzBtn) return;   // ничего не поменялось — интерфейс не трогаем (вызывается каждый кадр)
+    shzBtnSig = sig;
     const b = shazamBtnEl(); if (!b) return;
     const show = false;   // кнопка пока не используется — ШАЗАМ включается сам
     b.classList.toggle('show', show);

@@ -428,12 +428,16 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
     const flyT0 = performance.now(), FLY_MS = 480;   // полёт заканчивается чуть раньше момента прилёта (500 мс), когда обновляется панель
     let flyStop = false;
     const flyEase = (t) => 1 - Math.pow(1 - t, 3);
-    let flyDX = 0, flyDY = 0;
+    let flyDX = 0, flyDY = 0, ex = endX, ey = endY, flyMeasT = flyT0, flyLate = false;
     const flyTick = (now) => {
         if (flyStop) return;   // после прилёта положение больше не меняем: панель обновляется и иконки сдвигаются, шарик не должен за ними «уезжать»
         const t = Math.min(1, (now - flyT0) / FLY_MS);
-        const tr = targetElem.getBoundingClientRect(), cr = container.getBoundingClientRect();
-        const ex = tr.left - cr.left + tr.width / 2, ey = tr.top - cr.top + tr.height / 2;
+        // положение иконки перемеряем раз в 120 мс и ещё раз перед самым прилётом (а не каждый кадр): замер заставляет браузер пересчитывать всю вёрстку — от этого были подёргивания
+        if (now - flyMeasT > 120 || (t > 0.8 && !flyLate)) {
+            flyMeasT = now; if (t > 0.8) flyLate = true;
+            const tr = targetElem.getBoundingClientRect(), cr = container.getBoundingClientRect();
+            ex = tr.left - cr.left + tr.width / 2; ey = tr.top - cr.top + tr.height / 2;
+        }
         const k = flyEase(t);
         flyDX = ((startX + (ex - startX) * k) - startX) / orbZ;
         flyDY = ((startY + (ey - startY) * k) - startY) / orbZ;

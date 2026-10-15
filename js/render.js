@@ -135,8 +135,9 @@ function drawScene() {
     }
     ctx.globalAlpha = 1;
 
-    const isStartMenuOpen = !document.getElementById('startScreen').classList.contains('hidden');
-    const isGameOverOpen = !document.getElementById('gameOverModal').classList.contains('hidden');
+    const dsEl = drawScene.__el || (drawScene.__el = { s: document.getElementById('startScreen'), g: document.getElementById('gameOverModal') });
+    const isStartMenuOpen = !dsEl.s.classList.contains('hidden');
+    const isGameOverOpen = !dsEl.g.classList.contains('hidden');
     drawMoon();
     if (!gameActive) cityOffset += 0.5 * dtMult;   // в меню и на паузе город медленно плывёт
     drawCity();
@@ -168,22 +169,23 @@ function drawScene() {
             ];
 
             const trailColor = (CATEGORIES[it.type] && CATEGORIES[it.type].color) || '#00F0FF';
-
+            // кольца-следы со свечением — из заготовки (тень рисуется один раз, а не каждый кадр)
+            const devR = tokDevScale(ctx), lowQ = gfxQuality === 'low', rad = it.radius;
             ringOffsets.forEach(cfg => {
                 if (cfg.idx < it.trail.length) {
                     const pt = it.trail[cfg.idx];
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.arc(pt.x, pt.y, it.radius, 0, Math.PI * 2);
-                    ctx.strokeStyle = trailColor;
-                    ctx.globalAlpha = cfg.alpha;
-                    ctx.lineWidth = cfg.lineWidth;
-                    ctx.shadowColor = trailColor;
-                    ctx.shadowBlur = 6;
-                    ctx.stroke();
-                    ctx.restore();
+                    const pad = rad + cfg.lineWidth + (lowQ ? 2 : 16 / devR);
+                    const spr = tokSprite(`r|${trailColor}|${rad}|${cfg.lineWidth}|${devR}|${lowQ ? 1 : 0}`, devR, pad, pad, (g) => {
+                        g.beginPath(); g.arc(0, 0, rad, 0, Math.PI * 2);
+                        g.strokeStyle = trailColor; g.lineWidth = cfg.lineWidth;
+                        if (!lowQ) { g.shadowColor = trailColor; g.shadowBlur = 6; }
+                        g.stroke();
+                    });
+                    ctx.globalAlpha = cfg.alpha; ctx.shadowBlur = 0;
+                    ctx.drawImage(spr.c, pt.x + spr.x, pt.y + spr.y, spr.w, spr.h);
                 }
             });
+            ctx.globalAlpha = 1;
             ctx.restore();
         }
     });

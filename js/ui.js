@@ -26,6 +26,9 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', pauseIfHidden);
 window.addEventListener('pagehide', () => AudioFX.onHidden());
+// отложенное сохранение (во время полёта) записываем сразу, если вкладку закрывают или сворачивают
+window.addEventListener('pagehide', () => { try { StorageManager.flushPending(); } catch (e) {} });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { try { StorageManager.flushPending(); } catch (e) {} } });
 window.addEventListener('pageshow', () => { if (!document.hidden) AudioFX.onVisible(); });
 // Если вкладку сворачивали и звук остановился — снова ждём касания
 document.addEventListener('visibilitychange', () => {

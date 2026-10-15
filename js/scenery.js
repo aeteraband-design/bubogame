@@ -431,8 +431,8 @@ function drawCity() {
             const wn = L.windows[Math.floor(Math.random() * L.windows.length)];
             if (wn && Math.random() < 0.06 * dtMult) wn.on = !wn.on;
         }
-        const all = L.windows.concat(L.wrapped);
-        for (const wn of all) {
+        for (let wl = 0; wl < 2; wl++) { const arr = wl ? L.wrapped : L.windows; if (!arr) continue;   // без склейки массивов каждый кадр (меньше мусора в памяти)
+        for (let wi = 0; wi < arr.length; wi++) { const wn = arr[wi];
             const src = wn.twin || wn;
             if (!wn.twin) {
                 const target = src.on ? src.maxA : 0;
@@ -450,7 +450,7 @@ function drawCity() {
                 ctx.globalAlpha = src.a;
                 ctx.fillRect(sx, y0 + wn.y, wn.w, wn.h);
             }
-        }
+        } }
         if (fwL.length) fwGlowLayer(L, off, y0, fwL, li === 0 && citySprites.length > 1);   // залпы подсвечивают дома
         // красные лампы на шпилях мигают, каждая в своём ритме
         if (L.beacons && L.beacons.length) {
@@ -749,6 +749,47 @@ function drawRoundedRect(x, y, w, h, r) {
     ctx.fill();
 }
 
+// Шляпка трубы одинакова у всех труб: рисуем её один раз в заготовку (градиент, контур и блик по краю) и дальше копируем.
+// Раньше блик обрезался по форме шляпки (clip) у каждой трубы каждый кадр — на телефоне это заметная нагрузка.
+function drawPipeCap(capX, capY, capW, capH, r, rimY, pw) {
+    const devR = tokDevScale(ctx), hw = capW / 2 + 1, hh = capH / 2 + 1;
+    const spr = tokSprite(`cap|${pw}|${capW}|${capH}|${r}|${rimY}|${devR}`, devR, hw, hh, (g) => {
+        g.translate(-(capX + capW / 2), -capH / 2);
+        const path = () => {
+            g.beginPath();
+            g.moveTo(capX + r, 0);
+            g.lineTo(capX + capW - r, 0);
+            g.quadraticCurveTo(capX + capW, 0, capX + capW, r);
+            g.lineTo(capX + capW, capH - r);
+            g.quadraticCurveTo(capX + capW, capH, capX + capW - r, capH);
+            g.lineTo(capX + r, capH);
+            g.quadraticCurveTo(capX, capH, capX, capH - r);
+            g.lineTo(capX, r);
+            g.quadraticCurveTo(capX, 0, capX + r, 0);
+            g.closePath();
+        };
+        const cg = g.createLinearGradient(capX, 0, capX + capW, 0);
+        cg.addColorStop(0.0, '#8c2400');
+        cg.addColorStop(0.25, '#bc3a00');
+        cg.addColorStop(0.58, '#f36500');
+        cg.addColorStop(0.78, '#ff8e24');
+        cg.addColorStop(0.92, '#d64d00');
+        cg.addColorStop(1.0, '#8c2400');
+        const rg = g.createLinearGradient(capX, 0, capX + capW, 0);
+        rg.addColorStop(0.0, 'rgba(255, 255, 255, 0.10)');
+        rg.addColorStop(0.35, 'rgba(255, 255, 255, 0.22)');
+        rg.addColorStop(0.76, 'rgba(255, 255, 255, 0.50)');
+        rg.addColorStop(0.90, 'rgba(255, 255, 255, 0.24)');
+        rg.addColorStop(1.0, 'rgba(255, 255, 255, 0.10)');
+        g.fillStyle = cg; path(); g.fill();
+        g.strokeStyle = 'rgba(255, 185, 110, 0.28)'; g.lineWidth = 0.8; g.stroke();
+        g.save(); path(); g.clip();
+        g.strokeStyle = rg; g.lineWidth = 1.8;
+        g.beginPath(); g.moveTo(capX - 2, rimY); g.lineTo(capX + capW + 2, rimY); g.stroke();
+        g.restore();
+    });
+    ctx.drawImage(spr.c, capX + capW / 2 + spr.x, capY + capH / 2 + spr.y, spr.w, spr.h);
+}
 const PIPE_GRADS = {};   // градиенты труб по ширине (создаются один раз)
 function drawPipe(pipe) {
     ctx.save();
@@ -823,34 +864,7 @@ function drawPipe(pipe) {
     ctx.fillRect(0, Math.max(0, topCapY - 5) - topCapY, pipe.width, 5);
     ctx.restore();
 
-    ctx.fillStyle = capGrad;
-    drawRoundedRect(capX, topCapY, capW, capH, capRadius);
-
-    ctx.strokeStyle = 'rgba(255, 185, 110, 0.28)';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(capX + capRadius, topCapY);
-    ctx.lineTo(capX + capW - capRadius, topCapY);
-    ctx.quadraticCurveTo(capX + capW, topCapY, capX + capW, topCapY + capRadius);
-    ctx.lineTo(capX + capW, topCapY + capH - capRadius);
-    ctx.quadraticCurveTo(capX + capW, topCapY + capH, capX + capW - capRadius, topCapY + capH);
-    ctx.lineTo(capX + capRadius, topCapY + capH);
-    ctx.quadraticCurveTo(capX, topCapY + capH, capX, topCapY + capH - capRadius);
-    ctx.lineTo(capX, topCapY + capRadius);
-    ctx.quadraticCurveTo(capX, topCapY, capX + capRadius, topCapY);
-    ctx.closePath();
-    ctx.clip();
-
-    ctx.strokeStyle = rimShineGrad;
-    ctx.lineWidth = 1.8;
-    ctx.beginPath();
-    ctx.moveTo(capX - 2, effectiveTop - 2.5);
-    ctx.lineTo(capX + capW + 2, effectiveTop - 2.5);
-    ctx.stroke();
-    ctx.restore();
+    drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width);   // шляпка — из заготовки (без дорогой обрезки каждый кадр)
 
     const bottomY = height - effectiveBottom;
     const bottomStemY = bottomY + capH - 2;
@@ -878,34 +892,7 @@ function drawPipe(pipe) {
     ctx.fillRect(0, 0, pipe.width, 5);
     ctx.restore();
 
-    ctx.fillStyle = capGrad;
-    drawRoundedRect(capX, bottomY, capW, capH, capRadius);
-
-    ctx.strokeStyle = 'rgba(255, 185, 110, 0.28)';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(capX + capRadius, bottomY);
-    ctx.lineTo(capX + capW - capRadius, bottomY);
-    ctx.quadraticCurveTo(capX + capW, bottomY, capX + capW, bottomY + capRadius);
-    ctx.lineTo(capX + capW, bottomY + capH - capRadius);
-    ctx.quadraticCurveTo(capX + capW, bottomY + capH, capX + capW - capRadius, bottomY + capH);
-    ctx.lineTo(capX + capRadius, bottomY + capH);
-    ctx.quadraticCurveTo(capX, bottomY + capH, capX, bottomY + capH - capRadius);
-    ctx.lineTo(capX, bottomY + capRadius);
-    ctx.quadraticCurveTo(capX, bottomY, capX + capRadius, bottomY);
-    ctx.closePath();
-    ctx.clip();
-
-    ctx.strokeStyle = rimShineGrad;
-    ctx.lineWidth = 1.8;
-    ctx.beginPath();
-    ctx.moveTo(capX - 2, bottomY + 2.5);
-    ctx.lineTo(capX + capW + 2, bottomY + 2.5);
-    ctx.stroke();
-    ctx.restore();
+    drawPipeCap(capX, bottomY, capW, capH, capRadius, 2.5, pipe.width);
 
     ctx.restore();
 }
