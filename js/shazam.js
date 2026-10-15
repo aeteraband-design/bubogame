@@ -287,9 +287,9 @@ function shazamMagnet(it) {
         if (it.shzSpT <= 0 && SHZ.sparks.length < 110) {
             it.shzSpT = 14 - 10 * near + Math.random() * 4;
             const side = (Math.random() - 0.5) * it.radius * 1.2, nx = -dy / d, ny = dx / d;
-            shazamAddSpark(it.x + nx * side, it.y + ny * side, dx / d, dy / d, 0.8 + 0.8 * near, 0.45 + 0.55 * near);
+            shazamAddSpark(it.x + nx * side, it.y + ny * side, dx / d, dy / d, 0.8 + 0.8 * near, 0.45 + 0.55 * near, shzItemCol(it));
         }
-        SHZ.magOn = Math.max(SHZ.magOn, near > 0.5 ? 3 : 0);
+        if (near > 0.5) { SHZ.magOn = Math.max(SHZ.magOn, 3); SHZ.magCol = shzItemCol(it); }
         return;
     }
     it.mag = Math.min(1, (it.mag || 0) + 0.035 * dtMult);
@@ -303,15 +303,28 @@ function shazamMagnet(it) {
         it.shzSpT = 1.6 - 0.8 * it.mag;
         const t = Math.random() * 0.35, side = (Math.random() - 0.5) * it.radius * 1.4;
         const nx = -dy / (d || 1), ny = dx / (d || 1);
-        shazamAddSpark(it.x + dx * t + nx * side, it.y + dy * t + ny * side, dx / (d || 1), dy / (d || 1), 1.6 + 1.4 * it.mag);
+        shazamAddSpark(it.x + dx * t + nx * side, it.y + dy * t + ny * side, dx / (d || 1), dy / (d || 1), 1.6 + 1.4 * it.mag, 1, shzItemCol(it));
     }
+    SHZ.magCol = shzItemCol(it);
     SHZ.magOn = 6;   // пока хоть что-то притягивается — вокруг совы тоже стягиваются искры
 }
-function shazamAddSpark(x, y, ux, uy, sp, al) {
-    SHZ.sparks.push({ a: al || 1,
+// звёздочки притяжения — в цвет значка (часть чуть светлее, чтобы мерцали)
+function shzItemCol(it) {
+    if (it.type === 'speedup' && typeof shazamNextCharged === 'function' && shazamNextCharged()) return '#FF7A00';
+    return ((typeof CATEGORIES !== 'undefined' && CATEGORIES[it.type]) || {}).color || '#FFB25C';
+}
+const __shzLight = {};
+function shzLight(c) {
+    if (__shzLight[c]) return __shzLight[c];
+    const n = parseInt(c.slice(1), 16), m = (v) => Math.round(v + (255 - v) * 0.55);
+    return (__shzLight[c] = 'rgb(' + m(n >> 16 & 255) + ',' + m(n >> 8 & 255) + ',' + m(n & 255) + ')');
+}
+function shazamAddSpark(x, y, ux, uy, sp, al, col) {
+    col = col || '#FFB25C';
+    SHZ.sparks.push({ a: al || 1, hc: col,
         x, y, vx: ux * sp + (Math.random() - 0.5) * 0.8, vy: uy * sp + (Math.random() - 0.5) * 0.8,
         s: 2 + Math.random() * 1.8, life: 1, rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.25,
-        c: Math.random() < 0.55 ? '#FFF1D6' : '#FFB25C'
+        c: Math.random() < 0.4 ? shzLight(col) : col
     });
 }
 function shazamUpdateSparks() {
@@ -320,7 +333,7 @@ function shazamUpdateSparks() {
         SHZ.magOn -= dtMult;
         if (SHZ.sparks.length < 110 && Math.random() < 0.55 * dtMult) {
             const a = Math.random() * Math.PI * 2, r = owl.radius * (2.1 + Math.random() * 0.9);
-            shazamAddSpark(owl.x + Math.cos(a) * r, owl.y + Math.sin(a) * r, -Math.cos(a), -Math.sin(a), 0.9);
+            shazamAddSpark(owl.x + Math.cos(a) * r, owl.y + Math.sin(a) * r, -Math.cos(a), -Math.sin(a), 0.9, 1, SHZ.magCol);
         }
     }
     const sp = SHZ.sparks, R0 = owl.radius * 0.55;
@@ -344,7 +357,7 @@ function shazamDrawSparks() {
     for (const p of sp) {
         const k = p.life, tw = 0.75 + 0.25 * Math.sin(p.rot * 9), s = p.s * (0.5 + 0.5 * k) * tw, w = s * 0.22;
         ctx.globalAlpha = Math.min(1, k * 2) * 0.95 * (p.a || 1);
-        if (typeof tokenHalo === 'function') { const g = s * 2.6; ctx.globalAlpha *= 0.55; ctx.drawImage(tokenHalo('#FF8A1F'), p.x - g, p.y - g, g * 2, g * 2); ctx.globalAlpha /= 0.55; }
+        if (typeof tokenHalo === 'function') { const g = s * 2.6; ctx.globalAlpha *= 0.55; ctx.drawImage(tokenHalo(p.hc), p.x - g, p.y - g, g * 2, g * 2); ctx.globalAlpha /= 0.55; }
         ctx.fillStyle = p.c;
         const c = Math.cos(p.rot), si = Math.sin(p.rot);
         ctx.beginPath();
