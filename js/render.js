@@ -144,7 +144,6 @@ function drawScene() {
     if (gameActive || waitingFirstTap || isStartMenuOpen || isGameOverOpen) {
         drawClouds();
     }
-    stormDrawRain(false);   // дождь — за трубами и совой
 
     // камера: при эффекте ускорения чуть отдаляется (видно больше), при замедлении чуть приближается; от уровня сложности не зависит
     {
@@ -157,7 +156,6 @@ function drawScene() {
     const owlBehind = shazamOwlBehind();   // ШАЗАМ: сова пролетает за трубой — рисуем её до труб
     if (owlBehind) { drawSpeedStars(); owl.draw(); }
     pipes.forEach(drawPipe);
-    stormDrawPipeSplashes();
 
     items.forEach(it => {
         if ((it.type === 'stamina' || it.type === 'infinite') && it.trail && it.trail.length > 2) {
@@ -201,7 +199,7 @@ function drawScene() {
     shazamDrawFx();
     drawIceShards();
     ctx.restore();   // конец слоя камеры
-    stormDrawRain(true);    // редкие ближние капли поверх всего
+    stormDrawRain();        // дождь — поверх труб, значков и совы
 }
 
 let perfAvgDt = 16.7, perfSlowFrames = 0, perfCooldown = 240;
@@ -373,6 +371,7 @@ function resetEntireGame(opts) {
     collected = { music: 0, logic: 0, kino: 0, series: 0, cartoons: 0, fun: 0 };
     resetSpecialTimers();
     if (typeof shazamReset === 'function') shazamReset(); shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal'; invulnerableTime = 0;
+    if (typeof stormClearNow === 'function') stormClearNow();   // новая игра — с ясного неба
     resetOvereatDrunk();
     pipes = []; items = []; particles = [];
     snapProgressVisuals();

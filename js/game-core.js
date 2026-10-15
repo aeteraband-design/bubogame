@@ -22,7 +22,7 @@ const ADMIN_DEFAULTS = {
     drunkEvery: 6, drunkSec: 10,         // напитков до опьянения / его длительность
     freezeEvery: 3, freezeSec: 10,       // порций мороженого до заморозки / её длительность
     shieldSec: 10, slowSec: 10, speedSec: 10, compressSec: 10, infiniteSec: 10,   // длительности бонусов
-    stormTest: 0,                        // проверка погоды: 0 — по сложности, 10–100 — сила грозы вручную
+    stormTest: 0,                        // проверка погоды: 0 — случайные грозы, 10–100 — сила грозы вручную
     shazamEvery: 4,                      // какое по счёту взятое ускорение включает ШАЗАМ
     feathersForMax: 6,                   // волшебных перьев до роста максимума сил
     attempts: 2, questionsPerAttempt: 100,

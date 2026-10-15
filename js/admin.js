@@ -42,7 +42,7 @@
             rowDef('attempts', 'Попыток в начале', '', 'fa-rotate-right', '#FE7600', (n) => ruPlural(n, ['попытка', 'попытки', 'попыток'])),
             rowDef('questionsPerAttempt', 'За +1 попытку', '', 'fa-circle-question', '#FE7600', (n) => ruPlural(n, ['вопрос', 'вопроса', 'вопросов'])),
             rowDef('maxLives', 'Макс. сердечек', '', 'fa-heart', '#EF4444', (n) => ruPlural(n, ['сердечко', 'сердечка', 'сердечек'])),
-            rowDef('stormTest', 'Гроза (проверка)', '', 'fa-cloud-bolt', '#7DD3FC', (n) => n ? 'сила ' + n + '%' : 'по сложности')
+            rowDef('stormTest', 'Гроза (проверка)', '', 'fa-cloud-bolt', '#7DD3FC', (n) => n ? 'сила ' + n + '%' : 'случайно')
         ]
     };
     let tab = 'themes';

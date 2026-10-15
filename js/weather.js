@@ -1,28 +1,61 @@
-// ===== Погода: от ясной ночи (Суперлайт) к грозе (Хард+) =====
-// Одно число stormIntensity (0 — ясная ночь, 1 — пик грозы) плавно тянется к цели по прогрессу сложности.
-// От него зависят: тёмное грозовое небо, тучи, дождь, брызги, мокрые крыши, зарницы с подсветкой домов и звук (ветер, дождь, гром).
+// ===== Погода: случайная гроза =====
+// Одно число stormIntensity (0 — ясная ночь, 1 — пик грозы) плавно тянется к цели. Цель задают случайные «грозы»:
+// в любой момент полёта может начаться дождь (иногда сразу в начале игры, иногда ни разу за игру), идёт 30–45 с и проходит.
+// Сила каждой грозы своя: от мороси до ливня с молниями. От сложности не зависит.
+// От stormIntensity зависят: тёмное небо, тучи, дождь, мокрые крыши, зарницы с подсветкой домов и звук (ветер, дождь, гром).
 let stormIntensity = -1;   // -1 — ещё не задано: в первом кадре сразу ставим цель (без «наплыва» грозы при загрузке)
 const STORM = {
     LIGHT_FROM: 0.6,           // молнии начинаются выше этой силы
     LIGHT_MIN: 8, LIGHT_MAX: 18, // пауза между разрядами, секунды (при максимальной грозе чаще, при слабой — реже)
     flashT0: -1, flashX: 0, flashPow: 1, flash: 0, bolt: null, nextAt: 0,
-    drops: [], splashes: [], pipeSplashes: [],
+    drops: [],
     clouds: null, cloudKey: '', offFar: 0, offNear: 0, wet: 0,
     sndT: 0, sndRain: -1, sndWind: -1
 };
 const stormClamp = (v) => Math.max(0, Math.min(1, v));
 function stormSmooth(a, b, x) { const t = stormClamp((x - a) / (b - a)); return t * t * (3 - 2 * t); }
 
-// цель: Суперлайт — 0, начало Хард+ — 1, между ними плавно (по числу собранных тем). В админке можно задать вручную для проверки
+// расписание гроз (время идёт только в полёте)
+const WX = {
+    START_CHANCE: 0.3,           // шанс, что дождь начнётся в самом начале игры
+    DUR_MIN: 30, DUR_MAX: 45,    // сколько идёт гроза, с
+    GAP_MIN: 40, GAP_MAX: 160,   // пауза между грозами, с
+    on: false, left: -1, peak: 0
+};
+function wxRand(a, b) { return a + Math.random() * (b - a); }
+function wxTick() {
+    if (!gameActive || document.hidden) return;
+    const dt = dtMult / 60;
+    if (WX.left < 0) {   // первый полёт: либо дождь сразу, либо случайная пауза (может и не дождаться за всю игру)
+        WX.left = Math.random() < WX.START_CHANCE ? wxRand(1, 6) : wxRand(20, WX.GAP_MAX);
+        return;
+    }
+    WX.left -= dt;
+    if (WX.left > 0) return;
+    if (WX.on) { WX.on = false; WX.left = wxRand(WX.GAP_MIN, WX.GAP_MAX); }
+    else { WX.on = true; WX.peak = wxRand(0.35, 1); WX.left = wxRand(WX.DUR_MIN, WX.DUR_MAX); }
+}
 function stormTarget() {
     try { const t = ADMIN_CFG.stormTest | 0; if (t > 0) return t / 100; } catch (e) {}
-    try {
-        const p = getTotalCollectedThemes() / Math.max(1, TOTAL_THEMES), L = DIFF_LEVELS.length;
-        return stormClamp((p - 1 / L) / ((L - 2) / L));
-    } catch (e) { return 0; }
+    return WX.on ? WX.peak : 0;
 }
 
+// в главном меню погода всегда ясная; каждая игра начинается с чистого неба и своего случайного расписания гроз
+function stormInMenu() {
+    const el = STORM.menuEl || (STORM.menuEl = document.getElementById('startScreen'));
+    return !!el && !el.classList.contains('hidden');
+}
+function stormClearNow() {
+    stormIntensity = 0; STORM.drops.length = 0; STORM.flashT0 = -1; STORM.flash = 0; STORM.bolt = null; STORM.nextAt = 0; STORM.wet = 0;
+    WX.on = false; WX.left = -1;
+}
 function stormUpdate() {
+    if (stormInMenu()) {
+        if (stormIntensity !== 0 || WX.left >= 0) stormClearNow();
+        if (STORM.sndRain || STORM.sndWind) { STORM.sndRain = STORM.sndWind = 0; try { AudioFX.weatherSet(0, 0); } catch (e) {} }
+        return;
+    }
+    wxTick();
     const tg = stormTarget();
     if (stormIntensity < 0) stormIntensity = tg;
     stormIntensity += (tg - stormIntensity) * Math.min(1, 0.006 * dtMult);   // ~3 с на переход
@@ -99,15 +132,15 @@ function stormMakeBolt(x0) {
 // ---------- тучи ----------
 function stormCloudBottom() { const c = stormSmooth(0.05, 0.9, Math.max(0, stormIntensity)); return 90 + c * height * 0.2; }
 function stormBuildClouds() {
-    const S = Math.max(1, viewScale * renderScale), key = S.toFixed(2) + '|' + gfxQuality;
+    const S = Math.min(gfxQuality === 'low' ? 0.75 : 1.1, Math.max(0.6, viewScale * renderScale * 0.6)), key = S.toFixed(2) + '|' + gfxQuality;   // тучи мягкие — хватает пониженного разрешения (меньше памяти и нагрузки)
     if (STORM.clouds && STORM.cloudKey === key) return STORM.clouds;
     STORM.cloudKey = key;
-    const W = 900, H = 240, mk = (seed, col, n, rMin, rMax) => {
+    const W = 900, H = 260, mk = (seed, col, n, rMin, rMax) => {
         const c = document.createElement('canvas'); c.width = Math.ceil(W * S); c.height = Math.ceil(H * S);
         const g = c.getContext('2d'); g.scale(S, S);
         let s = seed; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
         for (let i = 0; i < n; i++) {
-            const x = r() * W, y = 40 + r() * (H - 110), rad = rMin + r() * (rMax - rMin);
+            const x = r() * W, rad = rMin + r() * (rMax - rMin), y = rad + r() * Math.max(0, H - 2 * rad - 2);   // целиком внутри холста — без обрезанного края снизу
             for (const dx of [-W, 0, W]) {   // по краям — копии, чтобы лента склеивалась без шва
                 if (x + dx + rad < 0 || x + dx - rad > W) continue;
                 const gr = g.createRadialGradient(x + dx, y, rad * 0.1, x + dx, y, rad);
@@ -194,7 +227,12 @@ function stormDrawCityLight() {
     if (si < 0.01 || !citySprites) return;
     const sk = stormSmooth(0, 1, si);
     const cityTop = height * 0.3;
-    ctx.globalAlpha = 0.28 * sk; ctx.fillStyle = 'rgb(8, 14, 28)';
+    if (!STORM.cityGrad || STORM.cityGradH !== height) {   // мягкий переход сверху — без видимой границы
+        const g = ctx.createLinearGradient(0, cityTop, 0, height * 0.62);
+        g.addColorStop(0, 'rgba(8, 14, 28, 0)'); g.addColorStop(1, 'rgba(8, 14, 28, 1)');
+        STORM.cityGrad = g; STORM.cityGradH = height;
+    }
+    ctx.globalAlpha = 0.28 * sk; ctx.fillStyle = STORM.cityGrad;
     ctx.fillRect(0, cityTop, width, height - cityTop);
     ctx.globalAlpha = 1;
     const f = STORM.flash, wet = STORM.wet;
@@ -223,87 +261,33 @@ function stormDrawCityLight() {
     ctx.globalAlpha = 1;
 }
 
-// ---------- дождь ----------
-function stormDrawRain(front) {
+// ---------- дождь (поверх всего: труб, значков и совы) ----------
+function stormDrawRain() {
     const si = Math.max(0, stormIntensity), rk = stormRainK(si);
-    const lowQ = gfxQuality === 'low', N = lowQ ? 150 : 300;
+    const lowQ = gfxQuality === 'low', N = lowQ ? 110 : 220;
     const n = Math.round(N * rk);
     const D = STORM.drops;
-    if (!front) {
-        while (D.length < n) D.push({ x: Math.random() * (width + 120), y: Math.random() * height, z: 0.4 + Math.random() * 0.6 });
-        if (D.length > n) D.length = n;
-    }
-    if (!D.length && !STORM.splashes.length) return;
+    while (D.length < n) D.push({ x: Math.random() * (width + 120), y: Math.random() * height, z: 0.4 + Math.random() * 0.6 });
+    if (D.length > n) D.length = n;
+    if (!D.length) return;
     const heavy = stormSmooth(0.5, 1, si), wind = -(0.12 + 0.3 * si);
-    if (!front) {
-        for (const d of D) {
-            const v = (8 + 10 * heavy) * (0.6 + 0.4 * d.z);
-            d.y += v * dtMult; d.x += v * wind * dtMult;
-            if (d.y > height + 20 || d.x < -40) { d.y = -Math.random() * 60; d.x = Math.random() * (width + 120); }
-        }
+    for (const d of D) {
+        const v = (8 + 10 * heavy) * (0.6 + 0.4 * d.z);
+        d.y += v * dtMult; d.x += v * wind * dtMult;
+        if (d.y > height + 20 || d.x < -40) { d.y = -Math.random() * 60; d.x = Math.random() * (width + 120); }
     }
-    // дальние капли — за трубами, немногие ближние — поверх (тонкие и прозрачные, чтобы не мешать игре)
     ctx.lineCap = 'round';
     ctx.strokeStyle = 'rgb(185, 210, 240)';
-    for (let pass = 0; pass < 2; pass++) {
-        const nearPass = pass === 1;
-        if (front && !nearPass) continue;
-        if (!front && nearPass) continue;
+    for (let pass = 0; pass < 2; pass++) {   // дальние капли тоньше и прозрачнее, ближние — чуть ярче
         ctx.beginPath();
-        let any = false;
-        for (let i = 0; i < D.length; i++) {
-            const d = D[i];
-            if ((i % 7 === 0) !== front) continue;   // каждая седьмая капля — «ближняя»
-            const len = (4 + 20 * heavy) * d.z * (front ? 1.4 : 1);
-            ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - len * wind, d.y - len); any = true;
+        for (const d of D) {
+            if ((d.z > 0.75) !== (pass === 1)) continue;
+            const len = (4 + 20 * heavy) * d.z;
+            ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - len * wind, d.y - len);
         }
-        if (any) {
-            ctx.globalAlpha = front ? (0.1 + 0.16 * heavy) : (0.16 + 0.3 * heavy);
-            ctx.lineWidth = front ? 1.3 : 0.9;
-            ctx.stroke();
-        }
+        ctx.globalAlpha = pass ? (0.2 + 0.28 * heavy) : (0.14 + 0.22 * heavy);
+        ctx.lineWidth = pass ? 1.1 : 0.8;
+        ctx.stroke();
     }
-    if (!front) stormRoofSplashes(heavy);
     ctx.globalAlpha = 1;
-}
-// брызги на крышах ближних домов
-function stormRoofSplashes(heavy) {
-    const S = STORM.splashes, L = citySprites && citySprites[citySprites.length - 1];
-    if (L && L.bodies && heavy > 0.05 && Math.random() < heavy * 1.6 * dtMult) {
-        const off = ((cityOffset * L.speed) % L.tileW + L.tileW) % L.tileW, y0 = height - L.H;
-        for (let tries = 0; tries < 3; tries++) {
-            const bd = L.bodies[Math.floor(Math.random() * L.bodies.length)];
-            let bx = -off + bd.x; if (bx + bd.w < 0) bx += L.tileW;
-            if (bx > width || bx + bd.w < 0) continue;
-            S.push({ x: bx + Math.random() * bd.w, y: y0 + (L.H - bd.h), t: 0, s: 0.8 + Math.random() * 0.6, sp: L.speed });
-            break;
-        }
-    }
-    stormDrawSplashList(S);
-}
-// брызги на шляпках нижних труб (в слое камеры, после труб)
-function stormDrawPipeSplashes() {
-    const heavy = stormSmooth(0.5, 1, Math.max(0, stormIntensity)), S = STORM.pipeSplashes;
-    if (heavy > 0.05 && Math.random() < heavy * 1.2 * dtMult) {
-        const vis = pipes.filter(p => p.x + p.width > 0 && p.x < width);
-        const p = vis[Math.floor(Math.random() * vis.length)];
-        if (p) S.push({ p, dx: 4 + Math.random() * (p.width - 8), t: 0, s: 1 + Math.random() * 0.5 });
-    }
-    if (!S.length) return;
-    for (const sp of S) { sp.x = sp.p.x + sp.dx; sp.y = sp.p.top + sp.p.gap; }
-    stormDrawSplashList(S);
-}
-function stormDrawSplashList(S) {
-    if (!S.length) return;
-    ctx.strokeStyle = 'rgb(200, 225, 250)'; ctx.lineWidth = 0.9; ctx.lineCap = 'round';
-    ctx.beginPath();
-    for (let i = S.length - 1; i >= 0; i--) {
-        const s = S[i];
-        s.t += dtMult / 14;
-        if (s.t >= 1) { S[i] = S[S.length - 1]; S.pop(); continue; }
-        const u = s.t, h = 4.5 * s.s * Math.sin(u * Math.PI), w = 3.5 * s.s * u;
-        ctx.moveTo(s.x - w, s.y - h); ctx.lineTo(s.x - w * 0.4, s.y - h * 0.3);
-        ctx.moveTo(s.x + w, s.y - h); ctx.lineTo(s.x + w * 0.4, s.y - h * 0.3);
-    }
-    ctx.globalAlpha = 0.55; ctx.stroke(); ctx.globalAlpha = 1;
 }
