@@ -254,3 +254,7 @@
 @keyframes shzSpin { to { --shz-a: 360deg; } }
 @keyframes shzFlicker { 0% { opacity: 0.9; } 12% { opacity: 0.25; } 20% { opacity: 1; } 38% { opacity: 0.4; } 46% { opacity: 0.85; } 63% { opacity: 0.2; } 71% { opacity: 1; } 88% { opacity: 0.5; } }
 @keyframes shzIdle { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; filter: drop-shadow(0 0 7px rgba(255, 122, 0, 0.9)); } }
+
+/* Верхняя панель зеркально: слева пауза, музыка, вопросы, силы, жизни (логика и DOM не меняются) */
+#topHud { flex-direction: row-reverse; }
+#topHud > div { flex-direction: row-reverse; }
