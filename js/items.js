@@ -96,6 +96,7 @@ function tokFontsReady() {
 }
 
 // Оптический центр каждой иконки (в основном по её габаритам, с небольшой поправкой на «центр тяжести»): иконку сдвигаем на эту величину назад, чтобы она визуально стояла ровно в центре круга
+const SHZ_TOKEN = { name: 'ШАЗАМ', color: '#FF7A00', iconCode: '\ue0b7', faClass: 'fa-bolt-lightning' };
 const TOKEN_OPTICAL = { music: [0.49, 0.03], logic: [-0.02, 0.16], kino: [-0.01, 0.07], series: [-0.07, 0.46], cartoons: [-0.08, 0.35], fun: [0.13, 0.92], secret: [-0.06, 0.38], shield: [-0.39, -0.2], stamina: [0.46, -0.31], drink: [-0.19, -0.36], mocktail: [0.25, -0.02], icecream: [-0.06, -0.47], heart: [-0.06, -0.15], pizza: [-0.18, 0.18], burger: [-0.06, 0.22], hotdog: [-0.07, 0.07], speedup: [-0.06, 0.07], slowmo: [-0.06, 0.19], question: [-0.02, 0.14] };
 
 const TOKEN_THEMATIC = new Set(['music', 'logic', 'kino', 'series', 'cartoons', 'fun', 'secret']);
@@ -110,7 +111,9 @@ function drawToken(item) {
     }
     ctx.scale(currentScale * 1.05, currentScale * 1.05);   // кружки с иконками на 5% крупнее (вместе с содержимым)
 
-    const cat = CATEGORIES[item.type] || CATEGORIES.question;
+    // ускорение, которое включит ШАЗАМ, выглядит как значок ШАЗАМа (оранжевая молния, как в правилах)
+    const shzCharged = item.type === 'speedup' && (item.__forceShz || (typeof shazamNextCharged === 'function' && shazamNextCharged()));
+    const cat = shzCharged ? SHZ_TOKEN : (CATEGORIES[item.type] || CATEGORIES.question);
     const col = cat.color;
     const isThematic = TOKEN_THEMATIC.has(item.type);
 
@@ -124,7 +127,7 @@ function drawToken(item) {
     const devR = tokDevScale(ctx, currentScale, 1.05);   // разрешение заготовки — как у жетона обычного размера
     {
         // тёмный круг с цветным кольцом и светом вокруг — из заготовки
-        const rad = item.radius, pad = rad + (lowQ ? 2 : (sBlur * 2 + 4) / devR), bk = lowQ ? -devR : devR;
+        const rad = item.radius, pad = rad + (lowQ ? 2 : (sBlur * 2 + 4) / devR), bk = (lowQ ? -devR : devR) + col;
         const spr = (item.__bk === bk && item.__bs) ? item.__bs : (item.__bk = bk, item.__bs = tokSprite(`b|${col}|${rad}|${sBlur}|${devR}|${lowQ ? 1 : 0}`, devR, pad, pad, (g) => {
             if (!lowQ) { g.shadowColor = col; g.shadowBlur = sBlur; }
             const bgGrad = g.createRadialGradient(-2, -2, 2, 0, 0, rad);
@@ -222,7 +225,7 @@ function drawToken(item) {
         if (item.type === 'secret') drawSecretStar(ctx, frame / 60, item.floatOffset || 0);
         else if (tokFontsReady()) {
             // иконка со свечением — из заготовки (шрифт уже загружен)
-            const code = cat.iconCode, pad = 16 + (lowQ ? 1 : 24 / devR), gk = lowQ ? -devR : devR;
+            const code = cat.iconCode, pad = 16 + (lowQ ? 1 : 24 / devR), gk = (lowQ ? -devR : devR) + code;
             const spr = (item.__gk === gk && item.__gs) ? item.__gs : (item.__gk = gk, item.__gs = tokSprite(`g|${item.type}|${code}|${col}|${devR}|${lowQ ? 1 : 0}`, devR, pad, pad, (g) => {
                 if (!lowQ) { g.shadowBlur = 10; g.shadowColor = col; }
                 g.fillStyle = col;
@@ -297,8 +300,8 @@ function drawToken(item) {
             ctx.globalAlpha = 1;
         }
     }
+    if (shzCharged && !item.__forceShz) shazamDrawItemCharge(item);   // это ускорение включит ШАЗАМ — молния искрит
     ctx.restore();   // конец группы покачивания
-    if (item.type === 'speedup' && typeof shazamNextCharged === 'function' && shazamNextCharged()) shazamDrawItemCharge(item);   // это ускорение включит ШАЗАМ
     ctx.restore();
 }
 
@@ -311,6 +314,7 @@ function prewarmTokenSprites() {
         ctx = g;
         try {
             for (const t of Object.keys(CATEGORIES)) { g.setTransform(S, 0, 0, S, 0, 0); drawToken({ x: 0, y: 0, radius: 26, type: t, floatOffset: 0, scale: 1 }); }
+            g.setTransform(S, 0, 0, S, 0, 0); drawToken({ x: 0, y: 0, radius: 26, type: 'speedup', floatOffset: 0, scale: 1, __forceShz: true });
             g.setTransform(S, 0, 0, S, 0, 0); drawPipe({ x: 0, width: 86, top: 200, gap: 220, bottom: 200 });
         } finally { ctx = main; frame = fr; }
     } catch (e) {}

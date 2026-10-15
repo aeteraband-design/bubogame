@@ -408,7 +408,7 @@ function update() {
                 speedBoostTime = ADMIN_CFG.speedSec * 60; const shz = shazamOnSpeedup();
                 AudioFX.onSpeedChanged();
                 Haptics.powerup();
-                if (!shzWas) it.pendingFX = shz ? { target: 'other', text: `ШАЗАМ ${Math.round(SHZ.DUR / 60)}с`, color: '#FF7A00', icon: 'fa-bolt' }
+                if (!shzWas) it.pendingFX = shz ? { target: 'other', text: `ШАЗАМ ${Math.round(SHZ.DUR / 60)}с`, color: '#FF7A00', icon: 'fa-bolt-lightning' }
                                    : { target: 'other', text: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#F59E0B', icon: 'fa-bolt' };
             } else if (it.type === 'slowmo') {
                 AudioFX.playStarCollect();
@@ -553,7 +553,7 @@ function updateBuffHUD() {
     lastBuffSig = sig;
 
     const activeBuffs = [];
-    if (shazamBusy()) activeBuffs.push({ key: 'shazam', left: 1e9, text: `ШАЗАМ: ${shazamSecLeft()}с`, color: '#FF7A00', icon: 'fa-bolt' });
+    if (shazamBusy()) activeBuffs.push({ key: 'shazam', left: 1e9, text: `ШАЗАМ: ${shazamSecLeft()}с`, color: '#FF7A00', icon: 'fa-bolt-lightning' });
     if (shieldTime > 0) {
         activeBuffs.push({
             key: 'shield', left: shieldTime, text: `ЩИТ: ${Math.ceil(shieldTime / 60)}с`,
@@ -815,7 +815,7 @@ function handleSecretRoulette(originX, originY) {
                 AudioFX.playStarCollect();
                 slowMotionTime = 0;
                 speedBoostTime = ADMIN_CFG.speedSec * 60;
-                if (shazamOnSpeedup()) { AudioFX.onSpeedChanged(); Haptics.powerup(); return { label: `ШАЗАМ ${Math.round(SHZ.DUR / 60)}с`, color: '#FF7A00', icon: 'fa-bolt', isScoreAdd: false }; }
+                if (shazamOnSpeedup()) { AudioFX.onSpeedChanged(); Haptics.powerup(); return { label: `ШАЗАМ ${Math.round(SHZ.DUR / 60)}с`, color: '#FF7A00', icon: 'fa-bolt-lightning', isScoreAdd: false }; }
                 AudioFX.onSpeedChanged();
                 Haptics.powerup();
                 return { label: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#F59E0B', icon: 'fa-bolt', isScoreAdd: false };
