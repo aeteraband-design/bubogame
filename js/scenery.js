@@ -773,7 +773,7 @@ function drawRoundedRect(x, y, w, h, r) {
 // Раньше блик обрезался по форме шляпки (clip) у каждой трубы каждый кадр — на телефоне это заметная нагрузка.
 function drawPipeCap(capX, capY, capW, capH, r, rimY, pw, red) {
     const devR = tokDevScale(ctx), hw = capW / 2 + 1, hh = capH / 2 + 1;
-    const spr = tokSprite(`cap|${red ? 'r' : ''}|${pw}|${capW}|${capH}|${r}|${rimY}|${devR}`, devR, hw, hh, (g) => {
+    const spr = tokSprite(`cap|${red ? red : ''}|${pw}|${capW}|${capH}|${r}|${rimY}|${devR}`, devR, hw, hh, (g) => {
         g.translate(-(capX + capW / 2), -capH / 2);
         const path = () => {
             g.beginPath();
@@ -789,7 +789,7 @@ function drawPipeCap(capX, capY, capW, capH, r, rimY, pw, red) {
             g.closePath();
         };
         const cg = g.createLinearGradient(capX, 0, capX + capW, 0);
-        const C = red ? ['#0b2f5c', '#114f8f', '#1f86d6', '#5cc6ff', '#1670bd', '#0b2f5c'] : ['#8c2400', '#bc3a00', '#f36500', '#ff8e24', '#d64d00', '#8c2400'];
+        const C = red === 'w' ? ['#5a2a00', '#8a4500', '#e07a10', '#ffb347', '#c46a0a', '#5a2a00'] : red ? ['#5e0010', '#8e0a1c', '#dc1f32', '#ff5262', '#b3122a', '#5e0010'] : ['#8c2400', '#bc3a00', '#f36500', '#ff8e24', '#d64d00', '#8c2400'];
         [0, 0.25, 0.58, 0.78, 0.92, 1].forEach((p, i) => cg.addColorStop(p, C[i]));
         const rg = g.createLinearGradient(capX, 0, capX + capW, 0);
         rg.addColorStop(0.0, 'rgba(255, 255, 255, 0.10)');
@@ -798,13 +798,32 @@ function drawPipeCap(capX, capY, capW, capH, r, rimY, pw, red) {
         rg.addColorStop(0.90, 'rgba(255, 255, 255, 0.24)');
         rg.addColorStop(1.0, 'rgba(255, 255, 255, 0.10)');
         g.fillStyle = cg; path(); g.fill();
-        g.strokeStyle = red ? 'rgba(150, 215, 255, 0.35)' : 'rgba(255, 185, 110, 0.28)'; g.lineWidth = 0.8; g.stroke();
+        g.strokeStyle = red === 'w' ? 'rgba(255, 210, 150, 0.35)' : red ? 'rgba(255, 140, 150, 0.3)' : 'rgba(255, 185, 110, 0.28)'; g.lineWidth = 0.8; g.stroke();
         g.save(); path(); g.clip();
         g.strokeStyle = rg; g.lineWidth = 1.8;
         g.beginPath(); g.moveTo(capX - 2, rimY); g.lineTo(capX + capW + 2, rimY); g.stroke();
         g.restore();
     });
     ctx.drawImage(spr.c, capX + capW / 2 + spr.x, capY + capH / 2 + spr.y, spr.w, spr.h);
+}
+// поперечный шов трубы: тёмная щель, светлая кромка под ней и ряд болтов (свет от луны справа сверху) — рисуется один раз в заготовку
+const PIPE_SEAM_STEP = 72;
+function drawPipeSeam(pw, y) {
+    const devR = tokDevScale(ctx);
+    const spr = tokSprite(`seam|${pw}|${devR}`, devR, pw / 2 + 0.5, 4, (g) => {
+        g.translate(-pw / 2, 0);
+        g.fillStyle = 'rgba(20, 2, 45, 0.55)'; g.fillRect(0, -1.8, pw, 1.5);           // щель
+        g.fillStyle = 'rgba(214, 170, 255, 0.28)'; g.fillRect(0, -0.3, pw, 0.9);       // освещённая кромка
+        const n = Math.max(3, Math.round(pw / 11));
+        for (let k = 0; k < n; k++) {
+            const bx = pw * (k + 0.5) / n, lit = 0.35 + 0.65 * (k + 0.5) / n;          // правые болты освещены сильнее
+            g.fillStyle = 'rgba(25, 4, 50, 0.6)'; g.beginPath(); g.arc(bx + 0.3, 1.9, 1.3, 0, Math.PI * 2); g.fill();   // тень болта
+            g.fillStyle = `rgba(${Math.round(70 + 70 * lit)}, ${Math.round(30 + 40 * lit)}, ${Math.round(130 + 80 * lit)}, 1)`;
+            g.beginPath(); g.arc(bx, 1.6, 1.2, 0, Math.PI * 2); g.fill();
+            g.fillStyle = `rgba(240, 220, 255, ${0.35 + 0.5 * lit})`; g.beginPath(); g.arc(bx + 0.4, 1.2, 0.45, 0, Math.PI * 2); g.fill();   // блик
+        }
+    });
+    ctx.drawImage(spr.c, pw / 2 + spr.x, y + spr.y, spr.w, spr.h);
 }
 const PIPE_GRADS = {};   // градиенты труб по ширине (создаются один раз)
 function drawPipe(pipe) {
@@ -851,7 +870,11 @@ function drawPipe(pipe) {
         const bs = ctx.createLinearGradient(0, 0, 0, 5);    // тень под нижней шляпкой
         bs.addColorStop(0, 'rgba(10, 1, 20, 0.35)');
         bs.addColorStop(1, 'transparent');
-        pgc = PIPE_GRADS[pipe.width] = { stem: sg, cap: cg, rim: rg, top: ts, bot: bs };
+        // объём: луна светит справа сверху — узкий мягкий блик справа и затенение левого края
+        const vol = ctx.createLinearGradient(0, 0, pipe.width, 0);
+        vol.addColorStop(0, 'rgba(8, 0, 20, 0.35)'); vol.addColorStop(0.16, 'rgba(8, 0, 20, 0)');
+        vol.addColorStop(0.64, 'rgba(255, 240, 255, 0)'); vol.addColorStop(0.75, 'rgba(255, 240, 255, 0.2)'); vol.addColorStop(0.83, 'rgba(255, 240, 255, 0)');
+        pgc = PIPE_GRADS[pipe.width] = { stem: sg, cap: cg, rim: rg, top: ts, bot: bs, vol };
     }
     const stemGrad = pgc.stem, capGrad = pgc.cap, rimShineGrad = pgc.rim;
 
@@ -859,6 +882,8 @@ function drawPipe(pipe) {
     ctx.fillStyle = stemGrad;
     const pOv = camZoom < 0.999 ? Math.ceil(height * (1 - camZoom) * 0.6) + 4 : 0;   // запас за краем — только при отдалении камеры
     ctx.fillRect(0, -pOv, pipe.width, topStemH + pOv);
+    ctx.fillStyle = pgc.vol; ctx.fillRect(0, -pOv, pipe.width, topStemH + pOv);
+    for (let sy = topStemH - 46; sy > -pOv - 6; sy -= PIPE_SEAM_STEP) drawPipeSeam(pipe.width, sy);   // поперечные швы на болтах
 
     ctx.lineWidth = 0.8;
     ctx.strokeStyle = 'rgba(147, 51, 234, 0.22)';   // слева приглушён, в тон трубе
@@ -881,7 +906,7 @@ function drawPipe(pipe) {
     ctx.restore();
 
     drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width);   // шляпка — из заготовки (без дорогой обрезки каждый кадр)
-    const redK = typeof crystalRedK === 'number' ? crystalRedK : 0;   // эффект «Водопад»: шляпки плавно краснеют
+    const redK = typeof crystalRedK === 'number' ? crystalRedK : 0;   // «Опасные трубы»: шляпки плавно краснеют
     if (redK > 0.01) { ctx.globalAlpha = redK; drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width, true); ctx.globalAlpha = 1; }
 
     const bottomY = height - effectiveBottom;
@@ -890,6 +915,8 @@ function drawPipe(pipe) {
 
     ctx.fillStyle = stemGrad;
     ctx.fillRect(0, bottomStemY, pipe.width, bottomStemH + pOv);
+    ctx.fillStyle = pgc.vol; ctx.fillRect(0, bottomStemY, pipe.width, bottomStemH + pOv);
+    for (let sy = bottomStemY + 46; sy < height + pOv + 6; sy += PIPE_SEAM_STEP) drawPipeSeam(pipe.width, sy);
 
     ctx.lineWidth = 0.8;
     ctx.strokeStyle = 'rgba(147, 51, 234, 0.22)';   // слева приглушён, в тон трубе
@@ -920,7 +947,7 @@ function drawPipe(pipe) {
             // ширина пятна — ровно по шляпке (по краям свет гаснет до нуля, без обрезов), вытянуто в проём
             ctx.save(); ctx.translate(pipe.width / 2, my); ctx.scale(1, 1.25);
             const R = capW / 2, rg = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
-            rg.addColorStop(0, `rgba(110, 200, 255, ${0.4 * redK * br})`); rg.addColorStop(0.45, `rgba(60, 150, 240, ${0.15 * redK * br})`); rg.addColorStop(1, 'rgba(40, 120, 230, 0)');
+            rg.addColorStop(0, `rgba(255, 110, 70, ${0.42 * redK * br})`); rg.addColorStop(0.45, `rgba(255, 60, 50, ${0.16 * redK * br})`); rg.addColorStop(1, 'rgba(255, 40, 40, 0)');
             ctx.globalAlpha = 1; ctx.fillStyle = rg;
             ctx.beginPath(); ctx.arc(0, 0, R, dir > 0 ? 0 : Math.PI, dir > 0 ? Math.PI : Math.PI * 2); ctx.fill();
             ctx.restore();

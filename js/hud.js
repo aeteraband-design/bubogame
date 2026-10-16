@@ -994,8 +994,8 @@ function spawnPipe(startX) {
         }
         if (itemType === 'icecream') pipesSinceIceCream = 0;
     }
-    // редкий значок «Энергия»: выпадает на месте обычного значка (не темы и не секретной звезды), когда набралось достаточно тем
-    if (crystalPending && crystalTime <= 0 && !shazamBusy() && itemType !== 'secret' && !(CATEGORIES[itemType] && CATEGORIES[itemType].count)) { itemType = 'crystal'; crystalPending = false; }
+    // редкий значок — «Опасные трубы» или «Водонапор» (что именно, решает случай): выпадает на месте обычного значка (не темы и не секретной звезды), когда набралось достаточно тем
+    if (crystalPending && crystalTime <= 0 && !shazamBusy() && itemType !== 'secret' && !(CATEGORIES[itemType] && CATEGORIES[itemType].count)) { itemType = (typeof registerWater === 'function' && Math.random() < 0.5) ? 'water' : 'crystal'; crystalPending = false; }   // случайно: «Опасные трубы» или «Водонапор»
     if (typeof shazamBlockedType === 'function' && shazamBlockedType(itemType)) itemType = 'question';   // в ШАЗАМе щит, заморозка и т.п. на пути не появляются
     lastSpawnedItemType = itemType;
     const tokenRadius = 26;

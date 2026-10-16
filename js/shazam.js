@@ -150,10 +150,10 @@ function shazamAddStreak(burst) {
 // все таймерные эффекты — в ноль (в ШАЗАМе он один)
 function shazamClearEffects() {
     shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0;
-    speedBoostTime = 0; slowMotionTime = 0; overeatTime = 0; drunkTime = 0; freezeTime = 0; crystalTime = 0;
+    speedBoostTime = 0; slowMotionTime = 0; overeatTime = 0; drunkTime = 0; freezeTime = 0; crystalTime = 0; if (typeof waterTime !== 'undefined') waterTime = 0;
 }
 // эти значки во время ШАЗАМа не появляются на пути, а взятые — не дают эффекта
-const SHZ_BLOCKED = ['shield', 'slowmo', 'compress', 'speedup', 'icecream', 'crystal'];
+const SHZ_BLOCKED = ['shield', 'slowmo', 'compress', 'speedup', 'icecream', 'crystal', 'water'];
 function shazamBlockedType(t) { return shazamBusy() && SHZ_BLOCKED.includes(t); }
 
 function shazamUpdate() {

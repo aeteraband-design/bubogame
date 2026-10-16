@@ -319,14 +319,31 @@ const AudioFX = {
         osc.connect(lp); lp.connect(g); g.connect(this.sfxGain || ctx.destination);
         osc.start(t); osc.stop(t + dur + 0.05);
     },
-    playPipesHeat() {     // «Водопад» включился: в трубах зашумела вода — нарастающий плеск и бульканье
+    playPipesHeat() {     // «Опасные трубы» включились: трубы накаляются — нарастающее огненное «вуух», низкий гул и треск искр
+        try {
+            if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime + 0.02;
+            this._noiseBand(t, 1.1, 280, 1600, 1.1, 0.11, 0.55);
+            this._toneSweep(t, 1.1, 55, 120, 300, 900, 0.06, 'sawtooth', 0.5);
+            this._toneSweep(t + 0.1, 0.9, 220, 440, 900, 2400, 0.025, 'triangle', 0.6);
+            this._crackle(t + 0.35, 0.8, 1800, 4200, 0.07, 1.4);
+        } catch (e) {}
+    },
+    playPipesCool() {     // эффект кончился: трубы остывают — шипение пара сверху вниз и затихающий гул
+        try {
+            if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime + 0.02;
+            this._noiseBand(t, 1.2, 2600, 500, 1.4, 0.07, 0.12);
+            this._toneSweep(t, 1.0, 120, 55, 700, 200, 0.045, 'sawtooth', 0.15);
+            this._crackle(t, 0.45, 2200, 900, 0.04, 1.2);
+        } catch (e) {}
+    },
+    playWaterStart() {    // «Водонапор» включился: в трубах зашумела вода — нарастающий плеск и бульканье
         try {
             if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime + 0.02;
             this._noiseBand(t, 1.2, 350, 1300, 0.9, 0.12, 0.5);
-            for (let i = 0; i < 6; i++) { const tt = t + 0.15 + i * 0.12 + Math.random() * 0.05, f = 300 + Math.random() * 500; this._toneSweep(tt, 0.09, f, f * 1.9, 1800, 2600, 0.035, 'sine', 0.2); }   // бульк-бульк
+            for (let i = 0; i < 6; i++) { const tt = t + 0.15 + i * 0.12 + Math.random() * 0.05, f = 300 + Math.random() * 500; this._toneSweep(tt, 0.09, f, f * 1.9, 1800, 2600, 0.035, 'sine', 0.2); }
         } catch (e) {}
     },
-    playPipesCool() {     // вода стихает: шум уходит вниз, последние капли
+    playWaterEnd() {      // вода стихает: шум уходит вниз, последние капли
         try {
             if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime + 0.02;
             this._noiseBand(t, 1.1, 1300, 300, 0.9, 0.08, 0.1);

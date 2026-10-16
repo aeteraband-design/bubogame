@@ -249,7 +249,8 @@ function update() {
         shieldHitPower *= Math.pow(0.9, dtMult);
     }
 
-    crystalUpdate(currentSpeed, activeSqueeze);   // эффект «Кристаллы»
+    crystalUpdate(currentSpeed, activeSqueeze);   // эффект «Опасные трубы»
+    if (typeof waterUpdate === 'function') waterUpdate(currentSpeed, activeSqueeze);   // эффект «Вода из труб»
     for (let i = items.length - 1; i >= 0; i--) {
         const it = items[i];
 
@@ -365,6 +366,8 @@ function update() {
                 updateStaminaHUD(); StorageManager.save();
                 it.pendingFX = { target: 'stamina', text: '+10% Сил', color: '#F4B942', icon: 'fa-beer-mug-empty' };
                 it.extraFX = registerDrink();
+            } else if (it.type === 'water') {
+                it.pendingFX = registerWater();   // 10 с: из труб льётся вода
             } else if (it.type === 'crystal') {
                 it.pendingFX = registerCrystal();   // 10 с: из труб падают светящиеся кристаллы
             } else if (it.type === 'icecream') {
@@ -442,7 +445,7 @@ function update() {
                 const maxLimit = cat.count;
                 if (collected[it.type] < maxLimit) {
                     collected[it.type]++;
-                    crystalOnTheme();   // редкий значок «Кристаллы»: считаем собранные темы
+                    crystalOnTheme();   // редкий значок «Опасные трубы»/«Водонапор»: считаем собранные темы
                     const labelText = collected[it.type] === maxLimit ? `+1 ${cat.name} (${maxLimit}/${maxLimit})` : `+1 ${cat.name}`;
                     it.pendingFX = { target: it.type, text: labelText, color: cat.color, icon: cat.faClass };
                     updateCollectionHUD();
@@ -494,7 +497,8 @@ function buffKeyForLabel(t) {
     if (/^Ускорение \d+с$/i.test(t)) return shazamBusy() ? 'shazam' : 'speed';   
     if (/^ШАЗАМ \d+с$/i.test(t)) return 'shazam';   // в ШАЗАМе подсказка улетает в таймер ШАЗАМа
     if (/^Замедление \d+с$/i.test(t)) return 'slow';
-    if (/^Водопад \d+с$/i.test(t)) return 'crystal';
+    if (/^Опасные трубы \d+с$/i.test(t)) return 'crystal';
+    if (/^Водонапор \d+с$/i.test(t)) return 'water';
     if (/переели/i.test(t)) return 'overeat';
     if (/замёрзли|замерзли/i.test(t)) return 'freeze';
     if (/опьянели/i.test(t)) return 'drunk';
@@ -557,7 +561,7 @@ function updateBuffHUD() {
     const bar = document.getElementById('buffBar');
     if (!bar) return;
     const sig = Math.ceil(shieldTime / 60) + Math.ceil(infiniteStaminaTime / 60) * 31 + Math.ceil(compressionTime / 60) * 961 + Math.ceil(speedBoostTime / 60) * 29791 +
-                Math.ceil(slowMotionTime / 60) * 923521 + Math.ceil(overeatTime / 60) * 28629151 + Math.ceil(freezeTime / 60) * 887503681 + Math.ceil(drunkTime / 60) * 27512614111 + Math.ceil(crystalTime / 60) * 3571 + '|' + shazamSecLeft() + (shazamBusy() ? 'b' : '');
+                Math.ceil(slowMotionTime / 60) * 923521 + Math.ceil(overeatTime / 60) * 28629151 + Math.ceil(freezeTime / 60) * 887503681 + Math.ceil(drunkTime / 60) * 27512614111 + Math.ceil(crystalTime / 60) * 3571 + Math.ceil(((typeof waterTime !== 'undefined') ? waterTime : 0) / 60) * 7919 + '|' + shazamSecLeft() + (shazamBusy() ? 'b' : '');
     if (sig === lastBuffSig && lastBuffStateKey !== '') return;   // ни одна секунда не сменилась — нечего перерисовывать
     // (при продлении эффекта секунда подскакивает вверх — это тоже смена, проверка ниже сработает сразу)
     lastBuffSig = sig;
@@ -609,7 +613,14 @@ function updateBuffHUD() {
     }
     if (crystalTime > 0) {
         activeBuffs.push({
-            key: 'crystal', left: crystalTime, text: `ВОДОПАД: ${Math.ceil(crystalTime / 60)}с`,
+            key: 'crystal', left: crystalTime, text: `ОПАСНЫЕ ТРУБЫ: ${Math.ceil(crystalTime / 60)}с`,
+            color: '#FF6A3D',
+            icon: 'fa-fire'
+        });
+    }
+    if (typeof waterTime !== 'undefined' && waterTime > 0) {
+        activeBuffs.push({
+            key: 'water', left: waterTime, text: `ВОДОНАПОР: ${Math.ceil(waterTime / 60)}с`,
             color: '#7DD3FC',
             icon: 'fa-droplet'
         });
@@ -742,6 +753,7 @@ function resetOvereatDrunk() {
     currentOvereatFactor = 0; currentDrunkFactor = 0;
     iceCreamCount = 0; freezeTime = 0; currentFreezeFactor = 0;
     crystalReset();
+    if (typeof waterReset === 'function') waterReset();
     owl.spinAngle = 0; owl.spinVel = 0;
     owl.drunkOffset = 0;
     owl.radius = owl.baseRadius;

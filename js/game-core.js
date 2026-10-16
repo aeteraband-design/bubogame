@@ -22,7 +22,7 @@ const ADMIN_DEFAULTS = {
     drunkEvery: 6, drunkSec: 10,         // напитков до опьянения / его длительность
     freezeEvery: 3, freezeSec: 10,       // порций мороженого до заморозки / её длительность
     shieldSec: 10, slowSec: 10, speedSec: 10, compressSec: 10, infiniteSec: 10,   // длительности бонусов
-    crystalFreq: 0,                      // опасные трубы: 0 — раз на два уровня сложности, 1 — раз за уровень, 2 — дважды за уровень
+    crystalFreq: 0,                      // опасные трубы / водонапор: 0 — раз на два уровня сложности, 1 — раз за уровень, 2 — дважды за уровень
     stormFreq: 1,                        // частота гроз: 0 — редко, 1 — обычно, 2 — часто, 3 — очень часто
     stormTest: 0,                        // проверка погоды: 0 — случайные грозы, 10–100 — сила грозы вручную
     shazamEvery: 4,                      // какое по счёту взятое ускорение включает ШАЗАМ
@@ -333,7 +333,8 @@ const CATEGORIES = {
     stamina:      { name: 'Перо силы',  color: '#67E8F9', iconCode: '\uf56b', faClass: 'fa-feather-pointed' },
     drink:        { name: 'Коктейль',   color: '#2DD4BF', iconCode: '\uf561', faClass: 'fa-martini-glass-citrus' },
     mocktail:     { name: 'Пиво',       color: '#F4B942', iconCode: '\uf0fc', faClass: 'fa-beer-mug-empty' },
-    crystal:      { name: 'Водопад',    color: '#38BDF8', iconCode: '\uf043', faClass: 'fa-droplet' },
+    crystal:      { name: 'Опасные трубы', color: '#FF4A3D', iconCode: '\uf06d', faClass: 'fa-fire' },
+    water:        { name: 'Водонапор',  color: '#38BDF8', iconCode: '\uf043', faClass: 'fa-droplet' },
     icecream:     { name: 'Мороженое',  color: '#B5E4FF', iconCode: '\uf810', faClass: 'fa-ice-cream' },
     heart:        { name: 'Жизнь',      color: '#EF4444', iconCode: '\uf004', faClass: 'fa-heart' },
     pizza:        { name: 'Пицца',      color: '#F97316', iconCode: '\uf818', faClass: 'fa-pizza-slice' },
