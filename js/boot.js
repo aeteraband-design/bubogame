@@ -129,11 +129,17 @@
                 cloneWrap.style.transform = 'translateY(-50%)'; cloneWrap.style.top = (r.top + r.height / 2) + 'px';   // увеличиваем от центра
             }
             var dismissed = false, exitT0 = 0, entryT0 = 0, revealed = false;
-            var ENTRY = 1.8;   // секунд на прилёт совы
+            var ENTRY = 1.1;   // секунд на прилёт совы
+            // звуки загрузки — те же, что в игре. Пока по экрану ни разу не нажимали, браузер звук не пускает: тогда они просто молчат
+            var SND = {};
+            function sfx(key, name) {
+                if (SND[key]) return; SND[key] = 1;
+                try { if (typeof AudioFX !== 'undefined' && AudioFX[name]) { if (AudioFX.ctx && AudioFX.ctx.state === 'running') AudioFX[name](); } } catch (e) {}
+            }
             function dismiss() {
                 if (dismissed || !ready) return; dismissed = true;
                 exitT0 = performance.now();   // сова улетает вправо, как в ШАЗАМе; экран гаснет следом
-                try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); } } catch (e) {}
+                try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); setTimeout(function () { try { AudioFX.playShazamArm(); } catch (e2) {} }, 150); } } catch (e) {}   // зарядка — мягкий звук ШАЗАМа
                 setTimeout(finishDismiss, 1100);
             }
             function finishDismiss() {
@@ -160,13 +166,14 @@
                     var ex = 1 - Math.pow(1 - ep, 1.6), hp = ep * 3, u = hp % 1, amp = 26 * (1 - ep * 0.55);
                     MV.x = -(MV.half + 50) * (1 - ex); MV.y = -Math.sin(u * Math.PI) * amp; MV.rot = -0.32 * Math.cos(u * Math.PI);
                     MV.wing = u < 0.22 ? 1 - u / 0.22 : 0;
+                    sfx('hop' + Math.floor(hp), 'playFlap');   // каждый прыжок — взмах
                 } else if (exitT0) {
                     // как ШАЗАМ в игре: 0,6 с сова заряжается (оранжевое свечение, молнии вокруг, искры стягиваются), потом рывок вправо
                     var ct = (now - exitT0) / 600;
                     MV.shz = Math.min(1, ct * 1.4);
                     if (ct < 1) { MV.exit = 0; MV.x = -4 * Math.sin(ct * Math.PI); MV.y = 0; MV.rot = 0; MV.wing = -1; MV.charge = ct; }
                     else {
-                        if (!MV.flapped) { MV.flapped = true; try { AudioFX.playFlap(); } catch (e) {} }
+                        if (!MV.flapped) { MV.flapped = true; try { AudioFX.playMaxStaminaChime(); } catch (e) {} }   // рывок — звонкий перелив
                         var q = Math.min(1, (now - exitT0 - 600) / 450); MV.exit = q; MV.charge = 0;
                         MV.x = (MV.half + 90) * q * q; MV.y = -6 * q; MV.rot = -0.05; MV.wing = 0;
                     }
@@ -178,7 +185,8 @@
                 drawStars(k);
                 // состояния идут по очереди и плавно перетекают друг в друга: пьяная → замёрзшая → толстая → в конце обычная
                 var d = ph(16, 22) * (1 - ph(36, 42)), fz = ph(38, 44) * (1 - ph(58, 64)), ov = ph(60, 66) * (1 - ph(80, 87));
-                var fin = ready || exitT0 ? 1 : ph(88, 100);   // в конце загрузки сова уже в виде ускорения
+                var fin = ready || exitT0 ? 1 : ph(88, 100);
+                if (shown > 17) sfx('d', 'playDrunk'); if (shown > 39) sfx('f', 'playFreeze'); if (shown > 61) sfx('o', 'playOverEat'); if (shown > 89) sfx('s', 'playSpeedUpStart');   // в конце загрузки сова уже в виде ускорения
                 drawOwl(now, d, fz, ov, fin);
                 syncLogo();
                 if (!ready) {
