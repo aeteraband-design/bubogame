@@ -142,7 +142,8 @@ function drawScene() {
     shazamDrawStreaks();
 
     if (gameActive || waitingFirstTap || isStartMenuOpen || isGameOverOpen) {
-        drawClouds();
+        // в грозу обычные облака освещаются так же, как тучи (луна, тень, темнее книзу) — цвет у всех одинаковый
+        if (typeof stormCover !== 'undefined' && stormCover > 0.01) stormLitLayer(0.85 * stormSmooth(0, 0.85, stormCover), drawClouds); else drawClouds();
     }
 
     // камера: при эффекте ускорения чуть отдаляется (видно больше), при замедлении чуть приближается; от уровня сложности не зависит

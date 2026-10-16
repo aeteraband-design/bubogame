@@ -236,7 +236,10 @@ function stormDrawCloudLayer(list, spr, yOf, cv, si, alpha, lag = 0, first = fal
         const y = yOf(c.yr);
         const dx = c.x - CLOUD_OX * c.k, dy = y - CLOUD_OY * c.k, dh = CLOUD_H * c.k;
         ctx.globalAlpha = alpha;
-        ctx.drawImage(spr, dx, dy, cw, dh);
+        // цвет как у обычных облаков: пока тучи собираются — сиреневые облачка постепенно сереют до грозовых, при уходе — обратно
+        const sk = stormSmooth(0, 0.85, cv);
+        if (sk < 0.999 && typeof cloudSprite !== 'undefined' && cloudSprite) { ctx.globalAlpha = alpha * (1 - sk); ctx.drawImage(cloudSprite, dx, dy, cw, dh); }
+        if (sk > 0.001) { ctx.globalAlpha = alpha * sk; ctx.drawImage(spr, dx, dy, cw, dh); }
         if (lit) { const m = stormMoonLit(c.x + cw * 0.15, y); if (m > 0.02) { ctx.globalAlpha = alpha * m * 0.8; ctx.drawImage(lit, dx, dy, cw, dh); } }
     }
 }
@@ -293,13 +296,14 @@ function stormDrawBack() {
     {
         const spr = stormBuildClouds(), L = stormCloudSet(), yb = stormCloudBottom(), first = !L.init; L.init = true;
         // тучи рисуются слоями на отдельный холст и освещаются луной целиком: у луны светлые, к краям и вниз темнеют
-        stormLitLayer(0.85, () => {
+        const lk = stormSmooth(0, 0.85, cv);   // освещение луной и тень нарастают вместе с грозой
+        stormLitLayer(0.85 * lk, () => {
             stormDrawCloudLayer(L.low, spr.far, (r) => height * (0.34 + r * 0.17), cv, si, 0.9, 0, first, null);   // за домами, у горизонта
             stormDrawCloudLayer(L.far, spr.far, (r) => 20 + r * Math.max(10, yb - 70), cv, si, 0.9, 0, first, null);
         });
         // зарница внутри туч и сам разряд — между дальним и ближним слоем туч
         if (STORM.flash > 0.01) stormDrawFlashBack(yb);
-        stormLitLayer(1, () => stormDrawCloudLayer(L.near, spr.near, (r) => -12 + r * Math.max(10, yb - 40), cv, si, 0.97, 0, first, null));
+        stormLitLayer(lk, () => stormDrawCloudLayer(L.near, spr.near, (r) => -12 + r * Math.max(10, yb - 40), cv, si, 0.97, 0, first, null));
         // луна сквозь плотные тучи лишь иногда проглядывает: то чуть видна, то почти скрыта
         const mp = window.__moonPos;
         if (mp && moonSprite && cv > 0.01) {
