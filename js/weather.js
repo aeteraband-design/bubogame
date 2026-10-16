@@ -33,9 +33,14 @@ let stormCover = 0;   // 0..1: сколько туч собралось (тем�
 function wxRand(a, b) { return a + Math.random() * (b - a); }
 function wxFreq() { let f = 1; try { f = ADMIN_CFG.stormFreq; } catch (e) {} return WX.FREQ[Math.max(0, Math.min(3, f | 0))] || WX.FREQ[1]; }
 function wxStart() { WX.on = true; WX.peak = wxRand(0.55, 1); WX.left = wxRand(WX.DUR_MIN, WX.DUR_MAX); }
+function wxDt() {   // настоящие секунды с прошлого кадра (замедление и прочие эффекты на длительность грозы не влияют)
+    const now = performance.now(), d = STORM.lastT ? (now - STORM.lastT) / 1000 : 0;
+    STORM.lastT = now; STORM.rdt = Math.min(0.1, Math.max(0, d));
+    return STORM.rdt;
+}
 function wxTick() {
     if (!gameActive || document.hidden) return;
-    const dt = dtMult / 60, F = wxFreq();
+    const dt = STORM.rdt, F = wxFreq();
     if (WX.left < 0) {   // первый полёт: либо игра начинается сразу в дождь, либо случайная пауза (может и не дождаться за всю игру)
         if (Math.random() < F.none) WX.left = 1e9;   // в этой игре грозы не будет
         else if (Math.random() < F.start) { wxStart(); stormCover = 1; stormIntensity = WX.peak; STORM.fade = 1; }
@@ -64,8 +69,8 @@ function stormUpdate() {
         return;
     }
     if (stormIntensity < 0) stormIntensity = 0;
+    const dt = wxDt();
     wxTick();
-    const dt = dtMult / 60;
     let test = 0; try { test = ADMIN_CFG.stormTest | 0; } catch (e) {}
     if (test > 0) {   // проверка из админки: тучи сразу, сила вручную
         stormCover = Math.min(1, stormCover + dt / 3); STORM.fade = 1;
@@ -79,7 +84,7 @@ function stormUpdate() {
         STORM.fade = Math.max(0, (STORM.fade || 0) - dt / WX.FADE);
         const fr = stormSmooth(0.3, 1, STORM.fade);
         stormIntensity = Math.min(stormIntensity, WX.peak * fr);
-        stormCover = Math.min(stormCover, stormSmooth(0, 1, STORM.fade));
+        stormCover = Math.min(stormCover, stormSmooth(0.25, 1, STORM.fade));   // тучи перестают подходить и уплывают
     }
     const si = stormIntensity;
     // намокание: крыши мокнут вслед за дождём и медленно сохнут
@@ -171,10 +176,10 @@ function stormBuildClouds() {
         c.arc(0, 0, 26, 0, Math.PI * 2); c.arc(26, -10, 32, 0, Math.PI * 2); c.arc(58, -4, 24, 0, Math.PI * 2); c.arc(38, 10, 22, 0, Math.PI * 2);
         c.fill();
     });
-    // серые с лёгким оттенком нашего фиолетового; «lit» — те же тучи, подсвеченные луной (накладываются тем сильнее, чем ближе к луне)
+    // серо-фиолетовые, в тон миру; «lit» — те же тучи, подсвеченные луной (накладываются тем сильнее, чем ближе к луне)
     STORM.cloudSpr = {
-        far: mk('rgba(50, 45, 66, 0.97)', 'rgba(32, 28, 45, 0.95)'), near: mk('rgba(38, 33, 52, 0.98)', 'rgba(21, 18, 31, 0.97)'),
-        farLit: mk('rgba(132, 122, 162, 0.97)', 'rgba(70, 62, 94, 0.95)'), nearLit: mk('rgba(112, 102, 142, 0.98)', 'rgba(52, 45, 72, 0.97)')
+        far: mk('rgba(92, 74, 128, 0.95)', 'rgba(56, 42, 84, 0.93)'), near: mk('rgba(74, 58, 106, 0.97)', 'rgba(42, 30, 66, 0.96)'),
+        farLit: mk('rgba(216, 202, 242, 0.97)', 'rgba(140, 120, 182, 0.95)'), nearLit: mk('rgba(198, 182, 230, 0.98)', 'rgba(120, 100, 162, 0.97)')
     };
     return STORM.cloudSpr;
 }
@@ -184,7 +189,7 @@ function stormCloudSet() {
     let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
     const mkL = (n, kMin, kMax, tMin, tMax) => {   // tMin..tMax — за сколько секунд туча пересекает экран
         const a = [];
-        for (let i = 0; i < n; i++) a.push({ x: (i + r() * 0.8) / n * (width + 360) - 180, yr: r(), k: kMin + r() * (kMax - kMin), tc: tMin + r() * (tMax - tMin), t: (i / n) * 0.45 + r() * 0.04, on: false, go: false });
+        for (let i = 0; i < n; i++) a.push({ x: (i + r() * 0.8) / n * (width + 360) - 180, yr: r(), k: kMin + r() * (kMax - kMin), tc: tMin + r() * (tMax - tMin), t: (i / n) * 0.6 + r() * 0.04, on: false, go: false });
         return a;
     };
     // low — густой слой у горизонта, за небоскрёбами; far и near — тучи в верхней части неба
@@ -197,18 +202,19 @@ function stormCloudsAny(L) { for (const n of ['low', 'far', 'near']) for (const 
 function stormMoonLit(x, y) {
     const mp = window.__moonPos; if (!mp) return 0;
     const d = Math.hypot(x - (mp[0] + mp[2] / 2), (y - (mp[1] + mp[2] / 2)) * 1.4);
-    return 0.85 * Math.exp(-d / Math.max(120, width * 0.32));
+    return Math.exp(-d / Math.max(140, width * 0.45));
 }
 function stormDrawCloudLayer(list, spr, yOf, cv, si, alpha, lag = 0, first = false, lit = null) {
     // пока тучи собираются — ветер сильный, потом тучи плывут спокойнее; уходят — быстро
-    const gather = WX.on && cv < 0.999, wind = (gather ? 1 : 0.5) * (1 + 0.3 * si) * dtMult / 60;
+    const gather = WX.on && cv < 0.999, wind = (gather ? 0.85 : 0.5) * (1 + 0.3 * si) * dtMult / 60;
+    alpha *= 0.3 + 0.7 * stormSmooth(0, 0.95, cv);   // сначала тучи полупрозрачные, как обычные облака; потом сгущаются
     for (const c of list) {
         const thr = c.t + lag, cw = CLOUD_W * c.k;
         if (first) c.on = cv >= thr;                       // игра началась уже в грозу — тучи сразу на месте
         if (!c.on && cv >= thr) { c.on = true; c.go = false; c.x = width + CLOUD_OX * c.k + Math.random() * width * 0.2; }   // выплывает из-за правого края
         if (c.on && (cv < thr - 0.04 || cv < 0.002)) c.go = true;           // тучи расходятся: эта больше не возвращается справа
         if (!c.on) continue;
-        c.x -= (width + cw) / c.tc * (c.go ? 2.4 * dtMult / 60 : wind);
+        c.x -= (width + cw) / (c.go ? 9 : c.tc) * (c.go ? dtMult / 60 : wind);
         if (c.x < -cw) {
             if (c.go) { c.on = false; continue; }
             c.x = width + CLOUD_OX * c.k + Math.random() * 60;
@@ -227,9 +233,9 @@ function stormSkyGrad() {
     if (STORM.skyGrad && STORM.skyH === height && STORM.skyQ === q) return STORM.skyGrad;
     const mix = (a, b) => 'rgb(' + a.map((v, i) => Math.round(v + (b[i] - v) * q * 0.85)).join(',') + ')';
     const g = ctx.createLinearGradient(0, 0, 0, height);
-    g.addColorStop(0, mix([30, 8, 66], [22, 17, 38]));
-    g.addColorStop(0.5, mix([20, 3, 38], [21, 18, 36]));
-    g.addColorStop(1, mix([9, 1, 23], [12, 10, 24]));
+    g.addColorStop(0, mix([30, 8, 66], [28, 14, 52]));
+    g.addColorStop(0.5, mix([20, 3, 38], [22, 10, 42]));
+    g.addColorStop(1, mix([9, 1, 23], [12, 5, 26]));
     STORM.skyGrad = g; STORM.skyH = height; STORM.skyQ = q;
     return g;
 }
@@ -287,7 +293,7 @@ function stormDrawCityLight() {
     const cityTop = height * 0.3;
     if (!STORM.cityGrad || STORM.cityGradH !== height) {   // мягкий переход сверху — без видимой границы
         const g = ctx.createLinearGradient(0, cityTop, 0, height * 0.62);
-        g.addColorStop(0, 'rgba(14, 10, 26, 0)'); g.addColorStop(1, 'rgba(14, 10, 26, 1)');
+        g.addColorStop(0, 'rgba(16, 6, 30, 0)'); g.addColorStop(1, 'rgba(16, 6, 30, 1)');
         STORM.cityGrad = g; STORM.cityGradH = height;
     }
     ctx.globalAlpha = 0.28 * sk; ctx.fillStyle = STORM.cityGrad;

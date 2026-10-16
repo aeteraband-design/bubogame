@@ -874,7 +874,7 @@ function drawPipe(pipe) {
     ctx.restore();
 
     drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width);   // шляпка — из заготовки (без дорогой обрезки каждый кадр)
-    const redK = typeof crystalRedK === 'number' ? crystalRedK : 0;   // эффект «Кристаллы»: шляпки плавно краснеют
+    const redK = typeof crystalRedK === 'number' ? crystalRedK : 0;   // эффект «Шипы»: шляпки плавно краснеют
     if (redK > 0.01) { ctx.globalAlpha = redK; drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width, true); ctx.globalAlpha = 1; }
 
     const bottomY = height - effectiveBottom;
@@ -906,18 +906,7 @@ function drawPipe(pipe) {
     drawPipeCap(capX, bottomY, capW, capH, capRadius, 2.5, pipe.width);
     if (redK > 0.01) {
         ctx.globalAlpha = redK; drawPipeCap(capX, bottomY, capW, capH, capRadius, 2.5, pipe.width, true);
-        // трубы чуть-чуть светятся красным: лёгкий отсвет у устья обеих труб и слабый налёт на стволах
-        ctx.globalCompositeOperation = 'lighter';
-        const gl = 0.16 * redK, gh = 26;
-        let gg = ctx.createLinearGradient(0, effectiveTop, 0, effectiveTop + gh);
-        gg.addColorStop(0, `rgba(255, 50, 70, ${gl})`); gg.addColorStop(1, 'rgba(255, 50, 70, 0)');
-        ctx.globalAlpha = 1; ctx.fillStyle = gg; ctx.fillRect(capX, effectiveTop, capW, gh);
-        gg = ctx.createLinearGradient(0, bottomY, 0, bottomY - gh);
-        gg.addColorStop(0, `rgba(255, 50, 70, ${gl})`); gg.addColorStop(1, 'rgba(255, 50, 70, 0)');
-        ctx.fillStyle = gg; ctx.fillRect(capX, bottomY - gh, capW, gh);
-        ctx.fillStyle = `rgba(255, 40, 60, ${0.07 * redK})`;
-        ctx.fillRect(0, -pOv, pipe.width, topStemH + pOv); ctx.fillRect(0, bottomStemY, pipe.width, bottomStemH + pOv);
-        ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+        ctx.globalAlpha = 1;
     }
 
     // капельки дождя на верхней грани обеих шляпок (у верхней трубы шляпка перевёрнута — капли всё равно сверху)

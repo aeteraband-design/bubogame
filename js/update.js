@@ -489,7 +489,7 @@ function buffKeyForLabel(t) {
     if (/^Ускорение \d+с$/i.test(t)) return shazamBusy() ? 'shazam' : 'speed';   
     if (/^ШАЗАМ \d+с$/i.test(t)) return 'shazam';   // в ШАЗАМе подсказка улетает в таймер ШАЗАМа
     if (/^Замедление \d+с$/i.test(t)) return 'slow';
-    if (/^Кристаллы \d+с$/i.test(t)) return 'crystal';
+    if (/^Шипы \d+с$/i.test(t)) return 'crystal';
     if (/переели/i.test(t)) return 'overeat';
     if (/замёрзли|замерзли/i.test(t)) return 'freeze';
     if (/опьянели/i.test(t)) return 'drunk';
@@ -604,9 +604,9 @@ function updateBuffHUD() {
     }
     if (crystalTime > 0) {
         activeBuffs.push({
-            key: 'crystal', left: crystalTime, text: `КРИСТАЛЛЫ: ${Math.ceil(crystalTime / 60)}с`,
+            key: 'crystal', left: crystalTime, text: `ШИПЫ: ${Math.ceil(crystalTime / 60)}с`,
             color: '#FF4D5E',
-            svgIcon: `<svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="#FF4D5E"><polygon points="12,0.5 14.6,9.4 21.5,12 14.6,14.6 12,23.5 9.4,14.6 2.5,12 9.4,9.4"/></svg>`
+            icon: 'fa-triangle-exclamation'
         });
     }
     if (freezeTime > 0) {

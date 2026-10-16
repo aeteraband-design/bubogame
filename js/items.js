@@ -97,7 +97,7 @@ function tokFontsReady() {
 
 // Оптический центр каждой иконки (в основном по её габаритам, с небольшой поправкой на «центр тяжести»): иконку сдвигаем на эту величину назад, чтобы она визуально стояла ровно в центре круга
 const SHZ_TOKEN = { name: 'ШАЗАМ', color: '#FF7A00', iconCode: '\ue0b7', faClass: 'fa-bolt-lightning' };
-const TOKEN_OPTICAL = { music: [0.49, 0.03], logic: [-0.02, 0.16], kino: [-0.01, 0.07], series: [-0.07, 0.46], cartoons: [-0.08, 0.35], fun: [0.13, 0.92], secret: [-0.06, 0.38], shield: [-0.39, -0.2], stamina: [0.46, -0.31], drink: [-0.19, -0.36], mocktail: [0.25, -0.02], icecream: [-0.06, -0.47], heart: [-0.06, -0.15], pizza: [-0.18, 0.18], burger: [-0.06, 0.22], hotdog: [-0.07, 0.07], speedup: [-0.06, 0.07], slowmo: [-0.06, 0.19], question: [-0.02, 0.14] };
+const TOKEN_OPTICAL = { crystal: [0, 0.9], music: [0.49, 0.03], logic: [-0.02, 0.16], kino: [-0.01, 0.07], series: [-0.07, 0.46], cartoons: [-0.08, 0.35], fun: [0.13, 0.92], secret: [-0.06, 0.38], shield: [-0.39, -0.2], stamina: [0.46, -0.31], drink: [-0.19, -0.36], mocktail: [0.25, -0.02], icecream: [-0.06, -0.47], heart: [-0.06, -0.15], pizza: [-0.18, 0.18], burger: [-0.06, 0.22], hotdog: [-0.07, 0.07], speedup: [-0.06, 0.07], slowmo: [-0.06, 0.19], question: [-0.02, 0.14] };
 
 const TOKEN_THEMATIC = new Set(['music', 'logic', 'kino', 'series', 'cartoons', 'fun', 'secret']);
 function drawToken(item) {
@@ -200,9 +200,6 @@ function drawToken(item) {
         ctx.stroke();
 
         ctx.restore();
-    } else if (item.type === 'crystal') {
-        ctx.shadowBlur = 0;
-        drawCrystalIcon(ctx, frame / 60, item.floatOffset || 0);   // светящийся кристалл с шипами
     } else if (item.type === 'infinite') {
         ctx.save();
         ctx.shadowBlur = 9;
