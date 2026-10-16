@@ -371,6 +371,8 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
     let iconHtml = `<i class="fa-solid ${faIcon} text-[10px]" style="color:${color}"></i>`;
     if (faIcon === 'svg-compress') {
         iconHtml = `<svg class="w-3 h-3 inline-block shrink-0" viewBox="0 0 24 24" fill=\"none\" stroke=\"${color}\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5\"/></svg>`;
+    } else if (faIcon === 'svg-crystal') {
+        iconHtml = `<svg class="w-3 h-3 inline-block shrink-0" viewBox="0 0 24 24" fill="${color}"><polygon points="12,0.5 14.6,9.4 21.5,12 14.6,14.6 12,23.5 9.4,14.6 2.5,12 9.4,9.4"/></svg>`;
     } else if (faIcon === 'svg-infinite-feather') {
         iconHtml = `<div style="position:relative;display:inline-flex;align-items:center;justify-content:flex-start;width:15px;height:14px;margin-right:0;color:${color};flex-shrink:0"><i class="fa-solid fa-feather-pointed" style="font-size:11px"></i><span class="inf-sign" style="position:absolute;right:-1px;bottom:-2px;font-weight:900;color:#fff;line-height:1;text-shadow:0 0 2px #000,0 0 4px #000">∞</span></div>`;
     }
@@ -429,6 +431,8 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
     
     if (faIcon === 'svg-compress') {
         orb.innerHTML = `<svg class="w-2.5 h-2.5 inline-block shrink-0" viewBox="0 0 24 24" fill=\"none\" stroke=\"${color}\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5\"/></svg>`;
+    } else if (faIcon === 'svg-crystal') {
+        orb.innerHTML = `<svg class="w-2.5 h-2.5 inline-block shrink-0" viewBox="0 0 24 24" fill="${color}"><polygon points="12,0.5 14.6,9.4 21.5,12 14.6,14.6 12,23.5 9.4,14.6 2.5,12 9.4,9.4"/></svg>`;
     } else if (faIcon === 'svg-infinite-feather') {
         orb.innerHTML = `<div class="relative flex items-center justify-center w-3 h-3" style="color:${color}"><i class="fa-solid fa-feather-pointed text-[9px]"></i><span class="absolute -bottom-1 -right-1 text-[7px] font-black" style="color:#fff;text-shadow:0 0 3px #000">∞</span></div>`;
     } else {
@@ -990,6 +994,8 @@ function spawnPipe(startX) {
         }
         if (itemType === 'icecream') pipesSinceIceCream = 0;
     }
+    // редкий «Кристалл»: выпадает на месте обычного значка (не темы и не секретной звезды), когда набралось достаточно тем
+    if (crystalPending && crystalTime <= 0 && !shazamBusy() && itemType !== 'secret' && !(CATEGORIES[itemType] && CATEGORIES[itemType].count)) { itemType = 'crystal'; crystalPending = false; }
     if (typeof shazamBlockedType === 'function' && shazamBlockedType(itemType)) itemType = 'question';   // в ШАЗАМе щит, заморозка и т.п. на пути не появляются
     lastSpawnedItemType = itemType;
     const tokenRadius = 26;

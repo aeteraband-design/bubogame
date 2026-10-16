@@ -244,6 +244,7 @@ function update() {
         shieldHitPower *= Math.pow(0.9, dtMult);
     }
 
+    crystalUpdate(currentSpeed, activeSqueeze);   // эффект «Кристаллы»
     for (let i = items.length - 1; i >= 0; i--) {
         const it = items[i];
 
@@ -359,6 +360,8 @@ function update() {
                 updateStaminaHUD(); StorageManager.save();
                 it.pendingFX = { target: 'stamina', text: '+5% Сил', color: '#F4B942', icon: 'fa-beer-mug-empty' };
                 it.extraFX = registerDrink();
+            } else if (it.type === 'crystal') {
+                it.pendingFX = registerCrystal();   // 10 с: из труб падают светящиеся кристаллы
             } else if (it.type === 'icecream') {
                 AudioFX.playCollect(true);
                 stamina = Math.min(maxStamina, stamina + 15.0);
@@ -434,6 +437,7 @@ function update() {
                 const maxLimit = cat.count;
                 if (collected[it.type] < maxLimit) {
                     collected[it.type]++;
+                    crystalOnTheme();   // редкий значок «Кристаллы»: считаем собранные темы
                     const labelText = collected[it.type] === maxLimit ? `+1 ${cat.name} (${maxLimit}/${maxLimit})` : `+1 ${cat.name}`;
                     it.pendingFX = { target: it.type, text: labelText, color: cat.color, icon: cat.faClass };
                     updateCollectionHUD();
@@ -485,6 +489,7 @@ function buffKeyForLabel(t) {
     if (/^Ускорение \d+с$/i.test(t)) return shazamBusy() ? 'shazam' : 'speed';   
     if (/^ШАЗАМ \d+с$/i.test(t)) return 'shazam';   // в ШАЗАМе подсказка улетает в таймер ШАЗАМа
     if (/^Замедление \d+с$/i.test(t)) return 'slow';
+    if (/^Кристаллы \d+с$/i.test(t)) return 'crystal';
     if (/переели/i.test(t)) return 'overeat';
     if (/замёрзли|замерзли/i.test(t)) return 'freeze';
     if (/опьянели/i.test(t)) return 'drunk';
@@ -547,7 +552,7 @@ function updateBuffHUD() {
     const bar = document.getElementById('buffBar');
     if (!bar) return;
     const sig = Math.ceil(shieldTime / 60) + Math.ceil(infiniteStaminaTime / 60) * 31 + Math.ceil(compressionTime / 60) * 961 + Math.ceil(speedBoostTime / 60) * 29791 +
-                Math.ceil(slowMotionTime / 60) * 923521 + Math.ceil(overeatTime / 60) * 28629151 + Math.ceil(freezeTime / 60) * 887503681 + Math.ceil(drunkTime / 60) * 27512614111 + '|' + shazamSecLeft() + (shazamBusy() ? 'b' : '');
+                Math.ceil(slowMotionTime / 60) * 923521 + Math.ceil(overeatTime / 60) * 28629151 + Math.ceil(freezeTime / 60) * 887503681 + Math.ceil(drunkTime / 60) * 27512614111 + Math.ceil(crystalTime / 60) * 3571 + '|' + shazamSecLeft() + (shazamBusy() ? 'b' : '');
     if (sig === lastBuffSig && lastBuffStateKey !== '') return;   // ни одна секунда не сменилась — нечего перерисовывать
     // (при продлении эффекта секунда подскакивает вверх — это тоже смена, проверка ниже сработает сразу)
     lastBuffSig = sig;
@@ -595,6 +600,13 @@ function updateBuffHUD() {
             key: 'overeat', left: overeatTime, text: `ПЕРЕЕДАНИЕ: ${Math.ceil(overeatTime / 60)}с`,
             color: '#FB923C',
             icon: 'fa-burger'
+        });
+    }
+    if (crystalTime > 0) {
+        activeBuffs.push({
+            key: 'crystal', left: crystalTime, text: `КРИСТАЛЛЫ: ${Math.ceil(crystalTime / 60)}с`,
+            color: '#8FE9FF',
+            svgIcon: `<svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="#8FE9FF"><polygon points="12,0.5 14.6,9.4 21.5,12 14.6,14.6 12,23.5 9.4,14.6 2.5,12 9.4,9.4"/></svg>`
         });
     }
     if (freezeTime > 0) {
@@ -724,6 +736,7 @@ function resetOvereatDrunk() {
     overeatTime = 0; drunkTime = 0;
     currentOvereatFactor = 0; currentDrunkFactor = 0;
     iceCreamCount = 0; freezeTime = 0; currentFreezeFactor = 0;
+    crystalReset();
     owl.spinAngle = 0; owl.spinVel = 0;
     owl.drunkOffset = 0;
     owl.radius = owl.baseRadius;

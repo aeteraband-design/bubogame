@@ -330,6 +330,7 @@ const CATEGORIES = {
     stamina:      { name: 'Перо силы',  color: '#67E8F9', iconCode: '\uf56b', faClass: 'fa-feather-pointed' },
     drink:        { name: 'Коктейль',   color: '#2DD4BF', iconCode: '\uf561', faClass: 'fa-martini-glass-citrus' },
     mocktail:     { name: 'Пиво',       color: '#F4B942', iconCode: '\uf0fc', faClass: 'fa-beer-mug-empty' },
+    crystal:      { name: 'Кристаллы',  color: '#8FE9FF', faClass: 'fa-gem' },
     icecream:     { name: 'Мороженое',  color: '#B5E4FF', iconCode: '\uf810', faClass: 'fa-ice-cream' },
     heart:        { name: 'Жизнь',      color: '#EF4444', iconCode: '\uf004', faClass: 'fa-heart' },
     pizza:        { name: 'Пицца',      color: '#F97316', iconCode: '\uf818', faClass: 'fa-pizza-slice' },

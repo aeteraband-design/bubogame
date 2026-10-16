@@ -12,22 +12,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BUBOGAME v0.10</title>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.12.8">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.12.9">
     <!-- Onest: локальные файлы -->
-    <link rel="stylesheet" href="css/fonts.css?v=0.12.8">
+    <link rel="stylesheet" href="css/fonts.css?v=0.12.9">
 
-    <script src="js/music-hold.js?v=0.12.8"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.12.8">
+    <script src="js/music-hold.js?v=0.12.9"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.12.9">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.12.8" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.12.9" id="adminStyle">
     <!-- Tailwind: готовый файл стилей вместо онлайн-компилятора (тот следил за каждым изменением страницы и пересобирал стили прямо во время игры) -->
-    <link rel="stylesheet" href="css/tailwind.css?v=0.12.8">
+    <link rel="stylesheet" href="css/tailwind.css?v=0.12.9">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.12.8">
-    <link rel="stylesheet" href="css/features.css?v=0.12.8">
+    <link rel="stylesheet" href="css/boot.css?v=0.12.9">
+    <link rel="stylesheet" href="css/features.css?v=0.12.9">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -43,9 +43,9 @@
             </div>
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
-        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.12.8</div>
+        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.12.9</div>
     </div>
-    <script src="js/boot.js?v=0.12.8"></script>
+    <script src="js/boot.js?v=0.12.9"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 backdrop-blur-[7px] overflow-y-auto custom-scroll">
@@ -424,6 +424,10 @@
                             <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#E3F5FF">Замерзание (<span data-pl="freezeSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> если съесть <span data-pl="freezeEvery" data-forms="порцию|порции|порций">3 порции</span> мороженого, сова замерзает: синеет, кувыркается, как ледышка, и слушается с трудом.</span>
                         </div>
                         <div class="flex items-center space-x-3.5">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#8FE9FF26;border-color:#8FE9FF4D;color:#8FE9FF"><i class="fa-solid fa-gem text-base sm:text-lg font-black "></i></div>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#BFF3FF">Кристаллы (10 секунд):</strong> очень редкий значок. Из труб начинают падать светящиеся кристаллы: свет ранит сову и отнимает пол-жизни. Щит их отбивает, а в ШАЗАМе они не страшны.</span>
+                        </div>
+                        <div class="flex items-center space-x-3.5">
                             <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FFD70026;border-color:#FFD7004D;color:#FFD700"><i class="fa-solid fa-star text-base sm:text-lg font-black "></i></div>
                             <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#FDE047">Секретная звезда:</strong> внутри случайный сюрприз. Штраф может отнять сердце, силы или собранную тему. Чем выше сложность, тем чаще штраф: в начале — 3 раза из 10, на Хард+ — всегда.</span>
                         </div>
@@ -714,20 +718,21 @@
         </div>
     </div>
 
-    <script src="js/audio.js?v=0.12.8"></script>
-    <script src="js/game-core.js?v=0.12.8"></script>
-    <script src="js/owl.js?v=0.12.8"></script>
-    <script src="js/hud.js?v=0.12.8"></script>
-    <script src="js/scenery.js?v=0.12.8"></script>
-    <script src="js/items.js?v=0.12.8"></script>
-    <script src="js/shazam.js?v=0.12.8"></script>
-    <script src="js/weather.js?v=0.12.8"></script>
-    <script src="js/update.js?v=0.12.8"></script>
-    <script src="js/render.js?v=0.12.8"></script>
-    <script src="js/wheel.js?v=0.12.8"></script>
-    <script src="js/ui.js?v=0.12.8"></script>
-<script src="js/admin.js?v=0.12.8"></script>
-<script src="js/text-measure.js?v=0.12.8"></script>
-<script src="js/fullscreen.js?v=0.12.8"></script>
+    <script src="js/audio.js?v=0.12.9"></script>
+    <script src="js/game-core.js?v=0.12.9"></script>
+    <script src="js/owl.js?v=0.12.9"></script>
+    <script src="js/hud.js?v=0.12.9"></script>
+    <script src="js/scenery.js?v=0.12.9"></script>
+    <script src="js/items.js?v=0.12.9"></script>
+    <script src="js/shazam.js?v=0.12.9"></script>
+    <script src="js/crystals.js?v=0.12.9"></script>
+    <script src="js/weather.js?v=0.12.9"></script>
+    <script src="js/update.js?v=0.12.9"></script>
+    <script src="js/render.js?v=0.12.9"></script>
+    <script src="js/wheel.js?v=0.12.9"></script>
+    <script src="js/ui.js?v=0.12.9"></script>
+<script src="js/admin.js?v=0.12.9"></script>
+<script src="js/text-measure.js?v=0.12.9"></script>
+<script src="js/fullscreen.js?v=0.12.9"></script>
 </body>
 </html>

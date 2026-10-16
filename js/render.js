@@ -189,6 +189,7 @@ function drawScene() {
     });
 
     items.forEach(drawToken);
+    drawCrystals();   // падающие кристаллы
 
     drawParticleList(particles);
 

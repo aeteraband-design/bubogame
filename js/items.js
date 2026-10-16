@@ -200,6 +200,9 @@ function drawToken(item) {
         ctx.stroke();
 
         ctx.restore();
+    } else if (item.type === 'crystal') {
+        ctx.shadowBlur = 0;
+        drawCrystalIcon(ctx, frame / 60, item.floatOffset || 0);   // светящийся кристалл с шипами
     } else if (item.type === 'infinite') {
         ctx.save();
         ctx.shadowBlur = 9;
