@@ -56,11 +56,13 @@ function crystalSprite() {
     const g = c.getContext('2d');
     g.scale(S, S); g.translate(W / 2, W / 2);
     const h = g.createRadialGradient(0, 0, 2, 0, 0, W / 2);
-    h.addColorStop(0, 'rgba(255, 150, 90, 0.95)'); h.addColorStop(0.22, 'rgba(255, 70, 50, 0.55)'); h.addColorStop(0.55, 'rgba(255, 30, 40, 0.16)'); h.addColorStop(1, 'rgba(255, 0, 30, 0)');
+    // ореол: от оранжевого у шара к красному по краям
+    h.addColorStop(0, 'rgba(255, 140, 50, 0.95)'); h.addColorStop(0.22, 'rgba(255, 70, 40, 0.55)'); h.addColorStop(0.55, 'rgba(230, 20, 40, 0.18)'); h.addColorStop(1, 'rgba(200, 0, 30, 0)');
     g.fillStyle = h; g.beginPath(); g.arc(0, 0, W / 2, 0, Math.PI * 2); g.fill();
-    const b = g.createRadialGradient(0, 0, 0.5, 0, 0, 6.5);
-    b.addColorStop(0, '#FFFFFF'); b.addColorStop(0.35, '#FFF1C2'); b.addColorStop(0.7, '#FF8A3D'); b.addColorStop(1, 'rgba(255, 60, 40, 0)');
-    g.fillStyle = b; g.beginPath(); g.arc(0, 0, 6.5, 0, Math.PI * 2); g.fill();
+    // сам огонёк: светится изнутри жёлто-оранжевым, к краям плавно уходит в красный — как пламя на значке
+    const b = g.createRadialGradient(0, 0, 0.3, 0, 0, 7.5);
+    b.addColorStop(0, '#FFF6C8'); b.addColorStop(0.2, '#FFD35A'); b.addColorStop(0.45, '#FF9A2E'); b.addColorStop(0.72, '#FF4A2A'); b.addColorStop(1, 'rgba(210, 20, 40, 0)');
+    g.fillStyle = b; g.beginPath(); g.arc(0, 0, 7.5, 0, Math.PI * 2); g.fill();
     return (__orbSpr = c);
 }
 function drawCrystals() {
