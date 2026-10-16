@@ -256,17 +256,50 @@ function stormSkyGrad() {
 function stormStarK() { return 1 - 0.85 * stormSmooth(0, 0.85, stormCover); }
 
 // Задний план: грозовое небо, тучи, зарницы и разряды (всё позади домов). Вызывается после луны, до города
+// Освещение луной: слой туч рисуется на отдельный холст, поверх (только по самим тучам) — тень везде,
+// светлое лунное пятно вокруг луны (сторона туч к луне светлее) и затемнение книзу. Потом слой целиком кладётся на сцену.
+function stormLitLayer(k, drawFn) {
+    const main = ctx, cv = main.canvas;
+    let L = STORM.litCv;
+    if (!L) { L = STORM.litCv = document.createElement('canvas'); STORM.litCtx = L.getContext('2d'); }
+    if (L.width !== cv.width || L.height !== cv.height) { L.width = cv.width; L.height = cv.height; }
+    const g = STORM.litCtx, T = main.getTransform();
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.clearRect(0, 0, L.width, L.height);
+    g.setTransform(T);
+    ctx = g;
+    try { drawFn(); } finally { ctx = main; }
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-atop';
+    // общая тень
+    g.fillStyle = `rgba(22, 12, 42, ${0.45 * k})`; g.fillRect(-50, -50, width + 100, height + 100);
+    // лунный свет: мягкое светлое пятно с центром в луне
+    const mp = window.__moonPos;
+    const mx = mp ? mp[0] + mp[2] / 2 : width * 0.8, my = mp ? mp[1] + mp[2] / 2 : height * 0.18;
+    const R = Math.max(width, height) * 0.75;
+    const rg = g.createRadialGradient(mx, my, 0, mx, my, R);
+    rg.addColorStop(0, `rgba(236, 226, 255, ${0.82 * k})`); rg.addColorStop(0.18, `rgba(206, 190, 240, ${0.62 * k})`);
+    rg.addColorStop(0.45, `rgba(150, 128, 200, ${0.3 * k})`); rg.addColorStop(1, 'rgba(120, 100, 170, 0)');
+    g.fillStyle = rg; g.fillRect(-50, -50, width + 100, height + 100);
+    // книзу тучи темнее
+    const vg = g.createLinearGradient(0, height * 0.12, 0, height * 0.6);
+    vg.addColorStop(0, 'rgba(18, 8, 34, 0)'); vg.addColorStop(1, `rgba(18, 8, 34, ${0.55 * k})`);
+    g.fillStyle = vg; g.fillRect(-50, -50, width + 100, height + 100);
+    g.globalCompositeOperation = 'source-over';
+    main.save(); main.setTransform(1, 0, 0, 1, 0, 0); main.globalAlpha = 1; main.drawImage(L, 0, 0); main.restore();
+}
 function stormDrawBack() {
     const si = Math.max(0, stormIntensity), cv = stormCover;
     if (cv < 0.005 && !(STORM.cl && stormCloudsAny(STORM.cl))) return;
     const ck = Math.max(0.3, stormSmooth(0.05, 0.9, cv));
     {
         const spr = stormBuildClouds(), L = stormCloudSet(), yb = stormCloudBottom(), first = !L.init; L.init = true;
-        stormDrawCloudLayer(L.low, spr.far, (r) => height * (0.34 + r * 0.17), cv, si, 0.9, 0, first, spr.farLit);   // за домами, у горизонта
-        stormDrawCloudLayer(L.far, spr.far, (r) => 20 + r * Math.max(10, yb - 70), cv, si, 0.9, 0, first, spr.farLit);
+        // тучи рисуются слоями на отдельный холст и освещаются луной целиком: у луны светлые, к краям и вниз темнеют
+        stormLitLayer(0.85, () => {
+            stormDrawCloudLayer(L.low, spr.far, (r) => height * (0.34 + r * 0.17), cv, si, 0.9, 0, first, null);   // за домами, у горизонта
+            stormDrawCloudLayer(L.far, spr.far, (r) => 20 + r * Math.max(10, yb - 70), cv, si, 0.9, 0, first, null);
+        });
         // зарница внутри туч и сам разряд — между дальним и ближним слоем туч
         if (STORM.flash > 0.01) stormDrawFlashBack(yb);
-        stormDrawCloudLayer(L.near, spr.near, (r) => -12 + r * Math.max(10, yb - 40), cv, si, 0.97, 0, first, spr.nearLit);
+        stormLitLayer(1, () => stormDrawCloudLayer(L.near, spr.near, (r) => -12 + r * Math.max(10, yb - 40), cv, si, 0.97, 0, first, null));
         // луна сквозь плотные тучи лишь иногда проглядывает: то чуть видна, то почти скрыта
         const mp = window.__moonPos;
         if (mp && moonSprite && cv > 0.01) {
