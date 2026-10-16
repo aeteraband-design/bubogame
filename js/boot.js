@@ -121,7 +121,7 @@
             function dismiss() {
                 if (dismissed || !ready) return; dismissed = true;
                 exitT0 = performance.now();   // сова улетает вправо, как в ШАЗАМе; экран гаснет следом
-                try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); AudioFX.playShazamLaunch(); } } catch (e) {}
+                try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); AudioFX.playFlap(); } } catch (e) {}   // мягкий взмах, без резкого звука ШАЗАМа
                 setTimeout(finishDismiss, 520);
             }
             function finishDismiss() {

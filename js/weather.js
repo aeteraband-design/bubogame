@@ -39,14 +39,20 @@ function wxDt() {   // настоящие секунды с прошлого к�
     return STORM.rdt;
 }
 function wxTick() {
-    if (!gameActive || document.hidden) return;
+    if (document.hidden) return;
     const dt = STORM.rdt, F = wxFreq();
-    if (WX.left < 0) {   // первый полёт: либо игра начинается сразу в дождь, либо случайная пауза (может и не дождаться за всю игру)
+    // решаем сразу, как только открылся экран игры (ещё до первого тапа): если игра начинается в дождь —
+    // тучи уже на месте, дождь идёт и шумит с первой секунды
+    if (WX.left < 0) {
         if (Math.random() < F.none) WX.left = 1e9;   // в этой игре грозы не будет
-        else if (Math.random() < F.start) { wxStart(); stormCover = 1; stormIntensity = WX.peak; STORM.fade = 1; }
+        else if (Math.random() < F.start) {
+            wxStart(); stormCover = 1; stormIntensity = WX.peak; STORM.fade = 1;
+            STORM.cl = null; STORM.sndFast = true; STORM.wet = 1;   // тучи расставятся сразу по всему небу, звук — без нарастания
+        }
         else WX.left = wxRand(F.first[0], F.first[1]);
         return;
     }
+    if (!gameActive) return;   // дальше время грозы идёт только в полёте
     WX.left -= dt;
     if (WX.left > 0) return;
     if (WX.on) { WX.on = false; WX.left = wxRand(F.gap[0], F.gap[1]) + WX.FADE + 5; }
@@ -116,13 +122,13 @@ function stormUpdate() {
     // звук: ветер и дождь плавно нарастают с грозой (только в полёте)
     if ((STORM.sndT -= dtMult) <= 0) {
         STORM.sndT = 12;
-        const on = gameActive && !document.hidden;
+        const on = (gameActive || (typeof waitingFirstTap !== 'undefined' && waitingFirstTap)) && !document.hidden;
         // звук затихает вместе с видимым дождём: почти нет капель — звука нет совсем
         const dropsK = Math.min(1, STORM.drops.length / 40);
         const r = on ? rainK * dropsK : 0, w = on ? stormSmooth(0.2, 1, si) * Math.min(1, dropsK + (si > 0.5 ? 1 : 0)) : 0;
         if (Math.abs(r - STORM.sndRain) > 0.002 || Math.abs(w - STORM.sndWind) > 0.002 || (r === 0 && STORM.sndRain !== 0)) {
             STORM.sndRain = r; STORM.sndWind = w;
-            try { AudioFX.weatherSet(r, w); } catch (e) {}
+            try { AudioFX.weatherSet(r, w, STORM.sndFast && r > 0); if (r > 0) STORM.sndFast = false; } catch (e) {}
         }
     }
 }

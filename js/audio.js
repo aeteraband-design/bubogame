@@ -1036,15 +1036,15 @@ const AudioFX = {
         rs.start(t, 0.37); ws.start(t, 2.1); l1.start(t); l2.start(t);
         this._wx = { rg, wg, lp };
     },
-    weatherSet(rain, wind) {
+    weatherSet(rain, wind, fast) {
         if (!this.ctx) return;
         if (!this._wx) { if (rain <= 0 && wind <= 0) return; this._weatherInit(); }
         const t = this.ctx.currentTime;
         this._wx.rg.gain.cancelScheduledValues(t); this._wx.wg.gain.cancelScheduledValues(t);
         // громкость по силе дождя: морось — тихий мягкий шелест, ливень — громко и звонко; меняется плавно (~3–4 с)
-        this._wx.rg.gain.setTargetAtTime(rain < 0.015 ? 0 : 0.1 * Math.pow(rain, 1.7), t, 1.2);
+        this._wx.rg.gain.setTargetAtTime(rain < 0.015 ? 0 : 0.1 * Math.pow(rain, 1.7), t, fast ? 0.15 : 1.2);   // игра началась в дождь — шум сразу
         this._wx.lp.frequency.cancelScheduledValues(t); this._wx.lp.frequency.setTargetAtTime(2400 + 4400 * rain, t, 1.2);
-        this._wx.wg.gain.setTargetAtTime(wind < 0.015 ? 0 : wind * 0.11, t, 1.6);
+        this._wx.wg.gain.setTargetAtTime(wind < 0.015 ? 0 : wind * 0.11, t, fast ? 0.2 : 1.6);
     },
     // далёкий гром: глухой низкий раскат с запаздыванием после вспышки (чем дальше, тем позже и тише)
     playThunder(delay, power) {
