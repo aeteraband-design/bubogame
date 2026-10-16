@@ -917,8 +917,9 @@ function drawPipe(pipe) {
         const br = 0.75 + 0.25 * Math.sin(frame * 0.07 + pipe.x * 0.01);
         ctx.globalCompositeOperation = 'lighter';
         for (const [my, dir] of [[effectiveTop, 1], [bottomY, -1]]) {
-            ctx.save(); ctx.translate(pipe.width / 2, my); ctx.scale(1, 0.6);
-            const R = pipe.width * 0.85, rg = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
+            // ширина пятна — ровно по шляпке (по краям свет гаснет до нуля, без обрезов), вытянуто в проём
+            ctx.save(); ctx.translate(pipe.width / 2, my); ctx.scale(1, 1.25);
+            const R = capW / 2, rg = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
             rg.addColorStop(0, `rgba(255, 110, 70, ${0.42 * redK * br})`); rg.addColorStop(0.45, `rgba(255, 60, 50, ${0.16 * redK * br})`); rg.addColorStop(1, 'rgba(255, 40, 40, 0)');
             ctx.globalAlpha = 1; ctx.fillStyle = rg;
             ctx.beginPath(); ctx.arc(0, 0, R, dir > 0 ? 0 : Math.PI, dir > 0 ? Math.PI : Math.PI * 2); ctx.fill();
