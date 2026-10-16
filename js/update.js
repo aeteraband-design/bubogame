@@ -204,7 +204,7 @@ function update() {
 
         if (shazamBusy()) {
             // ШАЗАМ: сова пролетает трубы насквозь (то за трубой, то перед ней)
-        } else if (shieldTime <= 0 && invulnerableTime <= 0) {
+        } else if (shieldTime <= 0 && invulnerableTime <= 0 && !p.shzPass) {   // shzPass — труба, которую облетали в ШАЗАМе
             const effectiveTop = p.top + activeSqueeze;
             const effectiveBottom = p.bottom + activeSqueeze;
             if (owl.x + owl.radius > p.x && owl.x - owl.radius < p.x + p.width && (owl.y - owl.radius < effectiveTop || owl.y + owl.radius > height - effectiveBottom)) {

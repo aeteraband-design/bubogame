@@ -126,6 +126,8 @@ function shazamEnd() {
     SHZ.state = 'idle'; SHZ.left = 0;
     // если эффект кончился, когда сова внутри трубы, — даём секунду неуязвимости, чтобы спокойно вылететь
     for (const p of pipes) if (owl.x + owl.radius > p.x && owl.x - owl.radius < p.x + p.width) { invulnerableTime = Math.max(invulnerableTime, 60); p.shieldPass = true; }
+    // трубы, которые уже рядом (сова их облетала или вот-вот облетит), до конца пролетаются насквозь — врезаться можно только в новые
+    for (const p of pipes) if (p.x < owl.x + 220) p.shzPass = true;
     try { AudioFX.playShazamEnd(); AudioFX.onSpeedChanged(); } catch (e) {}
 }
 
@@ -185,9 +187,9 @@ function shazamUpdate() {
     // плавные величины для рисования
     const on = SHZ.state === 'active', intro = SHZ.state === 'intro';
     const ease = (v, tgt, sp) => v + (tgt - v) * Math.min(1, sp * dtMult);
-    SHZ.k = ease(SHZ.k, on ? 1 : (intro ? 0.35 + 0.65 * Math.min(1, SHZ.t / SHZ.INTRO) : 0), on || intro ? 0.08 : 0.04);
+    SHZ.k = ease(SHZ.k, on ? Math.min(1, SHZ.left / 90) : (intro ? 0.35 + 0.65 * Math.min(1, SHZ.t / SHZ.INTRO) : 0), on || intro ? 0.08 : 0.04);
     SHZ.shieldK = 0;   // щит в ШАЗАМе не меняется
-    SHZ.blur = ease(SHZ.blur, on ? (SHZ.t < 50 ? 1 : 0.55) : 0, on ? 0.1 : 0.04);
+    SHZ.blur = ease(SHZ.blur, on ? (SHZ.t < 50 ? 1 : 0.55 * Math.min(1, SHZ.left / 90)) : 0, on ? 0.1 : 0.04);
 
     // трубы: по очереди — за трубой, перед трубой
     SHZ.depthBack = 0; SHZ.depthFront = 0;
