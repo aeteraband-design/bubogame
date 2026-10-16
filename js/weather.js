@@ -44,6 +44,18 @@ function wxTick() {
     // решаем сразу, как только открылся экран игры (ещё до первого тапа): если игра начинается в дождь —
     // тучи уже на месте, дождь идёт и шумит с первой секунды
     if (WX.left < 0) {
+        // продолжение сохранённой игры: погода — та же, что была, когда вышли (дождём внезапно не начинается)
+        let themes = 0; try { themes = getTotalCollectedThemes(); } catch (e) {}
+        if (themes > 0) {
+            let sv = null; try { sv = JSON.parse(localStorage.getItem('bubo_wx') || 'null'); } catch (e) {}
+            if (sv && typeof sv.left === 'number') {
+                WX.on = !!sv.on; WX.left = sv.left; WX.peak = sv.peak || 0.7;
+                stormCover = sv.cover || 0; stormIntensity = sv.si || 0; STORM.fade = sv.fade || 0; STORM.wet = sv.wet || 0;
+                STORM.cl = null; STORM.sndFast = stormIntensity > 0.2;
+            } else WX.left = wxRand(F.first[0], F.first[1]);   // старое сохранение без погоды — ясно, гроза позже, как обычно
+            return;
+        }
+        try { localStorage.removeItem('bubo_wx'); } catch (e) {}   // новая игра — своя случайная погода
         if (Math.random() < F.none) WX.left = 1e9;   // в этой игре грозы не будет
         else if (Math.random() < F.start) {
             wxStart(); stormCover = 1; stormIntensity = WX.peak; STORM.fade = 1;
@@ -53,6 +65,11 @@ function wxTick() {
         return;
     }
     if (!gameActive) return;   // дальше время грозы идёт только в полёте
+    // раз в ~2 с запоминаем погоду, чтобы при продолжении игры она была той же
+    if ((STORM.saveT = (STORM.saveT || 0) + dt) > 2) {
+        STORM.saveT = 0;
+        try { localStorage.setItem('bubo_wx', JSON.stringify({ on: WX.on, left: WX.left, peak: WX.peak, cover: stormCover, si: Math.max(0, stormIntensity), fade: STORM.fade || 0, wet: STORM.wet || 0 })); } catch (e) {}
+    }
     WX.left -= dt;
     if (WX.left > 0) return;
     if (WX.on) { WX.on = false; WX.left = wxRand(F.gap[0], F.gap[1]) + WX.FADE + 5; }
