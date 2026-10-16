@@ -164,16 +164,17 @@ function stormCloudSet() {
     STORM.clW = width;
     return STORM.cl;
 }
-function stormDrawCloudLayer(list, spr, yOf, ck, si, alpha) {
+function stormDrawCloudLayer(list, spr, yOf, ck, si, alpha, lag = 0) {
     const spd = 1 + 2.2 * si;
     for (const c of list) {
         c.x -= c.sp * spd * dtMult;
         if (c.x < -CLOUD_W * c.k) c.x = width + 60 + Math.random() * 60;
-        const a = alpha * stormSmooth(c.t, c.t + 0.18, ck);
-        if (a < 0.01) continue;
-        const y = yOf(c.yr);
-        ctx.globalAlpha = a;
-        ctx.drawImage(spr, c.x - CLOUD_OX * c.k, y - CLOUD_OY * c.k, CLOUD_W * c.k, CLOUD_H * c.k);
+        // туча не проявляется, а съезжает сверху из-за края экрана на своё место (и так же уезжает обратно); нижний слой подтягивается позже
+        const p = stormSmooth(c.t * 0.7 + lag, c.t * 0.7 + lag + 0.3, ck);
+        if (p < 0.001) continue;
+        const y = yOf(c.yr), top = y + (CLOUD_H - CLOUD_OY) * c.k;
+        ctx.globalAlpha = alpha;
+        ctx.drawImage(spr, c.x - CLOUD_OX * c.k, y - (1 - p) * top - CLOUD_OY * c.k, CLOUD_W * c.k, CLOUD_H * c.k);
     }
 }
 
@@ -198,7 +199,7 @@ function stormDrawBack() {
     const ck = stormSmooth(0.05, 0.9, si);
     if (ck > 0.01) {
         const spr = stormBuildClouds(), L = stormCloudSet(), yb = stormCloudBottom();
-        stormDrawCloudLayer(L.low, spr.far, (r) => height * (0.34 + r * 0.17), ck, si, 0.92);   // за домами, у горизонта
+        stormDrawCloudLayer(L.low, spr.far, (r) => height * (0.34 + r * 0.17), ck, si, 0.92, 0.1);   // за домами, у горизонта
         stormDrawCloudLayer(L.far, spr.far, (r) => 20 + r * Math.max(10, yb - 70), ck, si, 0.9);
         // зарница внутри туч и сам разряд — между дальним и ближним слоем туч
         if (STORM.flash > 0.01) stormDrawFlashBack(yb);
