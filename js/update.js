@@ -489,7 +489,7 @@ function buffKeyForLabel(t) {
     if (/^Ускорение \d+с$/i.test(t)) return shazamBusy() ? 'shazam' : 'speed';   
     if (/^ШАЗАМ \d+с$/i.test(t)) return 'shazam';   // в ШАЗАМе подсказка улетает в таймер ШАЗАМа
     if (/^Замедление \d+с$/i.test(t)) return 'slow';
-    if (/^Энергия \d+с$/i.test(t)) return 'crystal';
+    if (/^Опасные трубы \d+с$/i.test(t)) return 'crystal';
     if (/переели/i.test(t)) return 'overeat';
     if (/замёрзли|замерзли/i.test(t)) return 'freeze';
     if (/опьянели/i.test(t)) return 'drunk';
@@ -604,9 +604,9 @@ function updateBuffHUD() {
     }
     if (crystalTime > 0) {
         activeBuffs.push({
-            key: 'crystal', left: crystalTime, text: `ЭНЕРГИЯ: ${Math.ceil(crystalTime / 60)}с`,
-            color: '#FF4D5E',
-            svgIcon: `<svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FF4D5E" opacity="0.35"/><circle cx="12" cy="12" r="7" fill="#FF4D5E"/><circle cx="10" cy="10" r="2.6" fill="#FFE4E6"/></svg>`
+            key: 'crystal', left: crystalTime, text: `ОПАСНЫЕ ТРУБЫ: ${Math.ceil(crystalTime / 60)}с`,
+            color: '#FF6A3D',
+            icon: 'fa-fire'
         });
     }
     if (freezeTime > 0) {

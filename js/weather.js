@@ -196,8 +196,8 @@ function stormCloudSet() {
         for (let i = 0; i < n; i++) a.push({ x: (i + r() * 0.8) / n * (width + 360) - 180, yr: r(), k: kMin + r() * (kMax - kMin), tc: tMin + r() * (tMax - tMin), t: 0, on: false, go: false });
         return a;
     };
-    // low — слой у горизонта, за небоскрёбами; far и near — тучи в верхней части неба. Размер — как у обычных облаков, чуть крупнее
-    STORM.cl = { low: mkL(9, 1.2, 1.7, 15, 20), far: mkL(9, 0.9, 1.3, 12, 16), near: mkL(6, 1.0, 1.4, 9, 12), init: false };
+    // low — слой у горизонта, за небоскрёбами; far и near — тучи в верхней части неба. Тучек много, но каждая небольшая — как обычные облачка
+    STORM.cl = { low: mkL(17, 1.0, 1.45, 15, 20), far: mkL(15, 0.7, 1.05, 12, 16), near: mkL(12, 0.8, 1.15, 9, 12), init: false };
     // порядок появления общий для всех слоёв: сначала одна тучка, потом вторая, третья… — постепенно всё больше
     const all = [...STORM.cl.far, ...STORM.cl.near, ...STORM.cl.low];
     for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }

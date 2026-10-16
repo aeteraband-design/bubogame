@@ -874,7 +874,7 @@ function drawPipe(pipe) {
     ctx.restore();
 
     drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width);   // шляпка — из заготовки (без дорогой обрезки каждый кадр)
-    const redK = typeof crystalRedK === 'number' ? crystalRedK : 0;   // эффект «Энергия»: шляпки плавно краснеют
+    const redK = typeof crystalRedK === 'number' ? crystalRedK : 0;   // эффект «Опасные трубы»: шляпки плавно краснеют
     if (redK > 0.01) { ctx.globalAlpha = redK; drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width, true); ctx.globalAlpha = 1; }
 
     const bottomY = height - effectiveBottom;
