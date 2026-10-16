@@ -906,18 +906,6 @@ function drawPipe(pipe) {
     drawPipeCap(capX, bottomY, capW, capH, capRadius, 2.5, pipe.width);
     if (redK > 0.01) {
         ctx.globalAlpha = redK; drawPipeCap(capX, bottomY, capW, capH, capRadius, 2.5, pipe.width, true);
-        // мягкое свечение из устьев: овальное пятно без границ, слегка дышит
-        const br = 0.75 + 0.25 * Math.sin(frame * 0.07 + pipe.x * 0.01);
-        ctx.globalCompositeOperation = 'lighter';
-        for (const [my, dir] of [[effectiveTop, 1], [bottomY, -1]]) {
-            ctx.save(); ctx.translate(pipe.width / 2, my); ctx.scale(1, 0.55);
-            const rg = ctx.createRadialGradient(0, 0, 0, 0, 0, pipe.width * 0.75);
-            rg.addColorStop(0, `rgba(255, 110, 70, ${0.32 * redK * br})`); rg.addColorStop(0.5, `rgba(255, 60, 50, ${0.12 * redK * br})`); rg.addColorStop(1, 'rgba(255, 40, 40, 0)');
-            ctx.globalAlpha = 1; ctx.fillStyle = rg;
-            ctx.beginPath(); ctx.arc(0, 0, pipe.width * 0.75, dir > 0 ? 0 : Math.PI, dir > 0 ? Math.PI : Math.PI * 2); ctx.fill();
-            ctx.restore();
-        }
-        ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 1;
     }
 

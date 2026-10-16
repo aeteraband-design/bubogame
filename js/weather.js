@@ -197,7 +197,7 @@ function stormCloudSet() {
         return a;
     };
     // low — дальний слой у горизонта (самые маленькие), far — средний, near — ближние вверху (крупнее, сплошь затягивают верх неба)
-    STORM.cl = { low: mkL(18, 0.6, 0.9, 16, 22), far: mkL(20, 0.75, 1.05, 12, 16), near: mkL(16, 1.35, 1.9, 9, 12), init: false };
+    STORM.cl = { low: mkL(32, 0.7, 1.05, 16, 22), far: mkL(20, 0.75, 1.05, 12, 16), near: mkL(16, 1.35, 1.9, 9, 12), init: false };
     // порядок появления общий для всех слоёв: сначала одна тучка, потом вторая, третья… — постепенно всё больше
     const all = [...STORM.cl.far, ...STORM.cl.near, ...STORM.cl.low];
     for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }

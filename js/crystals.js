@@ -71,12 +71,7 @@ function drawCrystals() {
     for (const c of crystals) {
         const a = ghost ? 0.3 : 1;
         if (a <= 0.01) continue;
-        // огненный хвост позади шара
-        const len = Math.min(40, 10 + Math.abs(c.vy) * 6), y0 = c.y - len * c.d;
-        const tg = ctx.createLinearGradient(0, y0, 0, c.y);
-        tg.addColorStop(0, 'rgba(255, 60, 30, 0)'); tg.addColorStop(1, 'rgba(255, 140, 70, 0.7)');
-        ctx.globalAlpha = a; ctx.fillStyle = tg;
-        ctx.beginPath(); ctx.moveTo(c.x - 4, c.y); ctx.lineTo(c.x + 4, c.y); ctx.lineTo(c.x, y0); ctx.closePath(); ctx.fill();
+        ctx.globalAlpha = a;
         const s = 34 * (1 + 0.12 * Math.sin(c.age * 0.45 + c.ph));   // мерцает
         ctx.drawImage(sp, c.x - s / 2, c.y - s / 2, s, s);
     }
@@ -122,10 +117,10 @@ function crystalUpdate(speed, squeeze) {
         for (const p of pipes) {
             if (p.x + p.width < owl.x - 30 || p.x > width - 10) continue;   // трубы на экране впереди и рядом с совой
             if (p._cId !== CRYSTAL.id) { p._cId = CRYSTAL.id; p._cT = 10 + Math.random() * 50; }
-            // из устьев труб изредка вылетают лёгкие блёстки
-            if (Math.random() < 0.06 * dt && particles.length < 450) {
-                const top = Math.random() < 0.5, sx = p.x + 6 + Math.random() * (p.width - 12), sy = top ? p.top + squeeze + 2 : height - (p.bottom + squeeze) - 2;
-                particles.push({ x: sx, y: sy, vx: (Math.random() - 0.5) * 0.6, vy: (top ? 1 : -1) * (0.4 + Math.random() * 0.8), color: Math.random() < 0.6 ? '#FFD27A' : '#FF7A5A', alpha: 0.85, size: 0.8 + Math.random() * 1.1, decay: 0.022 + Math.random() * 0.015, isStar: true });
+            // из устьев труб всё время вылетают крошечные огненные искорки (как вокруг шаров)
+            if (Math.random() < 0.3 * dt && particles.length < 500) {
+                const top = Math.random() < 0.5, sx = p.x + 4 + Math.random() * (p.width - 8), sy = top ? p.top + squeeze + 1 : height - (p.bottom + squeeze) - 1;
+                particles.push({ x: sx, y: sy, vx: (Math.random() - 0.5) * 0.9 - speed * 0.3, vy: (top ? 1 : -1) * (0.5 + Math.random() * 1.1), color: Math.random() < 0.5 ? '#FFD27A' : (Math.random() < 0.6 ? '#FF4A3D' : '#FFFFFF'), alpha: 0.95, size: 0.6 + Math.random() * 0.9, decay: 0.03 + Math.random() * 0.025, isStar: true });
             }
             p._cT -= dt;
             if (p._cT > 0) continue;
@@ -151,8 +146,8 @@ function crystalUpdate(speed, squeeze) {
         if (inGap && particles.length < 450) {
             c.sp = (c.sp || 0) - dt;
             while (c.sp <= 0) {
-                c.sp += 1.2 + Math.random() * 1.2;
-                particles.push({ x: c.x + (Math.random() - 0.5) * 7, y: c.y + (Math.random() - 0.5) * 5, vx: (Math.random() - 0.5) * 1.8 - speed * 0.4, vy: -c.vy * 0.25 + (Math.random() - 0.5) * 1.4, color: Math.random() < 0.55 ? '#FFD27A' : (Math.random() < 0.5 ? '#FF4A3D' : '#FFFFFF'), alpha: 1, size: 1 + Math.random() * 1.6, decay: 0.035 + Math.random() * 0.025, isStar: true });
+                c.sp += 0.5 + Math.random() * 0.6;   // искры сыплются густо и летят назад — получается искрящийся хвост
+                particles.push({ x: c.x + (Math.random() - 0.5) * 6, y: c.y - c.d * Math.random() * 4, vx: (Math.random() - 0.5) * 1.1 - speed * 0.2, vy: -c.vy * (0.35 + Math.random() * 0.4) + (Math.random() - 0.5) * 0.6, color: Math.random() < 0.55 ? '#FFD27A' : (Math.random() < 0.5 ? '#FF4A3D' : '#FFFFFF'), alpha: 1, size: 1 + Math.random() * 1.6, decay: 0.035 + Math.random() * 0.025, isStar: true });
             }
         }
         // пролетел проём и скрылся в противоположной трубе
