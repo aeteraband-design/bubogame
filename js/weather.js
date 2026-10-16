@@ -132,37 +132,48 @@ function stormMakeBolt(x0) {
 }
 
 // ---------- тучи ----------
+// Тучи — те же облака, что плывут по небу в игре (тот же силуэт), только тёмные и крупнее; чем сильнее гроза, тем их больше и гуще
 function stormCloudBottom() { const c = stormSmooth(0.05, 0.9, Math.max(0, stormIntensity)); return 90 + c * height * 0.2; }
 function stormBuildClouds() {
-    const S = Math.min(gfxQuality === 'low' ? 0.75 : 1.1, Math.max(0.6, viewScale * renderScale * 0.6)), key = S.toFixed(2) + '|' + gfxQuality;   // тучи мягкие — хватает пониженного разрешения (меньше памяти и нагрузки)
-    if (STORM.clouds && STORM.cloudKey === key) return STORM.clouds;
+    const S = Math.max(1, viewScale * renderScale), key = S.toFixed(2) + '|' + gfxQuality;
+    if (STORM.cloudSpr && STORM.cloudKey === key) return STORM.cloudSpr;
     STORM.cloudKey = key;
-    const W = 900, H = 260, mk = (seed, col, n, rMin, rMax) => {
-        const c = document.createElement('canvas'); c.width = Math.ceil(W * S); c.height = Math.ceil(H * S);
-        const g = c.getContext('2d'); g.scale(S, S);
-        let s = seed; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
-        for (let i = 0; i < n; i++) {
-            const x = r() * W, rad = rMin + r() * (rMax - rMin), y = rad + r() * Math.max(0, H - 2 * rad - 2);   // целиком внутри холста — без обрезанного края снизу
-            for (const dx of [-W, 0, W]) {   // по краям — копии, чтобы лента склеивалась без шва
-                if (x + dx + rad < 0 || x + dx - rad > W) continue;
-                const gr = g.createRadialGradient(x + dx, y, rad * 0.1, x + dx, y, rad);
-                gr.addColorStop(0, col[0]); gr.addColorStop(0.55, col[1]); gr.addColorStop(1, 'rgba(0,0,0,0)');
-                g.fillStyle = gr; g.beginPath(); g.arc(x + dx, y, rad, 0, Math.PI * 2); g.fill();
-            }
-        }
-        return { c, W, H };
-    };
-    STORM.clouds = {
-        far: mk(11, ['rgba(92, 106, 140, 0.9)', 'rgba(58, 70, 100, 0.55)'], 50, 45, 95),
-        near: mk(29, ['rgba(58, 68, 96, 0.95)', 'rgba(32, 40, 60, 0.7)'], 44, 55, 120)
-    };
-    return STORM.clouds;
+    const mk = (c0, c1) => makeSprite(CLOUD_W, CLOUD_H, S, (c) => {
+        c.translate(CLOUD_OX, CLOUD_OY);
+        const g = c.createLinearGradient(0, -30, 0, 30);
+        g.addColorStop(0, c0); g.addColorStop(1, c1);
+        c.fillStyle = g;
+        c.beginPath();
+        c.arc(0, 0, 26, 0, Math.PI * 2); c.arc(26, -10, 32, 0, Math.PI * 2); c.arc(58, -4, 24, 0, Math.PI * 2); c.arc(38, 10, 22, 0, Math.PI * 2);
+        c.fill();
+    });
+    STORM.cloudSpr = { far: mk('rgba(84, 96, 140, 0.95)', 'rgba(52, 62, 100, 0.9)'), near: mk('rgba(56, 66, 104, 0.98)', 'rgba(30, 38, 66, 0.95)') };
+    return STORM.cloudSpr;
 }
-function stormDrawCloudLayer(L, off, yBottom, sy, alpha) {
-    const h = L.H * sy, y = yBottom - h + 30 * sy;
-    ctx.globalAlpha = alpha;
-    const o = ((off % L.W) + L.W) % L.W;
-    for (let x = -o; x < width; x += L.W) ctx.drawImage(L.c, x, y, L.W, h);
+// набор туч: у каждой своя «пороговая» сила грозы, с которой она появляется; положение и размер заданы заранее
+function stormCloudSet() {
+    if (STORM.cl && STORM.clW === width) return STORM.cl;
+    let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    const mkL = (n, kMin, kMax, spMin, spMax) => {
+        const a = [];
+        for (let i = 0; i < n; i++) a.push({ x: (i + r() * 0.8) / n * (width + 360) - 180, yr: r(), k: kMin + r() * (kMax - kMin), sp: spMin + r() * (spMax - spMin), t: (i % n) / n * 0.8 * (0.6 + r() * 0.4) });
+        return a;
+    };
+    STORM.cl = { far: mkL(11, 1.1, 1.7, 0.10, 0.2), near: mkL(9, 1.5, 2.3, 0.2, 0.38) };
+    STORM.clW = width;
+    return STORM.cl;
+}
+function stormDrawCloudLayer(list, spr, yBottom, ck, si, alpha) {
+    const spd = 1 + 2.2 * si;
+    for (const c of list) {
+        c.x -= c.sp * spd * dtMult;
+        if (c.x < -CLOUD_W * c.k) c.x = width + 60 + Math.random() * 60;
+        const a = alpha * stormSmooth(c.t, c.t + 0.18, ck);
+        if (a < 0.01) continue;
+        const y = 20 + c.yr * Math.max(10, yBottom - 50);
+        ctx.globalAlpha = a;
+        ctx.drawImage(spr, c.x - CLOUD_OX * c.k, y - CLOUD_OY * c.k, CLOUD_W * c.k, CLOUD_H * c.k);
+    }
 }
 
 // Грозовое небо: цвета неба плавно уходят в глубокие сине-серые тона (сам градиент неба пересобирается при заметном изменении — без лишнего слоя поверх)
@@ -185,15 +196,14 @@ function stormDrawBack() {
     if (si < 0.01) return;
     const ck = stormSmooth(0.05, 0.9, si);
     if (ck > 0.01) {
-        const C = stormBuildClouds(), yb = stormCloudBottom(), sy = 0.7 + 0.5 * ck;
-        STORM.offFar += (0.08 + 0.3 * si) * dtMult; STORM.offNear += (0.16 + 0.6 * si) * dtMult;
-        stormDrawCloudLayer(C.far, STORM.offFar, yb - 26, sy * 0.9, 0.85 * ck);
+        const spr = stormBuildClouds(), L = stormCloudSet(), yb = stormCloudBottom();
+        stormDrawCloudLayer(L.far, spr.far, yb - 20, ck, si, 0.9);
         // зарница внутри туч и сам разряд — между дальним и ближним слоем туч
         if (STORM.flash > 0.01) stormDrawFlashBack(yb);
-        stormDrawCloudLayer(C.near, STORM.offNear, yb, sy, 0.92 * ck);
+        stormDrawCloudLayer(L.near, spr.near, yb, ck, si, 0.95);
         // луна видна всегда: поверх туч рисуем её ещё раз — тучи закрывают её не больше чем на ~30%
         const mp = window.__moonPos;
-        if (mp && moonSprite) { ctx.globalAlpha = Math.min(1, ck * 0.75); ctx.drawImage(moonSprite, mp[0], mp[1], mp[2], mp[2]); }
+        if (mp && moonSprite) { ctx.globalAlpha = Math.min(1, ck * 0.8); ctx.drawImage(moonSprite, mp[0], mp[1], mp[2], mp[2]); }
         // вспышка подсвечивает и ближние тучи
         if (STORM.flash > 0.01) {
             ctx.globalCompositeOperation = 'lighter';
