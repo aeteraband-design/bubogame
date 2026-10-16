@@ -319,6 +319,23 @@ const AudioFX = {
         osc.connect(lp); lp.connect(g); g.connect(this.sfxGain || ctx.destination);
         osc.start(t); osc.stop(t + dur + 0.05);
     },
+    playPipesHeat() {     // «Опасные трубы» включились: трубы накаляются — нарастающее огненное «вуух», низкий гул и треск искр
+        try {
+            if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime + 0.02;
+            this._noiseBand(t, 1.1, 280, 1600, 1.1, 0.11, 0.55);
+            this._toneSweep(t, 1.1, 55, 120, 300, 900, 0.06, 'sawtooth', 0.5);
+            this._toneSweep(t + 0.1, 0.9, 220, 440, 900, 2400, 0.025, 'triangle', 0.6);
+            this._crackle(t + 0.35, 0.8, 1800, 4200, 0.07, 1.4);
+        } catch (e) {}
+    },
+    playPipesCool() {     // эффект кончился: трубы остывают — шипение пара сверху вниз и затихающий гул
+        try {
+            if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime + 0.02;
+            this._noiseBand(t, 1.2, 2600, 500, 1.4, 0.07, 0.12);
+            this._toneSweep(t, 1.0, 120, 55, 700, 200, 0.045, 'sawtooth', 0.15);
+            this._crackle(t, 0.45, 2200, 900, 0.04, 1.2);
+        } catch (e) {}
+    },
     playLevelShift() {    // смена уровня сложности: короткий мягкий «разгон» (вместе с обычным звуком нового уровня)
         try {
             if (!this.ctx || this.ctx.state !== 'running') return;

@@ -43,7 +43,7 @@ function crystalReset() { crystalTime = 0; crystals.length = 0; crystalRedK = 0;
 function registerCrystal() {
     if (typeof shazamBusy === 'function' && shazamBusy()) return null;   // в ШАЗАМе не действует
     crystalTime = CRYSTAL.SEC * 60; CRYSTAL.id++;
-    try { AudioFX.playStarCollect(); Haptics.powerup(); } catch (e) {}
+    try { AudioFX.playStarCollect(); AudioFX.playPipesHeat(); Haptics.powerup(); } catch (e) {}
     return { target: 'other', text: `Опасные трубы ${CRYSTAL.SEC}с`, color: CRYSTAL.COLOR, icon: 'fa-fire' };
 }
 
@@ -114,6 +114,7 @@ function crystalUpdate(speed, squeeze) {
     crystalRedK = Math.max(0, Math.min(1, crystalRedK + (crystalTime > 0 ? 1 : -1) * dt / 50));   // трубы краснеют и остывают ~0,8 с
     if (crystalTime > 0) {
         crystalTime -= dt;
+        if (crystalTime <= 0 && !shz) { try { AudioFX.playPipesCool(); } catch (e) {} }   // трубы остывают
         let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {}
         const N = CRYSTAL.PER_PIPE[lv] || 1;
         for (const p of pipes) {
