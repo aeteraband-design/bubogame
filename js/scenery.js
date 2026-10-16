@@ -905,24 +905,69 @@ function drawPipe(pipe) {
     drawPipeCap(capX, bottomY, capW, capH, capRadius, 2.5, pipe.width);
 
     // капельки дождя на верхней грани обеих шляпок (у верхней трубы шляпка перевёрнута — капли всё равно сверху)
-    if (STORM.wet > 0.03) { drawCapDrops(pipe, topCapY, capX, capW); drawCapDrops(pipe, bottomY, capX, capW); }
+    if (STORM.wet > 0.03 || (pipe._w && (pipe._w.beads.length || pipe._w.sp.length || pipe._w.drip))) pipeWater(pipe, effectiveTop, topCapY, bottomY, capX, capW);
 
     ctx.restore();
 }
-// мелкие капли на верхней кромке шляпки: появляются по мере намокания, высыхают вместе с ним
-function drawCapDrops(pipe, edgeY, capX, capW) {
-    if (!pipe._ds) pipe._ds = 1 + Math.floor(Math.random() * 2147483000);
-    let s = pipe._ds + Math.round(edgeY) * 7;
-    const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
-    const wet = STORM.wet, N = 7;
-    for (let i = 0; i < N; i++) {
-        const x = capX + 4 + rnd() * (capW - 8), r = 0.9 + rnd() * 1.1, th = rnd() * 0.85;
-        if (wet <= th) continue;
-        const a = Math.min(1, (wet - th) * 5);
-        ctx.globalAlpha = 0.7 * a; ctx.fillStyle = 'rgb(170, 205, 245)';
-        ctx.beginPath(); ctx.ellipse(x, edgeY, r, r * 1.15, 0, Math.PI, 0); ctx.ellipse(x, edgeY, r, r * 0.45, 0, 0, Math.PI); ctx.fill();   // капля-бусинка сидит на кромке
-        ctx.globalAlpha = 0.9 * a; ctx.fillStyle = '#F2FAFF';
-        ctx.fillRect(x - r * 0.45, edgeY - r * 0.8, Math.max(0.6, r * 0.45), Math.max(0.6, r * 0.45));
+// Вода на трубах: капли оседают на верхней кромке обеих шляпок и подрастают, с верхней трубы срываются капли и падают вниз,
+// при ударе о нижнюю шляпку и от дождя на кромках — мелкие брызги. Всё считается в системе координат трубы (после translate(pipe.x, 0)).
+function pipeWater(pipe, dripY, topCapY, bottomY, capX, capW) {
+    const W = pipe._w || (pipe._w = { beads: [], drip: null, sp: [] });
+    const wet = STORM.wet, rk = stormRainK(Math.max(0, stormIntensity)), dt = dtMult;
+    const edges = [topCapY, bottomY];
+    const splash = (x, y, n, power) => {
+        for (let i = 0; i < n; i++) W.sp.push({ x: x + (Math.random() - 0.5) * 4, y, vx: (Math.random() - 0.5) * 2.4 * power, vy: -(1.2 + Math.random() * 2.2) * power, l: 0, life: 16 + Math.random() * 14, r: 0.6 + Math.random() * 0.6 });
+        if (W.sp.length > 40) W.sp.splice(0, W.sp.length - 40);
+    };
+    // новые капли на кромках: чем мокрее, тем чаще; от дождя — с маленьким всплеском
+    for (let c = 0; c < 2; c++) {
+        let cnt = 0; for (const b of W.beads) if (b.c === c) cnt++;
+        if (cnt < 3 + Math.round(wet * 4) && Math.random() < 0.05 * wet * dt) {
+            const x = capX + 5 + Math.random() * (capW - 10);
+            W.beads.push({ c, x, rm: 1.0 + Math.random() * 1.2, age: 0, life: 260 + Math.random() * 360 });
+            if (rk > 0.05) splash(x, edges[c], 2 + (Math.random() * 2 | 0), 0.8);
+        }
+    }
+    // капля набухает под нижней кромкой шляпки верхней трубы и срывается
+    if (!W.drip && wet > 0.1 && Math.random() < 0.012 * wet * dt) W.drip = { x: capX + 7 + Math.random() * (capW - 14), y: dripY, v: 0, g: 0, fall: false, r: 1.0 + Math.random() * 0.8 };
+    ctx.fillStyle = 'rgb(172, 208, 245)';
+    // лежащие капли-бусинки: появляются, чуть набухают и со временем высыхают
+    for (let i = W.beads.length - 1; i >= 0; i--) {
+        const b = W.beads[i]; b.age += dt;
+        if (b.age > b.life || wet < 0.02) { W.beads.splice(i, 1); continue; }
+        const gr = Math.min(1, b.age / 35), fd = Math.min(1, (b.life - b.age) / 60), r = b.rm * (0.4 + 0.6 * gr) * (0.6 + 0.4 * fd), y = edges[b.c];
+        ctx.globalAlpha = 0.72 * Math.min(1, fd + 0.2);
+        ctx.beginPath(); ctx.ellipse(b.x, y, r, r * 1.15, 0, Math.PI, 0); ctx.ellipse(b.x, y, r, r * 0.4, 0, 0, Math.PI); ctx.fill();
+        ctx.globalAlpha = 0.9 * fd; ctx.fillStyle = '#F2FAFF';
+        ctx.fillRect(b.x - r * 0.45, y - r * 0.85, Math.max(0.6, r * 0.45), Math.max(0.6, r * 0.45));
+        ctx.fillStyle = 'rgb(172, 208, 245)';
+    }
+    // стекающая капля
+    const d = W.drip;
+    if (d) {
+        if (!d.fall) {
+            d.g += dt / 55;
+            const k = Math.min(1, d.g), r = d.r * (0.5 + 0.5 * k);
+            ctx.globalAlpha = 0.8;
+            ctx.beginPath(); ctx.ellipse(d.x, d.y + r * (0.6 + 0.9 * k), r, r * (1 + 0.7 * k), 0, 0, Math.PI * 2); ctx.fill();   // капля вытягивается вниз
+            if (d.g >= 1) { d.fall = true; d.v = 0.6; d.y += r * 1.6; }
+        } else {
+            d.v = Math.min(10, d.v + 0.26 * dt); d.y += d.v * dt;
+            ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.moveTo(d.x - d.r * 0.55, d.y); ctx.lineTo(d.x, d.y - d.r * (1.4 + d.v * 0.55)); ctx.lineTo(d.x + d.r * 0.55, d.y); ctx.fill();   // хвостик
+            ctx.globalAlpha = 0.85; ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx.fill();
+            if (d.y >= bottomY || d.y > height) {
+                if (d.y >= bottomY) { splash(d.x, bottomY, 5, 1); W.beads.push({ c: 1, x: d.x, rm: 0.9 + Math.random() * 0.6, age: 0, life: 200 + Math.random() * 200 }); }
+                W.drip = null;
+            }
+        }
+    }
+    // брызги: мелкие капли разлетаются и падают
+    for (let i = W.sp.length - 1; i >= 0; i--) {
+        const p = W.sp[i]; p.l += dt;
+        if (p.l >= p.life) { W.sp.splice(i, 1); continue; }
+        p.vy += 0.2 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+        ctx.globalAlpha = 0.8 * (1 - p.l / p.life);
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalAlpha = 1;
 }
