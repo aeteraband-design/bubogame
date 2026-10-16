@@ -106,6 +106,12 @@
                             owl.x = ox; octx.globalAlpha = 1;
                         }
                         if (fz > 0.01 && typeof drawFrozenOwl === 'function') drawFrozenOwl(); else owl.draw();
+                        // оттаивание: лёд разлетается осколками — те же, что в игре
+                        if (typeof iceShards !== 'undefined' && typeof spawnIceBurst === 'function') {
+                            var is_ = iceShards; iceShards = LS.shards || (LS.shards = []);
+                            try { if (MV.thaw) { MV.thaw = false; spawnIceBurst('thaw'); } updateIceShards(); drawIceShards(); }
+                            finally { LS.shards = iceShards; iceShards = is_; }
+                        }
                     }
                     finally { if (typeof SHZ !== 'undefined') SHZ.k = shzK_; waitingFirstTap = wft_; dtMult = dtm_; viewScale = svs; renderScale = srs; ctx = main; owl.x = sx; owl.y = sy; owl.rotation = sr; owl.visible = sv; owl.lean = sl; owl.boostK = sb; owl.spinAngle = sp; owl.wing = sw; currentDrunkFactor = sd; currentFreezeFactor = sf; currentOvereatFactor = so; frame = sfr; }
                 } catch (e) {}
@@ -186,6 +192,7 @@
                 // состояния идут по очереди и плавно перетекают друг в друга: пьяная → замёрзшая → толстая → в конце обычная
                 var d = ph(16, 22) * (1 - ph(36, 42)), fz = ph(38, 44) * (1 - ph(58, 64)), ov = ph(60, 66) * (1 - ph(80, 87));
                 var fin = ready || exitT0 ? 1 : ph(88, 100);
+                if (shown > 58 && !SND.thaw) { SND.thaw = 1; MV.thaw = true; sfx('ft', 'playFreezeEnd'); }   // заморозка кончается — лёд осыпается
                 if (shown > 17) sfx('d', 'playDrunk'); if (shown > 39) sfx('f', 'playFreeze'); if (shown > 61) sfx('o', 'playOverEat'); if (shown > 89) sfx('s', 'playSpeedUpStart');   // в конце загрузки сова уже в виде ускорения
                 drawOwl(now, d, fz, ov, fin);
                 syncLogo();
