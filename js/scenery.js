@@ -582,12 +582,15 @@ function drawClouds() {
             c.fill();
         });
     }
+    const sk = stormSmooth(0, 0.8, Math.max(0, stormIntensity)), stormSpr = sk > 0.001 ? stormBuildClouds() : null;
     clouds.forEach(cl => {
         cl.x -= cl.speed * dtMult;
         if (cl.x < -140) cl.x = width + 80;
         const k = cl.scale;
-        ctx.globalAlpha = 1 - 0.65 * stormSmooth(0, 1, Math.max(0, stormIntensity));   // в грозу лёгкие сиреневые облачка тают в тучах
-        ctx.drawImage(cloudSprite, cl.x - CLOUD_OX * k, cl.y - CLOUD_OY * k, CLOUD_W * k, CLOUD_H * k);
+        // в грозу сиреневые облачка плавно темнеют до цвета туч, после грозы — так же плавно возвращают свой цвет
+        const dx = cl.x - CLOUD_OX * k, dy = cl.y - CLOUD_OY * k, dw = CLOUD_W * k, dh = CLOUD_H * k;
+        if (sk < 0.999) { ctx.globalAlpha = 1 - sk; ctx.drawImage(cloudSprite, dx, dy, dw, dh); }
+        if (sk > 0.001) { ctx.globalAlpha = 0.92 * sk; ctx.drawImage(stormSpr.near, dx, dy, dw, dh); }
     });
     ctx.globalAlpha = 1;
 }

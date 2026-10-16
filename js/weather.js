@@ -159,18 +159,19 @@ function stormCloudSet() {
         for (let i = 0; i < n; i++) a.push({ x: (i + r() * 0.8) / n * (width + 360) - 180, yr: r(), k: kMin + r() * (kMax - kMin), sp: spMin + r() * (spMax - spMin), t: (i % n) / n * 0.8 * (0.6 + r() * 0.4) });
         return a;
     };
-    STORM.cl = { far: mkL(11, 1.1, 1.7, 0.10, 0.2), near: mkL(9, 1.5, 2.3, 0.2, 0.38) };
+    // low — густой слой у горизонта, за небоскрёбами; far и near — тучи в верхней части неба
+    STORM.cl = { low: mkL(17, 1.8, 2.8, 0.06, 0.13), far: mkL(15, 1.1, 1.8, 0.10, 0.2), near: mkL(12, 1.5, 2.4, 0.2, 0.38) };
     STORM.clW = width;
     return STORM.cl;
 }
-function stormDrawCloudLayer(list, spr, yBottom, ck, si, alpha) {
+function stormDrawCloudLayer(list, spr, yOf, ck, si, alpha) {
     const spd = 1 + 2.2 * si;
     for (const c of list) {
         c.x -= c.sp * spd * dtMult;
         if (c.x < -CLOUD_W * c.k) c.x = width + 60 + Math.random() * 60;
         const a = alpha * stormSmooth(c.t, c.t + 0.18, ck);
         if (a < 0.01) continue;
-        const y = 20 + c.yr * Math.max(10, yBottom - 50);
+        const y = yOf(c.yr);
         ctx.globalAlpha = a;
         ctx.drawImage(spr, c.x - CLOUD_OX * c.k, y - CLOUD_OY * c.k, CLOUD_W * c.k, CLOUD_H * c.k);
     }
@@ -197,10 +198,11 @@ function stormDrawBack() {
     const ck = stormSmooth(0.05, 0.9, si);
     if (ck > 0.01) {
         const spr = stormBuildClouds(), L = stormCloudSet(), yb = stormCloudBottom();
-        stormDrawCloudLayer(L.far, spr.far, yb - 20, ck, si, 0.9);
+        stormDrawCloudLayer(L.low, spr.far, (r) => height * (0.34 + r * 0.17), ck, si, 0.92);   // за домами, у горизонта
+        stormDrawCloudLayer(L.far, spr.far, (r) => 20 + r * Math.max(10, yb - 70), ck, si, 0.9);
         // зарница внутри туч и сам разряд — между дальним и ближним слоем туч
         if (STORM.flash > 0.01) stormDrawFlashBack(yb);
-        stormDrawCloudLayer(L.near, spr.near, yb, ck, si, 0.95);
+        stormDrawCloudLayer(L.near, spr.near, (r) => 20 + r * Math.max(10, yb - 50), ck, si, 0.95);
         // луна видна всегда: поверх туч рисуем её ещё раз — тучи закрывают её не больше чем на ~30%
         const mp = window.__moonPos;
         if (mp && moonSprite) { ctx.globalAlpha = Math.min(1, ck * 0.8); ctx.drawImage(moonSprite, mp[0], mp[1], mp[2], mp[2]); }
