@@ -563,7 +563,7 @@ function updateBuffHUD() {
     lastBuffSig = sig;
 
     const activeBuffs = [];
-    if (shazamBusy()) activeBuffs.push({ key: 'shazam', left: 1e9, text: `ШАЗАМ: ${shazamSecLeft()}с`, color: '#FF7A00', icon: 'fa-bolt-lightning' });
+    if (shazamBusy() && !(SHZ.state === 'active' && SHZ.left <= SHZ.FADE)) activeBuffs.push({ key: 'shazam', left: 1e9, text: `ШАЗАМ: ${shazamSecLeft()}с`, color: '#FF7A00', icon: 'fa-bolt-lightning' });
     if (shieldTime > 0) {
         activeBuffs.push({
             key: 'shield', left: shieldTime, text: `ЩИТ: ${Math.ceil(shieldTime / 60)}с`,

@@ -5,7 +5,8 @@
 // а все значки впереди сами притягиваются к ней, как магнитом.
 const SHZ = {
     count: 0, state: 'idle', t: 0, left: 0, armUntil: 0,
-    INTRO: 60, DUR: 900,               // кадры (60 в секунду): 1 с зарядки и 15 с эффекта
+    INTRO: 60, DUR: 900, FADE: 150,   // FADE — после 15 с ещё 2,5 с эффект гаснет (молнии затухают), сова всё ещё пролетает трубы
+                  // кадры (60 в секунду): 1 с зарядки и 15 с эффекта
     k: 0, shieldK: 0, blur: 0, slow: 1, dx: 0,
     depthBack: 0, depthFront: 0, sideN: 0,
     b: null, lastHalf: 0,
@@ -14,7 +15,7 @@ const SHZ = {
 function shazamActive() { return SHZ.state === 'active'; }
 function shazamBusy() { return SHZ.state === 'intro' || SHZ.state === 'active'; }
 function shazamBlocksTap() { return false; }   // сова всегда слушается тапов
-function shazamSecLeft() { return SHZ.state === 'active' ? Math.ceil(SHZ.left / 60) : (SHZ.state === 'intro' ? Math.ceil(SHZ.DUR / 60) : 0); }
+function shazamSecLeft() { return SHZ.state === 'active' ? Math.ceil(Math.max(0, SHZ.left - SHZ.FADE) / 60) : (SHZ.state === 'intro' ? Math.ceil(SHZ.DUR / 60) : 0); }
 function shazamOwlBehind() { return SHZ.depthBack > 0.02; }
 
 // ---- кнопка ----
@@ -112,7 +113,7 @@ function shazamStart() {
 }
 
 function shazamLaunch() {
-    SHZ.state = 'active'; SHZ.left = SHZ.DUR; SHZ.t = 0; SHZ.sideN = 0;
+    SHZ.state = 'active'; SHZ.left = SHZ.DUR + SHZ.FADE; SHZ.t = 0; SHZ.sideN = 0;
     SHZ.rings.push({ x: owl.x, y: owl.y, r: owl.radius * 1.2, a: 0.9 }, { x: owl.x, y: owl.y, r: owl.radius * 0.8, a: 0.6, slow: 1 });
     for (let i = 0; i < 14; i++) {
         const a = Math.PI * (0.55 + Math.random() * 0.9), v = 2 + Math.random() * 3.5;
@@ -187,9 +188,9 @@ function shazamUpdate() {
     // плавные величины для рисования
     const on = SHZ.state === 'active', intro = SHZ.state === 'intro';
     const ease = (v, tgt, sp) => v + (tgt - v) * Math.min(1, sp * dtMult);
-    SHZ.k = ease(SHZ.k, on ? Math.min(1, SHZ.left / 90) : (intro ? 0.35 + 0.65 * Math.min(1, SHZ.t / SHZ.INTRO) : 0), on || intro ? 0.08 : 0.04);
+    SHZ.k = ease(SHZ.k, on ? Math.min(1, SHZ.left / SHZ.FADE) : (intro ? 0.35 + 0.65 * Math.min(1, SHZ.t / SHZ.INTRO) : 0), on || intro ? 0.08 : 0.04);
     SHZ.shieldK = 0;   // щит в ШАЗАМе не меняется
-    SHZ.blur = ease(SHZ.blur, on ? (SHZ.t < 50 ? 1 : 0.55 * Math.min(1, SHZ.left / 90)) : 0, on ? 0.1 : 0.04);
+    SHZ.blur = ease(SHZ.blur, on ? (SHZ.t < 50 ? 1 : 0.55 * Math.min(1, SHZ.left / SHZ.FADE)) : 0, on ? 0.1 : 0.04);
 
     // трубы: по очереди — за трубой, перед трубой
     SHZ.depthBack = 0; SHZ.depthFront = 0;
