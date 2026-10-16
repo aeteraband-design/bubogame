@@ -1053,13 +1053,38 @@ const AudioFX = {
         rs.start(t, 0.37); ws.start(t, 2.1); l1.start(t); l2.start(t);
         this._wx = { rg, wg, lp };
     },
+    // отдельные капли: короткий звонкий щелчок (полоса шума с быстрым затуханием), высота и громкость случайные
+    _rainDrop(t, vol) {
+        const ctx = this.ctx, src = ctx.createBufferSource(); src.buffer = this._windBuf;
+        const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1400 + Math.random() * 4200; bp.Q.value = 2.5 + Math.random() * 4;
+        const g = ctx.createGain(), d = 0.02 + Math.random() * 0.05;
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+        src.connect(bp); bp.connect(g); g.connect(this.sfxGain || ctx.destination);
+        src.start(t, Math.random() * 1.5, d + 0.02);
+    },
+    _rainDropsLoop() {
+        const W = this._wx; if (!W || !this.ctx) return;
+        W.rain = W.rain == null ? 0 : W.rain + ((W.rainTarget || 0) - W.rain) * 0.06;   // частота капель меняется плавно (~2 с)
+        const r = W.rain;
+        if (r < 0.008 && (W.rainTarget || 0) < 0.01) { W.dropTimer = 0; W.rain = 0; return; }
+        if (this.ctx.state === 'running') {
+            const now = this.ctx.currentTime, span = 0.1, rate = 2.5 + 75 * Math.pow(r, 1.3);   // капель в секунду
+            let n = 0; const lam = rate * span; let p = Math.exp(-lam), s = p, u = Math.random(); while (u > s && n < 30) { n++; p *= lam / n; s += p; }
+            const vol = 0.035 + 0.03 * Math.min(1, r * 2);
+            for (let i = 0; i < n; i++) this._rainDrop(now + 0.02 + Math.random() * span, vol * (0.35 + Math.random() * 0.65));
+        }
+        W.dropTimer = setTimeout(() => this._rainDropsLoop(), 100);
+    },
     weatherSet(rain, wind, fast) {
         if (!this.ctx) return;
         if (!this._wx) { if (rain <= 0 && wind <= 0) return; this._weatherInit(); }
         const t = this.ctx.currentTime;
         this._wx.rg.gain.cancelScheduledValues(t); this._wx.wg.gain.cancelScheduledValues(t);
-        // громкость по силе дождя: морось — тихий мягкий шелест, ливень — громко и звонко; меняется плавно (~3–4 с)
-        this._wx.rg.gain.setTargetAtTime(rain < 0.015 ? 0 : 0.1 * Math.pow(rain, 1.7), t, fast ? 0.15 : 1.2);   // игра началась в дождь — шум сразу
+        // дождь из отдельных капель: сначала редкие «кап… кап», потом всё чаще, и только в сильный дождь их перекрывает сплошной шум ливня
+        const W = this._wx; W.rainTarget = rain; if (fast) W.rain = rain;
+        if (!W.dropTimer && rain > 0.01) this._rainDropsLoop();
+        const wash = rain < 0.2 ? 0 : Math.pow(Math.min(1, (rain - 0.2) / 0.8), 1.5);
+        this._wx.rg.gain.setTargetAtTime(0.1 * wash, t, fast ? 0.15 : 1.6);   // игра началась в дождь — шум сразу
         this._wx.lp.frequency.cancelScheduledValues(t); this._wx.lp.frequency.setTargetAtTime(2400 + 4400 * rain, t, 1.2);
         this._wx.wg.gain.setTargetAtTime(wind < 0.015 ? 0 : wind * 0.11, t, fast ? 0.2 : 1.6);
     },
