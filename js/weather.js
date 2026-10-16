@@ -1,5 +1,5 @@
 // ===== Погода: случайная гроза =====
-// Одно число stormIntensity (0 — ясная ночь, 1 — пик грозы) плавно тянется к цели. Цель задают случайные «грозы»:
+// stormCover — сколько туч собралось (небо, тучи); stormIntensity (0..1) — сила дождя и молний. Цель задают случайные «грозы»:
 // в любой момент полёта может начаться дождь (иногда сразу в начале игры, иногда ни разу за игру), идёт 30–45 с и проходит.
 // Сила каждой грозы своя: от мороси до ливня с молниями. От сложности не зависит.
 // От stormIntensity зависят: тёмное небо, тучи, дождь, мокрые крыши, зарницы с подсветкой домов и звук (ветер, дождь, гром).
@@ -15,29 +15,36 @@ const STORM = {
 const stormClamp = (v) => Math.max(0, Math.min(1, v));
 function stormSmooth(a, b, x) { const t = stormClamp((x - a) / (b - a)); return t * t * (3 - 2 * t); }
 
-// расписание гроз (время идёт только в полёте)
+// расписание гроз (время идёт только в полёте). Гроза: 30 с тучи собираются (облака темнеют, из-за правого края их наплывает всё больше,
+// под конец начинается дождь) → дождь с молниями → 15 с затихает (дождь слабеет, молнии всё реже) → тучи уплывают влево
 const WX = {
-    START_CHANCE: 0.3,           // шанс, что дождь начнётся в самом начале игры
-    DUR_MIN: 30, DUR_MAX: 45,    // сколько идёт гроза, с
-    GAP_MIN: 40, GAP_MAX: 160,   // пауза между грозами, с
+    RAMP: 30, FADE: 15,          // нарастание и затихание, с
+    DUR_MIN: 60, DUR_MAX: 100,   // сколько гроза «включена» (вместе с нарастанием), с
+    // частота (настройка в админке): шанс начать игру сразу в дождь, первая пауза, пауза между грозами, с
+    FREQ: [
+        { start: 0.1, first: [90, 300], gap: [180, 400] },    // редко
+        { start: 0.25, first: [25, 180], gap: [80, 220] },    // обычно
+        { start: 0.4, first: [10, 70], gap: [40, 100] },      // часто
+        { start: 0.7, first: [3, 20], gap: [15, 35] }         // очень часто
+    ],
     on: false, left: -1, peak: 0
 };
+let stormCover = 0;   // 0..1: сколько туч собралось (темнеют облака, небо, наплывают тучи)
 function wxRand(a, b) { return a + Math.random() * (b - a); }
+function wxFreq() { let f = 1; try { f = ADMIN_CFG.stormFreq; } catch (e) {} return WX.FREQ[Math.max(0, Math.min(3, f | 0))] || WX.FREQ[1]; }
+function wxStart() { WX.on = true; WX.peak = wxRand(0.55, 1); WX.left = wxRand(WX.DUR_MIN, WX.DUR_MAX); }
 function wxTick() {
     if (!gameActive || document.hidden) return;
-    const dt = dtMult / 60;
-    if (WX.left < 0) {   // первый полёт: либо дождь сразу, либо случайная пауза (может и не дождаться за всю игру)
-        WX.left = Math.random() < WX.START_CHANCE ? wxRand(1, 6) : wxRand(20, WX.GAP_MAX);
+    const dt = dtMult / 60, F = wxFreq();
+    if (WX.left < 0) {   // первый полёт: либо игра начинается сразу в дождь, либо случайная пауза (может и не дождаться за всю игру)
+        if (Math.random() < F.start) { wxStart(); stormCover = 1; stormIntensity = WX.peak; STORM.fade = 1; }
+        else WX.left = wxRand(F.first[0], F.first[1]);
         return;
     }
     WX.left -= dt;
     if (WX.left > 0) return;
-    if (WX.on) { WX.on = false; WX.left = wxRand(WX.GAP_MIN, WX.GAP_MAX); }
-    else { WX.on = true; WX.peak = wxRand(0.35, 1); WX.left = wxRand(WX.DUR_MIN, WX.DUR_MAX); }
-}
-function stormTarget() {
-    try { const t = ADMIN_CFG.stormTest | 0; if (t > 0) return t / 100; } catch (e) {}
-    return WX.on ? WX.peak : 0;
+    if (WX.on) { WX.on = false; WX.left = wxRand(F.gap[0], F.gap[1]) + WX.FADE + 20; }
+    else wxStart();
 }
 
 // в главном меню погода всегда ясная; каждая игра начинается с чистого неба и своего случайного расписания гроз
@@ -46,32 +53,47 @@ function stormInMenu() {
     return !!el && !el.classList.contains('hidden');
 }
 function stormClearNow() {
-    stormIntensity = 0; STORM.drops.length = 0; STORM.flashT0 = -1; STORM.flash = 0; STORM.bolt = null; STORM.nextAt = 0; STORM.wet = 0;
-    WX.on = false; WX.left = -1;
+    stormIntensity = 0; stormCover = 0; STORM.fade = 0; STORM.drops.length = 0; STORM.flashT0 = -1; STORM.flash = 0; STORM.bolt = null; STORM.nextAt = 0; STORM.wet = 0;
+    STORM.cl = null; WX.on = false; WX.left = -1;
 }
 function stormUpdate() {
     if (stormInMenu()) {
-        if (stormIntensity !== 0 || WX.left >= 0) stormClearNow();
+        if (stormIntensity !== 0 || stormCover !== 0 || WX.left >= 0) stormClearNow();
         if (STORM.sndRain || STORM.sndWind) { STORM.sndRain = STORM.sndWind = 0; try { AudioFX.weatherSet(0, 0); } catch (e) {} }
         return;
     }
+    if (stormIntensity < 0) stormIntensity = 0;
     wxTick();
-    const tg = stormTarget();
-    if (stormIntensity < 0) stormIntensity = tg;
-    stormIntensity += (tg - stormIntensity) * Math.min(1, 0.006 * dtMult);   // ~3 с на переход
-    if (Math.abs(tg - stormIntensity) < 0.0005) stormIntensity = tg;
+    const dt = dtMult / 60;
+    let test = 0; try { test = ADMIN_CFG.stormTest | 0; } catch (e) {}
+    if (test > 0) {   // проверка из админки: тучи сразу, сила вручную
+        stormCover = Math.min(1, stormCover + dt / 3); STORM.fade = 1;
+        stormIntensity += (test / 100 * stormSmooth(0.5, 1, stormCover) - stormIntensity) * Math.min(1, 0.05 * dtMult);
+    } else if (WX.on) {
+        // нарастание: 30 с собираются тучи, дождь начинается только в последние ~10 с
+        stormCover = Math.min(1, stormCover + dt / WX.RAMP); STORM.fade = 1;
+        stormIntensity = WX.peak * stormSmooth(0.65, 1, stormCover);
+    } else {
+        // затихание: 15 с слабеют дождь и молнии, потом тучи уходят
+        STORM.fade = Math.max(0, (STORM.fade || 0) - dt / WX.FADE);
+        stormIntensity = Math.min(stormIntensity, WX.peak * STORM.fade * STORM.fade);
+        if (STORM.fade <= 0) stormCover = Math.max(0, stormCover - dt / 20);
+    }
     const si = stormIntensity;
     // намокание: крыши мокнут вслед за дождём и медленно сохнут
     const rainK = stormRainK(si);
     STORM.wet += ((rainK > 0 ? Math.min(1, rainK * 1.4) : 0) - STORM.wet) * Math.min(1, 0.004 * dtMult);
 
-    // молнии: случайный таймер, только при сильной грозе
+// молнии: случайный таймер, только при сильной грозе
     const now = performance.now();
-    if (si > STORM.LIGHT_FROM) {
-        const k = (si - STORM.LIGHT_FROM) / (1 - STORM.LIGHT_FROM);
-        const nextDelay = () => Math.max(STORM.LIGHT_MIN, Math.min(STORM.LIGHT_MAX, STORM.LIGHT_MIN + (1 - k) * 6 + Math.random() * 4)) * 1000;
+    const pk = WX.on || STORM.fade >= 1 ? si : WX.peak;   // при затихании молнии зависят от силы грозы, а не от остатка дождя
+    const fd = STORM.fade || 0;
+    if (pk > STORM.LIGHT_FROM && fd > 0.12 && stormCover > 0.9) {
+        const k = (pk - STORM.LIGHT_FROM) / (1 - STORM.LIGHT_FROM);
+        // при затихании паузы между разрядами растут, удары слабее
+        const nextDelay = () => Math.max(STORM.LIGHT_MIN, Math.min(STORM.LIGHT_MAX, STORM.LIGHT_MIN + (1 - k) * 6 + Math.random() * 4)) * 1000 / Math.max(0.2, fd);
         if (!STORM.nextAt) STORM.nextAt = now + 2500 + Math.random() * 3000;
-        if (now >= STORM.nextAt && !document.hidden) { stormStrike(k); STORM.nextAt = now + nextDelay(); }
+        if (now >= STORM.nextAt && !document.hidden) { stormStrike(k * Math.max(0.4, fd)); STORM.nextAt = now + nextDelay(); }
     } else STORM.nextAt = 0;
     // яркость вспышки: быстрый подъём (~0,07 с), дрожание, мягкое затухание (~0,55 с)
     if (STORM.flashT0 >= 0) {
@@ -107,7 +129,7 @@ function stormRainK(si) {
 function stormStrike(k) {
     STORM.flashT0 = performance.now();
     STORM.flashX = width * (0.12 + Math.random() * 0.76);
-    STORM.flashPow = 0.65 + 0.35 * Math.random();
+    STORM.flashPow = (0.65 + 0.35 * Math.random()) * Math.max(0.5, Math.min(1, STORM.fade || 1));
     STORM.bolt = Math.random() < 0.6 ? stormMakeBolt(STORM.flashX) : null;   // иногда — только зарница в тучах, без видимого разряда
     if (gameActive) {
         const dist = Math.random();   // дальше — позже и тише гром
@@ -133,7 +155,7 @@ function stormMakeBolt(x0) {
 
 // ---------- тучи ----------
 // Тучи — те же облака, что плывут по небу в игре (тот же силуэт), только тёмные и крупнее; чем сильнее гроза, тем их больше и гуще
-function stormCloudBottom() { const c = stormSmooth(0.05, 0.9, Math.max(0, stormIntensity)); return 90 + c * height * 0.2; }
+function stormCloudBottom() { const c = stormSmooth(0.05, 0.9, stormCover); return 90 + c * height * 0.2; }
 function stormBuildClouds() {
     const S = Math.max(1, viewScale * renderScale), key = S.toFixed(2) + '|' + gfxQuality;
     if (STORM.cloudSpr && STORM.cloudKey === key) return STORM.cloudSpr;
@@ -147,40 +169,46 @@ function stormBuildClouds() {
         c.arc(0, 0, 26, 0, Math.PI * 2); c.arc(26, -10, 32, 0, Math.PI * 2); c.arc(58, -4, 24, 0, Math.PI * 2); c.arc(38, 10, 22, 0, Math.PI * 2);
         c.fill();
     });
-    STORM.cloudSpr = { far: mk('rgba(84, 96, 140, 0.95)', 'rgba(52, 62, 100, 0.9)'), near: mk('rgba(56, 66, 104, 0.98)', 'rgba(30, 38, 66, 0.95)') };
+    STORM.cloudSpr = { far: mk('rgba(52, 55, 64, 0.97)', 'rgba(34, 36, 43, 0.95)'), near: mk('rgba(38, 40, 47, 0.98)', 'rgba(21, 23, 28, 0.97)') };
     return STORM.cloudSpr;
 }
-// набор туч: у каждой своя «пороговая» сила грозы, с которой она появляется; положение и размер заданы заранее
+// набор туч: у каждой свой порог stormCover, с которого она выплывает из-за правого края; когда тучи расходятся — уплывает за левый
 function stormCloudSet() {
     if (STORM.cl && STORM.clW === width) return STORM.cl;
     let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
-    const mkL = (n, kMin, kMax, spMin, spMax) => {
+    const mkL = (n, kMin, kMax, tMin, tMax) => {   // tMin..tMax — за сколько секунд туча пересекает экран
         const a = [];
-        for (let i = 0; i < n; i++) a.push({ x: (i + r() * 0.8) / n * (width + 360) - 180, yr: r(), k: kMin + r() * (kMax - kMin), sp: spMin + r() * (spMax - spMin), t: (i % n) / n * 0.8 * (0.6 + r() * 0.4) });
+        for (let i = 0; i < n; i++) a.push({ x: (i + r() * 0.8) / n * (width + 360) - 180, yr: r(), k: kMin + r() * (kMax - kMin), tc: tMin + r() * (tMax - tMin), t: (i / n) * 0.62 + r() * 0.05, on: false, go: false });
         return a;
     };
     // low — густой слой у горизонта, за небоскрёбами; far и near — тучи в верхней части неба
-    STORM.cl = { low: mkL(17, 1.8, 2.8, 0.06, 0.13), far: mkL(15, 1.1, 1.8, 0.10, 0.2), near: mkL(12, 1.5, 2.4, 0.2, 0.38) };
+    STORM.cl = { low: mkL(17, 1.8, 2.8, 26, 36), far: mkL(15, 1.1, 1.8, 20, 28), near: mkL(12, 1.5, 2.4, 13, 19), init: false };
     STORM.clW = width;
     return STORM.cl;
 }
-function stormDrawCloudLayer(list, spr, yOf, ck, si, alpha, lag = 0) {
-    const spd = 1 + 2.2 * si;
+function stormCloudsAny(L) { for (const n of ['low', 'far', 'near']) for (const c of L[n]) if (c.on) return true; return false; }
+function stormDrawCloudLayer(list, spr, yOf, cv, si, alpha, lag = 0, first = false) {
+    const wind = (1 + 0.6 * si) * dtMult / 60;
     for (const c of list) {
-        c.x -= c.sp * spd * dtMult;
-        if (c.x < -CLOUD_W * c.k) c.x = width + 60 + Math.random() * 60;
-        // туча не проявляется, а съезжает сверху из-за края экрана на своё место (и так же уезжает обратно); нижний слой подтягивается позже
-        const p = stormSmooth(c.t * 0.7 + lag, c.t * 0.7 + lag + 0.3, ck);
-        if (p < 0.001) continue;
-        const y = yOf(c.yr), top = y + (CLOUD_H - CLOUD_OY) * c.k;
+        const thr = c.t + lag, cw = CLOUD_W * c.k;
+        if (first) c.on = cv >= thr;                       // игра началась уже в грозу — тучи сразу на месте
+        if (!c.on && cv >= thr) { c.on = true; c.go = false; c.x = width + CLOUD_OX * c.k + Math.random() * width * 0.45; }   // выплывает из-за правого края
+        if (c.on && cv < thr - 0.04) c.go = true;           // тучи расходятся: эта больше не возвращается справа
+        if (!c.on) continue;
+        c.x -= (width + cw) / c.tc * wind * (c.go ? 1.6 : 1);
+        if (c.x < -cw) {
+            if (c.go) { c.on = false; continue; }
+            c.x = width + CLOUD_OX * c.k + Math.random() * 60;
+        }
+        const y = yOf(c.yr);
         ctx.globalAlpha = alpha;
-        ctx.drawImage(spr, c.x - CLOUD_OX * c.k, y - (1 - p) * top - CLOUD_OY * c.k, CLOUD_W * c.k, CLOUD_H * c.k);
+        ctx.drawImage(spr, c.x - CLOUD_OX * c.k, y - CLOUD_OY * c.k, cw, CLOUD_H * c.k);
     }
 }
 
 // Грозовое небо: цвета неба плавно уходят в глубокие сине-серые тона (сам градиент неба пересобирается при заметном изменении — без лишнего слоя поверх)
 function stormSkyGrad() {
-    const si = Math.max(0, stormIntensity), q = Math.round(stormSmooth(0, 1, si) * 40) / 40;
+    const si = Math.max(0, stormCover), q = Math.round(stormSmooth(0, 1, si) * 40) / 40;
     if (STORM.skyGrad && STORM.skyH === height && STORM.skyQ === q) return STORM.skyGrad;
     const mix = (a, b) => 'rgb(' + a.map((v, i) => Math.round(v + (b[i] - v) * q * 0.85)).join(',') + ')';
     const g = ctx.createLinearGradient(0, 0, 0, height);
@@ -190,23 +218,23 @@ function stormSkyGrad() {
     STORM.skyGrad = g; STORM.skyH = height; STORM.skyQ = q;
     return g;
 }
-function stormStarK() { return 1 - 0.85 * stormSmooth(0, 0.85, Math.max(0, stormIntensity)); }
+function stormStarK() { return 1 - 0.85 * stormSmooth(0, 0.85, stormCover); }
 
 // Задний план: грозовое небо, тучи, зарницы и разряды (всё позади домов). Вызывается после луны, до города
 function stormDrawBack() {
-    const si = stormIntensity;
-    if (si < 0.01) return;
-    const ck = stormSmooth(0.05, 0.9, si);
-    if (ck > 0.01) {
-        const spr = stormBuildClouds(), L = stormCloudSet(), yb = stormCloudBottom();
-        stormDrawCloudLayer(L.low, spr.far, (r) => height * (0.34 + r * 0.17), ck, si, 0.92, 0.1);   // за домами, у горизонта
-        stormDrawCloudLayer(L.far, spr.far, (r) => 20 + r * Math.max(10, yb - 70), ck, si, 0.9);
+    const si = Math.max(0, stormIntensity), cv = stormCover;
+    if (cv < 0.005 && !(STORM.cl && stormCloudsAny(STORM.cl))) return;
+    const ck = Math.max(0.3, stormSmooth(0.05, 0.9, cv));
+    {
+        const spr = stormBuildClouds(), L = stormCloudSet(), yb = stormCloudBottom(), first = !L.init; L.init = true;
+        stormDrawCloudLayer(L.low, spr.far, (r) => height * (0.34 + r * 0.17), cv, si, 0.92, 0.12, first);   // за домами, у горизонта
+        stormDrawCloudLayer(L.far, spr.far, (r) => 20 + r * Math.max(10, yb - 70), cv, si, 0.9, 0, first);
         // зарница внутри туч и сам разряд — между дальним и ближним слоем туч
         if (STORM.flash > 0.01) stormDrawFlashBack(yb);
-        stormDrawCloudLayer(L.near, spr.near, (r) => 20 + r * Math.max(10, yb - 50), ck, si, 0.95);
+        stormDrawCloudLayer(L.near, spr.near, (r) => 20 + r * Math.max(10, yb - 50), cv, si, 0.95, 0.06, first);
         // луна видна всегда: поверх туч рисуем её ещё раз — тучи закрывают её не больше чем на ~30%
         const mp = window.__moonPos;
-        if (mp && moonSprite) { ctx.globalAlpha = Math.min(1, ck * 0.8); ctx.drawImage(moonSprite, mp[0], mp[1], mp[2], mp[2]); }
+        if (mp && moonSprite && cv > 0.01) { ctx.globalAlpha = Math.min(1, stormSmooth(0.05, 0.9, cv) * 0.8); ctx.drawImage(moonSprite, mp[0], mp[1], mp[2], mp[2]); }
         // вспышка подсвечивает и ближние тучи
         if (STORM.flash > 0.01) {
             ctx.globalCompositeOperation = 'lighter';
@@ -238,8 +266,8 @@ function stormDrawFlashBack(yb) {
 
 // Город: в грозу темнее и холоднее, крыши блестят от воды, вспышка мягко подсвечивает фасады и контуры крыш. После drawCity
 function stormDrawCityLight() {
-    const si = Math.max(0, stormIntensity);
-    if (si < 0.01 || !citySprites) return;
+    const si = Math.max(0, stormCover);
+    if ((si < 0.01 && STORM.flash < 0.01 && STORM.wet < 0.03) || !citySprites) return;
     const sk = stormSmooth(0, 1, si);
     const cityTop = height * 0.3;
     if (!STORM.cityGrad || STORM.cityGradH !== height) {   // мягкий переход сверху — без видимой границы

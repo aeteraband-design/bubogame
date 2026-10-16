@@ -582,7 +582,7 @@ function drawClouds() {
             c.fill();
         });
     }
-    const sk = stormSmooth(0, 0.8, Math.max(0, stormIntensity)), stormSpr = sk > 0.001 ? stormBuildClouds() : null;
+    const sk = stormSmooth(0, 0.85, stormCover), stormSpr = sk > 0.001 ? stormBuildClouds() : null;
     clouds.forEach(cl => {
         cl.x -= cl.speed * dtMult;
         if (cl.x < -140) cl.x = width + 80;
