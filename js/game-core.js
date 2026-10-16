@@ -84,12 +84,13 @@ function restartClass(el, removeList, addCls) {
 }
 
 // ===== Отложенное обновление цифр на плашках =====
-// Игра засчитывает подбор сразу, а цифры на плашках меняются только когда долетит анимация.
+// Игра засчитывает подбор сразу, и цифры на плашках тоже меняются сразу (шарик-иконка долетает отдельно).
 const HUD_THEME_KEYS = ['music', 'logic', 'kino', 'series', 'cartoons', 'fun'];
 const hudPending = { score: 0, stamina: 0, heart: 0, theme: 0 };
 const hudDirty = {};
 function hudGroup(t) { return HUD_THEME_KEYS.includes(t) ? 'theme' : t; }
 function hudBlocked(g) {
+    return false;   // цифры меняются сразу при подборе; шарик-иконка просто долетает сам по себе
     if ((hudPending[g] || 0) > 0) return true;
     try { for (const it of items) if (it.pendingFX && hudGroup(it.pendingFX.target) === g) return true; } catch (e) {}
     return false;
