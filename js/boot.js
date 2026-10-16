@@ -46,7 +46,7 @@
                 sctx.globalAlpha = 1;
             }
             initStars(); window.addEventListener('resize', initStars);
-            var owlBox = el.querySelector('.bl-owlbox'), owlCssW = 0;
+            var owlBox = el.querySelector('.bl-owlbox'), owlCssW = 0, owlCssH = 0;
             var LS = { stars: [], acc: 0 };   // звёздочки ускорения для финального вида совы на загрузке
             var MV = { x: 0, y: 0, rot: 0, wing: -1, half: 200 };   // движение совы: прилёт слева прыжками и улёт вправо
             function drawOwl(now, d, fz, ov, fin) {   // рисуем сову игры в нужном состоянии (значения игры возвращаем на место сразу после)
@@ -57,7 +57,10 @@
                     var zz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;
                     var cssW = Math.max(360, Math.ceil(window.innerWidth / (zz * 0.88)));   // холст на всю ширину экрана (с учётом масштаба): звёздочки улетают до самого края
                     if (cssW !== owlCssW) { owlCssW = cssW; oc.style.width = cssW + 'px'; owlBox.style.width = cssW + 'px'; owlBox.style.marginLeft = (-cssW / 2) + 'px'; }
-                    var W = Math.round(cssW * dpr), H = Math.round(360 * dpr);
+                    // холст совы — на всю высоту экрана (сова по центру как прежде): осколки льда падают до самого низа и нигде не обрезаются
+                    var cssH = Math.max(360, Math.ceil(window.innerHeight / (zz * 0.88)) + 60);
+                    if (cssH !== owlCssH) { owlCssH = cssH; oc.style.height = cssH + 'px'; oc.style.marginTop = ((360 - cssH) / 2) + 'px'; }
+                    var W = Math.round(cssW * dpr), H = Math.round(cssH * dpr);
                     if (oc.width !== W || oc.height !== H) { oc.width = W; oc.height = H; }
                     octx.setTransform(1, 0, 0, 1, 0, 0); octx.clearRect(0, 0, W, H);
                     var k = (170 * dpr) / 68; MV.half = (W / 2) / k; octx.setTransform(k, 0, 0, k, W / 2 + 0.7 * k, H / 2 - 3.4 * k);   // сама сова — прежнего размера   // по визуальному центру совы (центр «массы» рисунка), а не по габаритам с длинным крылом   // сова ровно по центру (центр её силуэта), запас по краям — при объедании лапки не обрезаются
@@ -110,8 +113,8 @@
                         if (typeof iceShards !== 'undefined' && typeof spawnIceBurst === 'function') {
                             var is_ = iceShards; iceShards = LS.shards || (LS.shards = []);
                             try {
-                                if (MV.thaw) { MV.thaw = false; spawnIceBurst('thaw'); iceShards.forEach(function (s) { s.g = 0.13; s.decay = 0.032; s.vy *= 0.8; }); }   // осыпаются вниз и тают, не долетая до края
-                                updateIceShards(); iceShards.forEach(function (s) { s.size *= 0.965; }); drawIceShards();
+                                if (MV.thaw) { MV.thaw = false; spawnIceBurst('thaw'); }   // как в игре: лёд отваливается и осыпается вниз
+                                updateIceShards(); iceShards.forEach(function (s) { s.size *= 0.985; }); drawIceShards();   // по пути осколки уменьшаются и тают
                             }
                             finally { LS.shards = iceShards; iceShards = is_; }
                         }
