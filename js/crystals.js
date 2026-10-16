@@ -4,7 +4,8 @@
 // в них можно врезаться. Сколько одновременно летит в одной трубе — по сложности: Суперлайт/Лайт — 1, Медиум/Медиум+ — 2, Хард/Хард+ — 3
 // (дорожки на равном расстоянии по ширине трубы). Попадание снимает пол-жизни. Щит отбивает; в ШАЗАМе не страшны.
 // Выпадение (админка «Опасные трубы»): по умолчанию один раз на каждые два уровня сложности; чаще — раз за уровень; максимум — дважды за уровень.
-const CRYSTAL = { SEC: 10, COLOR: '#FF4A3D', HIT_DMG: 0.5, PER_PIPE: [1, 1, 2, 2, 3, 3], id: 0, plan: null, planKey: '' };
+const CRYSTAL = { SEC: 10, GAP: [[80, 140], [65, 120], [55, 100], [45, 85], [36, 70], [28, 58]],   // пауза между шарами из одной трубы, кадры — по уровню сложности (сначала реже)
+    COLOR: '#FF4A3D', HIT_DMG: 0.5, PER_PIPE: [1, 1, 2, 2, 3, 3], id: 0, plan: null, planKey: '' };
 let crystalTime = 0;          // сколько кадров ещё идёт эффект
 let crystals = [];            // летящие кристаллы
 let crystalPending = false;   // следующий подходящий значок на пути будет кристаллом
@@ -120,10 +121,16 @@ function crystalUpdate(speed, squeeze) {
         const N = CRYSTAL.PER_PIPE[lv] || 1;
         for (const p of pipes) {
             if (p.x + p.width < owl.x - 30 || p.x > width - 10) continue;   // трубы на экране впереди и рядом с совой
-            if (p._cId !== CRYSTAL.id) { p._cId = CRYSTAL.id; p._cT = 6 + Math.random() * 30; }
+            if (p._cId !== CRYSTAL.id) { p._cId = CRYSTAL.id; p._cT = 10 + Math.random() * 50; }
+            // из устьев труб изредка вылетают лёгкие блёстки
+            if (Math.random() < 0.06 * dt && particles.length < 450) {
+                const top = Math.random() < 0.5, sx = p.x + 6 + Math.random() * (p.width - 12), sy = top ? p.top + squeeze + 2 : height - (p.bottom + squeeze) - 2;
+                particles.push({ x: sx, y: sy, vx: (Math.random() - 0.5) * 0.6, vy: (top ? 1 : -1) * (0.4 + Math.random() * 0.8), color: Math.random() < 0.6 ? '#FFD27A' : '#FF7A5A', alpha: 0.85, size: 0.8 + Math.random() * 1.1, decay: 0.022 + Math.random() * 0.015, isStar: true });
+            }
             p._cT -= dt;
             if (p._cT > 0) continue;
-            p._cT = 22 + Math.random() * 40;   // случайно, примерно раз в 0,4–1 с
+            const G = CRYSTAL.GAP[lv] || CRYSTAL.GAP[0];
+            p._cT = G[0] + Math.random() * (G[1] - G[0]);   // случайно; с ростом сложности — чаще
             const used = new Set(); for (const o of crystals) if (o.pipe === p && !o.in) used.add(o.lane);
             if (used.size >= N) continue;   // в трубе уже летит столько, сколько можно
             const free = []; for (let k = 0; k < N; k++) if (!used.has(k)) free.push(k);

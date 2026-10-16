@@ -180,8 +180,8 @@ function stormBuildClouds() {
     });
     // серо-фиолетовые, в тон миру; «lit» — та же туча, подсвеченная луной (мягко накладывается тем сильнее, чем ближе к луне)
     STORM.cloudSpr = {
-        far: mk('rgba(118, 96, 156, 0.62)', 'rgba(66, 48, 98, 0.5)', 'rgba(110, 84, 160, 0.45)'),
-        near: mk('rgba(100, 80, 138, 0.72)', 'rgba(52, 38, 82, 0.6)', 'rgba(90, 66, 140, 0.45)'),
+        far: mk('rgba(118, 96, 156, 0.74)', 'rgba(66, 48, 98, 0.62)', 'rgba(110, 84, 160, 0.5)'),
+        near: mk('rgba(100, 80, 138, 0.86)', 'rgba(52, 38, 82, 0.76)', 'rgba(90, 66, 140, 0.5)'),
         farLit: mk('rgba(222, 208, 246, 0.6)', 'rgba(150, 130, 192, 0.42)', 'rgba(200, 180, 240, 0.4)'),
         nearLit: mk('rgba(214, 198, 240, 0.66)', 'rgba(140, 118, 184, 0.48)', 'rgba(200, 180, 240, 0.4)')
     };
@@ -196,8 +196,8 @@ function stormCloudSet() {
         for (let i = 0; i < n; i++) a.push({ x: (i + r() * 0.8) / n * (width + 360) - 180, yr: r(), k: kMin + r() * (kMax - kMin), tc: tMin + r() * (tMax - tMin), t: 0, on: false, go: false });
         return a;
     };
-    // low — слой у горизонта, за небоскрёбами; far и near — тучи в верхней части неба. Тучек много, но каждая небольшая — как обычные облачка
-    STORM.cl = { low: mkL(17, 1.0, 1.45, 15, 20), far: mkL(15, 0.7, 1.05, 12, 16), near: mkL(12, 0.8, 1.15, 9, 12), init: false };
+    // low — дальний слой у горизонта (самые маленькие), far — средний, near — ближние вверху (крупнее, сплошь затягивают верх неба)
+    STORM.cl = { low: mkL(18, 0.6, 0.9, 16, 22), far: mkL(20, 0.75, 1.05, 12, 16), near: mkL(16, 1.35, 1.9, 9, 12), init: false };
     // порядок появления общий для всех слоёв: сначала одна тучка, потом вторая, третья… — постепенно всё больше
     const all = [...STORM.cl.far, ...STORM.cl.near, ...STORM.cl.low];
     for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }
@@ -260,10 +260,14 @@ function stormDrawBack() {
         stormDrawCloudLayer(L.far, spr.far, (r) => 20 + r * Math.max(10, yb - 70), cv, si, 0.9, 0, first, spr.farLit);
         // зарница внутри туч и сам разряд — между дальним и ближним слоем туч
         if (STORM.flash > 0.01) stormDrawFlashBack(yb);
-        stormDrawCloudLayer(L.near, spr.near, (r) => 20 + r * Math.max(10, yb - 50), cv, si, 0.95, 0, first, spr.nearLit);
-        // луна видна всегда: поверх туч рисуем её ещё раз — тучи закрывают её не больше чем на ~30%
+        stormDrawCloudLayer(L.near, spr.near, (r) => -12 + r * Math.max(10, yb - 40), cv, si, 0.97, 0, first, spr.nearLit);
+        // луна сквозь плотные тучи лишь иногда проглядывает: то чуть видна, то почти скрыта
         const mp = window.__moonPos;
-        if (mp && moonSprite && cv > 0.01) { ctx.globalAlpha = Math.min(1, stormSmooth(0.05, 0.9, cv) * 0.8); ctx.drawImage(moonSprite, mp[0], mp[1], mp[2], mp[2]); }
+        if (mp && moonSprite && cv > 0.01) {
+            const tt = performance.now() / 1000, peek = 0.5 + 0.5 * Math.sin(tt * 0.21) * Math.sin(tt * 0.13 + 1.3);
+            ctx.globalAlpha = stormSmooth(0.05, 0.9, cv) * (0.08 + 0.42 * peek * peek);
+            ctx.drawImage(moonSprite, mp[0], mp[1], mp[2], mp[2]);
+        }
         // вспышка подсвечивает и ближние тучи
         if (STORM.flash > 0.01) {
             ctx.globalCompositeOperation = 'lighter';

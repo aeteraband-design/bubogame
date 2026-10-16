@@ -147,7 +147,7 @@ function drawToken(item) {
     ctx.shadowColor = col;
     ctx.shadowBlur = sBlur;   // искорки вокруг тематических жетонов светятся, как раньше
 
-    if (isThematic) {
+    if (isThematic || item.type === 'crystal') {   // у тем и у «Опасных труб» вокруг значка мерцают звёздочки
         const sparkles = [
             { dx: -item.radius * 0.85, dy: -item.radius * 0.8, size: 6.0, phase: 0 },
             { dx: item.radius * 0.95, dy: -item.radius * 0.55, size: 7.5, phase: 2.1 },
