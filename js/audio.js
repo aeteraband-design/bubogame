@@ -319,21 +319,18 @@ const AudioFX = {
         osc.connect(lp); lp.connect(g); g.connect(this.sfxGain || ctx.destination);
         osc.start(t); osc.stop(t + dur + 0.05);
     },
-    playPipesHeat() {     // «Опасные трубы» включились: трубы накаляются — нарастающее огненное «вуух», низкий гул и треск искр
+    playPipesHeat() {     // «Водопад» включился: в трубах зашумела вода — нарастающий плеск и бульканье
         try {
             if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime + 0.02;
-            this._noiseBand(t, 1.1, 280, 1600, 1.1, 0.11, 0.55);
-            this._toneSweep(t, 1.1, 55, 120, 300, 900, 0.06, 'sawtooth', 0.5);
-            this._toneSweep(t + 0.1, 0.9, 220, 440, 900, 2400, 0.025, 'triangle', 0.6);
-            this._crackle(t + 0.35, 0.8, 1800, 4200, 0.07, 1.4);
+            this._noiseBand(t, 1.2, 350, 1300, 0.9, 0.12, 0.5);
+            for (let i = 0; i < 6; i++) { const tt = t + 0.15 + i * 0.12 + Math.random() * 0.05, f = 300 + Math.random() * 500; this._toneSweep(tt, 0.09, f, f * 1.9, 1800, 2600, 0.035, 'sine', 0.2); }   // бульк-бульк
         } catch (e) {}
     },
-    playPipesCool() {     // эффект кончился: трубы остывают — шипение пара сверху вниз и затихающий гул
+    playPipesCool() {     // вода стихает: шум уходит вниз, последние капли
         try {
             if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime + 0.02;
-            this._noiseBand(t, 1.2, 2600, 500, 1.4, 0.07, 0.12);
-            this._toneSweep(t, 1.0, 120, 55, 700, 200, 0.045, 'sawtooth', 0.15);
-            this._crackle(t, 0.45, 2200, 900, 0.04, 1.2);
+            this._noiseBand(t, 1.1, 1300, 300, 0.9, 0.08, 0.1);
+            for (let i = 0; i < 3; i++) { const tt = t + 0.5 + i * 0.22, f = 900 + Math.random() * 600; this._toneSweep(tt, 0.07, f, f * 1.6, 2400, 3000, 0.03, 'sine', 0.2); }
         } catch (e) {}
     },
     playLevelShift() {    // смена уровня сложности: короткий мягкий «разгон» (вместе с обычным звуком нового уровня)
@@ -666,6 +663,21 @@ const AudioFX = {
             gain.connect(this.sfxGain || this.ctx.destination);
             osc.start(now);
             osc.stop(now + 0.15);
+        } catch(e) {}
+    },
+    playThemeLose() {     // тема потеряна: тот же перелив, что при сборе темы, но наоборот — вниз, в миноре, с лёгким «сдуванием»
+        try {
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            const now = this.ctx.currentTime;
+            [783.99, 622.25, 523.25, 392.0].forEach((freq, index) => {
+                const t = now + index * 0.07, osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, t); osc.frequency.exponentialRampToValueAtTime(freq * 0.94, t + 0.22);
+                gain.gain.setValueAtTime(0.13, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.26);
+                osc.connect(gain); gain.connect(this.sfxGain || this.ctx.destination);
+                osc.start(t); osc.stop(t + 0.28);
+            });
         } catch(e) {}
     },
     playThemeCollect() {

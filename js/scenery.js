@@ -789,7 +789,7 @@ function drawPipeCap(capX, capY, capW, capH, r, rimY, pw, red) {
             g.closePath();
         };
         const cg = g.createLinearGradient(capX, 0, capX + capW, 0);
-        const C = red ? ['#5e0010', '#8e0a1c', '#dc1f32', '#ff5262', '#b3122a', '#5e0010'] : ['#8c2400', '#bc3a00', '#f36500', '#ff8e24', '#d64d00', '#8c2400'];
+        const C = red ? ['#0b2f5c', '#114f8f', '#1f86d6', '#5cc6ff', '#1670bd', '#0b2f5c'] : ['#8c2400', '#bc3a00', '#f36500', '#ff8e24', '#d64d00', '#8c2400'];
         [0, 0.25, 0.58, 0.78, 0.92, 1].forEach((p, i) => cg.addColorStop(p, C[i]));
         const rg = g.createLinearGradient(capX, 0, capX + capW, 0);
         rg.addColorStop(0.0, 'rgba(255, 255, 255, 0.10)');
@@ -798,7 +798,7 @@ function drawPipeCap(capX, capY, capW, capH, r, rimY, pw, red) {
         rg.addColorStop(0.90, 'rgba(255, 255, 255, 0.24)');
         rg.addColorStop(1.0, 'rgba(255, 255, 255, 0.10)');
         g.fillStyle = cg; path(); g.fill();
-        g.strokeStyle = red ? 'rgba(255, 140, 150, 0.3)' : 'rgba(255, 185, 110, 0.28)'; g.lineWidth = 0.8; g.stroke();
+        g.strokeStyle = red ? 'rgba(150, 215, 255, 0.35)' : 'rgba(255, 185, 110, 0.28)'; g.lineWidth = 0.8; g.stroke();
         g.save(); path(); g.clip();
         g.strokeStyle = rg; g.lineWidth = 1.8;
         g.beginPath(); g.moveTo(capX - 2, rimY); g.lineTo(capX + capW + 2, rimY); g.stroke();
@@ -881,7 +881,7 @@ function drawPipe(pipe) {
     ctx.restore();
 
     drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width);   // шляпка — из заготовки (без дорогой обрезки каждый кадр)
-    const redK = typeof crystalRedK === 'number' ? crystalRedK : 0;   // эффект «Опасные трубы»: шляпки плавно краснеют
+    const redK = typeof crystalRedK === 'number' ? crystalRedK : 0;   // эффект «Водопад»: шляпки плавно краснеют
     if (redK > 0.01) { ctx.globalAlpha = redK; drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width, true); ctx.globalAlpha = 1; }
 
     const bottomY = height - effectiveBottom;
@@ -920,7 +920,7 @@ function drawPipe(pipe) {
             // ширина пятна — ровно по шляпке (по краям свет гаснет до нуля, без обрезов), вытянуто в проём
             ctx.save(); ctx.translate(pipe.width / 2, my); ctx.scale(1, 1.25);
             const R = capW / 2, rg = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
-            rg.addColorStop(0, `rgba(255, 110, 70, ${0.42 * redK * br})`); rg.addColorStop(0.45, `rgba(255, 60, 50, ${0.16 * redK * br})`); rg.addColorStop(1, 'rgba(255, 40, 40, 0)');
+            rg.addColorStop(0, `rgba(110, 200, 255, ${0.4 * redK * br})`); rg.addColorStop(0.45, `rgba(60, 150, 240, ${0.15 * redK * br})`); rg.addColorStop(1, 'rgba(40, 120, 230, 0)');
             ctx.globalAlpha = 1; ctx.fillStyle = rg;
             ctx.beginPath(); ctx.arc(0, 0, R, dir > 0 ? 0 : Math.PI, dir > 0 ? Math.PI : Math.PI * 2); ctx.fill();
             ctx.restore();

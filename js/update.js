@@ -494,7 +494,7 @@ function buffKeyForLabel(t) {
     if (/^Ускорение \d+с$/i.test(t)) return shazamBusy() ? 'shazam' : 'speed';   
     if (/^ШАЗАМ \d+с$/i.test(t)) return 'shazam';   // в ШАЗАМе подсказка улетает в таймер ШАЗАМа
     if (/^Замедление \d+с$/i.test(t)) return 'slow';
-    if (/^Опасные трубы \d+с$/i.test(t)) return 'crystal';
+    if (/^Водопад \d+с$/i.test(t)) return 'crystal';
     if (/переели/i.test(t)) return 'overeat';
     if (/замёрзли|замерзли/i.test(t)) return 'freeze';
     if (/опьянели/i.test(t)) return 'drunk';
@@ -609,9 +609,9 @@ function updateBuffHUD() {
     }
     if (crystalTime > 0) {
         activeBuffs.push({
-            key: 'crystal', left: crystalTime, text: `ОПАСНЫЕ ТРУБЫ: ${Math.ceil(crystalTime / 60)}с`,
-            color: '#FF6A3D',
-            icon: 'fa-fire'
+            key: 'crystal', left: crystalTime, text: `ВОДОПАД: ${Math.ceil(crystalTime / 60)}с`,
+            color: '#7DD3FC',
+            icon: 'fa-droplet'
         });
     }
     if (freezeTime > 0) {
@@ -819,7 +819,7 @@ function handleSecretRoulette(originX, originY) {
                 const lostKey = existing[Math.floor(Math.random() * existing.length)];
                 collected[lostKey]--;
                 updateCollectionHUD();
-                AudioFX.playHit();
+                AudioFX.playThemeLose();   // потеря темы — свой звук «вычитания», не удар
                 triggerBadgeAnimation(lostKey, true);
                 return { label: `Штраф: -1 ${CATEGORIES[lostKey].name}`, color: '#F43F5E', icon: 'fa-triangle-exclamation', isScoreAdd: false };
             } },
