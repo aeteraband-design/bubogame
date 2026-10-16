@@ -71,7 +71,7 @@ function drawCrystals() {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (const c of crystals) {
-        const a = ghost ? 0.3 : 1;
+        const a = c.kn ? Math.min(1, c.kl / 25) : 1;
         if (a <= 0.01) continue;
         ctx.globalAlpha = a;
         const s = 34 * (1 + 0.12 * Math.sin(c.age * 0.45 + c.ph));   // мерцает
@@ -141,6 +141,12 @@ function crystalUpdate(speed, squeeze) {
         const c = crystals[i];
         c.age += dt; c.x -= speed * dt;
         const rr = 6;
+        if (c.kn) {   // отбит щитом или сдут ШАЗАМом: улетает прочь, кувыркаясь и сыпля искрами, и гаснет
+            c.x += c.kvx * dt; c.y += c.kvy * dt; c.kvy += 0.06 * dt; c.kvx *= Math.pow(0.985, dt); c.kl -= dt;
+            if (particles.length < 450 && Math.random() < 0.8 * dt) particles.push({ x: c.x, y: c.y, vx: -c.kvx * 0.15 + (Math.random() - 0.5) * 0.6, vy: -c.kvy * 0.15 + (Math.random() - 0.5) * 0.6, color: Math.random() < 0.5 ? '#FFD27A' : '#FF4A3D', alpha: 0.9, size: 0.8 + Math.random() * 1.1, decay: 0.07, isStar: true });
+            if (c.kl <= 0 || c.x < -40 || c.x > width + 40 || c.y < -40 || c.y > height + 40) crystals.splice(i, 1);
+            continue;
+        }
         c.vy = c.d > 0 ? Math.min(6, c.vy + 0.07 * dt) : Math.max(-6, c.vy - 0.07 * dt); c.y += c.vy * dt;
         // в проёме между трубами? (внутри труб шар скрыт за ними)
         let inGap = true;
@@ -160,12 +166,20 @@ function crystalUpdate(speed, squeeze) {
         }
         let gone = c.x < -40 || c.y > height + 30 || c.y < -30;
         if (!inGap) { if (gone) crystals.splice(i, 1); continue; }
-        if (!gone && !shz && gameActive) {
+        const knock = (pow) => {   // шар отлетает от совы
+            const a = Math.atan2(c.y - owl.y, c.x - owl.x);
+            c.kn = true; c.kl = 60; c.kvx = Math.cos(a) * pow + (shz ? 2 : 0); c.kvy = Math.sin(a) * pow - 1;
+            crystalBurst(c.x, c.y, shz ? 8 : 5);
+        };
+        if (!gone && gameActive && shz) {
+            // ШАЗАМ: вокруг совы такая мощь, что шары сдувает издалека — сильно и в сторону
+            if (Math.hypot(owl.x - c.x, owl.y - c.y) < owl.radius * 2.4) knock(9);
+        } else if (!gone && gameActive) {
             const d = Math.hypot(owl.x - c.x, owl.y - c.y);
             if (shieldTime > 0) {
-                if (d < owl.radius * 1.45 + rr * 0.5) {   // щит отбивает кристалл
+                if (d < owl.radius * 1.45 + rr * 0.5) {   // щит отбивает шар — тот отлетает прочь
                     try { shieldBump(Math.atan2(c.y - owl.y, c.x - owl.x), 0.45); } catch (e) {}
-                    crystalBurst(c.x, c.y, 6); gone = true;
+                    knock(5);
                 }
             } else if (invulnerableTime <= 0 && d < owl.radius * 0.85 + rr) {
                 crystalBurst(c.x, c.y, 9); gone = true;
