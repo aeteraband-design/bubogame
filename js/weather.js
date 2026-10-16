@@ -411,32 +411,44 @@ function stormDrawRain() {
     ctx.globalAlpha = 1;
 }
 
-// ---------- мокрая сова: сверху на голове блестят капельки, снизу висят и срываются капли (как на трубах) ----------
-// вызывается из owl.draw в координатах тела совы
-const OWL_WET = { top: [[-11, -16.5, 1.0], [-4, -19, 1.25], [3.5, -18.8, 1.1], [10, -15.5, 0.9], [-15, -9, 0.8]],
-                  hang: [[-8, 17.5], [1.5, 19.5], [9, 16.5]] };
-function stormDrawOwlWet(g, owlObj) {
-    const wet = STORM.wet || 0;
-    if (wet < 0.05) return;
-    g.save();
-    for (const [x, y, r] of OWL_WET.top) {   // капельки на голове и спине
-        const rr = r * (0.75 + 0.25 * wet);
-        g.globalAlpha = 0.85 * wet;
-        g.fillStyle = 'rgba(190, 220, 255, 0.55)'; g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.fill();
-        g.fillStyle = '#FFFFFF'; g.beginPath(); g.arc(x - rr * 0.35, y - rr * 0.35, rr * 0.32, 0, Math.PI * 2); g.fill();
+// ---------- мокрая сова: крошечные капли лежат прямо на контуре совы (как бусинки на трубах), медленно стекают вниз и срываются ----------
+// вызывается из owl.draw в координатах тела совы; контур — тот же, что у тела (OWL_BODY_PTS)
+function stormDrawOwlWet(g, o) {
+    const wet = STORM.wet || 0, P = (typeof OWL_BODY_PTS !== 'undefined') ? OWL_BODY_PTS.p : null;
+    const B = o._wb || (o._wb = []);
+    if (!P || (wet < 0.03 && !B.length)) return;
+    const n = P.length, dt = (typeof dtMult === 'number' ? dtMult : 1);
+    const at = (t) => { const i = ((Math.floor(t) % n) + n) % n, j = (i + 1) % n, f = t - Math.floor(t); return [P[i][0] + (P[j][0] - P[i][0]) * f, P[i][1] + (P[j][1] - P[i][1]) * f, i, j]; };
+    // новые капли — на верхней половине контура (голова, спина, грудка)
+    if (wet > 0.1 && B.length < 4 + Math.round(wet * 6) && Math.random() < 0.05 * wet * dt) {
+        let t = 0, tries = 0;
+        do { t = Math.random() * n; tries++; } while (at(t)[1] > 3 && tries < 8);
+        if (at(t)[1] <= 3) B.push({ t, r: 0.32 + Math.random() * 0.32, age: 0, v: 0 });
     }
-    OWL_WET.hang.forEach(([x, y], i) => {   // висячие капли растут и срываются
-        const u = ((frame || 0) * 0.008 * (0.6 + wet) + i * 0.37) % 1, s = 0.5 + 1.6 * u;
-        g.globalAlpha = 0.9 * wet;
-        g.fillStyle = 'rgba(190, 220, 255, 0.7)';
-        g.beginPath(); g.moveTo(x - s * 0.55, y); g.quadraticCurveTo(x, y - s * 0.6, x + s * 0.55, y);
-        g.arc(x, y + s * 0.35, s * 0.6, 0, Math.PI); g.closePath(); g.fill();
-        g.fillStyle = '#FFFFFF'; g.beginPath(); g.arc(x - s * 0.2, y + s * 0.25, s * 0.18, 0, Math.PI * 2); g.fill();
-        const key = '_wd' + i;
-        if (u > 0.95 && !owlObj[key] && gameActive && typeof particles !== 'undefined') {   // капля сорвалась
-            owlObj[key] = true;
-            particles.push({ x: owlObj.x + x * 1.29, y: owlObj.y + (y + s) * 1.29, vx: -0.3, vy: 1.4, color: '#BFDDFF', alpha: 0.85 * wet, size: 1.3, decay: 0.03 });
-        } else if (u < 0.5) owlObj[key] = false;
-    });
+    g.save();
+    for (let k = B.length - 1; k >= 0; k--) {
+        const b = B[k]; b.age += dt;
+        // стекает вниз по контуру: в сторону соседней точки, которая ниже; набирая вес, чуть быстрее
+        const [x0, y0] = at(b.t), yF = at(b.t + 0.5)[1], yB = at(b.t - 0.5)[1];
+        const dir = yF > yB ? 1 : -1, slope = Math.abs(yF - yB);
+        b.v = Math.min(0.06, b.v + 0.0006 * dt * (0.3 + slope)) * (slope < 0.15 ? 0.9 : 1);
+        b.t += dir * b.v * dt;
+        const [x, y, i, j] = at(b.t);
+        // внизу капля срывается
+        if ((y > 13 && slope > 0.3) || b.age > 900 || wet < 0.02) {
+            if (y > 13 && gameActive && typeof particles !== 'undefined') particles.push({ x: o.x + x * 1.29, y: o.y + (y + 2.7) * 1.29, vx: -0.2, vy: 1.2, color: '#ACD0F5', alpha: 0.8, size: 0.9, decay: 0.03 });
+            B.splice(k, 1); continue;
+        }
+        // капля лежит на контуре: купол наружу, плоское основание по линии контура
+        const tx = P[j][0] - P[i][0], ty = P[j][1] - P[i][1], ang = Math.atan2(ty, tx);
+        let nx = -ty, ny = tx; if (nx * (x + 1) + ny * (y - 3) < 0) { nx = -nx; ny = -ny; }   // нормаль наружу (от центра тела)
+        const out = Math.atan2(ny, nx), gr = Math.min(1, b.age / 30), r = b.r * (0.5 + 0.5 * gr);
+        g.save(); g.translate(x, y); g.rotate(out + Math.PI / 2);
+        g.globalAlpha = 0.75 * Math.min(1, wet * 2); g.fillStyle = 'rgb(172, 208, 245)';
+        g.beginPath(); g.ellipse(0, 0, r, r * 1.1, 0, Math.PI, 0); g.ellipse(0, 0, r, r * 0.35, 0, 0, Math.PI); g.fill();
+        g.globalAlpha = 0.9 * Math.min(1, wet * 2); g.fillStyle = '#F2FAFF';
+        g.fillRect(-r * 0.45, -r * 0.8, Math.max(0.18, r * 0.4), Math.max(0.18, r * 0.4));
+        g.restore();
+    }
     g.restore();
 }
