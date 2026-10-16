@@ -109,7 +109,10 @@
                         // оттаивание: лёд разлетается осколками — те же, что в игре
                         if (typeof iceShards !== 'undefined' && typeof spawnIceBurst === 'function') {
                             var is_ = iceShards; iceShards = LS.shards || (LS.shards = []);
-                            try { if (MV.thaw) { MV.thaw = false; spawnIceBurst('thaw'); } updateIceShards(); drawIceShards(); }
+                            try {
+                                if (MV.thaw) { MV.thaw = false; spawnIceBurst('thaw'); iceShards.forEach(function (s) { s.g = 0.13; s.decay = 0.032; s.vy *= 0.8; }); }   // осыпаются вниз и тают, не долетая до края
+                                updateIceShards(); iceShards.forEach(function (s) { s.size *= 0.965; }); drawIceShards();
+                            }
                             finally { LS.shards = iceShards; iceShards = is_; }
                         }
                     }
