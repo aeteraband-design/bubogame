@@ -538,24 +538,37 @@ const owl = {
             ctx.beginPath();
             ctx.moveTo(13.2, 0.6); ctx.lineTo(15.4, 0.4); ctx.lineTo(14.5, 0.5 + 6.0 * fz);
             ctx.closePath(); ctx.fill();
-            // в дождь капли на сове замерзают: со временем налипает всё больше льда — наросты сверху и сосульки снизу
+            // в дождь капли на сове замерзают: со временем по контуру налипают маленькие ледяные кристаллики, снизу растут сосульки
             const ice = (typeof STORM !== 'undefined' && STORM.ice) || 0;
-            if (ice > 0.02) {
-                const IC = [[-12, -15, 3.2], [-4, -18.5, 3.6], [4, -18, 3.0], [11, -14, 2.8], [-17, -6, 2.6], [16, -4, 2.4], [-14, 8, 2.6], [12, 12, 2.4]];
-                const nIce = Math.ceil(IC.length * ice);
-                for (let i = 0; i < nIce; i++) {
-                    const [x, y, r] = IC[i], k = Math.min(1, ice * IC.length - i), rr = r * k;
-                    ctx.fillStyle = 'rgba(214, 238, 255, 0.85)';
-                    ctx.beginPath(); ctx.moveTo(x - rr, y + rr * 0.3); ctx.lineTo(x - rr * 0.3, y - rr); ctx.lineTo(x + rr * 0.8, y - rr * 0.5); ctx.lineTo(x + rr, y + rr * 0.4); ctx.lineTo(x, y + rr * 0.8); ctx.closePath(); ctx.fill();
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; ctx.lineWidth = 0.6; ctx.stroke();
+            const P = (typeof OWL_BODY_PTS !== 'undefined') ? OWL_BODY_PTS.p : null;
+            if (ice > 0.02 && P) {
+                const n = P.length;
+                if (!this._iceSlots) {   // места на контуре и их порядок появления — один раз
+                    const s = []; let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+                    for (let k = 0; k < 22; k++) s.push({ t: (k + rnd() * 0.6) / 22 * n, tilt: (rnd() - 0.5) * 0.7, L: 1.6 + rnd() * 1.3 });
+                    for (let k = s.length - 1; k > 0; k--) { const q = Math.floor(rnd() * (k + 1)); [s[k], s[q]] = [s[q], s[k]]; }
+                    this._iceSlots = s;
                 }
-                [[-9, 16.5], [-2, 18.5], [5, 18.5], [11, 15.5]].forEach(([x, y], i) => {   // сосульки под брюшком
-                    const L = Math.max(0, ice * 4 - i) * 2.2;
-                    if (L < 0.3) return;
-                    const ig = ctx.createLinearGradient(x, y, x, y + L);
-                    ig.addColorStop(0, '#FFFFFF'); ig.addColorStop(1, 'rgba(125, 211, 252, 0.85)');
-                    ctx.fillStyle = ig; ctx.beginPath(); ctx.moveTo(x - 1.3, y); ctx.lineTo(x + 1.3, y); ctx.lineTo(x, y + L); ctx.closePath(); ctx.fill();
-                });
+                const S = this._iceSlots, cnt = S.length * ice;
+                for (let k = 0; k < S.length && k < cnt; k++) {
+                    const sl = S[k], gr = Math.min(1, cnt - k), i0 = Math.floor(sl.t) % n, i1 = (i0 + 1) % n, f = sl.t - Math.floor(sl.t);
+                    const x = P[i0][0] + (P[i1][0] - P[i0][0]) * f, y = P[i0][1] + (P[i1][1] - P[i0][1]) * f;
+                    let nx = -(P[i1][1] - P[i0][1]), ny = P[i1][0] - P[i0][0]; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+                    if (nx * (x + 1) + ny * (y - 3) < 0) { nx = -nx; ny = -ny; }   // наружу
+                    if (y > 12 && ny > 0.5) {   // низ брюшка — сосулька вниз
+                        const L = sl.L * 2.2 * gr;
+                        const ig = ctx.createLinearGradient(x, y, x, y + L); ig.addColorStop(0, '#FFFFFF'); ig.addColorStop(1, 'rgba(125, 211, 252, 0.85)');
+                        ctx.fillStyle = ig; ctx.beginPath(); ctx.moveTo(x - 0.9, y - 0.3); ctx.lineTo(x + 0.9, y - 0.3); ctx.lineTo(x, y + L); ctx.closePath(); ctx.fill();
+                        continue;
+                    }
+                    // кристаллик: вытянутый ромб с двумя гранями, наполовину «вмёрз» в контур
+                    const a = Math.atan2(ny, nx) + sl.tilt, L = sl.L * gr, W = L * 0.42;
+                    ctx.save(); ctx.translate(x - nx * L * 0.35, y - ny * L * 0.35); ctx.rotate(a);
+                    ctx.fillStyle = 'rgba(232, 247, 255, 0.95)'; ctx.beginPath(); ctx.moveTo(-L * 0.4, 0); ctx.lineTo(0, -W); ctx.lineTo(L, 0); ctx.closePath(); ctx.fill();
+                    ctx.fillStyle = 'rgba(150, 205, 245, 0.92)'; ctx.beginPath(); ctx.moveTo(-L * 0.4, 0); ctx.lineTo(L, 0); ctx.lineTo(0, W); ctx.closePath(); ctx.fill();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)'; ctx.lineWidth = 0.3; ctx.beginPath(); ctx.moveTo(-L * 0.4, 0); ctx.lineTo(0, -W); ctx.lineTo(L, 0); ctx.lineTo(0, W); ctx.closePath(); ctx.stroke();
+                    ctx.restore();
+                }
             }
             ctx.restore();
         }
