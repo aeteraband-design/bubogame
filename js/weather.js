@@ -18,8 +18,8 @@ function stormSmooth(a, b, x) { const t = stormClamp((x - a) / (b - a)); return 
 // расписание гроз (время идёт только в полёте). Гроза: 15 с тучи собираются (облака темнеют, из-за правого края их наплывает всё больше,
 // под конец начинается дождь) → 30–45 с дождь с молниями → 15 с уходит (дождь слабеет, молнии всё реже, тучи уплывают влево)
 const WX = {
-    RAMP: 15, FADE: 15,          // нарастание и уход, с
-    DUR_MIN: 45, DUR_MAX: 60,    // сколько гроза «включена» (15 с нарастания + 30–45 с грозы), с
+    RAMP: 24, FADE: 24,          // нарастание и уход, с — тучи налетают и уходят медленно
+    DUR_MIN: 54, DUR_MAX: 69,    // сколько гроза «включена» (24 с нарастания + 30–45 с грозы), с
     // частота (настройка в админке): шанс начать игру сразу в дождь, первая пауза, пауза между грозами, с
     FREQ: [
         { none: 0.45, start: 0.08, first: [120, 700], gap: [400, 900] },   // редко
@@ -372,4 +372,34 @@ function stormDrawRain() {
         ctx.stroke();
     }
     ctx.globalAlpha = 1;
+}
+
+// ---------- мокрая сова: сверху на голове блестят капельки, снизу висят и срываются капли (как на трубах) ----------
+// вызывается из owl.draw в координатах тела совы
+const OWL_WET = { top: [[-11, -16.5, 1.0], [-4, -19, 1.25], [3.5, -18.8, 1.1], [10, -15.5, 0.9], [-15, -9, 0.8]],
+                  hang: [[-8, 17.5], [1.5, 19.5], [9, 16.5]] };
+function stormDrawOwlWet(g, owlObj) {
+    const wet = STORM.wet || 0;
+    if (wet < 0.05) return;
+    g.save();
+    for (const [x, y, r] of OWL_WET.top) {   // капельки на голове и спине
+        const rr = r * (0.75 + 0.25 * wet);
+        g.globalAlpha = 0.85 * wet;
+        g.fillStyle = 'rgba(190, 220, 255, 0.55)'; g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.fill();
+        g.fillStyle = '#FFFFFF'; g.beginPath(); g.arc(x - rr * 0.35, y - rr * 0.35, rr * 0.32, 0, Math.PI * 2); g.fill();
+    }
+    OWL_WET.hang.forEach(([x, y], i) => {   // висячие капли растут и срываются
+        const u = ((frame || 0) * 0.008 * (0.6 + wet) + i * 0.37) % 1, s = 0.5 + 1.6 * u;
+        g.globalAlpha = 0.9 * wet;
+        g.fillStyle = 'rgba(190, 220, 255, 0.7)';
+        g.beginPath(); g.moveTo(x - s * 0.55, y); g.quadraticCurveTo(x, y - s * 0.6, x + s * 0.55, y);
+        g.arc(x, y + s * 0.35, s * 0.6, 0, Math.PI); g.closePath(); g.fill();
+        g.fillStyle = '#FFFFFF'; g.beginPath(); g.arc(x - s * 0.2, y + s * 0.25, s * 0.18, 0, Math.PI * 2); g.fill();
+        const key = '_wd' + i;
+        if (u > 0.95 && !owlObj[key] && gameActive && typeof particles !== 'undefined') {   // капля сорвалась
+            owlObj[key] = true;
+            particles.push({ x: owlObj.x + x * 1.29, y: owlObj.y + (y + s) * 1.29, vx: -0.3, vy: 1.4, color: '#BFDDFF', alpha: 0.85 * wet, size: 1.3, decay: 0.03 });
+        } else if (u < 0.5) owlObj[key] = false;
+    });
+    g.restore();
 }

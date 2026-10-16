@@ -81,6 +81,11 @@ function update() {
         freezeTime -= dtMult;
         if (freezeTime <= 0) { freezeTime = 0; AudioFX.playFreezeEnd(); spawnIceBurst('thaw'); Haptics.hit(); }
     }
+    // заморозка в дождь: капли на сове тоже замерзают — лёд налипает со временем (за 10 с — до максимума), сова тяжелеет
+    if (typeof STORM !== 'undefined') {
+        if (freezeTime > 0 && STORM.wet > 0.1) STORM.ice = Math.min(1, (STORM.ice || 0) + dtMult / 600 * Math.min(1, STORM.wet * 1.3));
+        else if (freezeTime <= 0) STORM.ice = Math.max(0, (STORM.ice || 0) - 0.05 * dtMult);
+    }
     {
         const fStep = 0.025 * dtMult;
         const fTarget = freezeTime > 0 ? 1 : 0;

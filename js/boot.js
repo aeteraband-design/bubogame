@@ -78,14 +78,26 @@
                     }
                     var wft_ = waitingFirstTap, dtm_ = dtMult;
                     waitingFirstTap = false; dtMult = 1;   // поза совы на загрузке не зависит ни от «покачивания ожидания» из игры, ни от длительности кадра — без дрожания
+                    var shzK_ = (typeof SHZ !== 'undefined') ? SHZ.k : 0;
+                    if (typeof SHZ !== 'undefined') SHZ.k = MV.shz || 0;   // свечение и молнии ШАЗАМа рисует сама сова
                     try {
+                        if (MV.charge > 0) {   // зарядка: искры со всех сторон стягиваются к сове
+                            octx.save(); octx.globalCompositeOperation = 'lighter';
+                            for (var ci = 0; ci < 14; ci++) {
+                                var cu = (MV.charge * 2.2 + ci / 14) % 1, ca = ci * 2.39, cr = 70 * (1 - cu) + 8;
+                                octx.globalAlpha = Math.sin(cu * Math.PI);
+                                octx.fillStyle = ci % 2 ? '#FFD08A' : '#FF7A00';
+                                octx.beginPath(); octx.arc(owl.x + Math.cos(ca) * cr, owl.y + Math.sin(ca) * cr * 0.8, 1.6, 0, Math.PI * 2); octx.fill();
+                            }
+                            octx.restore();
+                        }
                         if (MV.exit > 0) {   // улёт как в ШАЗАМе: огненно-фиолетовые полосы и тающие копии совы позади
                             var q = MV.exit;
                             octx.save(); octx.globalCompositeOperation = 'lighter';
                             for (var si = 0; si < 7; si++) {
                                 var yy = owl.y - 22 + si * 7.5, ln = (60 + (si % 3) * 40) * Math.min(1, q * 3);
                                 var gr = octx.createLinearGradient(owl.x - ln, 0, owl.x, 0);
-                                gr.addColorStop(0, 'rgba(168, 85, 247, 0)'); gr.addColorStop(1, si % 2 ? 'rgba(254, 140, 40, 0.7)' : 'rgba(192, 132, 252, 0.7)');
+                                gr.addColorStop(0, 'rgba(255, 122, 0, 0)'); gr.addColorStop(1, si % 2 ? 'rgba(255, 196, 138, 0.8)' : 'rgba(255, 140, 40, 0.75)');
                                 octx.fillStyle = gr; octx.fillRect(owl.x - ln - 8, yy, ln, 1.6);
                             }
                             octx.restore();
@@ -95,7 +107,7 @@
                         }
                         if (fz > 0.01 && typeof drawFrozenOwl === 'function') drawFrozenOwl(); else owl.draw();
                     }
-                    finally { waitingFirstTap = wft_; dtMult = dtm_; viewScale = svs; renderScale = srs; ctx = main; owl.x = sx; owl.y = sy; owl.rotation = sr; owl.visible = sv; owl.lean = sl; owl.boostK = sb; owl.spinAngle = sp; owl.wing = sw; currentDrunkFactor = sd; currentFreezeFactor = sf; currentOvereatFactor = so; frame = sfr; }
+                    finally { if (typeof SHZ !== 'undefined') SHZ.k = shzK_; waitingFirstTap = wft_; dtMult = dtm_; viewScale = svs; renderScale = srs; ctx = main; owl.x = sx; owl.y = sy; owl.rotation = sr; owl.visible = sv; owl.lean = sl; owl.boostK = sb; owl.spinAngle = sp; owl.wing = sw; currentDrunkFactor = sd; currentFreezeFactor = sf; currentOvereatFactor = so; frame = sfr; }
                 } catch (e) {}
             }
             var clone = null, cloneWrap = null;
@@ -121,8 +133,8 @@
             function dismiss() {
                 if (dismissed || !ready) return; dismissed = true;
                 exitT0 = performance.now();   // сова улетает вправо, как в ШАЗАМе; экран гаснет следом
-                try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); AudioFX.playFlap(); } } catch (e) {}   // мягкий взмах, без резкого звука ШАЗАМа
-                setTimeout(finishDismiss, 520);
+                try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); } } catch (e) {}
+                setTimeout(finishDismiss, 1100);
             }
             function finishDismiss() {
                 document.documentElement.classList.remove('booting'); window.__booting = false;
@@ -149,8 +161,15 @@
                     MV.x = -(MV.half + 50) * (1 - ex); MV.y = -Math.sin(u * Math.PI) * amp; MV.rot = -0.32 * Math.cos(u * Math.PI);
                     MV.wing = u < 0.22 ? 1 - u / 0.22 : 0;
                 } else if (exitT0) {
-                    var q = Math.min(1, (now - exitT0) / 480); MV.exit = q;
-                    MV.x = (MV.half + 90) * q * q; MV.y = -6 * q; MV.rot = -0.05; MV.wing = 0;
+                    // как ШАЗАМ в игре: 0,6 с сова заряжается (оранжевое свечение, молнии вокруг, искры стягиваются), потом рывок вправо
+                    var ct = (now - exitT0) / 600;
+                    MV.shz = Math.min(1, ct * 1.4);
+                    if (ct < 1) { MV.exit = 0; MV.x = -4 * Math.sin(ct * Math.PI); MV.y = 0; MV.rot = 0; MV.wing = -1; MV.charge = ct; }
+                    else {
+                        if (!MV.flapped) { MV.flapped = true; try { AudioFX.playFlap(); } catch (e) {} }
+                        var q = Math.min(1, (now - exitT0 - 600) / 450); MV.exit = q; MV.charge = 0;
+                        MV.x = (MV.half + 90) * q * q; MV.y = -6 * q; MV.rot = -0.05; MV.wing = 0;
+                    }
                 } else { MV.x = 0; MV.y = 0; MV.rot = 0; MV.wing = -1; }
                 // фон: как только игра начала рисовать свою сцену, тёмная подложка загрузки плавно уходит — видны небо, город и облака
                 if (!revealed && window.__sceneDrawn) { revealed = true; el.classList.add('reveal'); }

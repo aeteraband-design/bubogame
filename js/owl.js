@@ -89,7 +89,7 @@ const owl = {
             return;
         }
         // «Тяжёлая» сова: гравитация сильнее на 30% при переедании
-        this.vy += this.gravity * (1 + 0.3 * oe) * (1 + 0.15 * currentFreezeFactor) * ((typeof SHZ !== 'undefined' && SHZ.state === 'active') ? 0.82 : 1) * dtMult;
+        this.vy += this.gravity * (1 + 0.3 * oe) * (1 + 0.15 * currentFreezeFactor + 0.22 * ((typeof STORM !== 'undefined' && STORM.ice) || 0)) * ((typeof SHZ !== 'undefined' && SHZ.state === 'active') ? 0.82 : 1) * dtMult;
         this.y += this.vy * dtMult;
         this.rotation = Math.min(0.48, Math.max(-0.38, this.vy * 0.055));
         // Замерзание: сова кувыркается, как брошенная ледышка
@@ -538,8 +538,28 @@ const owl = {
             ctx.beginPath();
             ctx.moveTo(13.2, 0.6); ctx.lineTo(15.4, 0.4); ctx.lineTo(14.5, 0.5 + 6.0 * fz);
             ctx.closePath(); ctx.fill();
+            // в дождь капли на сове замерзают: со временем налипает всё больше льда — наросты сверху и сосульки снизу
+            const ice = (typeof STORM !== 'undefined' && STORM.ice) || 0;
+            if (ice > 0.02) {
+                const IC = [[-12, -15, 3.2], [-4, -18.5, 3.6], [4, -18, 3.0], [11, -14, 2.8], [-17, -6, 2.6], [16, -4, 2.4], [-14, 8, 2.6], [12, 12, 2.4]];
+                const nIce = Math.ceil(IC.length * ice);
+                for (let i = 0; i < nIce; i++) {
+                    const [x, y, r] = IC[i], k = Math.min(1, ice * IC.length - i), rr = r * k;
+                    ctx.fillStyle = 'rgba(214, 238, 255, 0.85)';
+                    ctx.beginPath(); ctx.moveTo(x - rr, y + rr * 0.3); ctx.lineTo(x - rr * 0.3, y - rr); ctx.lineTo(x + rr * 0.8, y - rr * 0.5); ctx.lineTo(x + rr, y + rr * 0.4); ctx.lineTo(x, y + rr * 0.8); ctx.closePath(); ctx.fill();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; ctx.lineWidth = 0.6; ctx.stroke();
+                }
+                [[-9, 16.5], [-2, 18.5], [5, 18.5], [11, 15.5]].forEach(([x, y], i) => {   // сосульки под брюшком
+                    const L = Math.max(0, ice * 4 - i) * 2.2;
+                    if (L < 0.3) return;
+                    const ig = ctx.createLinearGradient(x, y, x, y + L);
+                    ig.addColorStop(0, '#FFFFFF'); ig.addColorStop(1, 'rgba(125, 211, 252, 0.85)');
+                    ctx.fillStyle = ig; ctx.beginPath(); ctx.moveTo(x - 1.3, y); ctx.lineTo(x + 1.3, y); ctx.lineTo(x, y + L); ctx.closePath(); ctx.fill();
+                });
+            }
             ctx.restore();
         }
+        if (typeof stormDrawOwlWet === 'function' && currentFreezeFactor < 0.5) stormDrawOwlWet(ctx, this);   // мокрая сова в дождь
 
         ctx.restore();
 
