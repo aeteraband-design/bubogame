@@ -508,7 +508,10 @@ function drawMoon() {
     const S = Math.max(1, viewScale * renderScale);
     // плавно подтягиваем показанную фазу к целевой — смена почти незаметна
     const target = moonPhaseTarget();
-    if (moonPhase < 0) moonPhase = target;
+    // вышли из меню в игру (или вернулись в меню) — луна сразу в нужной фазе, без «откатывания» от прошлой
+    const inMenu = !!(moonPhaseTarget.__s && !moonPhaseTarget.__s.classList.contains('hidden'));
+    if (drawMoon.__menu !== inMenu) { drawMoon.__menu = inMenu; moonPhase = target; moonRendered = -1; }
+    if (moonPhase < 0 || target < moonPhase - 0.05) { moonPhase = target; moonRendered = -1; }   // новая игра (прогресс сброшен) — сразу начальная луна
     else moonPhase += (target - moonPhase) * Math.min(1, 0.02 * dtMult);
     // луна перерисовывается, когда фаза заметно сдвинулась (шаг 0,007 — раньше 0,003: после каждой темы луна перерисовывалась 4–5 раз подряд,
     // и каждая перерисовка с большим мягким свечением давала подёргивание). Холст луны используется повторно, новый не создаётся
