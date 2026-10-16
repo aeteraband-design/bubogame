@@ -764,9 +764,9 @@ function drawRoundedRect(x, y, w, h, r) {
 
 // Шляпка трубы одинакова у всех труб: рисуем её один раз в заготовку (градиент, контур и блик по краю) и дальше копируем.
 // Раньше блик обрезался по форме шляпки (clip) у каждой трубы каждый кадр — на телефоне это заметная нагрузка.
-function drawPipeCap(capX, capY, capW, capH, r, rimY, pw) {
+function drawPipeCap(capX, capY, capW, capH, r, rimY, pw, red) {
     const devR = tokDevScale(ctx), hw = capW / 2 + 1, hh = capH / 2 + 1;
-    const spr = tokSprite(`cap|${pw}|${capW}|${capH}|${r}|${rimY}|${devR}`, devR, hw, hh, (g) => {
+    const spr = tokSprite(`cap|${red ? 'r' : ''}|${pw}|${capW}|${capH}|${r}|${rimY}|${devR}`, devR, hw, hh, (g) => {
         g.translate(-(capX + capW / 2), -capH / 2);
         const path = () => {
             g.beginPath();
@@ -782,12 +782,8 @@ function drawPipeCap(capX, capY, capW, capH, r, rimY, pw) {
             g.closePath();
         };
         const cg = g.createLinearGradient(capX, 0, capX + capW, 0);
-        cg.addColorStop(0.0, '#8c2400');
-        cg.addColorStop(0.25, '#bc3a00');
-        cg.addColorStop(0.58, '#f36500');
-        cg.addColorStop(0.78, '#ff8e24');
-        cg.addColorStop(0.92, '#d64d00');
-        cg.addColorStop(1.0, '#8c2400');
+        const C = red ? ['#5e0010', '#8e0a1c', '#dc1f32', '#ff5262', '#b3122a', '#5e0010'] : ['#8c2400', '#bc3a00', '#f36500', '#ff8e24', '#d64d00', '#8c2400'];
+        [0, 0.25, 0.58, 0.78, 0.92, 1].forEach((p, i) => cg.addColorStop(p, C[i]));
         const rg = g.createLinearGradient(capX, 0, capX + capW, 0);
         rg.addColorStop(0.0, 'rgba(255, 255, 255, 0.10)');
         rg.addColorStop(0.35, 'rgba(255, 255, 255, 0.22)');
@@ -795,7 +791,7 @@ function drawPipeCap(capX, capY, capW, capH, r, rimY, pw) {
         rg.addColorStop(0.90, 'rgba(255, 255, 255, 0.24)');
         rg.addColorStop(1.0, 'rgba(255, 255, 255, 0.10)');
         g.fillStyle = cg; path(); g.fill();
-        g.strokeStyle = 'rgba(255, 185, 110, 0.28)'; g.lineWidth = 0.8; g.stroke();
+        g.strokeStyle = red ? 'rgba(255, 140, 150, 0.3)' : 'rgba(255, 185, 110, 0.28)'; g.lineWidth = 0.8; g.stroke();
         g.save(); path(); g.clip();
         g.strokeStyle = rg; g.lineWidth = 1.8;
         g.beginPath(); g.moveTo(capX - 2, rimY); g.lineTo(capX + capW + 2, rimY); g.stroke();
@@ -878,6 +874,8 @@ function drawPipe(pipe) {
     ctx.restore();
 
     drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width);   // шляпка — из заготовки (без дорогой обрезки каждый кадр)
+    const redK = typeof crystalRedK === 'number' ? crystalRedK : 0;   // эффект «Кристаллы»: шляпки плавно краснеют
+    if (redK > 0.01) { ctx.globalAlpha = redK; drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width, true); ctx.globalAlpha = 1; }
 
     const bottomY = height - effectiveBottom;
     const bottomStemY = bottomY + capH - 2;
@@ -906,6 +904,21 @@ function drawPipe(pipe) {
     ctx.restore();
 
     drawPipeCap(capX, bottomY, capW, capH, capRadius, 2.5, pipe.width);
+    if (redK > 0.01) {
+        ctx.globalAlpha = redK; drawPipeCap(capX, bottomY, capW, capH, capRadius, 2.5, pipe.width, true);
+        // трубы чуть-чуть светятся красным: лёгкий отсвет у устья обеих труб и слабый налёт на стволах
+        ctx.globalCompositeOperation = 'lighter';
+        const gl = 0.16 * redK, gh = 26;
+        let gg = ctx.createLinearGradient(0, effectiveTop, 0, effectiveTop + gh);
+        gg.addColorStop(0, `rgba(255, 50, 70, ${gl})`); gg.addColorStop(1, 'rgba(255, 50, 70, 0)');
+        ctx.globalAlpha = 1; ctx.fillStyle = gg; ctx.fillRect(capX, effectiveTop, capW, gh);
+        gg = ctx.createLinearGradient(0, bottomY, 0, bottomY - gh);
+        gg.addColorStop(0, `rgba(255, 50, 70, ${gl})`); gg.addColorStop(1, 'rgba(255, 50, 70, 0)');
+        ctx.fillStyle = gg; ctx.fillRect(capX, bottomY - gh, capW, gh);
+        ctx.fillStyle = `rgba(255, 40, 60, ${0.07 * redK})`;
+        ctx.fillRect(0, -pOv, pipe.width, topStemH + pOv); ctx.fillRect(0, bottomStemY, pipe.width, bottomStemH + pOv);
+        ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    }
 
     // капельки дождя на верхней грани обеих шляпок (у верхней трубы шляпка перевёрнута — капли всё равно сверху)
     if (STORM.wet > 0.03 || (pipe._w && (pipe._w.beads.length || pipe._w.sp.length || pipe._w.drip))) pipeWater(pipe, effectiveTop, topCapY, bottomY, capX, capW);

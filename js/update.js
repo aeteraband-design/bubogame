@@ -605,8 +605,8 @@ function updateBuffHUD() {
     if (crystalTime > 0) {
         activeBuffs.push({
             key: 'crystal', left: crystalTime, text: `КРИСТАЛЛЫ: ${Math.ceil(crystalTime / 60)}с`,
-            color: '#8FE9FF',
-            svgIcon: `<svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="#8FE9FF"><polygon points="12,0.5 14.6,9.4 21.5,12 14.6,14.6 12,23.5 9.4,14.6 2.5,12 9.4,9.4"/></svg>`
+            color: '#FF4D5E',
+            svgIcon: `<svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="#FF4D5E"><polygon points="12,0.5 14.6,9.4 21.5,12 14.6,14.6 12,23.5 9.4,14.6 2.5,12 9.4,9.4"/></svg>`
         });
     }
     if (freezeTime > 0) {
