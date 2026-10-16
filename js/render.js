@@ -287,6 +287,7 @@ function startOrResumeFlight() {
     if (bottomHud) bottomHud.classList.remove('hidden');
 
     hasStartedCampaign = true;
+    try { currentDifficultySqueeze = getDifficultyMultipliers().targetSqueeze || 0; } catch (e) {}   // трубы сразу такой ширины, как на текущем уровне (без сжатия на глазах)
     // после потери попытки полёт продолжается с того же уровня: вопросы, темы, перья, силы и прокачанные сердца сохраняются
     if (lives <= 0.5) { lives = startLives; stamina = maxStamina; }
 
@@ -344,6 +345,7 @@ function startOrResumeFlight() {
 function snapProgressVisuals() {
     try { moonPhase = moonPhaseTarget(); moonRendered = -1; moonSprite = null; } catch (e) {}
     try { AudioFX.snapSpeedFactor(); } catch (e) {}
+    try { currentDifficultySqueeze = getDifficultyMultipliers().targetSqueeze || 0; } catch (e) {}   // трубы сразу сжаты по текущему уровню
     try { gameSpeedFactor = gameSpeedFrom = gameSpeedTarget = 1; gameSpeedT = 1; spacingFactor = spacingFrom = spacingTarget = 1; spacingT = 1; prevDistMult = 1; } catch (e) {}
 }
 
@@ -356,6 +358,7 @@ function startNewQuestKeepScore() {
     startLives = keep.startLives; maxLives = keep.maxLives; heartOverflow = keep.heartOverflow; zeroDay = keep.zeroDay;
     lives = Math.min(maxLives, Math.max(startLives, keep.lives));
     hasStartedCampaign = true;
+    try { currentDifficultySqueeze = getDifficultyMultipliers().targetSqueeze || 0; } catch (e) {}   // трубы сразу такой ширины, как на текущем уровне (без сжатия на глазах)
     snapProgressVisuals();
     StorageManager.save();
     updateHUDAll();
