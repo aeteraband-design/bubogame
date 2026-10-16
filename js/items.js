@@ -147,7 +147,7 @@ function drawToken(item) {
     ctx.shadowColor = col;
     ctx.shadowBlur = sBlur;   // искорки вокруг тематических жетонов светятся, как раньше
 
-    if (isThematic || item.type === 'crystal') {   // у тем и у «Опасных труб» вокруг значка мерцают звёздочки
+    if (isThematic) {
         const sparkles = [
             { dx: -item.radius * 0.85, dy: -item.radius * 0.8, size: 6.0, phase: 0 },
             { dx: item.radius * 0.95, dy: -item.radius * 0.55, size: 7.5, phase: 2.1 },
@@ -240,6 +240,23 @@ function drawToken(item) {
             ctx.shadowBlur = 10;
         }
         else drawGlyph(ctx, cat.iconCode, 0, 0.5);
+        if (item.type === 'crystal') {
+            // огонёк переливается искрами, как огненные шары: на пламени мерцает блик, вверх вылетают звёздочки-искры
+            const ph = item.floatOffset || 0, n = gfxQuality === 'low' ? 4 : 8;
+            ctx.shadowBlur = 0;
+            const tw = (Math.sin(frame * 0.12 + ph * 3) + 1) / 2;
+            ctx.globalAlpha = 0.06 + 0.3 * tw * tw; ctx.fillStyle = '#FFE7A8';
+            drawGlyph(ctx, cat.iconCode, 0, 0.5);
+            const cols = ['#FFD27A', '#FF4A3D', '#FFFFFF', '#FF8A3D'];
+            for (let i = 0; i < n; i++) {
+                const u = (frame * 0.022 + i / n + ph * 0.31) % 1;
+                const sx = Math.sin(i * 2.39 + ph) * 7 + Math.sin(u * 6 + i) * 2.2, sy = 6 - u * 26;
+                const al = Math.min(1, u / 0.12) * Math.pow(1 - u, 1.2);
+                const o = (1.6 + (i % 3) * 0.7) * (1 - u * 0.5);
+                drawSparkleStar(sx, sy, 4, o, o * 0.3, cols[i % 4], al);
+            }
+            ctx.globalAlpha = 1; ctx.fillStyle = col; ctx.shadowBlur = 10;
+        }
         if (item.type === 'drink' || item.type === 'mocktail') {
             const ph = item.floatOffset || 0, n = gfxQuality === 'low' ? 3 : 6;
             ctx.shadowBlur = 0;

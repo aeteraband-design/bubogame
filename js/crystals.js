@@ -69,7 +69,7 @@ function drawCrystals() {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (const c of crystals) {
-        const a = (ghost ? 0.3 : 1) * Math.min(1, c.age / 5) * (1 - Math.min(1, (c.in || 0) / 14));
+        const a = ghost ? 0.3 : 1;
         if (a <= 0.01) continue;
         // огненный хвост позади шара
         const len = Math.min(40, 10 + Math.abs(c.vy) * 6), y0 = c.y - len * c.d;
@@ -136,7 +136,7 @@ function crystalUpdate(speed, squeeze) {
             const free = []; for (let k = 0; k < N; k++) if (!used.has(k)) free.push(k);
             const lane = free[Math.floor(Math.random() * free.length)], d = Math.random() < 0.5 ? 1 : -1;
             const x = p.x + (lane + 1) / (N + 1) * p.width;
-            crystals.push({ pipe: p, lane, x, y: d > 0 ? p.top + squeeze - 2 : height - (p.bottom + squeeze) + 2, d, vy: d * (1.6 + Math.random() * 0.8), age: 0, ph: Math.random() * 6.28 });
+            crystals.push({ pipe: p, lane, x, y: d > 0 ? p.top + squeeze - 20 : height - (p.bottom + squeeze) + 20, d, vy: d * (1.6 + Math.random() * 0.8), age: 0, ph: Math.random() * 6.28 });
         }
     }
     for (let i = crystals.length - 1; i >= 0; i--) {
@@ -144,21 +144,24 @@ function crystalUpdate(speed, squeeze) {
         c.age += dt; c.x -= speed * dt;
         const rr = 6;
         c.vy = c.d > 0 ? Math.min(6, c.vy + 0.07 * dt) : Math.max(-6, c.vy - 0.07 * dt); c.y += c.vy * dt;
-        // шар сыплет искрами
-        if (particles.length < 450) {
+        // в проёме между трубами? (внутри труб шар скрыт за ними)
+        let inGap = true;
+        if (c.pipe) { const p = c.pipe; inGap = c.y > p.top + squeeze && c.y < height - (p.bottom + squeeze); }
+        // шар сыплет искрами (только когда виден)
+        if (inGap && particles.length < 450) {
             c.sp = (c.sp || 0) - dt;
             while (c.sp <= 0) {
                 c.sp += 1.2 + Math.random() * 1.2;
                 particles.push({ x: c.x + (Math.random() - 0.5) * 7, y: c.y + (Math.random() - 0.5) * 5, vx: (Math.random() - 0.5) * 1.8 - speed * 0.4, vy: -c.vy * 0.25 + (Math.random() - 0.5) * 1.4, color: Math.random() < 0.55 ? '#FFD27A' : (Math.random() < 0.5 ? '#FF4A3D' : '#FFFFFF'), alpha: 1, size: 1 + Math.random() * 1.6, decay: 0.035 + Math.random() * 0.025, isStar: true });
             }
         }
-        // пролетел проём и уходит в противоположную трубу (там тает)
+        // пролетел проём и скрылся в противоположной трубе
         if (c.pipe) {
             const p = c.pipe, edge = c.d > 0 ? height - (p.bottom + squeeze) : p.top + squeeze;
-            if (c.d > 0 ? c.y > edge : c.y < edge) c.in = (c.in || 0) + Math.abs(c.vy) * dt;
+            if (c.d > 0 ? c.y > edge + 22 : c.y < edge - 22) { crystals.splice(i, 1); continue; }
         }
-        let gone = c.x < -40 || c.y > height + 30 || c.y < -30 || (c.in || 0) >= 14;
-        if (c.in) { if (gone) crystals.splice(i, 1); continue; }
+        let gone = c.x < -40 || c.y > height + 30 || c.y < -30;
+        if (!inGap) { if (gone) crystals.splice(i, 1); continue; }
         if (!gone && !shz && gameActive) {
             const d = Math.hypot(owl.x - c.x, owl.y - c.y);
             if (shieldTime > 0) {

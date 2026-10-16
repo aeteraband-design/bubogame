@@ -155,6 +155,7 @@ function drawScene() {
     if (Math.abs(camZoom - 1) > 0.0005) { ctx.translate(width / 2, height / 2); ctx.scale(camZoom, camZoom); ctx.translate(-width / 2, -height / 2); }
     const owlBehind = shazamOwlBehind();   // ШАЗАМ: сова пролетает за трубой — рисуем её до труб
     if (owlBehind) { drawSpeedStars(); owl.draw(); }
+    drawCrystals();   // огненные шары «Опасных труб» — за трубами: выныривают из одной и скрываются в другой
     pipes.forEach(drawPipe);
 
     items.forEach(it => {
@@ -189,7 +190,6 @@ function drawScene() {
     });
 
     items.forEach(drawToken);
-    drawCrystals();   // падающие кристаллы
 
     drawParticleList(particles);
 
