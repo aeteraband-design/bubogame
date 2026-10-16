@@ -40,3 +40,11 @@
 @keyframes blTapPulse { 0%, 100% { opacity: 0.72; text-shadow: 0 0 8px rgba(183, 174, 211, 0.4); } 50% { opacity: 1; text-shadow: 0 0 14px rgba(205, 196, 232, 0.9), 0 0 30px rgba(183, 174, 211, 0.5); } }
 @keyframes blHalo { 0%, 100% { transform: scale(0.94); opacity: 0.8; } 50% { transform: scale(1.06); opacity: 1; } }
     
+
+/* загрузка поверх живой сцены игры: когда игра начала рисовать небо, город и облака — тёмная подложка и свои звёзды плавно уходят */
+#bootLoader { transition: opacity 0.45s ease, background-color 0.7s ease; }
+#bootLoader::before { transition: opacity 0.7s ease; }
+#bootLoader .bl-stars, #bootLoader .bl-haze { transition: opacity 0.7s ease; }
+#bootLoader.reveal { background-color: transparent; }
+#bootLoader.reveal::before, #bootLoader.reveal .bl-stars, #bootLoader.reveal .bl-haze { opacity: 0; }
+html.booting #startScreen { visibility: hidden !important; }   /* меню появится только после тапа */

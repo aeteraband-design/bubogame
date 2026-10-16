@@ -5,6 +5,8 @@
             var el = document.getElementById('bootLoader'), fill = document.getElementById('blFill'), pct = document.getElementById('blPct'),
                 go = document.getElementById('blGo'), logo = document.getElementById('blLogo'), label = document.getElementById('blLabel'),
                 oc = document.getElementById('blOwlCv'), octx = oc.getContext('2d');
+            document.documentElement.classList.add('booting');   // пока идёт загрузка, меню скрыто: за экраном загрузки виден только фон игры (небо, город, облака)
+            window.__booting = true;
             var shown = 0, target = 12, t0 = performance.now(), ready = false, lastT = t0, loFrame = 0;
             function set(t) { if (t > target) target = t; }
             document.addEventListener('DOMContentLoaded', function () { set(45); });
@@ -46,6 +48,7 @@
             initStars(); window.addEventListener('resize', initStars);
             var owlBox = el.querySelector('.bl-owlbox'), owlCssW = 0;
             var LS = { stars: [], acc: 0 };   // звёздочки ускорения для финального вида совы на загрузке
+            var MV = { x: 0, y: 0, rot: 0, wing: -1, half: 200 };   // движение совы: прилёт слева прыжками и улёт вправо
             function drawOwl(now, d, fz, ov, fin) {   // рисуем сову игры в нужном состоянии (значения игры возвращаем на место сразу после)
                 if (!owlOk) return;
                 try {
@@ -57,12 +60,12 @@
                     var W = Math.round(cssW * dpr), H = Math.round(360 * dpr);
                     if (oc.width !== W || oc.height !== H) { oc.width = W; oc.height = H; }
                     octx.setTransform(1, 0, 0, 1, 0, 0); octx.clearRect(0, 0, W, H);
-                    var k = (170 * dpr) / 68; octx.setTransform(k, 0, 0, k, W / 2 + 0.7 * k, H / 2 - 3.4 * k);   // сама сова — прежнего размера   // по визуальному центру совы (центр «массы» рисунка), а не по габаритам с длинным крылом   // сова ровно по центру (центр её силуэта), запас по краям — при объедании лапки не обрезаются
+                    var k = (170 * dpr) / 68; MV.half = (W / 2) / k; octx.setTransform(k, 0, 0, k, W / 2 + 0.7 * k, H / 2 - 3.4 * k);   // сама сова — прежнего размера   // по визуальному центру совы (центр «массы» рисунка), а не по габаритам с длинным крылом   // сова ровно по центру (центр её силуэта), запас по краям — при объедании лапки не обрезаются
                     var main = ctx, sx = owl.x, sy = owl.y, sr = owl.rotation, sv = owl.visible, sl = owl.lean, sb = owl.boostK, sp = owl.spinAngle, sw = owl.wing,
                         sd = currentDrunkFactor, sf = currentFreezeFactor, so = currentOvereatFactor, sfr = frame;
                     fin = fin || 0;
                     var ha = now * 0.0033, hv = 0.5;   // покачивание на всей загрузке с амплитудой, как в финальной позе (7,5 единиц × 0,5), период около 1,9 с
-                    owl.x = 0; owl.y = Math.sin(ha) * 7.5 * hv; owl.rotation = Math.sin(ha) * 0.05 * hv; owl.visible = true; owl.lean = 0.3 * fin; owl.boostK = fin; owl.spinAngle = 0; owl.wing = Math.max(0, Math.sin(now / 150)) * (1 - fz) * (1 - fin);   // финал: наклон вперёд и устремление, как при ускорении
+                    owl.x = MV.x; owl.y = Math.sin(ha) * 7.5 * hv + MV.y; owl.rotation = Math.sin(ha) * 0.05 * hv + MV.rot; owl.visible = true; owl.lean = 0.3 * fin; owl.boostK = fin; owl.spinAngle = 0; owl.wing = MV.wing >= 0 ? MV.wing : Math.max(0, Math.sin(now / 150)) * (1 - fz) * (1 - fin);   // финал: наклон вперёд и устремление, как при ускорении
                     currentDrunkFactor = d; currentFreezeFactor = fz; currentOvereatFactor = ov; frame = loFrame;
                     ctx = octx;
                     var svs = viewScale, srs = renderScale;
@@ -75,7 +78,23 @@
                     }
                     var wft_ = waitingFirstTap, dtm_ = dtMult;
                     waitingFirstTap = false; dtMult = 1;   // поза совы на загрузке не зависит ни от «покачивания ожидания» из игры, ни от длительности кадра — без дрожания
-                    try { if (fz > 0.01 && typeof drawFrozenOwl === 'function') drawFrozenOwl(); else owl.draw(); }
+                    try {
+                        if (MV.exit > 0) {   // улёт как в ШАЗАМе: огненно-фиолетовые полосы и тающие копии совы позади
+                            var q = MV.exit;
+                            octx.save(); octx.globalCompositeOperation = 'lighter';
+                            for (var si = 0; si < 7; si++) {
+                                var yy = owl.y - 22 + si * 7.5, ln = (60 + (si % 3) * 40) * Math.min(1, q * 3);
+                                var gr = octx.createLinearGradient(owl.x - ln, 0, owl.x, 0);
+                                gr.addColorStop(0, 'rgba(168, 85, 247, 0)'); gr.addColorStop(1, si % 2 ? 'rgba(254, 140, 40, 0.7)' : 'rgba(192, 132, 252, 0.7)');
+                                octx.fillStyle = gr; octx.fillRect(owl.x - ln - 8, yy, ln, 1.6);
+                            }
+                            octx.restore();
+                            var ox = owl.x;
+                            for (var gi = 3; gi >= 1; gi--) { octx.globalAlpha = 0.18 * (4 - gi) / 3; owl.x = ox - gi * 16 * Math.min(1, q * 4); owl.draw(); }
+                            owl.x = ox; octx.globalAlpha = 1;
+                        }
+                        if (fz > 0.01 && typeof drawFrozenOwl === 'function') drawFrozenOwl(); else owl.draw();
+                    }
                     finally { waitingFirstTap = wft_; dtMult = dtm_; viewScale = svs; renderScale = srs; ctx = main; owl.x = sx; owl.y = sy; owl.rotation = sr; owl.visible = sv; owl.lean = sl; owl.boostK = sb; owl.spinAngle = sp; owl.wing = sw; currentDrunkFactor = sd; currentFreezeFactor = sf; currentOvereatFactor = so; frame = sfr; }
                 } catch (e) {}
             }
@@ -97,9 +116,16 @@
                 clone.style.zoom = z * LZ;
                 cloneWrap.style.transform = 'translateY(-50%)'; cloneWrap.style.top = (r.top + r.height / 2) + 'px';   // увеличиваем от центра
             }
-            var dismissed = false;
+            var dismissed = false, exitT0 = 0, entryT0 = 0, revealed = false;
+            var ENTRY = 1.8;   // секунд на прилёт совы
             function dismiss() {
                 if (dismissed || !ready) return; dismissed = true;
+                exitT0 = performance.now();   // сова улетает вправо, как в ШАЗАМе; экран гаснет следом
+                try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); AudioFX.playShazamLaunch(); } } catch (e) {}
+                setTimeout(finishDismiss, 520);
+            }
+            function finishDismiss() {
+                document.documentElement.classList.remove('booting'); window.__booting = false;
                 window.__musicHold = false;   // загрузка закончилась и игрок тапнул — теперь можно включать музыку меню
                 try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); setTimeout(function () { try { if (!AudioFX.musicTimer) AudioFX.startMusicLoop(); } catch (e2) {} }, 60); } } catch (e) {}   // нажатие разрешает звук: включаем музыку меню
                 el.style.pointerEvents = 'none';
@@ -111,19 +137,33 @@
             (function tick() {
                 if (!el.parentNode) return;
                 var now = performance.now(), k = Math.min(3, Math.max(0.3, (now - lastT) / 16.7)); lastT = now;
+                if (!entryT0 && typeof owl !== 'undefined' && owl && owl.draw) entryT0 = now;   // прилёт начинается, когда игра готова рисовать сову
+                var ep = entryT0 ? Math.min(1, (now - entryT0) / 1000 / ENTRY) : 0;
                 var step = (target - shown) * 0.1 * k + 0.35 * k;
-                shown += Math.min(step, 0.5 * k);   // не быстрее ~30% в секунду (около 3,5 секунд на всю загрузку): состояния совы сменяются плавно, но недолго
+                shown += Math.min(step, 0.5 * k);   // не быстрее ~30% в секунду: состояния совы сменяются плавно, но недолго
                 if (shown > target) shown = target;
+                if (ep < 1 && shown > 16) shown = 16;   // пока сова летит к центру, состояния не начинаются
+                // движение: прилетает слева тремя прыжками, как в игре (взмах — подскок — снижение), и садится в центр
+                if (ep < 1) {
+                    var ex = 1 - Math.pow(1 - ep, 1.6), hp = ep * 3, u = hp % 1, amp = 26 * (1 - ep * 0.55);
+                    MV.x = -(MV.half + 50) * (1 - ex); MV.y = -Math.sin(u * Math.PI) * amp; MV.rot = -0.32 * Math.cos(u * Math.PI);
+                    MV.wing = u < 0.22 ? 1 - u / 0.22 : 0;
+                } else if (exitT0) {
+                    var q = Math.min(1, (now - exitT0) / 480); MV.exit = q;
+                    MV.x = (MV.half + 90) * q * q; MV.y = -6 * q; MV.rot = -0.05; MV.wing = 0;
+                } else { MV.x = 0; MV.y = 0; MV.rot = 0; MV.wing = -1; }
+                // фон: как только игра начала рисовать свою сцену, тёмная подложка загрузки плавно уходит — видны небо, город и облака
+                if (!revealed && window.__sceneDrawn) { revealed = true; el.classList.add('reveal'); }
                 fill.style.width = shown.toFixed(1) + '%'; pct.textContent = Math.round(shown) + '%';
                 loFrame += k;
                 drawStars(k);
                 // состояния идут по очереди и плавно перетекают друг в друга: пьяная → замёрзшая → толстая → в конце обычная
-                var d = ph(0, 4) * (1 - ph(22, 30)), fz = ph(24, 32) * (1 - ph(46, 54)), ov = ph(48, 56) * (1 - ph(78, 88));
-                var fin = ready ? 1 : ph(88, 100);   // в конце загрузки сова уже в виде ускорения
+                var d = ph(16, 22) * (1 - ph(36, 42)), fz = ph(38, 44) * (1 - ph(58, 64)), ov = ph(60, 66) * (1 - ph(80, 87));
+                var fin = ready || exitT0 ? 1 : ph(88, 100);   // в конце загрузки сова уже в виде ускорения
                 drawOwl(now, d, fz, ov, fin);
                 syncLogo();
                 if (!ready) {
-                    if (shown >= 99.9 && now - t0 > 900) { ready = true; go.classList.add('ready'); el.querySelector('.bl-foot').classList.add('done'); }
+                    if (shown >= 99.9 && ep >= 1) { ready = true; go.classList.add('ready'); el.querySelector('.bl-foot').classList.add('done'); }
                 }
                 requestAnimationFrame(tick);
             })();
