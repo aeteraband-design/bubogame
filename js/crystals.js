@@ -1,8 +1,9 @@
-// ===== Эффект «Шипы» (в коде — crystal) =====
-// Редкий значок «опасность». Берём — 10 секунд шляпки труб плавно краснеют, а из каждой трубы впереди вылетают маленькие
-// шипастые шарики: то сверху вниз, то снизу вверх. Сколько на трубу — по сложности: Суперлайт/Лайт — 1, Медиум/Медиум+ — 2, Хард/Хард+ — 3.
-// Попадание снимает пол-жизни. Щит шипы отбивает; в ШАЗАМе они не страшны (сова проходит сквозь).
-// Выпадение (админка «Шипы»): по умолчанию один раз на каждые два уровня сложности; чаще — раз за уровень; максимум — дважды за уровень.
+// ===== Эффект «Энергия» (в коде — crystal) =====
+// Редкий значок — светящийся красный энергетический шар. Берём — 10 секунд шляпки труб плавно краснеют, а из каждой трубы впереди
+// вылетают маленькие красные огоньки (сыплют искрами): одни из верхней трубы вниз, другие из нижней вверх; долетев до противоположной
+// трубы, огонёк сплющивается и уходит в неё. Сколько на трубу — по сложности: Суперлайт/Лайт — 1 (по центру), Медиум/Медиум+ — 2, Хард/Хард+ — 3
+// (на равном расстоянии по ширине трубы). Попадание снимает пол-жизни. Щит отбивает; в ШАЗАМе не страшны.
+// Выпадение (админка «Энергия»): по умолчанию один раз на каждые два уровня сложности; чаще — раз за уровень; максимум — дважды за уровень.
 const CRYSTAL = { SEC: 10, COLOR: '#FF4D5E', HIT_DMG: 0.5, PER_PIPE: [1, 1, 2, 2, 3, 3], id: 0, plan: null, planKey: '' };
 let crystalTime = 0;          // сколько кадров ещё идёт эффект
 let crystals = [];            // летящие кристаллы
@@ -42,42 +43,46 @@ function registerCrystal() {
     if (typeof shazamBusy === 'function' && shazamBusy()) return null;   // в ШАЗАМе не действует
     crystalTime = CRYSTAL.SEC * 60; CRYSTAL.id++;
     try { AudioFX.playStarCollect(); Haptics.powerup(); } catch (e) {}
-    return { target: 'other', text: `Шипы ${CRYSTAL.SEC}с`, color: CRYSTAL.COLOR, icon: 'fa-triangle-exclamation' };
+    return { target: 'other', text: `Энергия ${CRYSTAL.SEC}с`, color: CRYSTAL.COLOR, icon: 'svg-crystal' };
 }
 
 // ---- рисование ----
-// шипастый шарик: красное ядро с бликом и 8 острых шипов вокруг (симметричный — как ни крутится, выглядит ровно)
-let __spkSpr = null;
+// светящийся красный шар: белое горячее ядро, красная оболочка и мягкий ореол
+let __orbSpr = null;
 function crystalSprite() {
-    if (__spkSpr) return __spkSpr;
-    const S = 3, W = 30, c = document.createElement('canvas'); c.width = c.height = W * S;
+    if (__orbSpr) return __orbSpr;
+    const S = 3, W = 40, c = document.createElement('canvas'); c.width = c.height = W * S;
     const g = c.getContext('2d');
     g.scale(S, S); g.translate(W / 2, W / 2);
-    const R = 12.5, r0 = 6.4, n = 8;
-    g.beginPath();
-    for (let i = 0; i < n * 2; i++) {
-        const a = -Math.PI / 2 + i * Math.PI / n, rr = i % 2 ? r0 : R;
-        i ? g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : g.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    const h = g.createRadialGradient(0, 0, 3, 0, 0, W / 2);   // ореол
+    h.addColorStop(0, 'rgba(255, 90, 105, 0.75)'); h.addColorStop(0.4, 'rgba(255, 40, 70, 0.28)'); h.addColorStop(1, 'rgba(255, 20, 50, 0)');
+    g.fillStyle = h; g.beginPath(); g.arc(0, 0, W / 2, 0, Math.PI * 2); g.fill();
+    const b = g.createRadialGradient(-1.6, -1.8, 0.3, 0, 0, 8);   // сам шар
+    b.addColorStop(0, '#FFFFFF'); b.addColorStop(0.25, '#FFD0D5'); b.addColorStop(0.55, '#FF4D5E'); b.addColorStop(1, '#C8102E');
+    g.fillStyle = b; g.beginPath(); g.arc(0, 0, 8, 0, Math.PI * 2); g.fill();
+    return (__orbSpr = c);
+}
+// значок на пути: крупный пульсирующий шар, вокруг кружат искры
+function drawCrystalIcon(g, t, ph) {
+    const sp = crystalSprite(), k = 1 + 0.07 * Math.sin(t * 4 + (ph || 0)), s = 46 * k;
+    g.drawImage(sp, -s / 2, -s / 2, s, s);
+    g.save(); g.fillStyle = '#FFD0D5';
+    for (let i = 0; i < 3; i++) {
+        const a = t * 2.2 + (ph || 0) + i * 2.094, r = 14 + 1.5 * Math.sin(t * 3 + i);
+        g.globalAlpha = 0.55 + 0.45 * Math.sin(t * 5 + i * 1.7);
+        g.beginPath(); g.arc(Math.cos(a) * r, Math.sin(a) * r, 1.3, 0, Math.PI * 2); g.fill();
     }
-    g.closePath();
-    g.fillStyle = '#B3122A'; g.fill();
-    g.strokeStyle = '#5E0010'; g.lineWidth = 1; g.lineJoin = 'round'; g.stroke();
-    const b = g.createRadialGradient(-2.2, -2.4, 0.5, 0, 0, 7.5);
-    b.addColorStop(0, '#FFB3BA'); b.addColorStop(0.35, '#FF4D5E'); b.addColorStop(1, '#8E0A1C');
-    g.fillStyle = b; g.beginPath(); g.arc(0, 0, 7.2, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = 'rgba(70, 0, 12, 0.8)'; g.lineWidth = 0.8; g.stroke();
-    return (__spkSpr = c);
+    g.restore();
 }
 function drawCrystals() {
     if (!crystals.length) return;
     const sp = crystalSprite(), ghost = typeof shazamBusy === 'function' && shazamBusy();
     ctx.save();
     for (const c of crystals) {
-        const s = 20 * c.s;
-        ctx.globalAlpha = (ghost ? 0.3 : 1) * Math.min(1, c.age / 8);
-        ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.rot);
-        ctx.drawImage(sp, -s / 2, -s / 2, s, s);
-        ctx.restore();
+        const s = 26 * c.s * (1 + 0.08 * Math.sin(c.age * 0.3));
+        const sq = c.sq || 0, sx = 1 + 0.6 * sq, sy = 1 - 0.75 * sq;   // уходит в трубу: сплющивается
+        ctx.globalAlpha = (ghost ? 0.3 : 1) * Math.min(1, c.age / 6) * (1 - sq * 0.7);
+        ctx.drawImage(sp, c.x - s * sx / 2, c.y - s * sy / 2, s * sx, s * sy);
     }
     ctx.restore();
 }
@@ -86,7 +91,7 @@ function drawCrystals() {
 function crystalBurst(x, y, n) {
     for (let i = 0; i < n; i++) {
         const a = Math.random() * Math.PI * 2, v = 0.8 + Math.random() * 2.6;
-        particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.6, color: Math.random() < 0.5 ? '#FF8A95' : '#C8102E', alpha: 0.95, size: 1.6 + Math.random() * 1.8, decay: 0.05, isStar: true });
+        particles.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.6, color: Math.random() < 0.5 ? '#FFD0D5' : '#FF4D5E', alpha: 0.95, size: 1.6 + Math.random() * 1.8, decay: 0.05, isStar: true });
     }
 }
 // направления кристаллов на трубе: не все в одну сторону (1 — вниз из верхней трубы, -1 — вверх из нижней)
@@ -113,14 +118,14 @@ function crystalUpdate(speed, squeeze) {
             if (p._cId !== CRYSTAL.id) {   // труба впервые попала под эффект: у неё будет ровно N кристаллов
                 p._cId = CRYSTAL.id;
                 const dirs = crystalDirs(N);
-                let t = 4 + Math.random() * 14;
-                p._cQ = dirs.map((d, k) => { const q = { t, d, k }; t += 22 + Math.random() * 22; return q; });
+                const t0 = 4 + Math.random() * 12;
+                p._cQ = dirs.map((d, k) => ({ t: t0 + k * 10, d, k }));
             }
             if (!p._cQ || !p._cQ.length) continue;
             for (const q of p._cQ) q.t -= dt;
             while (p._cQ.length && p._cQ[0].t <= 0) {
-                const q = p._cQ.shift(), fx = (q.k + 0.3 + Math.random() * 0.4) / N;
-                const x = p.x + 9 + fx * (p.width - 18);
+                const q = p._cQ.shift(), fx = (q.k + 1) / (N + 1);   // по центру / на равном расстоянии по ширине трубы
+                const x = p.x + fx * p.width;
                 if (q.d > 0) crystals.push({ x, y: p.top + squeeze - 3, d: 1, vy: 1.0 + Math.random() * 0.8, s: 0.8 + Math.random() * 0.25, rot: Math.random() * 6.28, vr: (Math.random() < 0.5 ? -1 : 1) * (0.03 + Math.random() * 0.03), age: 0 });
                 else crystals.push({ x, y: height - (p.bottom + squeeze) + 3, d: -1, vy: -(1.0 + Math.random() * 0.8), s: 0.8 + Math.random() * 0.25, rot: Math.random() * 6.28, vr: (Math.random() < 0.5 ? -1 : 1) * (0.03 + Math.random() * 0.03), age: 0 });
             }
@@ -129,14 +134,26 @@ function crystalUpdate(speed, squeeze) {
     for (let i = crystals.length - 1; i >= 0; i--) {
         const c = crystals[i];
         c.age += dt; c.x -= speed * dt;
-        c.vy = c.d > 0 ? Math.min(5.6, c.vy + 0.075 * dt) : Math.max(-5.6, c.vy - 0.075 * dt); c.y += c.vy * dt; c.rot += c.vr * dt;
-        const rr = 6.5 * c.s;
+        const rr = 6 * c.s;
+        if (c.sq) {   // сплющивается и уходит в трубу
+            c.sq = Math.min(1, c.sq + 0.1 * dt);
+            if (c.sq >= 1) crystals.splice(i, 1);
+            continue;
+        }
+        c.vy = c.d > 0 ? Math.min(5.6, c.vy + 0.075 * dt) : Math.max(-5.6, c.vy - 0.075 * dt); c.y += c.vy * dt;
+        // огонёк сыплет искрами
+        if ((c.sp = (c.sp || 0) - dt) <= 0 && particles.length < 400) {
+            c.sp = 3 + Math.random() * 3;
+            particles.push({ x: c.x + (Math.random() - 0.5) * 6 * c.s, y: c.y, vx: (Math.random() - 0.5) * 1.2 - speed * 0.5, vy: -c.vy * 0.15 + (Math.random() - 0.5) * 0.8, color: Math.random() < 0.5 ? '#FFD0D5' : '#FF4D5E', alpha: 0.9, size: 1 + Math.random() * 1.3, decay: 0.045, isStar: true });
+        }
         let gone = c.x < -30 || c.y > height + 20 || c.y < -20;
-        if (!gone) {   // долетел до противоположной трубы — разбивается о неё
+        if (!gone) {   // долетел до противоположной трубы — уходит в неё
             for (const p of pipes) {
                 if (c.x <= p.x || c.x >= p.x + p.width) continue;
-                if ((c.d > 0 && c.y + rr > height - (p.bottom + squeeze)) || (c.d < 0 && c.y - rr < p.top + squeeze)) { crystalBurst(c.x, c.y, 5); gone = true; break; }
+                if (c.d > 0 && c.y + rr * 0.4 > height - (p.bottom + squeeze)) { c.y = height - (p.bottom + squeeze); c.sq = 0.01; break; }
+                if (c.d < 0 && c.y - rr * 0.4 < p.top + squeeze) { c.y = p.top + squeeze; c.sq = 0.01; break; }
             }
+            if (c.sq) continue;
         }
         if (!gone && !shz && gameActive) {
             const d = Math.hypot(owl.x - c.x, owl.y - c.y);
@@ -158,12 +175,12 @@ function crystalHit() {
     try { AudioFX.playHit(); Haptics.hit(); } catch (e) {}
     if (lives <= 1.0 + 1e-6) {   // меньше одной жизни не остаётся — это была последняя
         lives = 0; updateLivesHUD();
-        handleRunFailure('Шип ранил сову — это была последняя жизнь.');
+        handleRunFailure('Красная энергия ранила сову — это была последняя жизнь.');
         return;
     }
     lives = Math.round((lives - CRYSTAL.HIT_DMG) * 10) / 10;
     invulnerableTime = 70;
     updateLivesHUD(); StorageManager.save();
     triggerTopHUDPop('heart');
-    try { spawnFlyingArrivalFX(owl.x, owl.y, 'other', 'Шипы ранят: -0.5 Жизни', CRYSTAL.COLOR, 'fa-heart-crack'); } catch (e) {}
+    try { spawnFlyingArrivalFX(owl.x, owl.y, 'other', 'Энергия ранит: -0.5 Жизни', CRYSTAL.COLOR, 'fa-heart-crack'); } catch (e) {}
 }

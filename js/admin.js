@@ -43,8 +43,7 @@
             rowDef('questionsPerAttempt', 'За +1 попытку', '', 'fa-circle-question', '#FE7600', (n) => ruPlural(n, ['вопрос', 'вопроса', 'вопросов'])),
             rowDef('maxLives', 'Макс. сердечек', '', 'fa-heart', '#EF4444', (n) => ruPlural(n, ['сердечко', 'сердечка', 'сердечек'])),
             rowDef('stormFreq', 'Частота гроз', '', 'fa-cloud-rain', '#93C5FD', (n) => ['редко', 'по умолчанию', 'часто', 'очень часто'][n] || ''),
-            rowDef('crystalFreq', 'Шипы', '', 'fa-triangle-exclamation', '#FF4D5E', (n) => ['раз на 2 уровня', 'раз за уровень', '2 раза за уровень'][n] || ''),
-            rowDef('stormTest', 'Гроза (проверка)', '', 'fa-cloud-bolt', '#7DD3FC', (n) => n ? 'сила ' + n + '%' : 'случайно')
+            rowDef('crystalFreq', 'Красная энергия', '', 'fa-circle', '#FF4D5E', (n) => ['раз на 2 уровня', 'раз за уровень', '2 раза за уровень'][n] || ''),
         ]
     };
     let tab = 'themes';

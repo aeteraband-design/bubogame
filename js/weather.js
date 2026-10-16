@@ -71,7 +71,7 @@ function stormUpdate() {
     if (stormIntensity < 0) stormIntensity = 0;
     const dt = wxDt();
     wxTick();
-    let test = 0; try { test = ADMIN_CFG.stormTest | 0; } catch (e) {}
+    const test = 0;   // ручная «проверка грозы» убрана: для теста — «Частота гроз: очень часто»
     if (test > 0) {   // проверка из админки: тучи сразу, сила вручную
         stormCover = Math.min(1, stormCover + dt / 3); STORM.fade = 1;
         stormIntensity += (test / 100 * stormSmooth(0.5, 1, stormCover) - stormIntensity) * Math.min(1, 0.05 * dtMult);
@@ -167,19 +167,23 @@ function stormBuildClouds() {
     const S = Math.max(1, viewScale * renderScale), key = S.toFixed(2) + '|' + gfxQuality;
     if (STORM.cloudSpr && STORM.cloudKey === key) return STORM.cloudSpr;
     STORM.cloudKey = key;
-    const mk = (c0, c1) => makeSprite(CLOUD_W, CLOUD_H, S, (c) => {
+    // в том же стиле, что обычные облака игры: мягкие края (размытие), полупрозрачные, без контура
+    const mk = (c0, c1, glow) => makeSprite(CLOUD_W, CLOUD_H, S, (c) => {
         c.translate(CLOUD_OX, CLOUD_OY);
         const g = c.createLinearGradient(0, -30, 0, 30);
         g.addColorStop(0, c0); g.addColorStop(1, c1);
         c.fillStyle = g;
+        c.shadowColor = glow; c.shadowBlur = gfxQuality === 'low' ? 0 : 12 * S;
         c.beginPath();
         c.arc(0, 0, 26, 0, Math.PI * 2); c.arc(26, -10, 32, 0, Math.PI * 2); c.arc(58, -4, 24, 0, Math.PI * 2); c.arc(38, 10, 22, 0, Math.PI * 2);
         c.fill();
     });
-    // серо-фиолетовые, в тон миру; «lit» — те же тучи, подсвеченные луной (накладываются тем сильнее, чем ближе к луне)
+    // серо-фиолетовые, в тон миру; «lit» — та же туча, подсвеченная луной (мягко накладывается тем сильнее, чем ближе к луне)
     STORM.cloudSpr = {
-        far: mk('rgba(92, 74, 128, 0.95)', 'rgba(56, 42, 84, 0.93)'), near: mk('rgba(74, 58, 106, 0.97)', 'rgba(42, 30, 66, 0.96)'),
-        farLit: mk('rgba(216, 202, 242, 0.97)', 'rgba(140, 120, 182, 0.95)'), nearLit: mk('rgba(198, 182, 230, 0.98)', 'rgba(120, 100, 162, 0.97)')
+        far: mk('rgba(118, 96, 156, 0.62)', 'rgba(66, 48, 98, 0.5)', 'rgba(110, 84, 160, 0.45)'),
+        near: mk('rgba(100, 80, 138, 0.72)', 'rgba(52, 38, 82, 0.6)', 'rgba(90, 66, 140, 0.45)'),
+        farLit: mk('rgba(222, 208, 246, 0.6)', 'rgba(150, 130, 192, 0.42)', 'rgba(200, 180, 240, 0.4)'),
+        nearLit: mk('rgba(214, 198, 240, 0.66)', 'rgba(140, 118, 184, 0.48)', 'rgba(200, 180, 240, 0.4)')
     };
     return STORM.cloudSpr;
 }
@@ -189,11 +193,15 @@ function stormCloudSet() {
     let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
     const mkL = (n, kMin, kMax, tMin, tMax) => {   // tMin..tMax — за сколько секунд туча пересекает экран
         const a = [];
-        for (let i = 0; i < n; i++) a.push({ x: (i + r() * 0.8) / n * (width + 360) - 180, yr: r(), k: kMin + r() * (kMax - kMin), tc: tMin + r() * (tMax - tMin), t: (i / n) * 0.6 + r() * 0.04, on: false, go: false });
+        for (let i = 0; i < n; i++) a.push({ x: (i + r() * 0.8) / n * (width + 360) - 180, yr: r(), k: kMin + r() * (kMax - kMin), tc: tMin + r() * (tMax - tMin), t: 0, on: false, go: false });
         return a;
     };
-    // low — густой слой у горизонта, за небоскрёбами; far и near — тучи в верхней части неба
-    STORM.cl = { low: mkL(17, 1.8, 2.8, 15, 20), far: mkL(15, 1.1, 1.8, 12, 16), near: mkL(12, 1.5, 2.4, 9, 12), init: false };
+    // low — слой у горизонта, за небоскрёбами; far и near — тучи в верхней части неба. Размер — как у обычных облаков, чуть крупнее
+    STORM.cl = { low: mkL(9, 1.2, 1.7, 15, 20), far: mkL(9, 0.9, 1.3, 12, 16), near: mkL(6, 1.0, 1.4, 9, 12), init: false };
+    // порядок появления общий для всех слоёв: сначала одна тучка, потом вторая, третья… — постепенно всё больше
+    const all = [...STORM.cl.far, ...STORM.cl.near, ...STORM.cl.low];
+    for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }
+    all.forEach((c, i) => { c.t = 0.03 + (i / all.length) * 0.82; });
     STORM.clW = width;
     return STORM.cl;
 }
@@ -207,7 +215,7 @@ function stormMoonLit(x, y) {
 function stormDrawCloudLayer(list, spr, yOf, cv, si, alpha, lag = 0, first = false, lit = null) {
     // пока тучи собираются — ветер сильный, потом тучи плывут спокойнее; уходят — быстро
     const gather = WX.on && cv < 0.999, wind = (gather ? 0.85 : 0.5) * (1 + 0.3 * si) * dtMult / 60;
-    alpha *= 0.3 + 0.7 * stormSmooth(0, 0.95, cv);   // сначала тучи полупрозрачные, как обычные облака; потом сгущаются
+    alpha *= 0.55 + 0.45 * stormSmooth(0.3, 1, cv);   // сначала тучи полупрозрачные, как обычные облака; потом сгущаются
     for (const c of list) {
         const thr = c.t + lag, cw = CLOUD_W * c.k;
         if (first) c.on = cv >= thr;                       // игра началась уже в грозу — тучи сразу на месте
@@ -223,7 +231,7 @@ function stormDrawCloudLayer(list, spr, yOf, cv, si, alpha, lag = 0, first = fal
         const dx = c.x - CLOUD_OX * c.k, dy = y - CLOUD_OY * c.k, dh = CLOUD_H * c.k;
         ctx.globalAlpha = alpha;
         ctx.drawImage(spr, dx, dy, cw, dh);
-        if (lit) { const m = stormMoonLit(c.x + cw * 0.15, y); if (m > 0.02) { ctx.globalAlpha = alpha * m; ctx.drawImage(lit, dx, dy, cw, dh); } }
+        if (lit) { const m = stormMoonLit(c.x + cw * 0.15, y); if (m > 0.02) { ctx.globalAlpha = alpha * m * 0.8; ctx.drawImage(lit, dx, dy, cw, dh); } }
     }
 }
 
@@ -248,11 +256,11 @@ function stormDrawBack() {
     const ck = Math.max(0.3, stormSmooth(0.05, 0.9, cv));
     {
         const spr = stormBuildClouds(), L = stormCloudSet(), yb = stormCloudBottom(), first = !L.init; L.init = true;
-        stormDrawCloudLayer(L.low, spr.far, (r) => height * (0.34 + r * 0.17), cv, si, 0.92, 0.1, first, spr.farLit);   // за домами, у горизонта
+        stormDrawCloudLayer(L.low, spr.far, (r) => height * (0.34 + r * 0.17), cv, si, 0.9, 0, first, spr.farLit);   // за домами, у горизонта
         stormDrawCloudLayer(L.far, spr.far, (r) => 20 + r * Math.max(10, yb - 70), cv, si, 0.9, 0, first, spr.farLit);
         // зарница внутри туч и сам разряд — между дальним и ближним слоем туч
         if (STORM.flash > 0.01) stormDrawFlashBack(yb);
-        stormDrawCloudLayer(L.near, spr.near, (r) => 20 + r * Math.max(10, yb - 50), cv, si, 0.95, 0.05, first, spr.nearLit);
+        stormDrawCloudLayer(L.near, spr.near, (r) => 20 + r * Math.max(10, yb - 50), cv, si, 0.95, 0, first, spr.nearLit);
         // луна видна всегда: поверх туч рисуем её ещё раз — тучи закрывают её не больше чем на ~30%
         const mp = window.__moonPos;
         if (mp && moonSprite && cv > 0.01) { ctx.globalAlpha = Math.min(1, stormSmooth(0.05, 0.9, cv) * 0.8); ctx.drawImage(moonSprite, mp[0], mp[1], mp[2], mp[2]); }

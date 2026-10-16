@@ -22,7 +22,7 @@ const ADMIN_DEFAULTS = {
     drunkEvery: 6, drunkSec: 10,         // напитков до опьянения / его длительность
     freezeEvery: 3, freezeSec: 10,       // порций мороженого до заморозки / её длительность
     shieldSec: 10, slowSec: 10, speedSec: 10, compressSec: 10, infiniteSec: 10,   // длительности бонусов
-    crystalFreq: 0,                      // шипы: 0 — раз на два уровня сложности, 1 — раз за уровень, 2 — дважды за уровень
+    crystalFreq: 0,                      // красная энергия: 0 — раз на два уровня сложности, 1 — раз за уровень, 2 — дважды за уровень
     stormFreq: 1,                        // частота гроз: 0 — редко, 1 — обычно, 2 — часто, 3 — очень часто
     stormTest: 0,                        // проверка погоды: 0 — случайные грозы, 10–100 — сила грозы вручную
     shazamEvery: 4,                      // какое по счёту взятое ускорение включает ШАЗАМ
@@ -33,7 +33,7 @@ const ADMIN_DEFAULTS = {
 const ADMIN_SPEC = {   // [минимум, максимум, шаг]
     overeatEvery: [1, 20, 1], overeatSec: [3, 60, 1], drunkEvery: [1, 30, 1], drunkSec: [3, 60, 1], freezeEvery: [1, 20, 1], freezeSec: [3, 60, 1],
     shieldSec: [3, 60, 1], slowSec: [3, 60, 1], speedSec: [3, 60, 1], compressSec: [3, 60, 1], infiniteSec: [3, 60, 1],
-    crystalFreq: [0, 2, 1], stormFreq: [0, 3, 1], stormTest: [0, 100, 10], shazamEvery: [1, 20, 1], feathersForMax: [1, 30, 1], attempts: [1, 9, 1], questionsPerAttempt: [10, 500, 10], maxLives: [5, 6, 1], theme: [1, 99, 1]
+    crystalFreq: [0, 2, 1], stormFreq: [0, 3, 1], shazamEvery: [1, 20, 1], feathersForMax: [1, 30, 1], attempts: [1, 9, 1], questionsPerAttempt: [10, 500, 10], maxLives: [5, 6, 1], theme: [1, 99, 1]
 };
 function normalizeAdminCfg(raw) {
     const out = JSON.parse(JSON.stringify(ADMIN_DEFAULTS));
@@ -332,7 +332,7 @@ const CATEGORIES = {
     stamina:      { name: 'Перо силы',  color: '#67E8F9', iconCode: '\uf56b', faClass: 'fa-feather-pointed' },
     drink:        { name: 'Коктейль',   color: '#2DD4BF', iconCode: '\uf561', faClass: 'fa-martini-glass-citrus' },
     mocktail:     { name: 'Пиво',       color: '#F4B942', iconCode: '\uf0fc', faClass: 'fa-beer-mug-empty' },
-    crystal:      { name: 'Шипы',       color: '#FF4D5E', iconCode: '\uf071', faClass: 'fa-triangle-exclamation' },
+    crystal:      { name: 'Энергия',    color: '#FF4D5E', faClass: 'fa-circle' },
     icecream:     { name: 'Мороженое',  color: '#B5E4FF', iconCode: '\uf810', faClass: 'fa-ice-cream' },
     heart:        { name: 'Жизнь',      color: '#EF4444', iconCode: '\uf004', faClass: 'fa-heart' },
     pizza:        { name: 'Пицца',      color: '#F97316', iconCode: '\uf818', faClass: 'fa-pizza-slice' },
