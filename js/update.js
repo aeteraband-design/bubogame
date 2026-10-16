@@ -34,7 +34,7 @@ function update() {
         stamina = maxStamina;
         updateStaminaHUD();
     } else {
-        stamina = Math.max(0, stamina - 0.044 * staminaDrainMult() * dtMult);   // в покое силы уходят чуть быстрее (было 0,04)
+        stamina = Math.max(0, stamina - 0.0462 * staminaDrainMult() * dtMult);   // +5% к расходу   // в покое силы уходят чуть быстрее (было 0,04)
         updateStaminaHUD();
     }
 
@@ -355,23 +355,23 @@ function update() {
                 if (maxUp) setTimeout(() => showGoldBanner('Макс. сила +20%', 'fa-feather-pointed', '#38BDF8'), 900);   // уведомление внизу, над панелью тем
             } else if (it.type === 'drink') {
                 AudioFX.playCollect(true);
-                stamina = Math.min(maxStamina, stamina + 10.0);
+                stamina = Math.min(maxStamina, stamina + 15.0);   // коктейль
                 updateStaminaHUD(); StorageManager.save();
-                it.pendingFX = { target: 'stamina', text: '+10% Сил', color: '#2DD4BF', icon: 'fa-martini-glass-citrus' };
+                it.pendingFX = { target: 'stamina', text: '+15% Сил', color: '#2DD4BF', icon: 'fa-martini-glass-citrus' };
                 it.extraFX = registerDrink();
             } else if (it.type === 'mocktail') {
                 AudioFX.playCollect(true);
-                stamina = Math.min(maxStamina, stamina + 5.0);
+                stamina = Math.min(maxStamina, stamina + 10.0);   // пиво
                 updateStaminaHUD(); StorageManager.save();
-                it.pendingFX = { target: 'stamina', text: '+5% Сил', color: '#F4B942', icon: 'fa-beer-mug-empty' };
+                it.pendingFX = { target: 'stamina', text: '+10% Сил', color: '#F4B942', icon: 'fa-beer-mug-empty' };
                 it.extraFX = registerDrink();
             } else if (it.type === 'crystal') {
                 it.pendingFX = registerCrystal();   // 10 с: из труб падают светящиеся кристаллы
             } else if (it.type === 'icecream') {
                 AudioFX.playCollect(true);
-                stamina = Math.min(maxStamina, stamina + 15.0);
+                stamina = Math.min(maxStamina, stamina + 20.0);   // мороженое
                 updateStaminaHUD(); StorageManager.save();
-                it.pendingFX = { target: 'stamina', text: '+15% Сил', color: '#B5E4FF', icon: 'fa-ice-cream' };
+                it.pendingFX = { target: 'stamina', text: '+20% Сил', color: '#B5E4FF', icon: 'fa-ice-cream' };
                 it.extraFX = registerIceCream();
             } else if (it.type === 'heart') {
                 AudioFX.playStarCollect();

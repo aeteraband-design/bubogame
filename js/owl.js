@@ -65,7 +65,7 @@ const owl = {
         Haptics.flap();
 
         // взмах тратит силы: чем чаще тапаешь, тем быстрее они уходят; объевшейся и замёрзшей сове каждый взмах даётся тяжелее
-        stamina = Math.max(0, stamina - 0.38 * staminaDrainMult() * (1 + 0.5 * currentOvereatFactor + 0.5 * currentFreezeFactor));   // взмах чуть дороже; объевшейся и замёрзшей сове — заметно тяжелее
+        stamina = Math.max(0, stamina - 0.399 * staminaDrainMult() * (1 + 0.5 * currentOvereatFactor + 0.5 * currentFreezeFactor));   // взмах чуть дороже; объевшейся и замёрзшей сове — заметно тяжелее
         updateStaminaHUD();
 
         // замёрзшая сова роняет снежинки, опьяневшая — пузырьки коктейля; в обычном состоянии — привычные кружочки
