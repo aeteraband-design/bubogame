@@ -612,7 +612,7 @@ function drawClouds() {
     }
     const sk = stormSmooth(0, 0.85, stormCover), stormSpr = sk > 0.001 ? stormBuildClouds() : null;
     clouds.forEach(cl => {
-        cl.x -= cl.speed * dtMult;
+        cl.x -= cl.speed * dtMult * (gameActive ? 1 : (window.__bgSpeed || 1));
         if (cl.x < -140) cl.x = width + 80;
         const k = cl.scale;
         // в грозу сиреневые облачка плавно темнеют до цвета туч, после грозы — так же плавно возвращают свой цвет

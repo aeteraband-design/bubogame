@@ -200,6 +200,10 @@
                 var fin = ready || exitT0 ? 1 : ph(88, 100);
                 if (shown > 58 && !SND.thaw) { SND.thaw = 1; MV.thaw = true; sfx('ft', 'playFreezeEnd'); }   // заморозка кончается — лёд осыпается
                 if (shown > 17) sfx('d', 'playDrunk'); if (shown > 39) sfx('f', 'playFreeze'); if (shown > 61) sfx('o', 'playOverEat'); if (shown > 89) sfx('s', 'playSpeedUpStart');   // в конце загрузки сова уже в виде ускорения
+                // фон показывает скорость совы: в ускорении небо и дома плывут быстрее, при рывке ШАЗАМа — мчатся
+                var bgT = 1 + 2.4 * fin;
+                if (exitT0) { var et = (now - exitT0) / 600; bgT = et < 1 ? 3.6 : 9; }
+                window.__bgSpeed = (window.__bgSpeed || 1) + (bgT - (window.__bgSpeed || 1)) * Math.min(1, 0.06 * k);
                 drawOwl(now, d, fz, ov, fin);
                 syncLogo();
                 if (!ready) {

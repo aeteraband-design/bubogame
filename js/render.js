@@ -142,7 +142,10 @@ function drawScene() {
     const isGameOverOpen = !dsEl.g.classList.contains('hidden');
     drawMoon();
     stormDrawBack();      // гроза: тучи, зарницы и разряды — позади домов
-    if (!gameActive) cityOffset += 0.5 * dtMult;   // в меню и на паузе город медленно плывёт
+    // фон на загрузке может ускоряться (сова в ускорении, рывок ШАЗАМа) — после загрузки плавно возвращается к обычному
+    if (!window.__booting && (window.__bgSpeed || 1) > 1.001) window.__bgSpeed += (1 - window.__bgSpeed) * Math.min(1, 0.035 * dtMult);
+    const bgK = window.__bgSpeed || 1;
+    if (!gameActive) cityOffset += 0.5 * dtMult * bgK;   // в меню и на паузе город медленно плывёт
     drawCity();
     stormDrawCityLight(); // мокрые крыши и подсветка фасадов вспышкой
     shazamDrawStreaks();
