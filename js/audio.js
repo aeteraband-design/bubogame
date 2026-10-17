@@ -233,10 +233,7 @@ const AudioFX = {
         this.setMuted(!this.isMusicMuted);
     },
 
-    // Смена музыки — переход «вырастает» из мелодии: старая музыка доигрывает уже поставленные ноты, затем её мелодия
-    // продолжается ещё тремя нотами (в том же тембре и темпе), которые шагами подводят к первой ноте новой музыки,
-    // а под ними уже звучит бас новой тональности. Темп связки плавно переходит от старого к новому, новая музыка
-    // вступает ровно на следующей доле — без паузы и без затухания.
+    // Смена музыки: плавное затухание старой и мягкое вступление новой
     setMode(newMode, opts) {
         const eff = this._pendMode || this.mode;
         if (eff === newMode) {
@@ -251,37 +248,16 @@ const AudioFX = {
             if (wasFading) this._fadeIn();
             return;
         }
-        const from = this._pendMode ? null : this.mode;
+        // просто плавная смена: старая музыка затихает ~0,45 с, новая начинается и мягко набирает громкость ~0,9 с
         this._pendMode = newMode;
-        this.stopMusic();
-        const ctx = this.ctx, now = ctx.currentTime, g = this.musicGain.gain;
-        g.cancelScheduledValues(now); g.setValueAtTime(Math.max(0.0001, g.value), now); g.linearRampToValueAtTime(this.musicVolume, now + 0.08);
-        const src = from ? this._modeStep(from) : this._modeStep(newMode), dst = this._modeStep(newMode);
-        let t = Math.max(now + 0.03, (from && this.nextNoteTime > now) ? this.nextNoteTime : now + 0.03);   // сразу за последней поставленной нотой
-        const target = this._firstNote(newMode, dst.p);
-        let start = from ? this._melodyAt(from, this.step, src.p) : 0;
-        if (!start) start = from ? this._melodyAt(from, this.step + 1, src.p) : 0;
-        if (!start) start = target * 1.5;
-        while (start > target * 1.9) start /= 2;
-        while (start < target / 1.9) start *= 2;
-        const up = start < target, wt = up ? 1 / 1.12246 : 1.12246, ht = up ? 1 / 1.05946 : 1.05946;
-        const notes = [start, target * wt * wt, target * ht];   // мелодия шагает к новой ноте: тон, тон, полутон — и попадает в неё
-        const tone = from ? this._modeTone(from) : 'bell', clamp = (d) => Math.min(0.34, Math.max(0.12, d));
-        const bass = this._rootOf(newMode) * dst.p;
-        notes.forEach((f, i) => {
-            const dt = clamp(src.d + (dst.d - src.d) * (i + 1) / 4);
-            this._transNote(t, f, dt * 1.7, i === 2 ? (newMode === 'victory' ? 'brass' : tone) : tone, i === 2);
-            if (i === 1) this._transNote(t, bass, dt * 3.2, 'soft', false);   // бас новой музыки готовит её тональность
-            t += dt;
-        });
-        if (newMode === 'victory' || newMode === 'shop') this._transSparkle(t, 1);
-        this._nextStartAt = t;
+        const now = this.ctx.currentTime, g = this.musicGain.gain;
+        g.cancelScheduledValues(now); g.setValueAtTime(Math.max(0.0001, g.value), now); g.linearRampToValueAtTime(0.0001, now + 0.45);
+        this._nextStartAt = 0;
         this._fadeT = setTimeout(() => {
             const m = this._pendMode; this._pendMode = null; if (!m) return;
-            this.mode = m; this.step = 0; this.stopMusic();
-            try { const c = this.ctx.currentTime, gg = this.musicGain.gain; gg.cancelScheduledValues(c); gg.setValueAtTime(Math.max(0.0001, gg.value), c); gg.linearRampToValueAtTime(this.isMusicMuted ? 0 : this.musicVolume, c + 0.1); } catch (e) {}
-            this.startMusicLoop();
-        }, Math.max(0, (t - now) * 1000 - 150));
+            this.mode = m; this.step = 0; this.stopMusic(); this.startMusicLoop();
+            try { const c = this.ctx.currentTime, gg = this.musicGain.gain; gg.cancelScheduledValues(c); gg.setValueAtTime(0.0001, c); gg.linearRampToValueAtTime(this.isMusicMuted ? 0 : this.musicVolume, c + 0.9); } catch (e) {}
+        }, 470);
     },
     // длина шага и высота музыки режима (в игре — с учётом сложности, ускорения и замедления)
     _modeStep(m) {
