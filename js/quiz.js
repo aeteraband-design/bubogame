@@ -73,36 +73,87 @@ function quizUpdate2D(speed, sq) {
         const p = pipes.find(pp => pp.x > width * 0.75 && !pp.portal);
         if (p) { p.portal = true; QZ.portal = { pipe: p }; QZ.pending = false; }
     }
+    quizUpdateExit2D(sq);
     const P = QZ.portal; if (!P) return;
     const p = P.pipe;
     if (pipes.indexOf(p) < 0) { QZ.portal = null; QZ.pending = true; return; }
     const top = p.top + sq, bot = height - (p.bottom + sq);
     P.x = p.x + p.width / 2; P.y = (top + bot) / 2; P.r = Math.min(46, (bot - top) * 0.36);
+    quizClearItemsNear(P.x);   // в проёме с порталом — никаких значков, только портал
     if (!gameActive) return;
     if (owl.x > P.x - 6 && owl.x < P.x + 14 && owl.y > top && owl.y < bot) quizEnter();
     else if (P.x < owl.x - 60) { QZ.portal = null; QZ.pending = true; }   // промахнулись (например, разбились) — портал появится у следующей трубы
 }
-function drawQuizPortal(x, y, r, a) {
-    const t = (typeof frame === 'number' ? frame : 0);
+// Портал как в игре Portal: вертикальный овал с яркой «живой» кромкой, внутри — закрученная воронка света.
+// Вход — голубой, выход — оранжевый.
+const QZ_PORTAL_COL = { in: { c: [56, 170, 255], hi: '#BFE7FF', dark: 'rgba(4, 22, 60, 0.92)' }, out: { c: [255, 138, 30], hi: '#FFE2B8', dark: 'rgba(60, 20, 2, 0.92)' } };
+function drawQuizPortal(x, y, r, a, kind) {
+    const t = (typeof frame === 'number' ? frame : 0), P = QZ_PORTAL_COL[kind || 'in'], [cr, cg, cb] = P.c;
+    const rx = r * 0.68, ry = r * 1.12;
     ctx.save(); ctx.globalAlpha = a;
-    const gl = ctx.createRadialGradient(x, y, r * 0.2, x, y, r * 1.6);
-    gl.addColorStop(0, 'rgba(255, 255, 255, 0.55)'); gl.addColorStop(0.35, 'rgba(56, 189, 248, 0.35)'); gl.addColorStop(0.7, 'rgba(168, 85, 247, 0.25)'); gl.addColorStop(1, 'rgba(168, 85, 247, 0)');
-    ctx.fillStyle = gl; ctx.beginPath(); ctx.ellipse(x, y, r * 1.1, r * 1.6, 0, 0, Math.PI * 2); ctx.fill();
-    for (let k = 0; k < 4; k++) {
-        const pr = r * (0.55 + k * 0.16) * (1 + 0.05 * Math.sin(t * 0.12 + k));
-        ctx.strokeStyle = k % 2 ? 'rgba(125, 211, 252, 0.85)' : 'rgba(216, 180, 254, 0.9)';
-        ctx.lineWidth = 2.4 - k * 0.4;
-        ctx.beginPath(); ctx.ellipse(x, y, pr * 0.62, pr, 0, t * 0.05 * (k % 2 ? -1 : 1) + k, t * 0.05 * (k % 2 ? -1 : 1) + k + Math.PI * 1.5); ctx.stroke();
-    }
-    ctx.fillStyle = '#FFFFFF';
-    for (let k = 0; k < 10; k++) {
-        const an = t * 0.04 + k * 0.63, rr = r * (0.3 + ((k * 37 + t * 0.6) % 70) / 100);
-        ctx.globalAlpha = a * (0.4 + 0.6 * Math.abs(Math.sin(t * 0.1 + k)));
-        ctx.beginPath(); ctx.arc(x + Math.cos(an) * rr * 0.6, y + Math.sin(an) * rr, 1.4, 0, Math.PI * 2); ctx.fill();
+    // внешнее свечение
+    const gl = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 1.9);
+    gl.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, 0.35)`); gl.addColorStop(1, `rgba(${cr}, ${cg}, ${cb}, 0)`);
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.ellipse(x, y, rx * 2.1, ry * 1.7, 0, 0, Math.PI * 2); ctx.fill();
+    // воронка внутри
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.clip();
+    const ig = ctx.createRadialGradient(x, y, 0, x, y, ry);
+    ig.addColorStop(0, '#FFFFFF'); ig.addColorStop(0.18, P.hi); ig.addColorStop(0.5, `rgba(${cr}, ${cg}, ${cb}, 0.85)`); ig.addColorStop(1, P.dark);
+    ctx.fillStyle = ig; ctx.fillRect(x - rx, y - ry, rx * 2, ry * 2);
+    ctx.translate(x, y); ctx.scale(rx / ry, 1);
+    ctx.lineCap = 'round';
+    for (let k = 0; k < 5; k++) {   // закрученные рукава
+        const a0 = t * 0.06 + k * Math.PI * 2 / 5;
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.28 + 0.1 * (k % 2)})`; ctx.lineWidth = Math.max(1, ry * 0.05);
+        ctx.beginPath();
+        for (let s2 = 0; s2 <= 1.0001; s2 += 0.1) { const rr = ry * (0.12 + s2 * 0.85), an = a0 + s2 * 2.6; if (s2 === 0) ctx.moveTo(Math.cos(an) * rr, Math.sin(an) * rr); else ctx.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); }
+        ctx.stroke();
     }
     ctx.restore();
+    // «живая» кромка: дрожащий яркий контур со свечением
+    ctx.save(); ctx.translate(x, y);
+    ctx.shadowColor = `rgb(${cr}, ${cg}, ${cb})`; ctx.shadowBlur = 16;
+    for (let pass = 0; pass < 2; pass++) {
+        ctx.strokeStyle = pass ? P.hi : `rgb(${cr}, ${cg}, ${cb})`; ctx.lineWidth = pass ? Math.max(1, r * 0.035) : Math.max(2, r * 0.11);
+        ctx.beginPath();
+        for (let i = 0; i <= 48; i++) {
+            const an = i / 48 * Math.PI * 2, j = 1 + 0.035 * Math.sin(an * 7 + t * 0.21) + 0.025 * Math.sin(an * 13 - t * 0.33);
+            const px = Math.cos(an) * rx * j, py = Math.sin(an) * ry * j;
+            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath(); ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    // искры, слетающие с кромки
+    for (let k = 0; k < 9; k++) {
+        const ph = (t * 0.02 + k * 0.137) % 1, an = k * 0.7 + t * 0.01 * (k % 2 ? 1 : -1), d = 1 + ph * 0.45;
+        ctx.globalAlpha = a * (1 - ph);
+        ctx.fillStyle = k % 3 ? P.hi : '#FFFFFF';
+        ctx.beginPath(); ctx.arc(Math.cos(an) * rx * d, Math.sin(an) * ry * d, Math.max(0.8, r * 0.035) * (1 - ph * 0.5), 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    ctx.restore();
 }
-function quizDrawPortal2D() { const P = QZ.portal; if (P && P.r) drawQuizPortal(P.x, P.y, P.r, 1); }
+function quizClearItemsNear(x) {
+    if (typeof items === 'undefined') return;
+    for (let i = items.length - 1; i >= 0; i--) { const it = items[i]; if (!it.collected && Math.abs(it.x - x) < 70) items.splice(i, 1); }
+}
+// выходной портал в обычном мире: стоит в проёме трубы, сова из него выскакивает; потом уезжает вместе с трубой и гаснет
+function quizUpdateExit2D(sq) {
+    const E = QZ.exitP; if (!E) return;
+    const p = E.pipe;
+    if (pipes.indexOf(p) < 0) { QZ.exitP = null; return; }
+    const top = p.top + sq, bot = height - (p.bottom + sq);
+    E.x = p.x + p.width / 2; E.y = (top + bot) / 2; E.r = Math.min(46, (bot - top) * 0.36);
+    E.t += dtMult; if (E.t > 70) E.a = Math.max(0, (E.a == null ? 1 : E.a) - 0.02 * dtMult);
+    quizClearItemsNear(E.x);
+    if (E.a === 0 || E.x < -80) QZ.exitP = null;
+}
+function quizDrawPortal2D() {
+    const P = QZ.portal; if (P && P.r) drawQuizPortal(P.x, P.y, P.r, 1, 'in');
+    const E = QZ.exitP; if (E && E.r) drawQuizPortal(E.x, E.y, E.r, E.a == null ? 1 : E.a, 'out');
+}
 
 // ---------- вход и выход ----------
 function quizEnter() {
@@ -112,11 +163,20 @@ function quizEnter() {
     try { AudioFX.playStarCollect(); Haptics.powerup(); } catch (e) {}
     quizUI(true);
 }
+function quizAbort() { QZ.on = false; QZ.objs = []; QZ.portal = null; QZ.exitP = null; quizUI(false); }
 function quizExit() {
     QZ.on = false; QZ.flash = 1; QZ.objs = []; quizUI(false);
-    // возвращаемся в обычный полёт: впереди расчищаем трубы и даём пару секунд неуязвимости
-    pipes = pipes.filter(p => p.x + p.width < owl.x - owl.radius * 2 || p.x > owl.x + 260);
-    owl.y = height * 0.45; owl.vy = 0; invulnerableTime = Math.max(invulnerableTime, 120);
+    // возвращаемся в обычный полёт: сова выскакивает из оранжевого портала в проёме трубы, вокруг — чисто
+    pipes = pipes.filter(p => p.x + p.width < owl.x - 160 || p.x > owl.x + 280);
+    let sq = 0; try { sq = currentDifficultySqueeze + currentCompressionFactor * compressionMaxForLevel(); } catch (e) {}
+    let gap = 230; try { gap = pipeGapForLevel(); } catch (e) {}
+    owl.y = Math.max(gap / 2 + 70, Math.min(height - gap / 2 - 90, height * 0.45));
+    const np = { x: owl.x - 43, width: 86, top: owl.y - gap / 2 - sq, gap, bottom: height - owl.y - gap / 2 - sq, passed: true, portal: true };
+    pipes.push(np); pipes.sort((a, b) => a.x - b.x);
+    QZ.exitP = { pipe: np, t: 0 };
+    quizClearItemsNear(owl.x);
+    try { owl.flap(); } catch (e) { owl.vy = 0; }
+    invulnerableTime = Math.max(invulnerableTime, 120);
     try { AudioFX.playStarCollect(); } catch (e) {}
 }
 
@@ -133,6 +193,10 @@ const QZ_BALL_COL = { A: '#FE7600', B: '#A855F7', C: '#38BDF8', D: '#F43F5E' };
 // ---------- логика ----------
 function quizUpdate() {
     const dt = dtMult; QZ.t += dt;
+    // сова сама «тапает»: короткий подскок и взмах, потом плавно опускается
+    QZ.hv = (QZ.hv || 0) + 0.24 * dt; QZ.hy = (QZ.hy || 0) + QZ.hv * dt;
+    if (QZ.hy >= 0) { QZ.hy = 0; QZ.hv = -2.7; QZ.wing = 1; }
+    QZ.wing = Math.max(0, (QZ.wing || 0) - 0.06 * dt);
     if (QZ.flash > 0) QZ.flash = Math.max(0, QZ.flash - 0.03 * dt);
     // управление: к пальцу / клавишами
     const XM = qzXmax();
@@ -225,6 +289,7 @@ function quizDraw() {
     const hz = ctx.createLinearGradient(0, v.y - 60, 0, v.y + 30);
     hz.addColorStop(0, 'rgba(168, 85, 247, 0)'); hz.addColorStop(0.7, 'rgba(168, 85, 247, 0.35)'); hz.addColorStop(1, 'rgba(254, 118, 0, 0.25)');
     ctx.fillStyle = hz; ctx.fillRect(0, v.y - 60, width, 90);
+    quizDrawCity(v);
     // пол — светящаяся сетка, бежит на нас
     const gy = (z) => v.y + QZ_GROUND * F / z;
     const floor = ctx.createLinearGradient(0, v.y, 0, height);
@@ -243,6 +308,7 @@ function quizDraw() {
         quizDrawObj(o);
     }
     if (!owlDrawn) quizDrawOwl();
+    quizDrawWarp(v);
     drawParticleList(particles);
     // всплывающая надпись
     if (QZ.toast && QZ.toast.t > 0) {
@@ -286,74 +352,114 @@ function quizDrawObj(o) {
         ctx.fillText(o.L, p.x, p.y + r * 0.05);
     } else if (o.k === 'exit') {
         const p = qzProj(o.X, o.Y, o.z);
-        drawQuizPortal(p.x, p.y, 0.9 * p.s, Math.max(0, fade));
+        drawQuizPortal(p.x, p.y, 0.9 * p.s, Math.max(0, fade), 'out');
     }
     ctx.restore();
 }
 function quizDrawOwl() {
     const p = qzProj(QZ.x, QZ_OWL_Y, QZ_ZO);
-    const bob = Math.sin(QZ.t * 0.12) * 4;
-    // тень на полу
-    const sh = qzProj(QZ.x, QZ_GROUND, QZ_ZO);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, 24, 6, 0, 0, Math.PI * 2); ctx.fill();
-    // взмахи: крылья сами поднимаются и опускаются в ритме покачивания; при повороте сова наклоняется в сторону полёта
-    const wing = 0.5 + 0.5 * Math.sin(QZ.t * 0.26);
+    const sh = qzProj(QZ.x, QZ_GROUND, QZ_ZO), hy = QZ.hy || 0;
+    ctx.fillStyle = `rgba(0, 0, 0, ${0.35 + hy * 0.008})`; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, 22 + hy * 0.2, 6, 0, 0, Math.PI * 2); ctx.fill();
     const tilt = Math.max(-0.35, Math.min(0.35, (QZ.tx - QZ.x) * 1.2));
-    quizOwlBack(p.x, p.y + bob, 1.15, wing, tilt);
+    quizOwlBack(p.x, p.y + hy, 1.7, QZ.wing || 0, tilt);
 }
-// Сова со спины: круглое тело-«капля» вместе с головой (общий контур), маленькие ушки-пёрышки, узор перьев на спине,
-// закруглённые крылья по бокам (машут вверх-вниз), хвостик и оранжевые лапки
+// Сова со спины — те же цвета и форма, что у совы сбоку: круглое фиолетовое тело с тёмным контуром #1D0542,
+// по краям видно белое брюшко и белки больших глаз, маленький хохолок, крылья с перьями, хвостик и оранжевые лапки.
 function quizOwlBack(x, y, k, wing, tilt) {
-    const OUT = '#14052a';
+    const OUT = '#1D0542';
     ctx.save(); ctx.translate(x, y); ctx.rotate(tilt); ctx.scale(k, k);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    // крылья — за телом: округлое крыло с тремя «маховыми» зубчиками по краю
+    // крылья: при взмахе поднимаются вверх, потом опускаются
     for (const sd of [-1, 1]) {
-        ctx.save(); ctx.translate(sd * 14, -2); ctx.rotate(sd * (-0.15 + wing * 0.85));
-        const wg = ctx.createLinearGradient(0, -8, 0, 10);
-        wg.addColorStop(0, '#7c3aed'); wg.addColorStop(1, '#4c1d95');
-        ctx.fillStyle = wg; ctx.strokeStyle = OUT; ctx.lineWidth = 2.4;
+        ctx.save(); ctx.translate(sd * 11, -1); ctx.rotate(sd * (0.35 - wing * 1.15));
+        const wg = ctx.createLinearGradient(0, -6, sd * 20, 6);
+        wg.addColorStop(0, '#7C2CE8'); wg.addColorStop(0.5, '#5216AC'); wg.addColorStop(1, '#2E0868');
+        ctx.fillStyle = wg; ctx.strokeStyle = '#20044A'; ctx.lineWidth = 1.8;
         ctx.beginPath();
-        ctx.moveTo(0, -7);
-        ctx.bezierCurveTo(sd * 10, -12, sd * 22, -9, sd * 27, -2);
-        ctx.quadraticCurveTo(sd * 27, 3, sd * 23, 3);
-        ctx.quadraticCurveTo(sd * 23, 7, sd * 18, 7);
-        ctx.quadraticCurveTo(sd * 16, 11, sd * 11, 10);
-        ctx.bezierCurveTo(sd * 6, 10, sd * 2, 8, 0, 6);
+        ctx.moveTo(0, -5);
+        ctx.bezierCurveTo(sd * 8, -9, sd * 17, -6, sd * 21, 0);
+        ctx.quadraticCurveTo(sd * 21, 4, sd * 17, 4);
+        ctx.quadraticCurveTo(sd * 16, 8, sd * 12, 7);
+        ctx.quadraticCurveTo(sd * 9, 10, sd * 5, 8);
+        ctx.quadraticCurveTo(sd * 1, 7, 0, 5);
         ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.strokeStyle = 'rgba(196, 161, 255, 0.5)'; ctx.lineWidth = 1.1;
-        ctx.beginPath(); ctx.moveTo(sd * 6, -2); ctx.quadraticCurveTo(sd * 14, -5, sd * 22, -2); ctx.stroke();
+        ctx.strokeStyle = 'rgba(235, 215, 255, 0.68)'; ctx.lineWidth = 0.9;
+        ctx.beginPath(); ctx.moveTo(sd * 5, -1); ctx.quadraticCurveTo(sd * 11, -3, sd * 17, 0); ctx.moveTo(sd * 5, 3); ctx.quadraticCurveTo(sd * 9, 3, sd * 13, 4); ctx.stroke();
         ctx.restore();
     }
-    // хвостик и лапки
-    ctx.fillStyle = '#5b21b6'; ctx.strokeStyle = OUT; ctx.lineWidth = 2.2;
-    ctx.beginPath(); ctx.moveTo(-6, 17); ctx.quadraticCurveTo(-7, 25, -3, 26); ctx.quadraticCurveTo(0, 28, 3, 26); ctx.quadraticCurveTo(7, 25, 6, 17); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#FE7600';
-    for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sd * 7, 21, 3.2, 2.3, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
-    // общий силуэт тела и головы: сначала толстый тёмный контур обеих фигур, потом заливка — получается один гладкий контур
-    const shape = () => {
-        ctx.beginPath(); ctx.ellipse(0, 3, 18.5, 18, 0, 0, Math.PI * 2);
-        ctx.moveTo(15.5, -14); ctx.ellipse(0, -14, 15.5, 12.5, 0, 0, Math.PI * 2);
-        // ушки-пёрышки — короткие и округлые
-        ctx.moveTo(-12, -21); ctx.quadraticCurveTo(-15, -30, -10.5, -31); ctx.quadraticCurveTo(-8, -26, -5, -25.5); ctx.closePath();
-        ctx.moveTo(12, -21); ctx.quadraticCurveTo(15, -30, 10.5, -31); ctx.quadraticCurveTo(8, -26, 5, -25.5); ctx.closePath();
-    };
-    ctx.strokeStyle = OUT; ctx.lineWidth = 5; shape(); ctx.stroke();
-    const bg = ctx.createRadialGradient(-5, -12, 2, 0, 0, 30);
-    bg.addColorStop(0, '#b197fc'); bg.addColorStop(0.45, '#8b5cf6'); bg.addColorStop(1, '#5b21b6');
-    ctx.fillStyle = bg; shape(); ctx.fill();
-    // перья на спине: ряды мягких дуг, книзу темнее
-    for (let r = 0; r < 4; r++) {
-        ctx.strokeStyle = `rgba(221, 214, 254, ${0.5 - r * 0.08})`; ctx.lineWidth = 1.2;
-        const n = r % 2 ? 3 : 4, w = 5.6;
-        for (let c = 0; c < n; c++) {
-            const fx = (c - (n - 1) / 2) * w, fy = -4 + r * 5.2;
-            ctx.beginPath(); ctx.arc(fx, fy, 2.6, 0.12 * Math.PI, 0.88 * Math.PI); ctx.stroke();
+    // хвост
+    const tg = ctx.createLinearGradient(0, 10, 0, 21);
+    tg.addColorStop(0, '#782CE9'); tg.addColorStop(0.55, '#5216BD'); tg.addColorStop(1, '#2B0762');
+    ctx.fillStyle = tg; ctx.strokeStyle = OUT; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(-5, 11); ctx.quadraticCurveTo(-6.5, 18, -3, 20); ctx.quadraticCurveTo(0, 22, 3, 20); ctx.quadraticCurveTo(6.5, 18, 5, 11); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // лапки
+    ctx.fillStyle = '#FE7600'; ctx.lineWidth = 1.5;
+    for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sd * 5.5, 15.5, 2.6, 1.9, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    // белки глаз, выглядывающие по бокам головы, и белое брюшко по краям снизу
+    ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = OUT; ctx.lineWidth = 1.8;
+    for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sd * 12.5, -6, 4.2, 5.2, sd * 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    const brg = ctx.createLinearGradient(0, 2, 0, 16);
+    brg.addColorStop(0, '#FFFFFF'); brg.addColorStop(0.65, '#FFFDF8'); brg.addColorStop(1, '#EDE5F8');
+    ctx.fillStyle = brg; ctx.beginPath(); ctx.ellipse(0, 6, 14.5, 9.5, 0, 0, Math.PI); ctx.fill(); ctx.stroke();
+    // тело — как у совы сбоку: радиальный фиолетовый градиент, тёмный контур, маленький хохолок сверху
+    const bg = ctx.createRadialGradient(-3, -10, 2, -1, -3, 21);
+    bg.addColorStop(0, '#9248FB'); bg.addColorStop(0.5, '#6A20D4'); bg.addColorStop(1, '#30066B');
+    ctx.fillStyle = bg; ctx.strokeStyle = OUT; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -15.5);
+    ctx.quadraticCurveTo(1.5, -18.5, 3.2, -15.2);   // хохолок
+    ctx.bezierCurveTo(10, -14, 14, -7, 14, 0);
+    ctx.bezierCurveTo(14, 9, 7.5, 14, 0, 14);
+    ctx.bezierCurveTo(-7.5, 14, -14, 9, -14, 0);
+    ctx.bezierCurveTo(-14, -7, -9, -14.5, 0, -15.5);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // перья на спине — светлые штрихи, как на крыле сбоку
+    ctx.strokeStyle = 'rgba(235, 215, 255, 0.41)'; ctx.lineWidth = 1;
+    for (let r = 0; r < 3; r++) {
+        const n = r === 1 ? 3 : 2;
+        for (let c = 0; c < n; c++) { const fx = (c - (n - 1) / 2) * 5.5, fy = -1 + r * 4.4; ctx.beginPath(); ctx.arc(fx, fy, 2.2, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke(); }
+    }
+    // блик на макушке
+    ctx.strokeStyle = 'rgba(235, 215, 255, 0.85)'; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.arc(-1, -4, 10, 1.15 * Math.PI, 1.45 * Math.PI); ctx.stroke();
+    ctx.restore();
+}
+
+// далёкий город на горизонте — силуэты домов с горящими окнами (рисуются один раз), чуть сдвигаются при повороте
+let __qzCity = null, __qzCityKey = '';
+function quizDrawCity(v) {
+    const key = Math.round(width) + 'x' + Math.round(height);
+    if (__qzCityKey !== key) {
+        __qzCityKey = key; const W = Math.round(width * 1.6), H = Math.round(height * 0.16), S = 2;
+        __qzCity = document.createElement('canvas'); __qzCity.width = W * S; __qzCity.height = H * S;
+        const g = __qzCity.getContext('2d'); g.scale(S, S);
+        for (let layer = 0; layer < 2; layer++) {
+            let x = 0;
+            while (x < W) {
+                const bw = 10 + Math.random() * 22, bh = H * (layer ? 0.35 + Math.random() * 0.55 : 0.25 + Math.random() * 0.4);
+                g.fillStyle = layer ? '#170634' : '#220a47'; g.fillRect(x, H - bh, bw, bh);
+                if (layer) for (let wy = H - bh + 3; wy < H - 2; wy += 4) for (let wx = x + 2; wx < x + bw - 2; wx += 3.5) if (Math.random() < 0.28) { g.fillStyle = Math.random() < 0.7 ? 'rgba(255, 190, 90, 0.85)' : 'rgba(200, 160, 255, 0.8)'; g.fillRect(wx, wy, 1.4, 1.6); }
+                x += bw + (layer ? 1 : 3);
+            }
         }
     }
-    // складка шеи и блик на макушке
-    ctx.strokeStyle = 'rgba(20, 5, 42, 0.3)'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(0, -11, 12, 0.25 * Math.PI, 0.75 * Math.PI); ctx.stroke();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.16)'; ctx.beginPath(); ctx.ellipse(-5, -19, 6, 3.2, -0.3, 0, Math.PI * 2); ctx.fill();
+    const cw = width * 1.6, ch = height * 0.16, off = -QZ.x * 18;
+    ctx.drawImage(__qzCity, (width - cw) / 2 + off, v.y - ch + 2, cw, ch);
+}
+// «звёздный тоннель»: искорки вылетают из точки схода и проносятся мимо — видно, что летим вперёд
+function quizDrawWarp(v) {
+    const W = QZ.warp || (QZ.warp = []);
+    const moving = QZ.phase !== 'read';
+    if (moving && W.length < 40 && Math.random() < 0.6 * dtMult) { const an = Math.random() * Math.PI * 2; W.push({ an, d: 4 + Math.random() * 10, v: 1.02 + Math.random() * 0.025 }); }
+    ctx.save(); ctx.lineCap = 'round';
+    for (let i = W.length - 1; i >= 0; i--) {
+        const w = W[i]; const d0 = w.d;
+        if (moving) w.d *= Math.pow(w.v, dtMult);
+        if (w.d > Math.max(width, height)) { W.splice(i, 1); continue; }
+        const a = Math.min(1, w.d / 80);
+        ctx.strokeStyle = `rgba(220, 200, 255, ${0.55 * a})`; ctx.lineWidth = 0.6 + w.d / 220;
+        ctx.beginPath(); ctx.moveTo(v.x + Math.cos(w.an) * d0 * 0.92, v.y + Math.sin(w.an) * d0 * 0.6 * 0.92); ctx.lineTo(v.x + Math.cos(w.an) * w.d, v.y + Math.sin(w.an) * w.d * 0.6); ctx.stroke();
+    }
     ctx.restore();
 }
 
@@ -376,16 +482,19 @@ function quizUI(on) {
             + '#qzScore{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);transform:translateX(-50%);z-index:35;display:flex;align-items:center;gap:12px;padding:8px 16px;border-radius:9999px;background:rgba(29,9,54,.9);border:1.5px solid rgba(168,120,245,.5);box-shadow:0 6px 18px rgba(0,0,0,.4);font:800 13px Onest,sans-serif;color:#EDE5F8;white-space:nowrap;pointer-events:none}'
             + '#qzScore b{font-weight:900;color:#fff}#qzScore .ok{color:#22C55E}#qzScore .bad{color:#EF4444}#qzScore i{margin-right:4px}'
             + '#qzCount{position:absolute;left:0;right:0;top:44%;z-index:35;text-align:center;font:900 64px Onest,sans-serif;color:#fff;text-shadow:0 0 18px #A855F7,0 4px 0 rgba(0,0,0,.4);pointer-events:none;opacity:0;transition:opacity .2s}'
-            + '#qzHint{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 62px);z-index:35;text-align:center;font:700 12px Onest,sans-serif;color:#C4A1FF;pointer-events:none;opacity:.85}';
+            + '#qzHint{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 64px);transform:translateX(-50%);z-index:35;display:flex;flex-direction:column;align-items:center;gap:6px;font:800 12px Onest,sans-serif;color:#EDE5F8;pointer-events:none;transition:opacity .5s;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap}'
+            + '#qzHint.off{opacity:0}#qzHint .qh-row{display:flex;align-items:center;gap:10px;font-size:18px;color:#C4A1FF}#qzHint .qh-hand{font-size:24px;color:#fff;animation:qzSwipe 1.6s ease-in-out infinite;filter:drop-shadow(0 0 6px #A855F7)}'
+            + '#qzHint .qh-row .fa-chevron-left{animation:qzArrL 1.6s ease-in-out infinite}#qzHint .qh-row .fa-chevron-right{animation:qzArrR 1.6s ease-in-out infinite}'
+            + '@keyframes qzSwipe{0%,100%{transform:translateX(-22px) rotate(-8deg)}50%{transform:translateX(22px) rotate(8deg)}}@keyframes qzArrL{0%,100%{opacity:1}50%{opacity:.3}}@keyframes qzArrR{0%,100%{opacity:.3}50%{opacity:1}}';
         document.head.appendChild(st);
         qzEl = { card: document.createElement('div'), count: document.createElement('div'), hint: document.createElement('div'), score: document.createElement('div') };
         qzEl.card.id = 'qzCard'; qzEl.count.id = 'qzCount'; qzEl.hint.id = 'qzHint'; qzEl.score.id = 'qzScore';
         container.appendChild(qzEl.score);
-        qzEl.hint.textContent = 'Веди сову пальцем влево-вправо';
+        qzEl.hint.innerHTML = '<div class="qh-row"><i class="fa-solid fa-chevron-left"></i><i class="fa-solid fa-hand-pointer qh-hand"></i><i class="fa-solid fa-chevron-right"></i></div><div>Веди сову влево-вправо</div>';
         container.appendChild(qzEl.card); container.appendChild(qzEl.count); container.appendChild(qzEl.hint);
     }
     if (!qzEl) return;
-    qzEl.hint.style.display = on ? '' : 'none'; qzEl.score.style.display = on ? '' : 'none';
+    qzEl.hint.style.display = on ? '' : 'none'; qzEl.hint.classList.remove('off'); QZ.moved = false; qzEl.score.style.display = on ? '' : 'none';
     container.classList.toggle('qz-on', !!on); if (on) quizScore();
     if (!on) { qzEl.card.classList.remove('on'); qzEl.count.style.opacity = 0; }
 }
@@ -425,14 +534,17 @@ function quizPointer(e) {
     if (!QZ.on) return;
     const r = canvas.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width;
     QZ.tx = (fx * 2 - 1) * qzXmax() * 1.15;
+    quizMoved();
 }
+// игрок начал рулить — подсказка плавно исчезает (как «Тапни, чтобы начать»)
+function quizMoved() { if (QZ.moved) return; QZ.moved = true; if (qzEl) qzEl.hint.classList.add('off'); }
 container.addEventListener('pointerdown', (e) => { if (!QZ.on) return; QZ.drag = true; quizPointer(e); }, true);
 container.addEventListener('pointermove', (e) => { if (QZ.on && (QZ.drag || e.pointerType === 'mouse')) quizPointer(e); }, true);
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => container.addEventListener(ev, () => { QZ.drag = false; }, true));
 window.addEventListener('keydown', (e) => {
     if (!QZ.on) return;
-    if (e.code === 'ArrowLeft' || e.code === 'KeyA') { QZ.keyL = true; e.preventDefault(); }
-    if (e.code === 'ArrowRight' || e.code === 'KeyD') { QZ.keyR = true; e.preventDefault(); }
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') { QZ.keyL = true; e.preventDefault(); quizMoved(); }
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') { QZ.keyR = true; e.preventDefault(); quizMoved(); }
 });
 window.addEventListener('keyup', (e) => {
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') QZ.keyL = false;

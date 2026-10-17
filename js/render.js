@@ -1,5 +1,9 @@
 function draw() {
-    if (typeof quizActive === 'function' && quizActive()) { quizDraw(); return; }   // квиз-мир: вид из-за спины совы
+    if (typeof quizActive === 'function' && quizActive()) {   // квиз-мир: вид из-за спины совы
+        const ss = document.getElementById('startScreen'), go = document.getElementById('gameOverModal');
+        if ((ss && !ss.classList.contains('hidden')) || (go && !go.classList.contains('hidden'))) quizAbort();   // вышли в меню — квиз закрываем вместе с подсказками
+        else { quizDraw(); return; }
+    }
     ctx.setTransform(viewScale * renderScale * WORLD_K, 0, 0, viewScale * renderScale * WORLD_K, 0, 0);
     const df = currentDrunkFactor;
     if (df > 0.001) {
