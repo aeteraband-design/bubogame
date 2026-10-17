@@ -235,6 +235,7 @@
         sure = false; clearTimeout(t);
         try { resetEntireGame({ attempts: MAX_ATTEMPTS }); playDay = todayKey(); zeroDay = ''; } catch (er) {}
         try { if (typeof quizResetDay === 'function') quizResetDay(); } catch (er) {}
+        try { localStorage.removeItem('bubo_shop_earn_hidden'); } catch (er) {}   // подсказка в лавке снова покажется, как новичку
         try { StorageManager.save(); updateHUDAll(); updateMenuVisibility(); } catch (er) {}
         lbl.textContent = 'ГОТОВО: НОВЫЙ ДЕНЬ';
         t = setTimeout(() => { lbl.textContent = 'СБРОСИТЬ ИГРУ'; }, 1800);
