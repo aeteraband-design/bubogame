@@ -178,20 +178,16 @@ function drawWaterFront() {
 (function () {
     try {
         const st = document.createElement('style');
-        // плашка таймера и улетающая подсказка «Водонапор» — одного стиля: внутри течёт вода и поднимаются пузырьки,
-        // по контуру бегает голубой градиент; текст остаётся хорошо читаемым
+        // плашка таймера и улетающая подсказка «Водонапор» — одного стиля: синяя, по ней бегут переливы,
+        // контур переливается голубым, текст и иконка мягко мерцают
         const W = '.buff-tag[data-key="water"],.fly-label-tag[data-key="water"]';
-        const Wi = '.buff-tag[data-key="water"] i,.fly-label-tag[data-key="water"] i';
-        const Wa = '.buff-tag[data-key="water"]::after,.fly-label-tag[data-key="water"]::after';
-        st.textContent = W + '{position:relative;overflow:hidden;border:1.5px solid transparent!important;'
-            + 'background:linear-gradient(100deg,rgba(6,42,88,.97) 0%,rgba(18,96,170,.97) 25%,rgba(6,42,88,.97) 50%,rgba(18,96,170,.97) 75%,rgba(6,42,88,.97) 100%) padding-box,'
-            + 'linear-gradient(90deg,#0EA5E9,#E0F7FF,#38BDF8,#1D4ED8,#7DD3FC,#0EA5E9) border-box!important;'
-            + 'background-size:200% 100%,300% 100%!important;color:#E6F7FF!important;text-shadow:0 1px 2px rgba(0,20,50,.8);animation:wtrFlow 1.6s linear infinite,wtrGlow 1.8s ease-in-out infinite}'
-            + Wi + '{color:#9BE3FF!important;filter:drop-shadow(0 0 3px #38BDF8)}'
-            + W + '>*{position:relative;z-index:1}'
-            + Wa + '{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.8;background-image:radial-gradient(circle,rgba(255,255,255,.7) 0 1.1px,transparent 1.6px),radial-gradient(circle,rgba(255,255,255,.5) 0 0.9px,transparent 1.4px),radial-gradient(circle,rgba(255,255,255,.55) 0 1.3px,transparent 1.8px);background-size:23px 18px,31px 22px,41px 26px;background-position:3px 0,14px 6px,27px 11px;animation:wtrBubbles 2.2s linear infinite}'
+        st.textContent = W + '{border:1.5px solid transparent!important;'
+            + 'background:linear-gradient(100deg,#0b3a75 0%,#1767b8 25%,#0b3a75 50%,#1767b8 75%,#0b3a75 100%) padding-box,'
+            + 'linear-gradient(90deg,#38BDF8,#E0F7FF,#0EA5E9,#7DD3FC,#38BDF8) border-box!important;'
+            + 'background-size:200% 100%,300% 100%!important;animation:wtrFlow 2s linear infinite,wtrTxt 1.8s ease-in-out infinite,wtrGlow 1.8s ease-in-out infinite!important}'
+            + W.split(',').map(x => x + ' i').join(',') + '{animation:wtrTxt 1.8s ease-in-out infinite;filter:drop-shadow(0 0 3px #38BDF8)}'
             + '@keyframes wtrFlow{from{background-position:0% 0,0% 0}to{background-position:200% 0,300% 0}}'
-            + '@keyframes wtrBubbles{from{background-position:3px 18px,14px 28px,27px 37px}to{background-position:3px 0,14px 6px,27px 11px}}'
+            + '@keyframes wtrTxt{0%,100%{color:#E6F7FF}50%{color:#8FDDFF}}'
             + '@keyframes wtrGlow{0%,100%{box-shadow:0 0 8px #38BDF899}50%{box-shadow:0 0 16px #7DD3FCEE}}';
         document.head.appendChild(st);
     } catch (e) {}
@@ -235,7 +231,7 @@ function waterUpdate(speed, squeeze) {
         }
     }
     // поток во всю ширину трубы; со сложностью — гуще, быстрее и сильнее давит
-    const WK = Math.min(0.95, 0.55 + 0.08 * lv), DENS = 0.016 + lv * 0.02, V0 = 2.6 + lv * 0.45, G = 0.22;
+    const WK = Math.min(0.95, 0.55 + 0.08 * lv), DENS = 0.027 + lv * 0.018, V0 = 2.6 + lv * 0.45, G = 0.22;
     const PUSH = 0.035 + 0.045 * lv;   // в начале — лёгкий напор, к Хард+ сильный, но пролететь можно
     const R = shieldTime > 0 ? owl.radius * 1.4 : owl.radius * 0.95;
     let imp = 0, hits = 0;

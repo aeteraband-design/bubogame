@@ -79,9 +79,17 @@ function drawCrystals() {
 (function () {
     try {
         const st = document.createElement('style');
-        st.textContent = '.buff-tag[data-key="crystal"],.fly-label-tag[data-key="crystal"]{background:linear-gradient(90deg,rgba(120,10,10,.96),rgba(60,4,20,.96))!important;border-color:#FF6A3D!important;color:#FFD9B0!important;animation:dangerPulse 0.9s ease-in-out infinite}'
-            + '.buff-tag[data-key="crystal"] i,.fly-label-tag[data-key="crystal"] i{color:#FFB347!important;filter:drop-shadow(0 0 3px #FF4A3D)}'
-            + '@keyframes dangerPulse{0%,100%{box-shadow:0 0 8px #FF4A3D99,inset 0 0 6px #FF4A3D55}50%{box-shadow:0 0 18px #FF6A3DEE,inset 0 0 10px #FF8A3D88}}';
+        // плашка таймера и улетающая подсказка «Опасные трубы» — красные: по ним бегут переливы, контур переливается огнём,
+        // текст и иконка мерцают
+        const C = '.buff-tag[data-key="crystal"],.fly-label-tag[data-key="crystal"]';
+        st.textContent = C + '{border:1.5px solid transparent!important;'
+            + 'background:linear-gradient(100deg,#6e0a0a 0%,#b3161c 25%,#6e0a0a 50%,#b3161c 75%,#6e0a0a 100%) padding-box,'
+            + 'linear-gradient(90deg,#FF4A3D,#FFD9B0,#FF7A1E,#FF9A7A,#FF4A3D) border-box!important;'
+            + 'background-size:200% 100%,300% 100%!important;animation:dngFlow 2s linear infinite,dngTxt 1.6s ease-in-out infinite,dangerPulse 0.9s ease-in-out infinite!important}'
+            + C.split(',').map(x => x + ' i').join(',') + '{animation:dngTxt 1.6s ease-in-out infinite;filter:drop-shadow(0 0 3px #FF4A3D)}'
+            + '@keyframes dngFlow{from{background-position:0% 0,0% 0}to{background-position:200% 0,300% 0}}'
+            + '@keyframes dngTxt{0%,100%{color:#FFE4D2}50%{color:#FFB070}}'
+            + '@keyframes dangerPulse{0%,100%{box-shadow:0 0 8px #FF4A3D99}50%{box-shadow:0 0 16px #FF6A3DEE}}';
         document.head.appendChild(st);
     } catch (e) {}
 })();

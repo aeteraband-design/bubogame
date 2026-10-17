@@ -18,7 +18,7 @@ function stormSmooth(a, b, x) { const t = stormClamp((x - a) / (b - a)); return 
 // расписание гроз (время идёт только в полёте). Гроза: 15 с тучи собираются (облака темнеют, из-за правого края их наплывает всё больше,
 // под конец начинается дождь) → 30–45 с дождь с молниями → 15 с уходит (дождь слабеет, молнии всё реже, тучи уплывают влево)
 const WX = {
-    RAMP: 24, FADE: 24,          // нарастание и уход, с — тучи налетают и уходят медленно
+    RAMP: 20, FADE: 30,          // нарастание (~20 с тучи плавно наплывают сбоку) и уход (тучи медленно тают), с
     DUR_MIN: 54, DUR_MAX: 69,    // сколько гроза «включена» (24 с нарастания + 30–45 с грозы), с
     // частота (настройка в админке): шанс начать игру сразу в дождь, первая пауза, пауза между грозами, с
     FREQ: [
@@ -220,7 +220,7 @@ function stormCloudSet() {
         return a;
     };
     // low — дальний слой у горизонта (самые маленькие), far — средний, near — ближние вверху (крупнее, сплошь затягивают верх неба)
-    STORM.cl = { low: mkL(32, 0.7, 1.05, 16, 22), far: mkL(20, 0.75, 1.05, 12, 16), near: mkL(16, 1.35, 1.9, 9, 12), init: false };
+    STORM.cl = { low: mkL(32, 0.7, 1.05, 24, 32), far: mkL(20, 0.75, 1.05, 19, 25), near: mkL(16, 1.35, 1.9, 15, 19), init: false };   // плывут спокойно
     // порядок появления общий для всех слоёв: сначала одна тучка, потом вторая, третья… — постепенно всё больше
     const all = [...STORM.cl.far, ...STORM.cl.near, ...STORM.cl.low];
     for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }
@@ -237,27 +237,34 @@ function stormMoonLit(x, y) {
 }
 function stormDrawCloudLayer(list, spr, yOf, cv, si, alpha, lag = 0, first = false, lit = null) {
     // пока тучи собираются — ветер сильный, потом тучи плывут спокойнее; уходят — быстро
-    const gather = WX.on && cv < 0.999, wind = (gather ? 0.85 : 0.5) * (1 + 0.3 * si) * dtMult / 60;
+    // тучи плывут ровно справа налево, без рывков; новая туча выплывает из-за правого края и плавно проявляется,
+    // при уходе туча не убегает, а продолжает плыть и медленно тает (цвет при этом возвращается к сиреневому)
+    const wind = 0.6 * (1 + 0.2 * si) * dtMult / 60;
     alpha *= 0.55 + 0.45 * stormSmooth(0.3, 1, cv);   // сначала тучи полупрозрачные, как обычные облака; потом сгущаются
     for (const c of list) {
         const thr = c.t + lag, cw = CLOUD_W * c.k;
         if (first) c.on = cv >= thr;                       // игра началась уже в грозу — тучи сразу на месте
-        if (!c.on && cv >= thr) { c.on = true; c.go = false; c.x = width + CLOUD_OX * c.k + Math.random() * width * 0.2; }   // выплывает из-за правого края
+        if (!c.on && cv >= thr) { c.on = true; c.go = false; c.a = first ? 1 : 0; c.x = width + CLOUD_OX * c.k + Math.random() * width * 0.25; }   // выплывает из-за правого края
         if (c.on && (cv < thr - 0.04 || cv < 0.002)) c.go = true;           // тучи расходятся: эта больше не возвращается справа
         if (!c.on) continue;
-        c.x -= (width + cw) / (c.go ? 9 : c.tc) * (c.go ? dtMult / 60 : wind);
+        if (first && c.a == null) c.a = 1;
+        c.a = c.go ? Math.max(0, (c.a == null ? 1 : c.a) - dtMult / 60 / 9) : Math.min(1, (c.a == null ? 0 : c.a) + dtMult / 60 / 4);   // проявляется ~4 с, тает ~9 с
+        if (c.go && c.a <= 0) { c.on = false; continue; }
+        c.x -= (width + cw) / c.tc * wind;
         if (c.x < -cw) {
             if (c.go) { c.on = false; continue; }
             c.x = width + CLOUD_OX * c.k + Math.random() * 60;
         }
         const y = yOf(c.yr);
         const dx = c.x - CLOUD_OX * c.k, dy = y - CLOUD_OY * c.k, dh = CLOUD_H * c.k;
+        const al0 = alpha; alpha = al0 * c.a;
         ctx.globalAlpha = alpha;
         // цвет как у обычных облаков: пока тучи собираются — сиреневые облачка постепенно сереют до грозовых, при уходе — обратно
         const sk = stormSmooth(0, 0.85, cv);
         if (sk < 0.999 && typeof cloudSprite !== 'undefined' && cloudSprite) { ctx.globalAlpha = alpha * (1 - sk); ctx.drawImage(cloudSprite, dx, dy, cw, dh); }
         if (sk > 0.001) { ctx.globalAlpha = alpha * sk; ctx.drawImage(spr, dx, dy, cw, dh); }
         if (lit) { const m = stormMoonLit(c.x + cw * 0.15, y); if (m > 0.02) { ctx.globalAlpha = alpha * m * 0.8; ctx.drawImage(lit, dx, dy, cw, dh); } }
+        alpha = al0;
     }
 }
 
