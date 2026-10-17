@@ -17,61 +17,66 @@ function registerWater() {
     return { target: 'other', text: `Водонапор ${WATERFX.SEC}с`, color: WATERFX.COLOR, icon: 'fa-droplet' };
 }
 
-// поток из частиц: у трубы — плотная струя, ниже она распадается на капли-штрихи, которые падают и разбиваются о нижнюю трубу.
-// Капли — настоящие: если на пути сова, они бьются об неё, разлетаются брызгами, а под совой остаётся «тень» без воды.
+// ---------- картинки: капля-слеза (острый верх, круглый низ, синий контур, голубая заливка, блик) и голубой пузырёк ----------
+let __wDrop = null, __wBub = null;
+function waterDropSprite() {
+    if (__wDrop) return __wDrop;
+    const c = document.createElement('canvas'); c.width = 40; c.height = 56; const g = c.getContext('2d');
+    g.translate(20, 36);   // центр круглой части; острый кончик вверху
+    const path = () => { g.beginPath(); g.moveTo(0, -33); g.bezierCurveTo(4, -22, 16, -12, 16, 0); g.arc(0, 0, 16, 0, Math.PI); g.bezierCurveTo(-16, -12, -4, -22, 0, -33); g.closePath(); };
+    const gr = g.createLinearGradient(-16, -30, 16, 16);
+    gr.addColorStop(0, '#B8F0FF'); gr.addColorStop(0.45, '#5CCBF2'); gr.addColorStop(1, '#2C9BDB');
+    path(); g.fillStyle = gr; g.fill();
+    g.lineWidth = 3; g.strokeStyle = '#1F7FC2'; g.stroke();
+    // тень снизу справа и блик слева сверху
+    g.fillStyle = 'rgba(20, 100, 180, 0.35)'; g.beginPath(); g.ellipse(5, 6, 8, 7, -0.5, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255, 255, 255, 0.9)'; g.beginPath(); g.ellipse(-7, -4, 3.2, 6, 0.35, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255, 255, 255, 0.7)'; g.beginPath(); g.arc(-3, -16, 1.8, 0, Math.PI * 2); g.fill();
+    return (__wDrop = c);
+}
+function waterBubbleSprite() {
+    if (__wBub) return __wBub;
+    const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d');
+    const grd = g.createRadialGradient(13, 12, 1, 16, 16, 14);
+    grd.addColorStop(0, 'rgba(255,255,255,0.6)'); grd.addColorStop(0.55, 'rgba(56,189,248,0.2)'); grd.addColorStop(1, 'rgba(56,189,248,0.06)');
+    g.fillStyle = grd; g.beginPath(); g.arc(16, 16, 13, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(160, 230, 255, 0.95)'; g.lineWidth = 2; g.beginPath(); g.arc(16, 16, 13, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.95)'; g.beginPath(); g.ellipse(11, 10, 3.2, 2, -0.6, 0, Math.PI * 2); g.fill();
+    return (__wBub = c);
+}
+// одна капля: r — радиус круглой части; ang — куда летит (0 — вниз); st — вытягивание от скорости
+function waterDrawDrop(x, y, r, ang, st) {
+    const spr = waterDropSprite(), k = r / 16, w = 40 * k, h = 56 * k * st;
+    if (ang) { ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.drawImage(spr, -w / 2, -36 * k * st, w, h); ctx.restore(); }
+    else ctx.drawImage(spr, x - w / 2, y - 36 * k * st, w, h);
+}
+function waterDrawBubble(x, y, r) { const s2 = r * 2.4; ctx.drawImage(waterBubbleSprite(), x - s2 / 2, y - s2 / 2, s2, s2); }
+// брызги и пузырьки в общем списке частиц (рисуются поверх совы) — вызывается из drawParticleList
+function waterDrawPart(pt) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, pt.alpha));
+    if (pt.kind === 'wbub') waterDrawBubble(pt.x, pt.y, pt.size);
+    else waterDrawDrop(pt.x, pt.y, pt.size, Math.atan2(-pt.vx, pt.vy), 1 + Math.min(0.5, Math.hypot(pt.vx, pt.vy) * 0.06));
+    ctx.globalAlpha = 1;
+}
+// живая капля: летит, чуть покачивается и «дышит» (сжимается-вытягивается), как капли дождя
 function drawWater() {
     if (!waterStreams.length) return;
     const t = (typeof frame === 'number' ? frame : 0);
     ctx.save();
-    ctx.lineCap = 'round';
     for (const s of waterStreams) {
         const p = s.pipe; if (!p) continue;
         const x = p.x + s.fx * p.width, y0 = p.top + s.sq, w = s.w;
-        // струя на выходе из трубы: короткий сплошной язык воды, книзу рвётся
+        // у кромки трубы набухают капли
         if (s.on) {
-            const L = 16 + w * 0.6;
-            const g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
-            g.addColorStop(0, 'rgba(190, 240, 255, 0.85)'); g.addColorStop(0.25, 'rgba(80, 190, 240, 0.7)'); g.addColorStop(0.6, 'rgba(60, 165, 230, 0.65)'); g.addColorStop(1, 'rgba(210, 248, 255, 0.9)');
-            ctx.fillStyle = g;
-            ctx.beginPath(); ctx.moveTo(x - w * 0.42, y0);
-            for (let k = 0; k <= 6; k++) { const yy = y0 + L * k / 6; ctx.lineTo(x - w * (0.42 - 0.12 * k / 6) + Math.sin(t * 0.4 + k + s.ph) * 1.2 * k / 6, yy); }
-            for (let k = 6; k >= 0; k--) { const yy = y0 + L * k / 6; ctx.lineTo(x + w * (0.42 - 0.12 * k / 6) + Math.sin(t * 0.37 + k * 1.3 + s.ph) * 1.2 * k / 6, yy); }
-            ctx.closePath();
-            ctx.save(); ctx.clip();
-            ctx.fillRect(x - w, y0, w * 2, L);
-            ctx.restore();
-            // корона брызг на кромке трубы
-            ctx.fillStyle = 'rgba(200, 244, 255, 0.85)';
-            for (let k = 0; k < 4; k++) {
-                const sx = x + (k - 1.5) * w * 0.3, sh = 1.5 + 1.8 * Math.abs(Math.sin(t * 0.25 + k * 1.3 + s.ph));
-                ctx.beginPath(); ctx.ellipse(sx, y0 + 2, 1.4, sh, 0, 0, Math.PI * 2); ctx.fill();
+            for (let k = 0; k < 3; k++) {
+                const u = ((t * 0.04 + k / 3 + s.ph) % 1);
+                waterDrawDrop(x + (k - 1) * w * 0.33, y0 + 1 + u * 4, 1.6 + u * 1.8, 0, 1.15);
             }
         }
-        // капли: тёмно-голубой штрих (тело) + светлая сердцевина + белая головка — три прохода, чтобы не менять стиль на каждую каплю
-        const D = s.drops;
-        ctx.strokeStyle = 'rgba(56, 160, 230, 0.55)';
-        ctx.beginPath();
-        for (const d of D) { const dx = p.x + d.x, len = Math.min(16, d.vy * 1.7); ctx.moveTo(dx, d.y - len); ctx.lineTo(dx, d.y); }
-        ctx.lineWidth = 2.6; ctx.stroke();
-        ctx.strokeStyle = 'rgba(175, 232, 255, 0.8)';
-        ctx.beginPath();
-        for (const d of D) { if (d.r < 0.9) continue; const dx = p.x + d.x, len = Math.min(13, d.vy * 1.4); ctx.moveTo(dx - 0.3, d.y - len); ctx.lineTo(dx - 0.3, d.y - 0.5); }
-        ctx.lineWidth = 1.2; ctx.stroke();
-        ctx.fillStyle = 'rgba(240, 252, 255, 0.95)';
-        ctx.beginPath();
-        for (const d of D) { const dx = p.x + d.x; ctx.moveTo(dx + d.r, d.y); ctx.arc(dx, d.y, d.r, 0, Math.PI * 2); }
-        ctx.fill();
-        // лужица брызг там, где вода бьёт в нижнюю трубу
-        if (s.hitK > 0.05) {
-            const yb = height - (p.bottom + s.sq);
-            ctx.strokeStyle = `rgba(205, 244, 255, ${0.8 * s.hitK})`; ctx.lineWidth = 1.3;
-            ctx.beginPath();
-            for (let k = 0; k < 6; k++) {
-                const a2 = -Math.PI / 2 + (k - 2.5) * 0.45, L2 = 3 + 4 * Math.abs(Math.sin(t * 0.35 + k * 1.7 + s.ph));
-                const bx = x + (k - 2.5) * w * 0.12;
-                ctx.moveTo(bx, yb); ctx.lineTo(bx + Math.cos(a2) * L2, yb + Math.sin(a2) * L2);
-            }
-            ctx.stroke();
+        for (const d of s.drops) {
+            const dx = p.x + d.x + Math.sin(t * 0.18 + d.ph) * 0.7;
+            if (d.b) waterDrawBubble(dx, d.y, d.r);
+            else waterDrawDrop(dx, d.y, d.r, d.vx * 0.15, 1 + Math.min(0.35, d.vy * 0.03) + 0.06 * Math.sin(t * 0.3 + d.ph));
         }
     }
     ctx.restore();
@@ -90,10 +95,14 @@ function drawWater() {
     } catch (e) {}
 })();
 
-function waterSplash(x, y, n) {
+// брызги: капли-слёзы, летящие веером, вперемешку с пузырьками; на них действует тяжесть
+function waterSplash(x, y, n, dir, spread, power) {
     for (let i = 0; i < n; i++) {
-        const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2, v = 0.8 + Math.random() * 2.4;
-        particles.push({ x: x + (Math.random() - 0.5) * 8, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, color: Math.random() < 0.5 ? '#D6F4FF' : '#5CC8F5', alpha: 0.85, size: 0.8 + Math.random() * 1.4, decay: 0.045 + Math.random() * 0.03 });
+        if (particles.length >= 520) return;
+        const a2 = dir + (Math.random() - 0.5) * spread, v = power * (0.5 + Math.random() * 0.8), bub = Math.random() < 0.3;
+        particles.push({ kind: bub ? 'wbub' : 'wdrop', x: x + (Math.random() - 0.5) * 4, y: y + (Math.random() - 0.5) * 4,
+            vx: Math.cos(a2) * v, vy: Math.sin(a2) * v, grav: bub ? 0.03 : 0.16, alpha: 0.95, decay: 0.028 + Math.random() * 0.02,
+            size: bub ? 1.2 + Math.random() * 2 : 1.1 + Math.random() * 1.9 });
     }
 }
 // капля попала в сову: на теле появляется бусинка воды в месте удара (контур OWL_BODY_PTS, масштаб тела 1.29)
@@ -122,7 +131,7 @@ function waterUpdate(speed, squeeze) {
         }
     }
     // со сложностью поток шире, капель больше и бьют они сильнее: Суперлайт — тонкая струйка, Хард+ — широкий тяжёлый поток
-    const W = 12 + lv * 4.5, RATE = 1.6 + lv * 0.65, V0 = 3.2 + lv * 0.5, G = 0.32;
+    const W = 14 + lv * 4.5, RATE = 0.9 + lv * 0.38, V0 = 2.6 + lv * 0.45, G = 0.22;
     // импульс одной капли: подобран так, чтобы весь поток давил на сову примерно с силой PUSH за кадр
     const PUSH = 0.1 + 0.07 * lv, IMP = PUSH / (RATE * 0.55);
     const R = shieldTime > 0 ? owl.radius * 1.4 : owl.radius * 0.95;
@@ -138,34 +147,30 @@ function waterUpdate(speed, squeeze) {
             while (s.acc >= 1) {
                 s.acc -= 1;
                 const u = (Math.random() + Math.random() - 1);   // гуще к центру
-                s.drops.push({ x: cx + u * W * 0.42, y: y0 + Math.random() * 6, vx: u * 0.12 + (Math.random() - 0.5) * 0.08, vy: V0 + Math.random() * 1.2, r: 0.6 + Math.random() * 0.9 });
+                const b = Math.random() < 0.22;   // вперемешку с каплями летят пузырьки
+                s.drops.push({ x: cx + u * W * 0.45, y: y0 + 2 + Math.random() * 4, vx: u * 0.14 + (Math.random() - 0.5) * 0.1, vy: (V0 + Math.random() * 1.2) * (b ? 0.7 : 1), r: b ? 1.3 + Math.random() * 1.8 : 1.5 + Math.random() * 2.8, b, ph: Math.random() * 6.28 });
             }
         }
         let hb = 0;
         const D = s.drops;
         for (let k = D.length - 1; k >= 0; k--) {
             const d = D[k];
-            d.vy += G * dt; d.x += d.vx * dt; d.y += d.vy * dt;
+            d.vy += G * (d.b ? 0.55 : 1) * dt; d.x += d.vx * dt; d.y += d.vy * dt;
             // удар о нижнюю трубу: капля разбивается на брызги
             if (d.y >= yb) {
                 hb++;
-                if (Math.random() < 0.3 && particles.length < 500) {
-                    const a2 = -Math.PI / 2 + (Math.random() - 0.5) * 2.4, v = 0.8 + Math.random() * 1.8;
-                    particles.push({ x: p.x + d.x, y: yb - 1, vx: Math.cos(a2) * v, vy: Math.sin(a2) * v, color: Math.random() < 0.5 ? '#D6F4FF' : '#5CC8F5', alpha: 0.85, size: 0.7 + Math.random() * 1.1, decay: 0.05 + Math.random() * 0.03 });
-                }
+                if (Math.random() < 0.55) waterSplash(p.x + d.x, yb - 1, 1 + (d.r > 2.8 ? 1 : 0), -Math.PI / 2, 2.4, 2.2 + d.vy * 0.15);   // капля разбивается в брызги и пузырьки
                 D.splice(k, 1); continue;
             }
             // удар о сову
             if (gameActive) {
                 const wx = p.x + d.x, ddx = wx - owl.x, ddy = d.y - owl.y;
                 if (ddx * ddx + ddy * ddy < R * R) {
-                    if (shz) { if (Math.random() < 0.15 && particles.length < 500) particles.push({ x: wx, y: d.y, vx: (Math.random() - 0.5) * 2, vy: -1 - Math.random(), color: '#D6F4FF', alpha: 0.8, size: 1, decay: 0.06 }); continue; }   // ШАЗАМ пробивает воду
+                    if (shz) { if (Math.random() < 0.15) waterSplash(wx, d.y, 1, -Math.PI / 2, 2.5, 2); continue; }   // ШАЗАМ пробивает воду
                     hits++;
-                    // капля отскакивает от тела в сторону и вверх — брызги
-                    if (Math.random() < 0.55 && particles.length < 500) {
-                        const side = ddx >= 0 ? 1 : -1, v = 0.8 + Math.random() * 1.6;
-                        particles.push({ x: wx, y: d.y, vx: side * v * (0.6 + Math.random()), vy: -v * (0.4 + Math.random() * 0.8), color: Math.random() < 0.5 ? '#E2F7FF' : '#6CCFF7', alpha: 0.9, size: 0.7 + Math.random() * 1.1, decay: 0.045 + Math.random() * 0.03 });
-                    }
+                    // капля разлетается веером от тела: брызги в стороны и вверх
+                    const out = Math.atan2(ddy, ddx);
+                    waterSplash(wx, d.y, d.b ? 1 : 2 + (d.r > 3 ? 1 : 0), out < 0 ? out : -Math.PI / 2 + (ddx >= 0 ? 0.9 : -0.9), 1.6, 2.6 + d.vy * 0.25);
                     if (shieldTime <= 0) waterWetOwl(wx, d.y);   // без щита сова мокнет
                     D.splice(k, 1); continue;
                 }

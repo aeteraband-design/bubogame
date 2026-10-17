@@ -818,28 +818,23 @@ function pipeStemCol(f, k, a) {   // цвет трубы в точке f (0..1 �
 }
 function drawPipeSeam(pw, y) {
     const devR = tokDevScale(ctx);
-    const spr = tokSprite(`seam2|${pw}|${devR}`, devR, pw / 2 + 0.5, 7, (g) => {
+    const spr = tokSprite(`seam3|${pw}|${devR}`, devR, pw / 2 + 0.5, 7, (g) => {
         g.translate(-pw / 2, 0);
         const lin = (k, a) => { const gr = g.createLinearGradient(0, 0, pw, 0); for (let f = 0; f <= 1.0001; f += 0.05) gr.addColorStop(Math.min(1, f), pipeStemCol(f, k, a)); return gr; };
         const lit = (f) => Math.max(0, 1 - Math.abs(f - 0.77) / 0.22);   // где на трубе блик от луны
-        // обод: чуть светлее самой трубы, тот же изгиб
-        g.fillStyle = lin(1.22); g.fillRect(0, -5.5, pw, 11);
-        // верхняя кромка обода ловит свет, нижняя уходит в тень
+        // просто линия стыка: тёмная бороздка и под ней тонкий отсвет, оба по изгибу трубы
         const hl = g.createLinearGradient(0, 0, pw, 0);
-        for (let f = 0; f <= 1.0001; f += 0.05) hl.addColorStop(Math.min(1, f), `rgba(235, 205, 255, ${0.08 + 0.5 * lit(f)})`);
-        g.fillStyle = hl; g.fillRect(0, -5.5, pw, 1);
-        g.fillStyle = 'rgba(10, 0, 25, 0.45)'; g.fillRect(0, 4.6, pw, 0.9);
-        // щель посередине: тёмная линия, под ней тонкий отсвет — тоже по изгибу
-        g.fillStyle = lin(0.35); g.fillRect(0, -0.7, pw, 1.3);
-        g.fillStyle = hl; g.globalAlpha = 0.6; g.fillRect(0, 0.6, pw, 0.6); g.globalAlpha = 1;
-        // болты — ряд над щелью и ряд под ней; цвет и блик зависят от места на трубе
-        const n = Math.max(3, Math.round(pw / 12));
-        for (const by of [-3, 3]) {
+        for (let f = 0; f <= 1.0001; f += 0.05) hl.addColorStop(Math.min(1, f), `rgba(225, 195, 255, ${0.04 + 0.28 * lit(f)})`);
+        g.fillStyle = lin(0.55, 0.85); g.fillRect(0, -0.6, pw, 1.1);
+        g.fillStyle = hl; g.fillRect(0, 0.5, pw, 0.7);
+        // винты — ряд сверху и ряд снизу от линии, небольшие и неяркие, в цвет трубы
+        const n = Math.max(3, Math.round(pw / 13));
+        for (const by of [-3.6, 3.6]) {
             for (let k = 0; k < n; k++) {
                 const f = (k + 0.5) / n, bx = pw * f, L = lit(f);
-                g.fillStyle = 'rgba(10, 0, 25, 0.5)'; g.beginPath(); g.arc(bx + 0.35, by + 0.45, 1.25, 0, Math.PI * 2); g.fill();
-                g.fillStyle = pipeStemCol(f, 1.45); g.beginPath(); g.arc(bx, by, 1.15, 0, Math.PI * 2); g.fill();
-                g.fillStyle = `rgba(245, 225, 255, ${0.15 + 0.75 * L})`; g.beginPath(); g.arc(bx + 0.35, by - 0.4, 0.45, 0, Math.PI * 2); g.fill();
+                g.fillStyle = 'rgba(10, 0, 25, 0.3)'; g.beginPath(); g.arc(bx + 0.3, by + 0.35, 1, 0, Math.PI * 2); g.fill();
+                g.fillStyle = pipeStemCol(f, 1.18, 0.9); g.beginPath(); g.arc(bx, by, 0.9, 0, Math.PI * 2); g.fill();
+                g.fillStyle = `rgba(240, 220, 255, ${0.08 + 0.4 * L})`; g.beginPath(); g.arc(bx + 0.25, by - 0.3, 0.35, 0, Math.PI * 2); g.fill();
             }
         }
     });

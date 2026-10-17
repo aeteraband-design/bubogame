@@ -18,6 +18,7 @@ function update() {
             pt.vx *= Math.pow(0.97, dtMult);
             pt.angle = (pt.angle || 0) + ((pt.vAngle || 0.05) * dtMult);
         }
+        if (pt.grav) pt.vy += pt.grav * dtMult;   // брызги воды падают
         pt.alpha -= (pt.decay || 0.025) * dtMult;
         if (pt.grow) pt.size += pt.grow * dtMult;
         if (pt.alpha <= 0) {

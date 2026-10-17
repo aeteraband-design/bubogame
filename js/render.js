@@ -47,6 +47,7 @@ function flapBubbleSprite() {
 // Отрисовка списка частиц (снежинки, пузырьки, кружочки, перья и т. д.) — общая для игры и для тестовой вкладки
 function drawParticleList(list) {
     list.forEach(pt => {
+        if ((pt.kind === 'wdrop' || pt.kind === 'wbub') && typeof waterDrawPart === 'function') { waterDrawPart(pt); return; }   // брызги «Водонапора»
         if (pt.kind === 'snow' || pt.kind === 'bubble') {
             const spr = pt.kind === 'snow' ? flapSnowSprite() : flapBubbleSprite(), s = pt.size * 2;
             ctx.globalAlpha = Math.max(0, Math.min(1, pt.alpha));
