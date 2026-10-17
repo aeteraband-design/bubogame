@@ -209,6 +209,13 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-ready{display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px 10px;border-radius:20px;background:linear-gradient(180deg,rgba(120,44,233,.2),rgba(120,44,233,.06));border:1px dashed rgba(168,120,245,.5);text-align:center}
 #qzWin .qz-ready .n{font-weight:900;font-size:13px;letter-spacing:.08em;color:#C4B5FD;text-transform:uppercase}
 #qzWin .qz-ready .t{font-weight:600;font-size:12px;color:#DDD6FE;line-height:1.4}
+#qzWin .qz-cnt.pop{animation:qzCntPop .7s cubic-bezier(.2,1.5,.4,1)}
+@keyframes qzCntPop{0%{transform:scale(1)}35%{transform:scale(1.3);text-shadow:0 0 12px #FFC53D}100%{transform:scale(1)}}
+.qz-gain{position:absolute;transform:translate(-50%,0);display:flex;align-items:center;gap:5px;font:900 18px Onest,sans-serif;color:#FFE08A;text-shadow:0 0 10px rgba(255,197,61,.9),0 2px 3px rgba(0,0,0,.4);pointer-events:none;z-index:3;white-space:nowrap;animation:qzGain 1.4s cubic-bezier(.2,.8,.3,1) forwards}
+.qz-gain .qz-coin{width:20px;height:20px;font-size:10px}
+@keyframes qzGain{0%{opacity:0;transform:translate(-50%,10px) scale(.5)}18%{opacity:1;transform:translate(-50%,-14px) scale(1.15)}35%{transform:translate(-50%,-20px) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-44px) scale(.9)}}
+.qz-spark{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#FFE08A;box-shadow:0 0 8px #FFC53D;pointer-events:none;z-index:3;animation:qzSpark .75s ease-out forwards}
+@keyframes qzSpark{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
 .qz-plus{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;font:900 26px Onest,sans-serif;color:#FFD66B;text-shadow:0 0 14px rgba(255,197,61,.8);pointer-events:none;animation:qzPlus 1.2s ease-out forwards;z-index:3}
 .qz-plus .qz-coin{width:24px;height:24px;font-size:12px}
 @keyframes qzPlus{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-140%) scale(1)}}
@@ -250,7 +257,7 @@ function qzProg(d, curIdx) {
         const r = d.res[i];
         dots += `<div class="qz-dot${r === 1 ? ' ok' : r === 0 ? ' bad' : i === curIdx ? ' cur' : ''}">${r === 1 ? '<i class="fa-solid fa-check"></i>' : r === 0 ? '<i class="fa-solid fa-xmark"></i>' : ''}</div>`;
     }
-    return `<div class="qz-prog"><div class="qz-dots">${dots}</div><div class="qz-cnt">${QZ_COIN}+${d.earned}</div></div>`;
+    return `<div class="qz-prog"><div class="qz-dots">${dots}</div><div class="qz-cnt">${QZ_COIN}${d.earned}</div></div>`;
 }
 function qzUntilTomorrow() {
     const n = new Date(), t = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), s = Math.max(0, Math.floor((t - n) / 1000));
@@ -365,10 +372,27 @@ function qzAnswer(L) {
         if (ok) { AudioFX.playThemeCollect(); Haptics.collectTheme(); }
         else { (AudioFX.playThemeLose || AudioFX.playHit).call(AudioFX); Haptics.hit(); }
     } catch (e) {}
-    if (ok) { const w = document.getElementById('qzWin'); if (w) { const p = document.createElement('div'); p.className = 'qz-plus'; p.innerHTML = QZ_COIN + '+' + di.coins; w.appendChild(p); setTimeout(() => p.remove(), 1300); } }
+    if (ok) qzGainFx(di.coins);
     quizMenuBadge();
     // время вышло — сразу следующий вопрос (через миг, чтобы увидеть правильный ответ)
     if (!L) QS.autoT = setTimeout(() => { if (qzRoot && !qzRoot.classList.contains('hidden') && QS.phase === 'reveal') { if (d.ids.length >= QUIZ_PER_DAY) qzRenderDone(); else qzStartQuestion(); } }, 1800);
+}
+// заработали монеты: у счётчика «+N» справа от кружков всплывает прибавка, счётчик вспыхивает золотом, разлетаются искорки
+function qzGainFx(n) {
+    const w = document.getElementById('qzWin'), c = w && w.querySelector('.qz-cnt'); if (!c) return;
+    const wr = w.getBoundingClientRect(), r = c.getBoundingClientRect();
+    const x = r.left - wr.left + r.width / 2, y = r.top - wr.top + w.scrollTop;
+    c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop');
+    const g = document.createElement('div'); g.className = 'qz-gain';
+    g.style.left = x + 'px'; g.style.top = y + 'px'; g.innerHTML = QZ_COIN + '+' + n;
+    w.appendChild(g); setTimeout(() => g.remove(), 1500);
+    for (let i = 0; i < 9; i++) {
+        const s = document.createElement('i'); s.className = 'qz-spark';
+        const a = Math.PI * 2 * i / 9 + Math.random() * 0.4, d = 22 + Math.random() * 16;
+        s.style.left = x + 'px'; s.style.top = (y + r.height / 2) + 'px';
+        s.style.setProperty('--dx', (Math.cos(a) * d).toFixed(1) + 'px'); s.style.setProperty('--dy', (Math.sin(a) * d).toFixed(1) + 'px');
+        w.appendChild(s); setTimeout(() => s.remove(), 800);
+    }
 }
 function qzPick(L) {
     if (QS.phase === 'reveal') return;
@@ -383,7 +407,7 @@ function openQuiz(e) {
     if (d.cur && d.shown) { d.ids.push(d.cur); d.res.push(0); quizMarkSeen(d.cur); d.cur = 0; d.ord = ''; d.shown = false; quizSaveDay(d); }
     qzRenderReady();
     qzRoot.classList.remove('hidden');
-    try { if (AudioFX.mode !== 'quiz') { qzPrevMusic = AudioFX.mode; AudioFX.setMode('quiz'); } } catch (er) {}
+    try { if (AudioFX.mode !== 'quiz') { qzPrevMusic = AudioFX.mode; AudioFX.setMode('quiz', { fade: true }); } } catch (er) {}
 }
 function closeQuiz(e) {
     if (e) e.stopPropagation();
@@ -391,7 +415,7 @@ function closeQuiz(e) {
     QS.phase = 'idle';
     if (qzRoot) qzRoot.classList.add('hidden');
     quizMenuBadge();
-    try { if (AudioFX.mode === 'quiz') AudioFX.setMode(qzPrevMusic && qzPrevMusic !== 'quiz' ? qzPrevMusic : 'menu'); } catch (er) {}
+    try { if (AudioFX.mode === 'quiz' || AudioFX._pendMode === 'quiz') AudioFX.setMode(qzPrevMusic && qzPrevMusic !== 'quiz' && qzPrevMusic !== 'shop' ? qzPrevMusic : 'menu', { fade: true }); } catch (er) {}
     try { updateHUDAll(); if (typeof shopSyncBtn === 'function') shopSyncBtn(); } catch (er) {}
 }
 function quizMenuBadge() {

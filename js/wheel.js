@@ -195,6 +195,7 @@ function openRoulette(opts) {
     const res = rwEl('rwResult'); if (res) res.classList.add('hidden');
     const reel = rwEl('rwReel'); if (reel) reel.classList.remove('rw-done');
     m.classList.remove('hidden');
+    if (AudioFX.mode !== 'victory') AudioFX.setMode('victory', { fade: true });   // в рулетке — её музыка (и когда зашли из меню)
     rwUpdateUI();
     rw.wave = null; rw.nextWave = performance.now() + 2500;
     if (!rw.pos) rw.pos = Math.random() * RL_PATTERN.length * rw.pitch;
@@ -204,7 +205,7 @@ function closeRoulette() {
     if (rw.spinning) return;
     const res = rwEl('rwResult'); if (res && !res.classList.contains('hidden')) return;   // приз нужно забрать
     const m = rwEl('rouletteModal'); if (m) m.classList.add('hidden');
-    if (AudioFX.mode === 'victory') AudioFX.setMode('menu');
+    if (AudioFX.mode === 'victory' || AudioFX._pendMode === 'victory') AudioFX.setMode('menu', { fade: true });
 }
 function spinRoulette() {
     if (rw.spinning || rw.prize || rouletteSpins <= 0) return;

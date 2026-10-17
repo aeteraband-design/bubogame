@@ -80,6 +80,9 @@ const AudioFX = {
 
     victoryMelody: [523.25, 659.25, 783.99, 1046.50, 783.99, 880.00, 1046.50, 1318.51, 1174.66, 1046.50, 880.00, 783.99, 880.00, 1046.50, 1174.66, 1046.50],
     victoryBass: [130.81, 130.81, 174.61, 174.61, 196.00, 196.00, 130.81, 196.00],
+    shopMelody:  [523.25, 659.25, 783.99, 659.25, 880.00, 783.99, 659.25, 0, 698.46, 880.00, 1046.50, 880.00, 783.99, 659.25, 587.33, 0],
+    shopMelody2: [659.25, 783.99, 880.00, 783.99, 659.25, 587.33, 523.25, 0, 587.33, 698.46, 880.00, 783.99, 698.46, 659.25, 587.33, 523.25],
+    shopBass:    [130.81, 196.00, 110.00, 164.81, 174.61, 130.81, 196.00, 146.83],
     quizMelody:  [329.63, 0, 392.00, 0, 440.00, 0, 392.00, 329.63, 349.23, 0, 329.63, 0, 261.63, 0, 293.66, 0],
     quizMelody2: [329.63, 0, 392.00, 0, 523.25, 0, 440.00, 392.00, 329.63, 0, 293.66, 0, 261.63, 0, 246.94, 0],
     quizBass:    [110.00, 87.31, 130.81, 98.00],
@@ -230,12 +233,34 @@ const AudioFX = {
         this.setMuted(!this.isMusicMuted);
     },
 
-    setMode(newMode) {
-        if (this.mode === newMode) return;
-        this.mode = newMode;
-        this.step = 0;
-        this.stopMusic();
-        this.startMusicLoop();
+    // fade: true — плавная смена музыки (окна в меню): старая затихает ~0,4 с, новая набирает громкость ~0,8 с
+    setMode(newMode, opts) {
+        const eff = this._pendMode || this.mode;
+        if (eff === newMode) {
+            if (this._pendMode && this._pendMode === this.mode) { clearTimeout(this._fadeT); this._pendMode = null; this._fadeIn(); }
+            return;
+        }
+        const smooth = !!(opts && opts.fade) && this.ctx && this.musicGain && this.ctx.state === 'running' && !this.isMusicMuted;
+        clearTimeout(this._fadeT);
+        if (!smooth) {
+            const wasFading = !!this._pendMode; this._pendMode = null;
+            this.mode = newMode; this.step = 0; this.stopMusic(); this.startMusicLoop();
+            if (wasFading) this._fadeIn();
+            return;
+        }
+        this._pendMode = newMode;
+        const now = this.ctx.currentTime, g = this.musicGain.gain;
+        g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0.0001, now + 0.4);
+        this._fadeT = setTimeout(() => {
+            const m = this._pendMode; this._pendMode = null; if (!m) return;
+            this.mode = m; this.step = 0; this.stopMusic(); this.startMusicLoop(); this._fadeIn();
+        }, 420);
+    },
+    _fadeIn() {
+        try {
+            const now = this.ctx.currentTime, g = this.musicGain.gain;
+            g.cancelScheduledValues(now); g.setValueAtTime(Math.max(0.0001, g.value), now); g.linearRampToValueAtTime(this.isMusicMuted ? 0 : this.musicVolume, now + 0.8);
+        } catch (e) {}
     },
 
     stopMusic() {
@@ -424,8 +449,8 @@ const AudioFX = {
                     // ноты ставятся заранее (на 0.35 с вперёд) точно по времени аудио — подвисания игры музыку не рвут
                     while (this.nextNoteTime < t + 0.35) {
                         this.playMusicStep(this.nextNoteTime);
-                        let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : (this.mode === 'quiz' ? 0.3 : 0.29)));
-                        if (this.mode !== 'death' && this.mode !== 'victory' && this.mode !== 'menu' && this.mode !== 'quiz') {   // в меню темп всегда стандартный — не зависит ни от сложности, ни от ускорения
+                        let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : (this.mode === 'quiz' ? 0.3 : (this.mode === 'shop' ? 0.19 : 0.29))));
+                        if (this.mode !== 'death' && this.mode !== 'victory' && this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop') {   // в меню темп всегда стандартный — не зависит ни от сложности, ни от ускорения
                             const diff = getDifficultyMultipliers();
                             if (diff.musicTempoMult) d /= diff.musicTempoMult;
                             d /= this.updateSpeedFactor();
@@ -467,7 +492,7 @@ const AudioFX = {
         const now = when || this.ctx.currentTime;
         let pitchMultiplier = 1.0;
 
-        if (this.mode !== 'menu' && this.mode !== 'quiz') {   // музыка меню всегда в стандартном темпе и высоте — сложность и ускорение на неё не влияют
+        if (this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop') {   // музыка меню всегда в стандартном темпе и высоте — сложность и ускорение на неё не влияют
             const diff = getDifficultyMultipliers();
             if (diff.musicTempoMult) {
                 pitchMultiplier *= diff.musicTempoMult;
@@ -524,6 +549,25 @@ const AudioFX = {
                 ns.buffer = this._iceNoise(); fl.type = 'bandpass'; fl.frequency.setValueAtTime(1900, now);
                 g.gain.setValueAtTime(0.18, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
                 ns.connect(fl); fl.connect(g); g.connect(this.musicGain); ns.start(now); ns.stop(now + 0.14);
+            }
+        } else if (this.mode === 'shop') {
+            // лавка: весёлая «магазинная» мелодия — щипковые нотки, прыгающий бас и лёгкий шейкер (C – Am – F – G)
+            const s = this.step, s16 = s % 16, ph = Math.floor(s / 16) % 2;
+            const f = (ph ? this.shopMelody2 : this.shopMelody)[s16];
+            const pl = (type, fr, vol, dur) => {
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain(), lp = this.ctx.createBiquadFilter();
+                o.type = type; o.frequency.setValueAtTime(fr, now); lp.type = 'lowpass'; lp.frequency.setValueAtTime(2600, now);
+                g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + 0.008); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                o.connect(lp); lp.connect(g); g.connect(this.musicGain); o.start(now); o.stop(now + dur + 0.02);
+            };
+            if (f) { pl('triangle', f, 0.3, 0.24); pl('sine', f * 2, 0.06, 0.12); }
+            if (s % 2 === 0) pl('triangle', this.shopBass[Math.floor(s / 2) % this.shopBass.length], 0.34, 0.3);
+            if (s % 4 === 2) { pl('sine', 523.25 * (ph ? 1.26 : 1.19), 0.05, 0.18); }   // лёгкий аккордный «плинк» на слабую долю
+            {   // шейкер
+                const ns = this.ctx.createBufferSource(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+                ns.buffer = this._iceNoise(); fl.type = 'highpass'; fl.frequency.setValueAtTime(7000, now);
+                g.gain.setValueAtTime(s % 2 ? 0.05 : 0.025, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                ns.connect(fl); fl.connect(g); g.connect(this.musicGain); ns.start(now); ns.stop(now + 0.06);
             }
         } else if (this.mode === 'quiz') {
             // вопросы: спокойный «лоу-фай» — мягкая мелодия, тёплый бас, приглушённая бочка и тихие хэты (Am – F – C – G)

@@ -170,11 +170,13 @@ function openShop(e) {
     try { AudioFX.resume(); } catch (er) {}
     shopBuild(); shSure = null; shopRender();
     shRoot.classList.remove('hidden');
+    try { AudioFX.setMode('shop', { fade: true }); } catch (er) {}
 }
 function closeShop(e) {
     if (e) e.stopPropagation();
     if (shRoot) shRoot.classList.add('hidden');
     shSure = null; shopSyncBtn();
+    try { if (AudioFX.mode === 'shop' || AudioFX._pendMode === 'shop') AudioFX.setMode('menu', { fade: true }); } catch (er) {}
     try { updateHUDAll(); } catch (er) {}
 }
 function shopSyncBtn() {
@@ -186,4 +188,21 @@ function shopSyncBtn() {
     const g = document.getElementById('earnAttemptBtn');   // попыток нет — в лавку (там можно купить попытку)
     if (g) g.addEventListener('click', (e) => { e.stopPropagation(); try { returnToHome(); } catch (er) {} openShop(); });
     shopSyncBtn();
+})();
+
+// Пока открыто окно из главного меню (вопросы, лавка, рулетка, правила, настройки, админка…), само меню прячется —
+// остаётся только фон, кнопки не светятся сквозь окно. Закрыли окно — меню плавно возвращается.
+(function () {
+    const st = document.createElement('style');
+    st.textContent = '#startScreen > *{transition:opacity .25s ease}#startScreen.menu-under-pop > *{opacity:0!important;pointer-events:none!important}';
+    document.head.appendChild(st);
+    const POPS = ['rouletteModal', 'quizModal', 'shopModal', 'rulesModal', 'settingsModal', 'adminModal', 'admLogin', 'resetConfirmModal', 'winModal'];
+    const sync = () => {
+        const ss = document.getElementById('startScreen'); if (!ss) return;
+        const any = POPS.some((id) => { const e = document.getElementById(id); return e && !e.classList.contains('hidden'); });
+        ss.classList.toggle('menu-under-pop', any);
+    };
+    const gc = document.getElementById('gameContainer') || document.body;
+    try { new MutationObserver(sync).observe(gc, { subtree: true, attributes: true, attributeFilter: ['class'], childList: true }); } catch (e) {}
+    sync();
 })();
