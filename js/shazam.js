@@ -130,7 +130,7 @@ function shazamEnd() {
     for (const p of pipes) if (owl.x + owl.radius > p.x && owl.x - owl.radius < p.x + p.width) { invulnerableTime = Math.max(invulnerableTime, 60); p.shieldPass = true; }
     // трубы, которые уже рядом (сова их облетала или вот-вот облетит), до конца пролетаются насквозь — врезаться можно только в новые
     for (const p of pipes) if (p.x < owl.x + 220) p.shzPass = true;
-    try { AudioFX.playShazamEnd(); AudioFX.onSpeedChanged(); } catch (e) {}
+    try { AudioFX.playShazamPowerDown(); AudioFX.onSpeedChanged(); } catch (e) {}   // эффект кончился совсем — последний звук
 }
 
 function shazamReset() {
@@ -182,12 +182,10 @@ function shazamUpdate() {
     }
     SHZ.slow = 1; SHZ.dx = 0;   // сова не замирает и не дёргается
     if (SHZ.state === 'active') {
-        const wl0 = SHZ.left - SHZ.FADE;
         SHZ.left -= dtMult; SHZ.t += dtMult;
-        const wl = SHZ.left - SHZ.FADE;
-        // последние 3 секунды: звук-предупреждение каждую секунду, на нуле — «выключение»
-        for (const n of [3, 2, 1]) if (wl0 > n * 60 && wl <= n * 60) { try { AudioFX.playShazamWarn(n); } catch (e) {} SHZ.blink = 1; }
-        if (wl0 > 0 && wl <= 0) { try { AudioFX.playShazamPowerDown(); } catch (e) {} }
+        // под самый конец — три «дзинь» (последние ~1,5 с), а когда эффект кончился совсем — звук «выключения» (в shazamEnd)
+        const l0 = SHZ.left + dtMult;
+        for (const [n, at] of [[3, 135], [2, 90], [1, 45]]) if (l0 > at && SHZ.left <= at) { try { AudioFX.playShazamWarn(n); } catch (e) {} SHZ.blink = 1; }
         if (SHZ.left <= 0) shazamEnd();
     }
     // предупреждение: 0 → 1 за последние 3 с перед угасанием

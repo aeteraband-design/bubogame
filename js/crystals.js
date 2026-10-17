@@ -79,13 +79,15 @@ function drawCrystals() {
     try {
         const st = document.createElement('style');
         const C = '.buff-tag[data-key="crystal"],.fly-label-tag[data-key="crystal"]';
-        // фон как у остальных плашек; цвет ровный, без мигания. Иногда по плашке мягко проходит белый перелив.
+        // обычная плашка своего цвета; иногда по контуру по кругу пробегает светлый блик (как у плашки сил при увеличении максимума).
         // Свою animation у плашки не трогаем (у улетающей подсказки это её полёт)
-        st.textContent = '#buffBar .buff-tag[data-key="crystal"]{position:relative}'
-            + C + '{overflow:hidden}'
-            + C.split(',').map(x => x + '::after').join(',') + '{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;'
-            + 'background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.26) 50%,transparent 58%) no-repeat;background-size:300% 100%;animation:dngSheen 5s ease-in-out infinite}'
-            + '@keyframes dngSheen{0%{background-position:0 0}38%{background-position:100% 0}100%{background-position:100% 0}}';
+        st.textContent = '@property --dngA{syntax:"<angle>";inherits:false;initial-value:0deg}'
+            + '#buffBar .buff-tag[data-key="crystal"]{position:relative}'
+            + C.split(',').map(x => x + '::after').join(',') + '{content:"";position:absolute;inset:-1.5px;border-radius:inherit;padding:1.5px;pointer-events:none;'
+            + 'background:conic-gradient(from var(--dngA),transparent 0deg,rgba(255,255,255,.95) 30deg,#FF4A3D 62deg,transparent 105deg,transparent 360deg);'
+            + '-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;'
+            + 'animation:dngRun 5s linear infinite}'
+            + '@keyframes dngRun{0%{--dngA:0deg;opacity:1}24%{--dngA:360deg;opacity:1}27%{--dngA:360deg;opacity:0}100%{--dngA:360deg;opacity:0}}';
         document.head.appendChild(st);
     } catch (e) {}
 })();

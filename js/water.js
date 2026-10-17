@@ -178,13 +178,15 @@ function drawWaterFront() {
     try {
         const st = document.createElement('style');
         const W = '.buff-tag[data-key="water"],.fly-label-tag[data-key="water"]';
-        // фон как у остальных плашек; цвет ровный, без мигания. Иногда по плашке мягко проходит белый перелив.
+        // обычная плашка своего цвета; иногда по контуру по кругу пробегает светлый блик (как у плашки сил при увеличении максимума).
         // Свою animation у плашки не трогаем (у улетающей подсказки это её полёт)
-        st.textContent = '#buffBar .buff-tag[data-key="water"]{position:relative}'
-            + W + '{overflow:hidden}'
-            + W.split(',').map(x => x + '::after').join(',') + '{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;'
-            + 'background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.26) 50%,transparent 58%) no-repeat;background-size:300% 100%;animation:wtrSheen 5s ease-in-out infinite}'
-            + '@keyframes wtrSheen{0%{background-position:0 0}38%{background-position:100% 0}100%{background-position:100% 0}}';
+        st.textContent = '@property --wtrA{syntax:"<angle>";inherits:false;initial-value:0deg}'
+            + '#buffBar .buff-tag[data-key="water"]{position:relative}'
+            + W.split(',').map(x => x + '::after').join(',') + '{content:"";position:absolute;inset:-1.5px;border-radius:inherit;padding:1.5px;pointer-events:none;'
+            + 'background:conic-gradient(from var(--wtrA),transparent 0deg,rgba(255,255,255,.95) 30deg,#38BDF8 62deg,transparent 105deg,transparent 360deg);'
+            + '-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;'
+            + 'animation:wtrRun 5s linear infinite}'
+            + '@keyframes wtrRun{0%{--wtrA:0deg;opacity:1}24%{--wtrA:360deg;opacity:1}27%{--wtrA:360deg;opacity:0}100%{--wtrA:360deg;opacity:0}}';
         document.head.appendChild(st);
     } catch (e) {}
 })();
@@ -228,7 +230,7 @@ function waterUpdate(speed, squeeze) {
     // поток во всю ширину трубы; со сложностью — гуще, быстрее и сильнее давит
     const WK = Math.min(0.95, 0.66 + 0.058 * lv), DENS = 0.045 + lv * 0.021, V0 = 2.6 + lv * 0.45, G = 0.22;
     const PUSH = 0.035 + 0.045 * lv;   // в начале — лёгкий напор, к Хард+ сильный, но пролететь можно
-    const R = shieldTime > 0 ? owl.radius * 1.4 : owl.radius * 0.95;
+    const R = shz ? owl.radius * 1.2 : (shieldTime > 0 ? owl.radius * 1.4 : owl.radius * 0.95);   // в ШАЗАМе прорезает чуть шире совы
     let imp = 0, hits = 0;
     for (let i = waterStreams.length - 1; i >= 0; i--) {
         const s = waterStreams[i], p = s.pipe;
@@ -280,7 +282,10 @@ function waterUpdate(speed, squeeze) {
             if (gameActive) {
                 const wx = p.x + d.x, ddx = wx - owl.x, ddy = d.y - owl.y;
                 if (ddx * ddx + ddy * ddy < R * R) {
-                    if (shz) { if (Math.random() < 0.1) waterSplash(wx, d.y, 1, -Math.PI / 2, 2.5, 2); continue; }   // ШАЗАМ пробивает воду
+                    if (shz) {   // ШАЗАМ прорезает струю: капля на пути совы исчезает, а брызги отлетают вперёд, чуть вверх или вниз
+                        if (Math.random() < 0.6) waterSplash(wx + owl.radius * 0.4, d.y, 1, (ddy < 0 ? -0.35 : 0.3) + (Math.random() - 0.5) * 0.3, 0.4, 2.6 + Math.random() * 1.6, 0.15);
+                        D.splice(k, 1); continue;
+                    }
                     hits++; imp += IMP;
                     const out = Math.atan2(ddy, ddx);
                     waterSplash(wx, d.y, d.b ? 1 : 2, out < 0 ? out : -Math.PI / 2 + (ddx >= 0 ? 0.9 : -0.9), 1.6, 2.4 + d.vy * 0.25);

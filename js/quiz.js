@@ -1,7 +1,7 @@
 // ===== ВОПРОСЫ ЗА ПОПЫТКИ =====
-// Кнопка в главном меню (под рулеткой) открывает окно «Вопросы дня». В день — до 5 вопросов; 3 верных ответа дают +1 попытку,
-// после этого (или когда 3 верных уже не набрать) вопросы закрываются до завтра. Вопросы не повторяются, пока не пройдена вся база.
-// Порядок вариантов перемешивается при каждом показе. Админка, вкладка «Вопросы»: список, сброс показанных и сброс дня.
+// Кнопка в главном меню (под рулеткой) открывает окно «Вопросы». Отвечать можно без ограничений; каждые 5 верных ответов — +1 попытка
+// (ошибки счёт не сбрасывают). Вопросы не повторяются, пока не пройдена вся база; порядок вариантов перемешивается.
+// Админка, вкладка «Вопросы»: список, сброс показанных и сброс счёта.
 
 // ---------- база вопросов: добавлять по этому же шаблону ----------
 const QUIZ_QUESTIONS = [
@@ -85,8 +85,8 @@ const QUIZ_QUESTIONS = [
     { id: 170, cat: 'Наука', question: 'Какая планета Солнечной системы самая большая?', options: { A: 'Юпитер', B: 'Сатурн', C: 'Нептун', D: 'Уран' }, correct: 'A' }
 ];
 
-const QUIZ_PER_DAY = 5, QUIZ_NEED_OK = 3;
-const QUIZ_SEEN_KEY = 'bubo_quiz_seen', QUIZ_DAY_KEY = 'bubo_quiz_day';
+const QUIZ_NEED_OK = 5;   // столько верных ответов — +1 попытка (отвечать можно без ограничений)
+const QUIZ_SEEN_KEY = 'bubo_quiz_seen', QUIZ_DAY_KEY = 'bubo_quiz_prog';
 const QZ_LETTERS = ['A', 'B', 'C', 'D'];
 const QZ_BALL_COL = { A: '#FE7600', B: '#A855F7', C: '#38BDF8', D: '#F43F5E' };
 
@@ -102,21 +102,21 @@ function quizMarkSeen(id) { try { const s = quizSeen(); if (s.indexOf(id) < 0) {
 function quizResetSeen() { try { localStorage.removeItem(QUIZ_SEEN_KEY); } catch (e) {} }
 function quizNextId(day) {
     let seen = quizSeen();
-    let free = QUIZ_QUESTIONS.filter(q => seen.indexOf(q.id) < 0 && day.ids.indexOf(q.id) < 0);
-    if (!free.length) { quizResetSeen(); free = QUIZ_QUESTIONS.filter(q => day.ids.indexOf(q.id) < 0); }   // вся база пройдена — идём по кругу
+    let free = QUIZ_QUESTIONS.filter(q => seen.indexOf(q.id) < 0 && day.recent.indexOf(q.id) < 0);
+    if (!free.length) { quizResetSeen(); free = QUIZ_QUESTIONS.filter(q => day.recent.indexOf(q.id) < 0); }   // вся база пройдена — идём по кругу
     return free.length ? free[Math.floor(Math.random() * free.length)].id : QUIZ_QUESTIONS[0].id;
 }
 
-// ---------- прогресс дня ----------
-function qzToday() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+// ---------- прогресс: сколько верных ответов набрано к следующей попытке ----------
 function quizDay() {
     let d = null; try { d = JSON.parse(localStorage.getItem(QUIZ_DAY_KEY)); } catch (e) {}
-    if (!d || d.d !== qzToday()) d = { d: qzToday(), ids: [], res: [], ok: 0, cur: 0, ord: '', got: false, done: false };
+    if (!d || typeof d.ok !== 'number') d = { ok: 0, cur: 0, ord: '', won: false, recent: [] };
+    if (!d.recent) d.recent = [];
     return d;
 }
 function quizSaveDay(d) { try { localStorage.setItem(QUIZ_DAY_KEY, JSON.stringify(d)); } catch (e) {} }
 function quizResetDay() { try { localStorage.removeItem(QUIZ_DAY_KEY); } catch (e) {} quizMenuBadge(); }
-function quizDayLeft() { const d = quizDay(); return !d.done; }
+function quizDayLeft() { return true; }
 function qzShuffleOrd() { const a = QZ_LETTERS.slice(); for (let i = 3; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.join(''); }
 
 // ---------- окно ----------
@@ -198,88 +198,77 @@ function qzBuild() {
         if (e.target === qzRoot) { closeQuiz(); return; }
         const b = e.target.closest('[data-qa]'); if (!b) return;
         const a = b.dataset.qa;
-        if (a === 'start') qzNext();
+        if (a === 'start' || a === 'more') qzNext();
         else if (a === 'close') closeQuiz();
         else if (a.length === 1) qzPick(a);
     });
     return qzRoot;
 }
 function qzHead() {
-    return '<div class="qz-head"><div class="qz-emb"><i class="fa-solid fa-circle-question"></i></div><div><div class="qz-title">ВОПРОСЫ ДНЯ</div>'
+    return '<div class="qz-head"><div class="qz-emb"><i class="fa-solid fa-circle-question"></i></div><div><div class="qz-title">ВОПРОСЫ</div>'
         + '<div class="qz-sub">Отвечая на вопросы, вы можете заработать попытки в игре</div></div></div>';
 }
-function qzProg(d, curIdx) {
+function qzProg(d) {
     let dots = '';
-    for (let i = 0; i < QUIZ_PER_DAY; i++) {
-        const r = d.res[i];
-        dots += `<div class="qz-dot${r === 1 ? ' ok' : r === 0 ? ' bad' : i === curIdx ? ' cur' : ''}">${r === 1 ? '<i class="fa-solid fa-check"></i>' : r === 0 ? '<i class="fa-solid fa-xmark"></i>' : ''}</div>`;
-    }
+    for (let i = 0; i < QUIZ_NEED_OK; i++) dots += `<div class="qz-dot${i < d.ok ? ' ok' : i === d.ok ? ' cur' : ''}">${i < d.ok ? '<i class="fa-solid fa-check"></i>' : ''}</div>`;
     return `<div class="qz-prog"><div class="qz-dots">${dots}</div><div class="qz-cnt">Верно: <b>${d.ok}</b> / ${QUIZ_NEED_OK}</div></div>`;
-}
-function qzUntilTomorrow() {
-    const n = new Date(), t = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), s = Math.max(0, Math.floor((t - n) / 1000));
-    const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60;
-    return `${h} ч ${String(m).padStart(2, '0')} мин`;
 }
 function qzRender(pickL, dShow) {
     const body = document.getElementById('qzBody'); if (!body) return;
     const d = dShow || quizDay();
-    if (d.done) {
-        const win = d.got;
-        body.innerHTML = qzHead() + qzProg(d, -1) + `<div class="qz-res"><div class="qz-big ${win ? 'win' : 'lose'}"><i class="fa-solid ${win ? 'fa-rotate-right' : 'fa-moon'}"></i></div>`
-            + (win ? `<div class="qz-rt win">+1 ПОПЫТКА!</div><div class="qz-rd">Отлично! <b>${d.ok} верных ответа</b> — попытка уже добавлена. Новые вопросы будут завтра.</div>`
-                   : `<div class="qz-rt">Сегодня не вышло</div><div class="qz-rd">Верных ответов: <b>${d.ok} из ${QUIZ_NEED_OK}</b>. Завтра будут новые вопросы и новый шанс заработать попытку.</div>`)
-            + `<div class="qz-timer"><i class="fa-regular fa-clock"></i> Новые вопросы через ${qzUntilTomorrow()}</div></div>`
-            + `<button type="button" class="btn-bubo qz-btn" data-qa="close"><i class="fa-solid fa-check"></i>ПОНЯТНО</button>`;
+    if (d.won && !pickL) {   // набрали 5 верных — попытка уже начислена
+        body.innerHTML = qzHead() + qzProg({ ok: QUIZ_NEED_OK }) + `<div class="qz-res"><div class="qz-big win"><i class="fa-solid fa-rotate-right"></i></div>`
+            + `<div class="qz-rt win">+1 ПОПЫТКА!</div><div class="qz-rd">Отлично! <b>${QUIZ_NEED_OK} верных ответов</b> — попытка уже добавлена. Можно отвечать дальше и заработать ещё.</div></div>`
+            + `<button type="button" class="btn-bubo qz-btn" data-qa="more"><i class="fa-solid fa-play"></i>ОТВЕЧАТЬ ДАЛЬШЕ</button>`
+            + `<button type="button" class="qz-btn sec" data-qa="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button>`;
         return;
     }
     if (!d.cur) {
-        body.innerHTML = qzHead() + `<div class="qz-res"><div class="qz-big start"><i class="fa-solid fa-lightbulb"></i></div>`
-            + `<div class="qz-rules"><div class="qz-rule"><i class="fa-solid fa-list-ol"></i><span>В день — ${QUIZ_PER_DAY} вопросов из разных тем</span></div>`
-            + `<div class="qz-rule"><i class="fa-solid fa-circle-check"></i><span>Ответьте верно на ${QUIZ_NEED_OK} — и получите <b style="color:#FE7600">+1 попытку</b></span></div>`
+        body.innerHTML = qzHead() + qzProg(d) + `<div class="qz-res"><div class="qz-big start"><i class="fa-solid fa-lightbulb"></i></div>`
+            + `<div class="qz-rules"><div class="qz-rule"><i class="fa-solid fa-infinity"></i><span>Отвечайте на вопросы сколько угодно</span></div>`
+            + `<div class="qz-rule"><i class="fa-solid fa-circle-check"></i><span>Каждые ${QUIZ_NEED_OK} верных ответов — <b style="color:#FE7600">+1 попытка</b></span></div>`
             + `<div class="qz-rule"><i class="fa-solid fa-hand-pointer"></i><span>Выбирайте ответ большими кнопками A, B, C, D</span></div></div>`
-            + (d.ids.length ? `<div class="qz-rd">Отвечено: <b>${d.ids.length} из ${QUIZ_PER_DAY}</b>, верно: <b>${d.ok}</b></div>` : '')
-            + `</div><button type="button" class="btn-bubo qz-btn" data-qa="start"><i class="fa-solid fa-play"></i>${d.ids.length ? 'ПРОДОЛЖИТЬ' : 'НАЧАТЬ'}</button>`;
+            + `</div><button type="button" class="btn-bubo qz-btn" data-qa="start"><i class="fa-solid fa-play"></i>${d.ok ? 'ПРОДОЛЖИТЬ' : 'НАЧАТЬ'}</button>`;
         return;
     }
     const q = QUIZ_QUESTIONS.find(x => x.id === d.cur) || QUIZ_QUESTIONS[0];
     const ord = (d.ord || 'ABCD').split('');   // ord[i] — какой исходный вариант стоит под буквой QZ_LETTERS[i]
-    const idx = d.ids.indexOf(q.id) >= 0 ? d.ids.indexOf(q.id) : d.ids.length;
     const corL = QZ_LETTERS[ord.indexOf(q.correct)];
     const opts = QZ_LETTERS.map((L, i) => {
         const cls = pickL ? (L === corL ? ' ok' : L === pickL ? ' bad' : ' dim') : '';
         return `<div class="qz-o${cls}"><b style="background:${QZ_BALL_COL[L]}">${L}</b><span>${q.options[ord[i]]}</span></div>`;
     }).join('');
     const balls = QZ_LETTERS.map(L => `<button type="button" class="qz-ball${pickL ? (L === corL ? ' ok' : L === pickL ? ' bad' : '') : ''}" data-qa="${L}" style="--c:${QZ_BALL_COL[L]}">${L}</button>`).join('');
-    body.innerHTML = qzHead() + qzProg(d, idx)
-        + `<div class="qz-card"><div class="qz-meta"><span class="qz-chip">${q.cat || 'Вопрос'}</span><span class="qz-n">Вопрос ${idx + 1} из ${QUIZ_PER_DAY}</span></div><div class="qz-q">${q.question}</div><div class="qz-opts">${opts}</div></div>`
+    body.innerHTML = qzHead() + qzProg(d)
+        + `<div class="qz-card"><div class="qz-meta"><span class="qz-chip">${q.cat || 'Вопрос'}</span><span class="qz-n">До попытки: ${QUIZ_NEED_OK - d.ok}</span></div><div class="qz-q">${q.question}</div><div class="qz-opts">${opts}</div></div>`
         + `<div class="qz-abcd${pickL ? ' lock' : ''}">${balls}</div>`;
 }
 function qzNext() {
-    const d = quizDay(); if (d.done) { qzRender(); return; }
-    if (!d.cur) { d.cur = quizNextId(d); d.ord = qzShuffleOrd(); quizSaveDay(d); }
+    const d = quizDay();
+    if (d.won) { d.won = false; }
+    if (!d.cur) { d.cur = quizNextId(d); d.ord = qzShuffleOrd(); }
+    quizSaveDay(d);
     qzRender();
 }
 function qzPick(L) {
     if (qzLock) return;
-    const d = quizDay(); if (d.done || !d.cur) return;
+    const d = quizDay(); if (!d.cur) return;
     const q = QUIZ_QUESTIONS.find(x => x.id === d.cur); if (!q) return;
     const ord = (d.ord || 'ABCD').split('');
     const ok = ord[QZ_LETTERS.indexOf(L)] === q.correct;
-    d.ids.push(q.id); d.res.push(ok ? 1 : 0); if (ok) d.ok++;
+    if (ok) d.ok++;
     quizMarkSeen(q.id);
-    const cur = d.cur; d.cur = 0;
+    d.recent.push(q.id); if (d.recent.length > 10) d.recent.shift();
+    // показываем ответ на этом же вопросе (счётчик уже с новым верным), потом — следующий вопрос или «+1 попытка»
+    const shown = Object.assign({}, d, { ok: Math.min(QUIZ_NEED_OK, d.ok) });
+    d.cur = 0;
     let award = false;
-    if (d.ok >= QUIZ_NEED_OK) { d.done = true; d.got = true; award = true; }
-    else if (d.ids.length >= QUIZ_PER_DAY || (QUIZ_PER_DAY - d.ids.length) < (QUIZ_NEED_OK - d.ok)) d.done = true;   // 3 верных уже не набрать — до завтра
+    if (d.ok >= QUIZ_NEED_OK) { d.ok = 0; d.won = true; award = true; }
     quizSaveDay(d);
     if (award) qzAward();
     try { if (ok) { AudioFX.playThemeCollect(); Haptics.collectTheme(); } else { (AudioFX.playThemeLose || AudioFX.playHit).call(AudioFX); Haptics.hit(); } } catch (e) {}
-    // показываем ответ на том же вопросе, потом — следующий или итог
-    const dd = Object.assign({}, d, { cur: cur, ids: d.ids.slice(0, -1).concat([cur]) });
-    dd.done = false; qzLock = true; qzRender(L, dd);
-    setTimeout(() => { qzLock = false; if (qzRoot && !qzRoot.classList.contains('hidden')) { const d2 = quizDay(); if (d2.done) qzRender(); else qzNext(); } }, 1500);
-    quizMenuBadge();
+    qzLock = true; qzRender(L, shown);
+    setTimeout(() => { qzLock = false; if (qzRoot && !qzRoot.classList.contains('hidden')) { const d2 = quizDay(); if (d2.won) qzRender(); else qzNext(); } }, 1500);
 }
 function qzAward() {
     try {
@@ -311,7 +300,6 @@ function quizMenuBadge() {
     const g = document.getElementById('earnAttemptBtn');
     if (g) g.addEventListener('click', (e) => { e.stopPropagation(); try { returnToHome(); } catch (er) {} openQuiz(); });
     quizMenuBadge();
-    setInterval(quizMenuBadge, 60000);   // наступил новый день — значок снова светится
 })();
 
 // ---------- админка: список вопросов ----------
@@ -339,7 +327,7 @@ function quizMenuBadge() {
 function quizAdminHtml() {
     const seen = quizSeen();
     return `<div class="adm-sum"><span>Вопросов в базе / уже показано</span><b>${QUIZ_QUESTIONS.length} / ${seen.filter(id => QUIZ_QUESTIONS.some(q => q.id === id)).length}</b></div>`
-        + `<div class="adq-acts"><button type="button" class="adq-btn pri" data-q="today"><i class="fa-solid fa-calendar-day"></i>Сбросить день</button>`
+        + `<div class="adq-acts"><button type="button" class="adq-btn pri" data-q="today"><i class="fa-solid fa-rotate-left"></i>Сбросить счёт</button>`
         + `<button type="button" class="adq-btn" data-q="reset"><i class="fa-solid fa-rotate-left"></i>Сбросить показанные</button></div>`
         + QUIZ_QUESTIONS.map((q, n) => {
             const was = seen.indexOf(q.id) >= 0;
