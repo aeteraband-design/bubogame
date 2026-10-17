@@ -64,16 +64,16 @@ const SHOP_ITEMS = [
 .sh-coin{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:10px;color:#7C4A00;background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);box-shadow:0 0 8px rgba(255,197,61,.6),inset 0 -1.5px 0 rgba(0,0,0,.2);flex:0 0 auto}
 #shWin .sh-x{justify-self:end;width:34px;height:34px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#C4A1FF;background:rgba(120,44,233,.18);border:1px solid rgba(120,44,233,.4);font-size:14px;cursor:pointer}
 #shWin .sh-emb{position:relative;width:92px;height:92px;display:flex;align-items:center;justify-content:center}
-#shWin .sh-rays{position:absolute;inset:-26px;border-radius:50%;background:repeating-conic-gradient(rgba(255,214,107,.16) 0deg 8deg,transparent 8deg 22deg);-webkit-mask:radial-gradient(circle,#000 30%,transparent 70%);mask:radial-gradient(circle,#000 30%,transparent 70%);animation:shSpin 26s linear infinite}
-#shWin .sh-glow{position:absolute;inset:-12px;border-radius:50%;background:radial-gradient(circle,rgba(255,197,61,.55),rgba(45,212,191,.18) 55%,transparent 72%);filter:blur(4px);animation:shPulse 2.6s ease-in-out infinite}
-#shWin .sh-ring{position:absolute;inset:0;border-radius:50%;padding:3px;background:conic-gradient(from var(--shA),#FFC53D,#2DD4BF,#FFF3B0,#FFC53D);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:shRing 4s linear infinite}
+#shWin .sh-glow{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(circle,rgba(255,197,61,.22),transparent 70%);animation:shPulse 3.2s ease-in-out infinite}
+#shWin .sh-ring{position:absolute;inset:6px;border-radius:50%;padding:1.5px;background:conic-gradient(from var(--shA),rgba(255,197,61,0) 0deg,#FFE08A 70deg,#5EEAD4 140deg,rgba(94,234,212,0) 200deg,rgba(255,197,61,0) 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:shRing 3.6s linear infinite;opacity:.9}
 @property --shA{syntax:'<angle>';inherits:false;initial-value:0deg}
-#shWin .sh-core{position:absolute;inset:7px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 30%,#3B1670,#1d0936 70%);box-shadow:inset 0 0 18px rgba(255,197,61,.35)}
-#shWin .sh-core i{font-size:34px;background:linear-gradient(180deg,#FFF3B0,#FFC53D 55%,#F59E0B);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 8px rgba(255,197,61,.6))}
+#shWin .sh-core{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+#shWin .sh-core i{font-size:38px;background:linear-gradient(110deg,#FFC53D 0%,#FFF3B0 22%,#FFC53D 40%,#5EEAD4 60%,#FFC53D 80%,#FFF3B0 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 6px rgba(255,197,61,.45));animation:shFlow 4.5s linear infinite}
+@keyframes shFlow{to{background-position:-250% 0}}
 #shWin .sh-tw{position:absolute;color:#FFF3B0;font-style:normal;font-size:var(--s);text-shadow:0 0 8px #FFC53D;animation:shTw 2.2s ease-in-out infinite;animation-delay:var(--d)}
 @keyframes shSpin{to{transform:rotate(360deg)}}
 @keyframes shRing{to{--shA:360deg}}
-@keyframes shPulse{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+@keyframes shPulse{0%,100%{opacity:.6;transform:scale(.95)}50%{opacity:1;transform:scale(1.05)}}
 @keyframes shTw{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:1;transform:scale(1.1)}}
 #shWin .sh-title{text-align:center;margin-top:-4px}
 #shWin .sh-title b{display:block;font-weight:900;font-size:26px;letter-spacing:.02em;line-height:1;background:linear-gradient(90deg,#FFD66B,#FFF3B0 45%,#5EEAD4);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -98,6 +98,8 @@ const SHOP_ITEMS = [
 #shWin .sh-earn>i{color:#38BDF8;font-size:18px;flex:0 0 22px;text-align:center}
 #shWin .sh-earn span{flex:1;font-weight:700;font-size:11.5px;line-height:1.35;color:#DDD6FE}
 #shWin .sh-earn button{flex:0 0 auto;padding:8px 11px;border-radius:11px;font-weight:900;font-size:11px;color:#fff;background:rgba(56,189,248,.22);border:1px solid rgba(56,189,248,.6);cursor:pointer}
+#shWin .sh-back{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 10px;border-radius:16px;font-weight:900;font-size:12px;letter-spacing:.06em;color:#fff;cursor:pointer;background:rgba(45,14,82,.9);border:1px solid rgba(168,85,247,.5)}
+#shWin .sh-back i{color:#FE7600}
 #shWin .sh-toast{position:absolute;left:50%;top:132px;transform:translate(-50%,0);padding:9px 14px;border-radius:14px;font-weight:900;font-size:13px;white-space:nowrap;background:rgba(22,101,52,.95);border:1px solid #4ADE80;box-shadow:0 0 18px rgba(34,197,94,.5);pointer-events:none;animation:shToast 1.8s ease forwards;z-index:3}
 @keyframes shToast{0%{opacity:0;transform:translate(-50%,10px)}15%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-10px)}}
 `;
@@ -110,14 +112,15 @@ function shopBuild() {
     if (shRoot) return shRoot;
     const host = document.getElementById('gameContainer') || document.body;
     shRoot = document.createElement('div'); shRoot.id = 'shopModal'; shRoot.className = 'hidden';
-    const tw = [[-56, -8, 11, 0], [58, 4, 9, .6], [-44, 54, 8, 1.2], [50, 58, 12, .3], [0, -40, 8, 1.6]].map(([x, y, s, d]) => `<i class="sh-tw" style="left:calc(50% + ${x}px - ${s / 2}px);top:calc(50% + ${y}px - ${s / 2}px);--s:${s}px;--d:${d}s">✦</i>`).join('');
+    const tw = [[-50, -18, 8, 0], [52, 10, 7, .9], [36, -40, 6, 1.7]].map(([x, y, s, d]) => `<i class="sh-tw" style="left:calc(50% + ${x}px - ${s / 2}px);top:calc(50% + ${y}px - ${s / 2}px);--s:${s}px;--d:${d}s">✦</i>`).join('');
     shRoot.innerHTML = `<div id="shWin">
         <div class="sh-top"><div class="sh-coins" id="shCoins"><span class="sh-coin"><i class="fa-solid fa-star"></i></span><span id="shCoinsN">0</span></div>
-            <div class="sh-emb"><div class="sh-rays"></div><div class="sh-glow"></div><div class="sh-ring"></div><div class="sh-core"><i class="fa-solid fa-store"></i></div>${tw}</div>
+            <div class="sh-emb"><div class="sh-glow"></div><div class="sh-ring"></div><div class="sh-core"><i class="fa-solid fa-store"></i></div>${tw}</div>
             <button type="button" class="sh-x" data-sh="close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button></div>
         <div class="sh-title"><b>ЛАВКА</b><span>Обменивай монеты на попытки и бонусы</span></div>
         <div class="sh-grid" id="shGrid"></div>
         <div class="sh-earn"><i class="fa-solid fa-circle-question"></i><span>Монеты: вопросы дня (до 100 за ответ) и по 40 за каждые 50 вопросов в полёте</span><button type="button" data-sh="quiz">ВОПРОСЫ</button></div>
+        <button type="button" class="sh-back" data-sh="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button>
     </div>`;
     host.appendChild(shRoot);
     ['click', 'pointerdown', 'touchstart'].forEach((ev) => shRoot.addEventListener(ev, (e) => e.stopPropagation()));

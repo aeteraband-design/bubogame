@@ -143,8 +143,8 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
  background:radial-gradient(120% 60% at 50% -10%,rgba(56,189,248,.16),transparent 60%),radial-gradient(90% 50% at 100% 110%,rgba(254,118,0,.12),transparent 60%),rgba(29,9,54,.97);border:1px solid rgba(120,44,233,.6);box-shadow:0 10px 40px rgba(0,0,0,.5)}
 #qzBody{display:flex;flex-direction:column;gap:18px}
 #qzWin .qz-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#C4A1FF;background:rgba(120,44,233,.18);border:1px solid rgba(120,44,233,.4);font-size:13px;cursor:pointer;z-index:2}
-#qzWin .qz-head{display:flex;align-items:center;gap:10px;padding-right:38px}
-#qzWin .qz-emb{flex:0 0 40px;height:40px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;background:linear-gradient(135deg,#FE7600,#782CE9);border:1px solid rgba(255,255,255,.3);box-shadow:0 0 16px rgba(254,118,0,.45)}
+#qzWin .qz-head{display:flex;align-items:center;gap:12px;padding-right:38px}
+#qzWin .qz-emb{flex:0 0 54px;width:54px;height:54px;border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:24px;background:linear-gradient(135deg,#FE7600,#782CE9);border:1px solid rgba(255,255,255,.3);box-shadow:0 0 16px rgba(254,118,0,.45)}
 #qzWin .qz-title{font-weight:900;font-size:18px;letter-spacing:-.01em;line-height:1}
 #qzWin .qz-sub{font-weight:600;font-size:11.5px;color:#C4B5FD;margin-top:5px;line-height:1.35}
 #qzWin .qz-prog{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(20,3,38,.7);border:1px solid rgba(120,44,233,.3)}
