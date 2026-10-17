@@ -61,7 +61,7 @@ const SHOP_ITEMS = [
 #shWin .sh-coins{justify-self:start;display:flex;align-items:center;gap:7px;padding:6px 11px 6px 6px;border-radius:999px;background:rgba(20,3,38,.75);border:1px solid rgba(255,197,61,.5);box-shadow:0 0 12px rgba(255,197,61,.18);font-weight:900;font-size:15px;color:#FFD66B;margin-top:4px}
 #shWin .sh-coins.bump{animation:shBump .5s ease}
 @keyframes shBump{40%{transform:scale(1.12)}}
-.sh-coin{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:10px;color:#7C4A00;background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);box-shadow:0 0 8px rgba(255,197,61,.6),inset 0 -1.5px 0 rgba(0,0,0,.2);flex:0 0 auto}
+.sh-coin{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:8.5px;color:#7C4A00;background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);box-shadow:0 0 8px rgba(255,197,61,.6),inset 0 -1.5px 0 rgba(0,0,0,.2);flex:0 0 auto}
 #shWin .sh-x{justify-self:end;width:34px;height:34px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#C4A1FF;background:rgba(120,44,233,.18);border:1px solid rgba(120,44,233,.4);font-size:14px;cursor:pointer}
 #shWin .sh-emb{position:relative;width:92px;height:92px;display:flex;align-items:center;justify-content:center}
 #shWin .sh-glow{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(circle,rgba(255,197,61,.22),transparent 70%);animation:shPulse 3.2s ease-in-out infinite}
@@ -218,10 +218,10 @@ function shopSyncBtn() {
 (function () {
     const st = document.createElement('style');
     st.textContent = '#openAdminBtn{display:none!important}'
-        + '#menuCoins{position:absolute;z-index:6;zoom:var(--ui-zoom,1);top:12px;left:14px;height:36px;display:flex;align-items:center;gap:7px;padding:0 12px 0 7px;border-radius:12px;'
-        + 'background:rgba(29,9,54,.72);border:1px solid rgba(255,197,61,.55);box-shadow:0 0 10px rgba(255,197,61,.22);font:900 14px Onest,sans-serif;color:#FFD66B;cursor:pointer}'
+        + '#menuCoins{position:absolute;z-index:6;zoom:var(--ui-zoom,1);top:12px;left:14px;height:30px;display:flex;align-items:center;gap:5px;padding:0 10px 0 6px;border-radius:12px;'
+        + 'background:rgba(29,9,54,.72);border:1px solid rgba(255,197,61,.55);box-shadow:0 0 10px rgba(255,197,61,.22);font:900 12px Onest,sans-serif;color:#FFD66B;cursor:pointer}'
         + '#menuCoins:active{transform:scale(.95)}'
-        + '#menuCoins .mc-coin{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:10px;color:#7C4A00;background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);box-shadow:0 0 8px rgba(255,197,61,.6),inset 0 -1.5px 0 rgba(0,0,0,.2)}';
+        + '#menuCoins .mc-coin{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:8.5px;color:#7C4A00;background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);box-shadow:0 0 8px rgba(255,197,61,.6),inset 0 -1.5px 0 rgba(0,0,0,.2)}';
     document.head.appendChild(st);
     const mc = document.getElementById('menuCoins');
     if (mc) mc.addEventListener('click', (e) => { e.stopPropagation(); openShop(); });
