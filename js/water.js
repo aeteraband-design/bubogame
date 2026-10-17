@@ -110,6 +110,15 @@ function drawWaterFront() {
             ctx.drawImage(mist, p.x + m.x - m.r, m.y - m.r, m.r * 2, m.r * 2);
         }
         ctx.globalAlpha = 1;
+        // кольца от ударов капель по воде на нижней шляпке
+        if (s.rip.length) {
+            const yb = height - (p.bottom + s.sq);
+            ctx.lineWidth = 0.9;
+            for (const q of s.rip) {
+                ctx.strokeStyle = `rgba(210, 245, 255, ${Math.max(0, q.a)})`;
+                ctx.beginPath(); ctx.ellipse(p.x + q.x, yb - 1, q.r, q.r * 0.28, 0, 0, Math.PI * 2); ctx.stroke();
+            }
+        }
         // пена: живые пузырьки у выхода из верхней трубы и на нижней шляпке — расползаются в стороны, покачиваются, лопаются
         for (const f of s.foam) {
             ctx.globalAlpha = Math.max(0, Math.min(1, f.a));
@@ -164,7 +173,7 @@ function waterUpdate(speed, squeeze) {
             if (p.x + p.width < -40 || p.x > width + 40) continue;
             if (p._wId !== WATERFX.id) {
                 p._wId = WATERFX.id;
-                waterStreams.push({ pipe: p, fx: 0.5, on: true, ph: Math.random() * 6.28, sq: squeeze, drops: [], streaks: [], mist: [], foam: [], hitK: 0, acc: 0, sacc: 0 });
+                waterStreams.push({ pipe: p, fx: 0.5, on: true, ph: Math.random() * 6.28, sq: squeeze, drops: [], streaks: [], mist: [], foam: [], rip: [], hitK: 0, acc: 0, sacc: 0 });
             }
         }
     }
@@ -198,12 +207,16 @@ function waterUpdate(speed, squeeze) {
         const D = s.drops;
         for (let k = D.length - 1; k >= 0; k--) {
             const d = D[k];
-            d.vy += G * (d.b ? 0.6 : 1) * dt; d.x += d.vx * dt; d.y += d.vy * dt;
+            if (d.b) { d.vy += G * 0.45 * dt; d.vy *= Math.pow(0.992, dt); d.x += (d.vx + Math.sin(d.y * 0.06 + d.ph) * 0.35) * dt; }   // пузырёк покачивается из стороны в сторону
+            else { d.vy += G * dt; d.vy *= Math.pow(0.996, dt); d.x += d.vx * dt; }   // капле немного мешает воздух
+            d.y += d.vy * dt;
             if (d.y >= yb) {
                 hb++;
                 // брызги летят в свою сторону: упала слева — плещет влево и стекает за край, справа — вправо
                 const rel = (d.x - cx) / (W / 2), side = rel < 0 ? -1 : 1;
                 if (Math.random() < 0.45) waterSplash(p.x + d.x, yb - 2, 1, -Math.PI / 2 + side * (0.75 + Math.abs(rel) * 0.45), 0.7, 1.8 + d.vy * 0.14 + Math.abs(rel) * 0.8, 0.3);
+                // от удара по воде на шляпке расходится кольцо
+                if (!d.b && Math.random() < 0.3 && s.rip.length < 14) s.rip.push({ x: d.x, r: 1 + d.r * 0.6, a: 0.7 });
                 // на шляпке рождается пузырёк пены и ползёт к краю
                 if (Math.random() < 0.35 && s.foam.length < 60) s.foam.push({ x: d.x, y: yb - 1.5, vx: side * (0.25 + Math.random() * 0.55) + rel * 0.2, vy: -0.4 - Math.random() * 0.5, r: 0.8 + Math.random() * 1.4, a: 0.95, life: 50 + Math.random() * 50, bot: true, ph: Math.random() * 6.28 });
                 if (Math.random() < 0.05 && s.mist.length < 12) s.mist.push({ x: d.x + (Math.random() - 0.5) * 10, y: yb - 8, r: 9 + Math.random() * 8, a: 0.3, vy: -0.22 - Math.random() * 0.2 });
@@ -250,6 +263,7 @@ function waterUpdate(speed, squeeze) {
             if (f.life < 15) f.a = Math.max(0, f.life / 15);
             if (f.life <= 0 || f.y > height) s.foam.splice(k, 1);
         }
+        for (let k = s.rip.length - 1; k >= 0; k--) { const q = s.rip[k]; q.r += 0.45 * dt; q.a -= 0.035 * dt; if (q.a <= 0) s.rip.splice(k, 1); }
         // водяная пыль по всей высоте потока
         if (s.on && Math.random() < 0.18 * dt && s.mist.length < 18) s.mist.push({ x: cx + (Math.random() - 0.5) * W, y: y0 + 15 + Math.random() * (yb - y0 - 15), r: 8 + Math.random() * 7, a: 0.2, vy: -0.05 - Math.random() * 0.08, vx: (Math.random() - 0.5) * 0.25 });
         // вода переливается через края нижней шляпки и стекает каплями по бокам
@@ -262,7 +276,7 @@ function waterUpdate(speed, squeeze) {
             m.y += m.vy * dt; m.x += (m.vx || 0) * dt; m.r += 0.18 * dt; m.a -= 0.004 * dt;
             if (m.a <= 0) s.mist.splice(k, 1);
         }
-        if ((!s.on && !D.length && !s.streaks.length && !s.mist.length && !s.foam.length) || p.x + p.width < -60) { waterStreams.splice(i, 1); continue; }
+        if ((!s.on && !D.length && !s.streaks.length && !s.mist.length && !s.foam.length && !s.rip.length) || p.x + p.width < -60) { waterStreams.splice(i, 1); continue; }
     }
     if (owl._wWet) owl._wWet = Math.max(0, owl._wWet - 0.0015 * dt);   // сова понемногу обсыхает
     if (hits && gameActive && !shz) {
