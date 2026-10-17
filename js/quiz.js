@@ -26,7 +26,7 @@ const QUIZ_QUESTIONS = [
     { id: 116, cat: 'Наука', question: 'Сколько костей в теле взрослого человека?', options: { A: '186', B: '206', C: '226', D: '256' }, correct: 'B' }
 ];
 const QUIZ_PER_PORTAL = 3;          // вопросов за один заход в портал
-const QUIZ_PORTAL_STEP = 0.10;      // портал — на каждых 10% собранных тем
+const QUIZ_PORTAL_AT = [0.30, 0.60];   // порталы за всю игру: на 30% и на 60% собранных тем
 const QUIZ_READ_SEC = 5;            // пауза на чтение вопроса
 const QUIZ_FLY_SEC = 12;            // сколько летят шары с ответами (10–15 с)
 const QUIZ_SEEN_KEY = 'bubo_quiz_seen', QUIZ_MS_KEY = 'bubo_quiz_ms';
@@ -58,7 +58,7 @@ function quizOnTheme() {
     let have = 0, need = 0;
     for (const k of THEME_KEYS_ALL) { have += Math.min(collected[k] || 0, CATEGORIES[k].count); need += CATEGORIES[k].count; }
     if (!need) return;
-    const m = Math.floor(have / need / QUIZ_PORTAL_STEP + 1e-9);
+    const pct = have / need + 1e-9, m = QUIZ_PORTAL_AT.filter(a => pct >= a).length;
     if (m > quizMs) { quizMs = m; try { localStorage.setItem(QUIZ_MS_KEY, String(m)); } catch (e) {} if (quizPick(1).length) QZ.pending = true; }
 }
 // новая игра: рубежи с нуля
@@ -158,6 +158,7 @@ function quizDrawPortal2D() {
 // ---------- вход и выход ----------
 function quizEnter() {
     QZ.portal = null; QZ.on = true; QZ.t = 0; QZ.flash = 1; QZ.x = 0; QZ.tx = 0; QZ.objs = [];
+    QZ.bld = []; QZ.bz = 0; for (let z = 1.2; z < 40; z += 0) z += quizSpawnBuildingRow(z);
     QZ.qList = quizPick(QUIZ_PER_PORTAL); QZ.qi = -1; QZ.q = null; QZ.balls = null; QZ.exiting = false;
     QZ.phase = 'fly'; QZ.phaseT = 150; QZ.spawnT = 40; QZ.colT = 0; QZ.nOk = 0; QZ.nBad = 0; QZ.nDone = 0;
     try { AudioFX.playStarCollect(); Haptics.powerup(); } catch (e) {}
@@ -206,7 +207,11 @@ function quizUpdate() {
     QZ.x += (QZ.tx - QZ.x) * Math.min(1, 0.14 * dt);
     const reading = QZ.phase === 'read';
     const vz = reading ? 0 : 0.11;
-    if (!reading) QZ.grid = (QZ.grid + vz * dt) % 2;
+    if (!reading) {
+        QZ.grid = (QZ.grid + vz * dt) % 2;
+        for (let i = QZ.bld.length - 1; i >= 0; i--) { const b = QZ.bld[i]; b.z -= vz * dt; if (b.z + b.d < 0.5) QZ.bld.splice(i, 1); }
+        QZ.bz -= vz * dt; while (QZ.bz <= 0) QZ.bz += quizSpawnBuildingRow(40);
+    }
     // фаза вопросов
     QZ.phaseT -= dt;
     if (QZ.phase === 'fly' && QZ.phaseT <= 0) {
@@ -289,17 +294,19 @@ function quizDraw() {
     const hz = ctx.createLinearGradient(0, v.y - 60, 0, v.y + 30);
     hz.addColorStop(0, 'rgba(168, 85, 247, 0)'); hz.addColorStop(0.7, 'rgba(168, 85, 247, 0.35)'); hz.addColorStop(1, 'rgba(254, 118, 0, 0.25)');
     ctx.fillStyle = hz; ctx.fillRect(0, v.y - 60, width, 90);
+    try { drawClouds(); } catch (e) {}
     quizDrawCity(v);
-    // пол — светящаяся сетка, бежит на нас
-    const gy = (z) => v.y + QZ_GROUND * F / z;
+    // улица внизу: тёмная, с мягкой разметкой, бегущей навстречу
     const floor = ctx.createLinearGradient(0, v.y, 0, height);
-    floor.addColorStop(0, '#1a0638'); floor.addColorStop(1, '#090117');
+    floor.addColorStop(0, '#1c0a3a'); floor.addColorStop(1, '#0a0218');
     ctx.fillStyle = floor; ctx.fillRect(0, v.y, width, height - v.y);
-    ctx.strokeStyle = 'rgba(192, 132, 252, 0.45)'; ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let z = 2 - QZ.grid; z < 40; z += 2) { if (z < 0.7) continue; const y = gy(z); ctx.moveTo(0, y); ctx.lineTo(width, y); }
-    for (let X = -12; X <= 12; X += 1.2) { const a = qzProj(X, QZ_GROUND, 0.7), b = qzProj(X, QZ_GROUND, 40); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); }
-    ctx.stroke();
+    ctx.fillStyle = 'rgba(255, 190, 110, 0.22)';
+    for (let z = 3 - QZ.grid * 1.5; z < 40; z += 3) {
+        if (z < 0.8) continue;
+        const a = qzProj(-0.05, QZ_GROUND, z), b = qzProj(0.05, QZ_GROUND, z + 1.2);
+        ctx.fillRect(a.x, b.y, Math.max(0.5, b.x - a.x), Math.max(0.5, a.y - b.y));
+    }
+    quizDrawBuildings();
     // объекты — от дальних к ближним
     const list = QZ.objs.slice().sort((a, b) => b.z - a.z);
     let owlDrawn = false;
@@ -363,68 +370,125 @@ function quizDrawOwl() {
     const tilt = Math.max(-0.35, Math.min(0.35, (QZ.tx - QZ.x) * 1.2));
     quizOwlBack(p.x, p.y + hy, 1.7, QZ.wing || 0, tilt);
 }
-// Сова со спины — те же цвета и форма, что у совы сбоку: круглое фиолетовое тело с тёмным контуром #1D0542,
-// по краям видно белое брюшко и белки больших глаз, маленький хохолок, крылья с перьями, хвостик и оранжевые лапки.
+// Сова со спины (как на референсе): круглое фиолетовое тело, два ушка-пёрышка, широко раскрытые крылья
+// в нашем стиле (фиолетовый градиент, тёмный контур, светлые пёрышки), хвост-веер из трёх перьев, белки глаз по бокам.
 function quizOwlBack(x, y, k, wing, tilt) {
     const OUT = '#1D0542';
     ctx.save(); ctx.translate(x, y); ctx.rotate(tilt); ctx.scale(k, k);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    // крылья: при взмахе поднимаются вверх, потом опускаются
+    // крылья: раскрыты в стороны; при взмахе концы поднимаются, потом опускаются
     for (const sd of [-1, 1]) {
-        ctx.save(); ctx.translate(sd * 11, -1); ctx.rotate(sd * (0.35 - wing * 1.15));
-        const wg = ctx.createLinearGradient(0, -6, sd * 20, 6);
-        wg.addColorStop(0, '#7C2CE8'); wg.addColorStop(0.5, '#5216AC'); wg.addColorStop(1, '#2E0868');
-        ctx.fillStyle = wg; ctx.strokeStyle = '#20044A'; ctx.lineWidth = 1.8;
-        ctx.beginPath();
-        ctx.moveTo(0, -5);
-        ctx.bezierCurveTo(sd * 8, -9, sd * 17, -6, sd * 21, 0);
-        ctx.quadraticCurveTo(sd * 21, 4, sd * 17, 4);
-        ctx.quadraticCurveTo(sd * 16, 8, sd * 12, 7);
-        ctx.quadraticCurveTo(sd * 9, 10, sd * 5, 8);
-        ctx.quadraticCurveTo(sd * 1, 7, 0, 5);
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.strokeStyle = 'rgba(235, 215, 255, 0.68)'; ctx.lineWidth = 0.9;
-        ctx.beginPath(); ctx.moveTo(sd * 5, -1); ctx.quadraticCurveTo(sd * 11, -3, sd * 17, 0); ctx.moveTo(sd * 5, 3); ctx.quadraticCurveTo(sd * 9, 3, sd * 13, 4); ctx.stroke();
+        ctx.save(); ctx.translate(sd * 11, -2); ctx.rotate(sd * (0.18 - wing * 0.55));
+        // маховые перья — 5 закруглённых «пальцев», веером в сторону (нижние короче)
+        for (let f = 4; f >= 0; f--) {
+            const len = 27 - f * 2.4, ang = -0.1 + f * 0.27;
+            const fx = Math.cos(ang) * len * 0.5, fy = Math.sin(ang) * len * 0.5 + 1;
+            const fg = ctx.createLinearGradient(0, 0, sd * len, 0);
+            fg.addColorStop(0, '#9A46FF'); fg.addColorStop(0.5, '#7C2CE8'); fg.addColorStop(1, '#5216AC');
+            ctx.fillStyle = fg; ctx.strokeStyle = '#20044A'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.ellipse(sd * fx, fy, len * 0.5, 4.8, sd * ang, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.strokeStyle = 'rgba(235, 215, 255, 0.45)'; ctx.lineWidth = 0.8;
+            ctx.beginPath(); ctx.moveTo(sd * fx * 0.4, fy * 0.4); ctx.lineTo(sd * (fx + Math.cos(ang) * len * 0.35), fy + Math.sin(ang) * len * 0.35); ctx.stroke();
+        }
+        // кроющие перья у плеча
+        const cg = ctx.createLinearGradient(0, -6, sd * 16, 4);
+        cg.addColorStop(0, '#9A46FF'); cg.addColorStop(0.55, '#6F1CDA'); cg.addColorStop(1, '#450F96');
+        ctx.fillStyle = cg; ctx.strokeStyle = '#20044A'; ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.moveTo(0, -5); ctx.bezierCurveTo(sd * 7, -8, sd * 14, -6, sd * 16, -2); ctx.quadraticCurveTo(sd * 10, 2, 0, 3); ctx.closePath(); ctx.fill(); ctx.stroke();
+        // светлые крапинки, как на перьях совы
+        ctx.fillStyle = 'rgba(235, 215, 255, 0.75)';
+        for (let i = 0; i < 6; i++) { const px = sd * (6 + i * 2.2), py = -2.6 + (i % 2) * 2.2 + i * 0.25; ctx.beginPath(); ctx.arc(px, py, 0.75, 0, Math.PI * 2); ctx.fill(); }
         ctx.restore();
     }
-    // хвост
-    const tg = ctx.createLinearGradient(0, 10, 0, 21);
+    // хвост-веер из трёх перьев
+    const tg = ctx.createLinearGradient(0, 9, 0, 22);
     tg.addColorStop(0, '#782CE9'); tg.addColorStop(0.55, '#5216BD'); tg.addColorStop(1, '#2B0762');
-    ctx.fillStyle = tg; ctx.strokeStyle = OUT; ctx.lineWidth = 1.8;
-    ctx.beginPath(); ctx.moveTo(-5, 11); ctx.quadraticCurveTo(-6.5, 18, -3, 20); ctx.quadraticCurveTo(0, 22, 3, 20); ctx.quadraticCurveTo(6.5, 18, 5, 11); ctx.closePath(); ctx.fill(); ctx.stroke();
-    // лапки
-    ctx.fillStyle = '#FE7600'; ctx.lineWidth = 1.5;
-    for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sd * 5.5, 15.5, 2.6, 1.9, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
-    // белки глаз, выглядывающие по бокам головы, и белое брюшко по краям снизу
-    ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = OUT; ctx.lineWidth = 1.8;
-    for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sd * 12.5, -6, 4.2, 5.2, sd * 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
-    const brg = ctx.createLinearGradient(0, 2, 0, 16);
-    brg.addColorStop(0, '#FFFFFF'); brg.addColorStop(0.65, '#FFFDF8'); brg.addColorStop(1, '#EDE5F8');
-    ctx.fillStyle = brg; ctx.beginPath(); ctx.ellipse(0, 6, 14.5, 9.5, 0, 0, Math.PI); ctx.fill(); ctx.stroke();
-    // тело — как у совы сбоку: радиальный фиолетовый градиент, тёмный контур, маленький хохолок сверху
-    const bg = ctx.createRadialGradient(-3, -10, 2, -1, -3, 21);
+    ctx.fillStyle = tg; ctx.strokeStyle = OUT; ctx.lineWidth = 1.6;
+    for (const a2 of [-0.45, 0.45, 0]) { ctx.save(); ctx.translate(0, 10); ctx.rotate(a2); ctx.beginPath(); ctx.ellipse(0, 5.5, 4, 5.8, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore(); }
+    // белки глаз, выглядывающие по бокам головы
+    ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = OUT; ctx.lineWidth = 1.6;
+    for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sd * 12.6, -6.5, 3.4, 4.6, sd * 0.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    // тело — круглое, как у совы сбоку, с ушками-пёрышками
+    const bg = ctx.createRadialGradient(-3, -9, 2, -1, -2, 20);
     bg.addColorStop(0, '#9248FB'); bg.addColorStop(0.5, '#6A20D4'); bg.addColorStop(1, '#30066B');
     ctx.fillStyle = bg; ctx.strokeStyle = OUT; ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(0, -15.5);
-    ctx.quadraticCurveTo(1.5, -18.5, 3.2, -15.2);   // хохолок
-    ctx.bezierCurveTo(10, -14, 14, -7, 14, 0);
-    ctx.bezierCurveTo(14, 9, 7.5, 14, 0, 14);
-    ctx.bezierCurveTo(-7.5, 14, -14, 9, -14, 0);
-    ctx.bezierCurveTo(-14, -7, -9, -14.5, 0, -15.5);
+    ctx.moveTo(-6, -13.2);
+    ctx.lineTo(-9.5, -19); ctx.quadraticCurveTo(-11.5, -14, -10.6, -11.2);   // левое ушко
+    ctx.bezierCurveTo(-13.6, -7, -14, -3, -14, 0);
+    ctx.bezierCurveTo(-14, 9, -7.5, 14, 0, 14);
+    ctx.bezierCurveTo(7.5, 14, 14, 9, 14, 0);
+    ctx.bezierCurveTo(14, -3, 13.6, -7, 10.6, -11.2);
+    ctx.quadraticCurveTo(11.5, -14, 9.5, -19); ctx.lineTo(6, -13.2);   // правое ушко
+    ctx.quadraticCurveTo(0, -15.6, -6, -13.2);
     ctx.closePath(); ctx.fill(); ctx.stroke();
-    // перья на спине — светлые штрихи, как на крыле сбоку
-    ctx.strokeStyle = 'rgba(235, 215, 255, 0.41)'; ctx.lineWidth = 1;
-    for (let r = 0; r < 3; r++) {
-        const n = r === 1 ? 3 : 2;
-        for (let c = 0; c < n; c++) { const fx = (c - (n - 1) / 2) * 5.5, fy = -1 + r * 4.4; ctx.beginPath(); ctx.arc(fx, fy, 2.2, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke(); }
-    }
-    // блик на макушке
+    // мягкий блик на макушке и лёгкая тень снизу — объём шара
     ctx.strokeStyle = 'rgba(235, 215, 255, 0.85)'; ctx.lineWidth = 1.3;
-    ctx.beginPath(); ctx.arc(-1, -4, 10, 1.15 * Math.PI, 1.45 * Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-1, -3, 10, 1.15 * Math.PI, 1.45 * Math.PI); ctx.stroke();
+    ctx.fillStyle = 'rgba(20, 3, 45, 0.25)'; ctx.beginPath(); ctx.ellipse(0, 9, 10, 4, 0, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
 }
 
+// ---------- наш город в 3D: дома по обе стороны «улицы», мы летим между ними ----------
+// дом — коробка: X — центр, w — ширина, d — глубина, h — высота над землёй, z — ближняя грань; окна запоминаются (какие горят)
+function quizSpawnBuildingRow(z) {
+    const XM = qzXmax(), gap = 1.6 + Math.random() * 1.8;
+    for (const sd of [-1, 1]) {
+        if (Math.random() < 0.12) continue;   // иногда просвет между домами
+        const w = 1.1 + Math.random() * 1.4, d = 1.2 + Math.random() * 1.6, h = 2.4 + Math.random() * 5.5;
+        const X = sd * (XM + 0.55 + w / 2 + Math.random() * 0.35);
+        const cols = Math.max(2, Math.round(w / 0.32)), rows = Math.max(3, Math.round(h / 0.42)), dcols = Math.max(2, Math.round(d / 0.36));
+        const lit = []; for (let i = 0; i < (cols + dcols) * rows; i++) lit.push(Math.random() < 0.32 ? (Math.random() < 0.8 ? 1 : 2) : 0);
+        const tone = Math.random();
+        QZ.bld.push({ X, w, d, h, z: z + Math.random() * 0.6, sd, cols, rows, dcols, lit, tone });
+        // второй ряд — дальше от улицы, выше
+        if (Math.random() < 0.6) {
+            const w2 = 1.3 + Math.random() * 1.6, h2 = 4 + Math.random() * 6;
+            QZ.bld.push({ X: X + sd * (w / 2 + w2 / 2 + 0.6), w: w2, d: 1.5 + Math.random() * 1.5, h: h2, z: z + 0.8 + Math.random(), sd, cols: Math.max(2, Math.round(w2 / 0.34)), rows: Math.max(3, Math.round(h2 / 0.45)), dcols: 2, lit: Array.from({ length: 200 }, () => Math.random() < 0.28 ? 1 : 0), tone: Math.random(), back: true });
+        }
+    }
+    return gap;
+}
+function quizDrawBuildings() {
+    const list = QZ.bld.slice().sort((a, b) => (b.z + b.d * 0.5) - (a.z + a.d * 0.5));
+    const G = QZ_GROUND;
+    const quad = (p1, p2, p3, p4) => { ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y); ctx.closePath(); };
+    for (const b of list) {
+        const z0 = Math.max(0.55, b.z), z1 = b.z + b.d; if (z1 <= 0.55) continue;
+        const far = Math.min(1, Math.max(0, (36 - b.z) / 8));   // дальние — проявляются из дымки
+        const top = G - b.h, xi = b.X - b.sd * b.w / 2, xo = b.X + b.sd * b.w / 2;   // xi — грань, что смотрит на улицу
+        const base = b.back ? [30, 12, 62] : [38 + b.tone * 10, 16 + b.tone * 6, 76 + b.tone * 14];
+        ctx.globalAlpha = far;
+        // боковая грань, обращённая к улице: левые дома освещены луной чуть сильнее
+        const s1 = qzProj(xi, top, z0), s2 = qzProj(xi, G, z0), s3 = qzProj(xi, G, z1), s4 = qzProj(xi, top, z1);
+        const sideK = b.sd < 0 ? 1.25 : 0.8;
+        ctx.fillStyle = `rgb(${Math.round(base[0] * sideK)}, ${Math.round(base[1] * sideK)}, ${Math.round(base[2] * sideK)})`;
+        quad(s1, s2, s3, s4); ctx.fill();
+        // окна на боковой грани
+        for (let r = 0; r < b.rows; r++) for (let c = 0; c < b.dcols; c++) {
+            const L = b.lit[(b.cols + c) * b.rows + r] || 0; if (!L) continue;
+            const u0 = (c + 0.25) / b.dcols, u1 = (c + 0.75) / b.dcols, zz0 = b.z + b.d * u0, zz1 = b.z + b.d * u1; if (zz0 < 0.55) continue;
+            const y0 = top + (r + 0.25) / b.rows * b.h, y1 = top + (r + 0.7) / b.rows * b.h;
+            ctx.fillStyle = L === 1 ? 'rgba(255, 186, 92, 0.9)' : 'rgba(205, 165, 255, 0.85)';
+            quad(qzProj(xi, y0, zz0), qzProj(xi, y1, zz0), qzProj(xi, y1, zz1), qzProj(xi, y0, zz1)); ctx.fill();
+        }
+        // передняя грань (если дом ещё впереди)
+        if (b.z > 0.55) {
+            const f1 = qzProj(Math.min(xi, xo), top, b.z), f2 = qzProj(Math.max(xi, xo), G, b.z);
+            ctx.fillStyle = `rgb(${base[0]}, ${base[1]}, ${base[2]})`;
+            ctx.fillRect(f1.x, f1.y, f2.x - f1.x, f2.y - f1.y);
+            // кромка крыши и свет луны по краю
+            ctx.fillStyle = 'rgba(200, 160, 255, 0.25)'; ctx.fillRect(f1.x, f1.y, f2.x - f1.x, Math.max(0.6, (f2.y - f1.y) * 0.012));
+            const cw = (f2.x - f1.x) / b.cols, rh = (f2.y - f1.y) / b.rows;
+            if (cw > 1.2 && rh > 1.2) for (let r = 0; r < b.rows; r++) for (let c = 0; c < b.cols; c++) {
+                const L = b.lit[c * b.rows + r]; if (!L) continue;
+                ctx.fillStyle = L === 1 ? 'rgba(255, 186, 92, 0.92)' : 'rgba(205, 165, 255, 0.85)';
+                ctx.fillRect(f1.x + (c + 0.28) * cw, f1.y + (r + 0.25) * rh, cw * 0.44, rh * 0.45);
+            }
+        }
+    }
+    ctx.globalAlpha = 1;
+}
 // далёкий город на горизонте — силуэты домов с горящими окнами (рисуются один раз), чуть сдвигаются при повороте
 let __qzCity = null, __qzCityKey = '';
 function quizDrawCity(v) {
@@ -450,7 +514,7 @@ function quizDrawCity(v) {
 function quizDrawWarp(v) {
     const W = QZ.warp || (QZ.warp = []);
     const moving = QZ.phase !== 'read';
-    if (moving && W.length < 40 && Math.random() < 0.6 * dtMult) { const an = Math.random() * Math.PI * 2; W.push({ an, d: 4 + Math.random() * 10, v: 1.02 + Math.random() * 0.025 }); }
+    if (moving && W.length < 18 && Math.random() < 0.25 * dtMult) { const an = Math.random() * Math.PI * 2; W.push({ an, d: 4 + Math.random() * 10, v: 1.02 + Math.random() * 0.025 }); }
     ctx.save(); ctx.lineCap = 'round';
     for (let i = W.length - 1; i >= 0; i--) {
         const w = W[i]; const d0 = w.d;
