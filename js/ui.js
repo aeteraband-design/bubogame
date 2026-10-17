@@ -37,11 +37,12 @@ document.addEventListener('visibilitychange', () => {
 
 // ===== Качество графики =====
 const _shadowBlurDesc = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'shadowBlur');
-const GFX_LEVELS = ['low', 'medium', 'high'];
+const GFX_LEVELS = ['low', 'medium', 'high', 'ultra'];
 const GFX_TEXT = {
     low: { name: 'Низкая', hint: 'Для слабых телефонов и компьютеров: без теней и размытия' },
     medium: { name: 'Средняя', hint: 'Баланс чёткости и скорости' },
-    high: { name: 'Высокая', hint: 'Максимальная чёткость и все эффекты' }
+    high: { name: 'Высокая', hint: 'Максимальная чёткость и все эффекты' },
+    ultra: { name: 'Ультра (тест)', hint: 'Объёмная графика: свечение, блики, тени. Тестовый режим — на слабых телефонах может тормозить' }
 };
 function applyGfxQuality(soft) {
     if (gfxQuality === 'low') {
@@ -51,6 +52,7 @@ function applyGfxQuality(soft) {
         delete ctx.shadowBlur;
     }
     document.documentElement.classList.toggle('gfx-low', gfxQuality === 'low');
+    document.documentElement.classList.toggle('gfx-ultra', gfxQuality === 'ultra');
     const rs0 = renderScale;
     resize(soft);
     // мягкое понижение (автоматически, во время полёта): готовые заготовки значков и труб остаются прежней чёткости — не пересоздаются

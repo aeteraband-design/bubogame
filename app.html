@@ -12,22 +12,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BUBOGAME v0.10</title>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.12.59">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.12.60">
     <!-- Onest: локальные файлы -->
-    <link rel="stylesheet" href="css/fonts.css?v=0.12.59">
+    <link rel="stylesheet" href="css/fonts.css?v=0.12.60">
 
-    <script src="js/music-hold.js?v=0.12.59"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.12.59">
+    <script src="js/music-hold.js?v=0.12.60"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.12.60">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.12.59" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.12.60" id="adminStyle">
     <!-- Tailwind: готовый файл стилей вместо онлайн-компилятора (тот следил за каждым изменением страницы и пересобирал стили прямо во время игры) -->
-    <link rel="stylesheet" href="css/tailwind.css?v=0.12.59">
+    <link rel="stylesheet" href="css/tailwind.css?v=0.12.60">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.12.59">
-    <link rel="stylesheet" href="css/features.css?v=0.12.59">
+    <link rel="stylesheet" href="css/boot.css?v=0.12.60">
+    <link rel="stylesheet" href="css/features.css?v=0.12.60">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -43,9 +43,9 @@
             </div>
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
-        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.12.59</div>
+        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.12.60</div>
     </div>
-    <script src="js/boot.js?v=0.12.59"></script>
+    <script src="js/boot.js?v=0.12.60"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 backdrop-blur-[7px] overflow-y-auto custom-scroll">
@@ -58,13 +58,13 @@
             </button>
             
             <div class="pt-[30px] px-1 w-full flex items-center justify-center">
-                <div class="flex items-center space-x-2.5 filter drop-shadow-[0_2px_20px_rgba(254,118,0,0.65)]">
-                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FE7600] to-[#782CE9] flex items-center justify-center shadow-lg border border-white/30 shrink-0">
+                <div id="menuLogo" class="flex items-center space-x-2.5 filter drop-shadow-[0_2px_20px_rgba(254,118,0,0.65)]">
+                    <div class="ul-ico w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FE7600] to-[#782CE9] flex items-center justify-center shadow-lg border border-white/30 shrink-0">
                         <i class="fa-solid fa-gamepad text-white text-lg"></i>
                     </div>
                     <div class="text-2xl sm:text-3xl tracking-tight font-black leading-none flex items-center space-x-1.5">
-                        <span class="text-[#FE7600] font-black">BUBO</span>
-                        <span class="text-[#A855F7] font-black">GAME</span>
+                        <span class="ul-a text-[#FE7600] font-black">BUBO</span>
+                        <span class="ul-b text-[#A855F7] font-black">GAME</span>
                     </div>
                 </div>
             </div>
@@ -533,11 +533,12 @@
                     </span>
                     <span id="gfxLabel" class="text-[10px] font-black text-[#C4A1FF]">Средняя</span>
                 </div>
-                <input id="gfxSlider" type="range" min="0" max="2" step="1" value="1" class="w-full accent-[#A855F7] cursor-pointer">
+                <input id="gfxSlider" type="range" min="0" max="3" step="1" value="1" class="w-full accent-[#A855F7] cursor-pointer">
                 <div class="flex justify-between text-[9px] font-black">
                     <span class="gfx-tick" data-q="low">Низкая</span>
                     <span class="gfx-tick" data-q="medium">Средняя</span>
                     <span class="gfx-tick" data-q="high">Высокая</span>
+                    <span class="gfx-tick" data-q="ultra">Ультра</span>
                 </div>
                 <div id="gfxHint" class="text-[10px] text-purple-300 font-medium leading-snug">Баланс чёткости и скорости</div>
             </div>
@@ -718,22 +719,23 @@
         </div>
     </div>
 
-    <script src="js/audio.js?v=0.12.59"></script>
-    <script src="js/game-core.js?v=0.12.59"></script>
-    <script src="js/owl.js?v=0.12.59"></script>
-    <script src="js/hud.js?v=0.12.59"></script>
-    <script src="js/scenery.js?v=0.12.59"></script>
-    <script src="js/items.js?v=0.12.59"></script>
-    <script src="js/shazam.js?v=0.12.59"></script>
-    <script src="js/crystals.js?v=0.12.59"></script>
-    <script src="js/water.js?v=0.12.59"></script>
-    <script src="js/weather.js?v=0.12.59"></script>
-    <script src="js/update.js?v=0.12.59"></script>
-    <script src="js/render.js?v=0.12.59"></script>
-    <script src="js/wheel.js?v=0.12.59"></script>
-    <script src="js/ui.js?v=0.12.59"></script>
-<script src="js/admin.js?v=0.12.59"></script>
-<script src="js/text-measure.js?v=0.12.59"></script>
-<script src="js/fullscreen.js?v=0.12.59"></script>
+    <script src="js/audio.js?v=0.12.60"></script>
+    <script src="js/game-core.js?v=0.12.60"></script>
+    <script src="js/owl.js?v=0.12.60"></script>
+    <script src="js/hud.js?v=0.12.60"></script>
+    <script src="js/scenery.js?v=0.12.60"></script>
+    <script src="js/items.js?v=0.12.60"></script>
+    <script src="js/shazam.js?v=0.12.60"></script>
+    <script src="js/crystals.js?v=0.12.60"></script>
+    <script src="js/water.js?v=0.12.60"></script>
+    <script src="js/weather.js?v=0.12.60"></script>
+    <script src="js/update.js?v=0.12.60"></script>
+    <script src="js/render.js?v=0.12.60"></script>
+    <script src="js/ultra.js?v=0.12.60"></script>
+    <script src="js/wheel.js?v=0.12.60"></script>
+    <script src="js/ui.js?v=0.12.60"></script>
+<script src="js/admin.js?v=0.12.60"></script>
+<script src="js/text-measure.js?v=0.12.60"></script>
+<script src="js/fullscreen.js?v=0.12.60"></script>
 </body>
 </html>

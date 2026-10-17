@@ -5,12 +5,12 @@
 // Качество графики: low / medium / high (сохраняется в браузере)
 const GFX_KEY = 'bubo_gfx_quality';
 let gfxQuality = 'medium';
-try { const q = localStorage.getItem(GFX_KEY); if (q === 'low' || q === 'medium' || q === 'high') gfxQuality = q; } catch (e) {}
+try { const q = localStorage.getItem(GFX_KEY); if (q === 'low' || q === 'medium' || q === 'high' || q === 'ultra') gfxQuality = q; } catch (e) {}
 let renderScale = 1;
 let __tokHoldK = 1, __gfxSoft = false;   // >1 после автоматического понижения качества: заготовки остаются прежней чёткости
 function computeRenderScale() {
     const dpr = window.devicePixelRatio || 1;
-    if (gfxQuality === 'high') return Math.min(dpr, 3);     // максимальная чёткость
+    if (gfxQuality === 'high' || gfxQuality === 'ultra') return Math.min(dpr, 3);     // максимальная чёткость
     if (gfxQuality === 'medium') return Math.min(dpr, 1.5); // середина
     return 1;                                               // низкая: как раньше, без лишней нагрузки
 }

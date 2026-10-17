@@ -772,6 +772,7 @@ function drawRoundedRect(x, y, w, h, r) {
 // Шляпка трубы одинакова у всех труб: рисуем её один раз в заготовку (градиент, контур и блик по краю) и дальше копируем.
 // Раньше блик обрезался по форме шляпки (clip) у каждой трубы каждый кадр — на телефоне это заметная нагрузка.
 function drawPipeCap(capX, capY, capW, capH, r, rimY, pw, red) {
+    if (gfxQuality === 'ultra' && typeof drawUltraCap === 'function') return drawUltraCap(capX, capY, capW, capH, r, rimY, pw, red);   // «Ультра»: шляпка-кольцо
     const devR = tokDevScale(ctx), hw = capW / 2 + 1, hh = capH / 2 + 1;
     const spr = tokSprite(`cap6|${red ? red : ''}|${pw}|${capW}|${capH}|${r}|${rimY}|${devR}`, devR, hw, hh, (g) => {
         g.translate(-(capX + capW / 2), -capH / 2);
@@ -907,6 +908,7 @@ function drawPipe(pipe) {
     const pOv = camZoom < 0.999 ? Math.ceil(height * (1 - camZoom) * 0.6) + 4 : 0;   // запас за краем — только при отдалении камеры
     ctx.fillRect(0, -pOv, pipe.width, topStemH + pOv);
     ctx.fillStyle = pgc.vol; ctx.fillRect(0, -pOv, pipe.width, topStemH + pOv);
+    if (gfxQuality === 'ultra' && typeof ultraStem === 'function') ultraStem(pipe.width, -pOv, topStemH + pOv);
     for (let sy = topStemH - 95; sy > -pOv - 6; sy -= PIPE_SEAM_STEP) drawPipeSeam(pipe.width, sy);   // поперечные швы на болтах
 
     ctx.lineWidth = 0.8;
@@ -940,6 +942,7 @@ function drawPipe(pipe) {
     ctx.fillStyle = stemGrad;
     ctx.fillRect(0, bottomStemY, pipe.width, bottomStemH + pOv);
     ctx.fillStyle = pgc.vol; ctx.fillRect(0, bottomStemY, pipe.width, bottomStemH + pOv);
+    if (gfxQuality === 'ultra' && typeof ultraStem === 'function') ultraStem(pipe.width, bottomStemY, bottomStemH + pOv);
     for (let sy = bottomStemY + 95; sy < height + pOv + 6; sy += PIPE_SEAM_STEP) drawPipeSeam(pipe.width, sy);
 
     ctx.lineWidth = 0.8;
