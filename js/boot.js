@@ -136,7 +136,7 @@
                     logo.style.display = 'none';
                 }
                 var z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;
-                const LZ = 1.17;   // логотип на экране загрузки: на 10% меньше, чем было (крупнее на 17% от обычного)
+                const LZ = 0.95;   // логотип на экране загрузки: на 10% меньше, чем было (крупнее на 17% от обычного)
                 clone.style.zoom = z * LZ;
                 cloneWrap.style.transform = 'translateY(-50%)'; cloneWrap.style.top = (r.top + r.height / 2) + 'px';   // увеличиваем от центра
             }

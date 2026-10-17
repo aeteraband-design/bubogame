@@ -1989,3 +1989,11 @@
 .rw-res-ico::after { content:''; position:absolute; inset:-8px; border-radius:50%; border:2px dashed var(--c); opacity:.6; animation:rwResSpin 9s linear infinite; }
 @keyframes rwResSpin { to { transform:rotate(360deg); } }
 .rw-res-title { text-shadow:0 0 12px color-mix(in srgb, var(--c) 60%, transparent); }
+
+/* Главное меню: логотип стоит посередине между верхним рядом кнопок и блоком под ним */
+#startScreen > .menu-logo-wrap { flex: 1 1 auto; min-height: 0; padding-top: calc(54px * var(--ui-zoom, 1) / var(--menu-zoom, 1)); padding-bottom: 6px; }
+#startScreen > .menu-logo-wrap .fa-gamepad { font-size: 24px; }
+#startScreen > .menu-logo-wrap .fa-gamepad { line-height: 1; }
+#startScreen > .menu-logo-wrap .shrink-0:has(> .fa-gamepad) { width: 56px; height: 56px; border-radius: 18px; }
+#startScreen > .menu-logo-wrap .tracking-tight { font-size: 32px; }
+@media (min-width: 640px) { #startScreen > .menu-logo-wrap .tracking-tight { font-size: 38px; } }

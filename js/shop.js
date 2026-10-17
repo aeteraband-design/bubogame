@@ -51,11 +51,11 @@ const SHOP_ITEMS = [
     try {
         const st = document.createElement('style');
         st.textContent = `
-#openShopBtn.rw-menu-btn{z-index:6;zoom:var(--ui-zoom,1);position:absolute!important;top:100px!important;right:14px!important;left:auto!important;width:36px!important;height:36px!important;border-radius:12px!important;font-size:13px!important;color:#E9D5FF!important;background-color:rgba(29,9,54,.72)!important;border:1px solid rgba(120,44,233,.6)!important;box-shadow:0 6px 14px rgba(0,0,0,.3)!important}
+#openShopBtn.rw-menu-btn{z-index:6;zoom:var(--ui-zoom,1);position:absolute!important;top:12px!important;right:102px!important;left:auto!important;width:36px!important;height:36px!important;border-radius:12px!important;font-size:13px!important;color:#E9D5FF!important;background-color:rgba(29,9,54,.72)!important;border:1px solid rgba(120,44,233,.6)!important;box-shadow:0 6px 14px rgba(0,0,0,.3)!important}
 #openShopBtn.rw-menu-btn.has-c{color:#FFC53D!important;border-color:#FFC53D!important;box-shadow:0 0 12px rgba(255,197,61,.45)!important}
 #shopModal{position:absolute;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(20,3,38,.25);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
 #shopModal.hidden{display:none}
-#shWin{position:relative;width:100%;max-width:380px;max-height:100%;overflow-y:auto;border-radius:28px;padding:16px 16px 18px;display:flex;flex-direction:column;gap:16px;font-family:Onest,sans-serif;color:#fff;
+#shWin{position:relative;width:100%;max-width:380px;max-height:100%;overflow:hidden;border-radius:28px;padding:16px 16px 18px;display:flex;flex-direction:column;gap:16px;font-family:Onest,sans-serif;color:#fff;
  background:radial-gradient(110% 45% at 50% -8%,rgba(255,197,61,.2),transparent 62%),radial-gradient(80% 40% at 0% 105%,rgba(45,212,191,.13),transparent 60%),rgba(29,9,54,.97);border:1.5px solid rgba(255,197,61,.35);box-shadow:0 10px 40px rgba(0,0,0,.5)}
 #shWin .sh-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:6px}
 #shWin .sh-coins{justify-self:start;display:flex;align-items:center;gap:7px;padding:6px 11px 6px 6px;border-radius:999px;background:rgba(20,3,38,.75);border:1px solid rgba(255,197,61,.5);box-shadow:0 0 12px rgba(255,197,61,.18);font-weight:900;font-size:15px;color:#FFD66B;margin-top:4px}
@@ -78,7 +78,13 @@ const SHOP_ITEMS = [
 #shWin .sh-title{text-align:center;margin-top:-4px}
 #shWin .sh-title b{display:block;font-weight:900;font-size:26px;letter-spacing:.02em;line-height:1;background:linear-gradient(90deg,#FFD66B,#FFF3B0 45%,#5EEAD4);-webkit-background-clip:text;background-clip:text;color:transparent}
 #shWin .sh-title span{display:block;margin-top:6px;font-weight:600;font-size:12px;color:#C4B5FD}
-#shWin .sh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+#shWin .sh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;flex:1 1 auto;min-height:0;overflow-y:auto;padding:4px 3px;margin:-4px -3px;align-content:start;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#shWin .sh-grid::-webkit-scrollbar{display:none}
+#shWin>*:not(.sh-grid){flex-shrink:0}
+#shWin .sh-earn.gone{display:none}
+#shWin .sh-earn b{color:#FFD66B}
+#shWin .sh-earn .sh-ex{flex:0 0 auto;width:26px;height:26px;padding:0;margin-left:-4px;display:flex;align-items:center;justify-content:center;border-radius:9px;background:transparent;border:none;color:#A78BFA;font-size:13px}
+#shWin .sh-earn .sh-go i{margin-left:5px}
 #shWin .sh-it{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px 9px;border-radius:16px;text-align:center;
  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 14%,transparent),rgba(20,3,38,.65) 70%);border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
 #shWin .sh-ic{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--c) 55%,#fff),var(--c) 60%,color-mix(in srgb,var(--c) 70%,#000));box-shadow:0 0 14px color-mix(in srgb,var(--c) 60%,transparent),inset 0 -3px 0 rgba(0,0,0,.2)}
@@ -119,7 +125,7 @@ function shopBuild() {
             <button type="button" class="sh-x" data-sh="close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button></div>
         <div class="sh-title"><b>ЛАВКА</b><span>Обменивай монеты на попытки и бонусы</span></div>
         <div class="sh-grid" id="shGrid"></div>
-        <div class="sh-earn"><i class="fa-solid fa-circle-question"></i><span>Монеты: вопросы дня (до 100 за ответ) и 50/100/150 за каждые 50 вопросов в полёте</span><button type="button" data-sh="quiz">ВОПРОСЫ</button></div>
+        <div class="sh-earn" id="shEarn"><i class="fa-solid fa-coins"></i><span><b>Монеты дают:</b> вопросы дня — до 100 за верный ответ; в полёте — 50, 100 и 150 за каждые 50 вопросов</span><button type="button" class="sh-go" data-sh="quiz">ЗАРАБОТАТЬ<i class="fa-solid fa-arrow-right"></i></button><button type="button" class="sh-ex" data-sh="hideearn" aria-label="Скрыть"><i class="fa-solid fa-xmark"></i></button></div>
         <button type="button" class="sh-back" data-sh="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button>
     </div>`;
     host.appendChild(shRoot);
@@ -130,6 +136,7 @@ function shopBuild() {
         const a = b.dataset.sh;
         if (a === 'close') closeShop();
         else if (a === 'quiz') { closeShop(); if (typeof openQuiz === 'function') openQuiz(); }
+        else if (a === 'hideearn') { try { localStorage.setItem('bubo_shop_earn_hidden', '1'); } catch (er) {} const el = document.getElementById('shEarn'); if (el) el.classList.add('gone'); }
         else shopTap(a, b);
     });
     return shRoot;
@@ -172,6 +179,8 @@ function openShop(e) {
     if (e) e.stopPropagation();
     try { AudioFX.resume(); } catch (er) {}
     shopBuild(); shSure = null; shopRender();
+    try { const el = document.getElementById('shEarn'); if (el) el.classList.toggle('gone', localStorage.getItem('bubo_shop_earn_hidden') === '1'); } catch (er) {}
+    try { const g = document.getElementById('shGrid'); if (g) g.scrollTop = 0; } catch (er) {}
     shRoot.classList.remove('hidden');
     try { AudioFX.setMode('shop', { fade: true }); } catch (er) {}
 }

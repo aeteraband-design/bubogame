@@ -134,7 +134,7 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
     try {
         const st = document.createElement('style');
         st.textContent = `
-#openQuizBtn.rw-menu-btn{z-index:6;zoom:var(--ui-zoom,1);position:absolute!important;top:56px!important;right:14px!important;left:auto!important;width:36px!important;height:36px!important;border-radius:12px!important;font-size:13px!important;color:#E9D5FF!important;background-color:rgba(29,9,54,.72)!important;border:1px solid rgba(120,44,233,.6)!important;box-shadow:0 6px 14px rgba(0,0,0,.3)!important}
+#openQuizBtn.rw-menu-btn{z-index:6;zoom:var(--ui-zoom,1);position:absolute!important;top:12px!important;right:58px!important;left:auto!important;width:36px!important;height:36px!important;border-radius:12px!important;font-size:13px!important;color:#E9D5FF!important;background-color:rgba(29,9,54,.72)!important;border:1px solid rgba(120,44,233,.6)!important;box-shadow:0 6px 14px rgba(0,0,0,.3)!important}
 #openQuizBtn.rw-menu-btn.has-q{color:#38BDF8!important;border-color:#38BDF8!important;box-shadow:0 0 12px rgba(56,189,248,.5)!important}
 #openQuizBtn .rw-badge{top:-4px!important;right:-4px!important;left:auto!important;transform:none!important;min-width:0!important;width:10px!important;height:10px!important;padding:0!important;background:#38BDF8;border:1.5px solid #1d0936;font-size:0}
 #quizModal{position:absolute;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(20,3,38,.25);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}

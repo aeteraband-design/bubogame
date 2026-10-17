@@ -233,9 +233,10 @@ const AudioFX = {
         this.setMuted(!this.isMusicMuted);
     },
 
-    // Смена музыки — всегда музыкальным переходом: старая быстро стихает, звучит короткая фраза-«связка»
-    // (первая нота — из тональности уходящей музыки, дальше — подводка к новой), и новая музыка вступает точно в долю.
-    // Темп и высота связки берутся из уходящей музыки: на ускорении / Хард+ она быстрее и выше, в начале игры — медленнее.
+    // Смена музыки — переход «вырастает» из мелодии: старая музыка доигрывает уже поставленные ноты, затем её мелодия
+    // продолжается ещё тремя нотами (в том же тембре и темпе), которые шагами подводят к первой ноте новой музыки,
+    // а под ними уже звучит бас новой тональности. Темп связки плавно переходит от старого к новому, новая музыка
+    // вступает ровно на следующей доле — без паузы и без затухания.
     setMode(newMode, opts) {
         const eff = this._pendMode || this.mode;
         if (eff === newMode) {
@@ -250,57 +251,65 @@ const AudioFX = {
             if (wasFading) this._fadeIn();
             return;
         }
-        const from = this._pendMode ? null : this.mode;   // если переход уже шёл — связку строим только к новой цели
+        const from = this._pendMode ? null : this.mode;
         this._pendMode = newMode;
         this.stopMusic();
         const ctx = this.ctx, now = ctx.currentTime, g = this.musicGain.gain;
-        g.cancelScheduledValues(now); g.setValueAtTime(Math.max(0.0001, g.value), now); g.linearRampToValueAtTime(0.0001, now + 0.22);
-        const tr = this._transPlan(from, newMode);
-        const t0 = now + 0.06;
-        let t = t0;
-        tr.notes.forEach((n, i) => {
-            if (n) this._transNote(t, n * tr.pitch, tr.dt * (i === tr.notes.length - 1 ? 3.2 : 1.6), tr.tone, i === tr.notes.length - 1);
-            t += tr.dt;
+        g.cancelScheduledValues(now); g.setValueAtTime(Math.max(0.0001, g.value), now); g.linearRampToValueAtTime(this.musicVolume, now + 0.08);
+        const src = from ? this._modeStep(from) : this._modeStep(newMode), dst = this._modeStep(newMode);
+        let t = Math.max(now + 0.03, (from && this.nextNoteTime > now) ? this.nextNoteTime : now + 0.03);   // сразу за последней поставленной нотой
+        const target = this._firstNote(newMode, dst.p);
+        let start = from ? this._melodyAt(from, this.step, src.p) : 0;
+        if (!start) start = from ? this._melodyAt(from, this.step + 1, src.p) : 0;
+        if (!start) start = target * 1.5;
+        while (start > target * 1.9) start /= 2;
+        while (start < target / 1.9) start *= 2;
+        const up = start < target, wt = up ? 1 / 1.12246 : 1.12246, ht = up ? 1 / 1.05946 : 1.05946;
+        const notes = [start, target * wt * wt, target * ht];   // мелодия шагает к новой ноте: тон, тон, полутон — и попадает в неё
+        const tone = from ? this._modeTone(from) : 'bell', clamp = (d) => Math.min(0.34, Math.max(0.12, d));
+        const bass = this._rootOf(newMode) * dst.p;
+        notes.forEach((f, i) => {
+            const dt = clamp(src.d + (dst.d - src.d) * (i + 1) / 4);
+            this._transNote(t, f, dt * 1.7, i === 2 ? (newMode === 'victory' ? 'brass' : tone) : tone, i === 2);
+            if (i === 1) this._transNote(t, bass, dt * 3.2, 'soft', false);   // бас новой музыки готовит её тональность
+            t += dt;
         });
-        if (tr.sparkle) this._transSparkle(t - tr.dt, tr.pitch);
-        const tStart = t + tr.dt * 0.5;   // новая музыка — через полдоли после последней ноты
-        this._nextStartAt = tStart;
+        if (newMode === 'victory' || newMode === 'shop') this._transSparkle(t, 1);
+        this._nextStartAt = t;
         this._fadeT = setTimeout(() => {
             const m = this._pendMode; this._pendMode = null; if (!m) return;
             this.mode = m; this.step = 0; this.stopMusic();
-            try {
-                const c = this.ctx.currentTime, gg = this.musicGain.gain, st = Math.max(c, this._nextStartAt || c);
-                gg.cancelScheduledValues(c); gg.setValueAtTime(0.0001, c); gg.setValueAtTime(0.0001, st);
-                gg.linearRampToValueAtTime(this.isMusicMuted ? 0 : this.musicVolume, st + 0.5);
-            } catch (e) {}
+            try { const c = this.ctx.currentTime, gg = this.musicGain.gain; gg.cancelScheduledValues(c); gg.setValueAtTime(Math.max(0.0001, gg.value), c); gg.linearRampToValueAtTime(this.isMusicMuted ? 0 : this.musicVolume, c + 0.1); } catch (e) {}
             this.startMusicLoop();
-        }, Math.max(0, (tStart - now) * 1000 - 120));
+        }, Math.max(0, (t - now) * 1000 - 150));
     },
-    // темп (длина шага) и высота уходящей музыки — связка звучит в её ритме
+    // длина шага и высота музыки режима (в игре — с учётом сложности, ускорения и замедления)
     _modeStep(m) {
-        let d = m === 'game' ? 0.185 : (m === 'death' ? 0.3 : (m === 'victory' ? 0.2 : (m === 'quiz' ? 0.3 : (m === 'shop' ? 0.19 : 0.29)))), p = 1;
+        let d = m === 'game' ? 0.185 : (m === 'death' ? 0.56 : (m === 'victory' ? 0.2 : (m === 'quiz' ? 0.3 : (m === 'shop' ? 0.19 : 0.29)))), p = 1;
         if (m === 'game') {
             try { const diff = getDifficultyMultipliers(); if (diff.musicTempoMult) { d /= diff.musicTempoMult; p *= diff.musicTempoMult; } } catch (e) {}
             const sf = this.speedFactor || 1; d /= sf; p *= sf;
         }
         return { d, p };
     },
-    _transPlan(from, to) {
-        // тоники музыки: меню и игра — ре минор, лавка и рулетка — до мажор, вопросы — ля минор, поражение — ля минор
-        const tonic = { menu: 587.33, game: 587.33, shop: 523.25, victory: 523.25, quiz: 440.00, death: 440.00 };
-        const src = from ? this._modeStep(from) : { d: 0.17, p: 1 };
-        const dt = Math.min(0.2, Math.max(0.1, src.d * 0.62));   // «тан-тан-тан» — чуть быстрее шага уходящей музыки
-        const first = from ? tonic[from] * src.p : 0;
-        let notes, tone = 'bell', sparkle = false;
-        if (to === 'victory') { notes = [392.00, 523.25, 659.25, 783.99, 1046.50]; tone = 'brass'; sparkle = true; }   // фанфарный взлёт в до мажор
-        else if (to === 'shop') { notes = [659.25, 783.99, 880.00, 1046.50]; tone = 'pluck'; sparkle = true; }          // весёлые щипковые ступеньки вверх
-        else if (to === 'quiz') { notes = [523.25, 0, 493.88, 440.00, 659.25]; tone = 'bell'; }                     // «хм?» — спуск и вопросительный подъём
-        else if (to === 'game') { notes = [293.66, 349.23, 440.00, 587.33]; tone = 'pluck'; }                        // разгон по аккорду ре минор — в полёт
-        else if (to === 'death') { notes = [440.00, 415.30, 392.00, 293.66]; tone = 'soft'; }                       // грустный спуск
-        else { notes = [880.00, 698.46, 587.33, 440.00, 587.33]; tone = 'bell'; }                                    // домой в меню: мягкий колокольчик, ре минор
-        if (first) notes = [first].concat(notes);
-        return { notes, dt, tone, sparkle, pitch: 1 };
+    // нота мелодии режима на шаге s (0 — пауза)
+    _melodyAt(m, s, p) {
+        const s16 = s % 16, ph = Math.floor(s / 16) % 2;
+        let f = 0;
+        if (m === 'menu') f = this.menuMelody[s % this.menuMelody.length];
+        else if (m === 'shop') f = (ph ? this.shopMelody2 : this.shopMelody)[s16];
+        else if (m === 'quiz') f = (ph ? this.quizMelody2 : this.quizMelody)[s16];
+        else if (m === 'victory') f = this.victoryMelody[s % this.victoryMelody.length];
+        else if (m === 'death') f = this.deathMelody[s % this.deathMelody.length];
+        else if (m === 'game') f = this.gameArp[s % this.gameArp.length];
+        return f ? f * (p || 1) : 0;
     },
+    _firstNote(m, p) {
+        for (let s = 0; s < 4; s++) { const f = this._melodyAt(m, s, p); if (f) return f; }
+        return 440;
+    },
+    _rootOf(m) { return { menu: 146.83, game: 146.83, shop: 130.81, victory: 130.81, quiz: 110.00, death: 110.00 }[m] || 130.81; },
+    _modeTone(m) { return { shop: 'pluck', game: 'pluck', victory: 'brass', quiz: 'soft', death: 'soft' }[m] || 'tri'; },
     _transNote(t, f, dur, tone, last) {
         const ctx = this.ctx;
         if (!this._stingGain) { this._stingGain = ctx.createGain(); this._stingGain.connect(this.master || ctx.destination); }
@@ -314,6 +323,7 @@ const AudioFX = {
         const v = last ? 1.1 : 1;
         if (tone === 'brass') { mk('triangle', f, 0.3 * v, dur, 0.012); mk('square', f, 0.045 * v, dur * 0.8, 0.012); }
         else if (tone === 'pluck') { mk('triangle', f, 0.3 * v, dur, 0.006); mk('sine', f * 2, 0.07 * v, dur * 0.5, 0.006); }
+        else if (tone === 'tri') { mk('triangle', f, 0.42 * v, dur, 0.03); }
         else if (tone === 'soft') { mk('triangle', f, 0.28 * v, dur * 1.3, 0.04); }
         else { mk('sine', f, 0.28 * v, dur * 1.2, 0.008); mk('triangle', f * 2, 0.06 * v, dur * 0.7, 0.008); mk('sine', f * 3.01, 0.025 * v, dur * 0.4, 0.004); }   // колокольчик
     },
