@@ -54,7 +54,7 @@ function waterDrawBubble(x, y, r) { const s2 = r * 2.4; ctx.drawImage(waterBubbl
 // брызги и пузырьки в общем списке частиц (рисуются поверх совы) — вызывается из drawParticleList
 // живая капля, как бусинки дождя на трубах: неровный комочек воды, который в полёте тянется, сплющивается и покачивается
 function waterDrawBlob(x, y, r, d, t) {
-    const w = Math.sin(t * (0.22 + (d.ph % 1) * 0.2) + d.ph), st = Math.min(0.45, (d.vy || 0) * 0.035);
+    const w = Math.sin(t * (0.22 + (d.ph % 1) * 0.2 + (d.jig || 0) * 0.3) + d.ph) * (1 + 1.6 * (d.jig || 0)), st = Math.min(0.45, (d.vy || 0) * 0.035);   // после слияния капля сильнее дрожит
     const rx = r * (d.sx || 1) * (1 + 0.14 * w - st * 0.4), ry = r * (d.sy || 1) * (1 - 0.12 * w + st);
     const rot = (d.rot || 0) + (d.vx || 0) * 0.25;
     const A = ctx.globalAlpha;
@@ -193,8 +193,8 @@ function waterUpdate(speed, squeeze) {
         }
     }
     // поток во всю ширину трубы; со сложностью — гуще, быстрее и сильнее давит
-    const WK = Math.min(0.96, 0.82 + 0.03 * lv), DENS = 0.025 + lv * 0.018, V0 = 2.6 + lv * 0.45, G = 0.22;
-    const PUSH = 0.045 + 0.06 * lv;   // в начале — лёгкий напор, с каждым уровнем сильнее
+    const WK = Math.min(0.96, 0.82 + 0.03 * lv), DENS = 0.016 + lv * 0.02, V0 = 2.6 + lv * 0.45, G = 0.22;
+    const PUSH = 0.035 + 0.065 * lv;   // в начале — лёгкий напор, с каждым уровнем сильнее
     const R = shieldTime > 0 ? owl.radius * 1.4 : owl.radius * 0.95;
     let imp = 0, hits = 0;
     for (let i = waterStreams.length - 1; i >= 0; i--) {
@@ -212,7 +212,7 @@ function waterUpdate(speed, squeeze) {
                 s.drops.push({ x: cx + (Math.random() - 0.5) * W, y: y0 - 4 - Math.random() * 10, vx: (Math.random() - 0.5) * 0.18, vy: V0 * (0.55 + Math.random() * 0.5) * (b ? 0.85 : 1), r: b ? 1.1 + Math.random() * 1.8 : 1 + Math.pow(Math.random(), 1.7) * 3.4, sx: 0.7 + Math.random() * 0.6, sy: 0.7 + Math.random() * 0.6, rot: Math.random() * 3.14, b, ph: Math.random() * 6.28 });   // капли разные: мелкие, крупные, круглые и вытянутые
             }
             // штрихи «дождя» в потоке
-            s.sacc += (0.6 + lv * 0.3) * dt;
+            s.sacc += (0.4 + lv * 0.3) * dt;
             while (s.sacc >= 1) {
                 s.sacc -= 1;
                 s.streaks.push({ x: cx + (Math.random() - 0.5) * W * 0.95, y: y0 - Math.random() * 6, vy: V0 * 2 + 3 + Math.random() * 3, len: 18 + Math.random() * 22, w: 0.6 + Math.random() * 0.6, a: 0.16 + Math.random() * 0.18 });
@@ -255,6 +255,36 @@ function waterUpdate(speed, squeeze) {
                     if (Math.random() < 0.03 && s.mist.length < 12) s.mist.push({ x: d.x, y: d.y, r: 7 + Math.random() * 6, a: 0.28, vy: -0.2 });
                     if (shieldTime <= 0) waterWetOwl(wx, d.y);
                     D.splice(k, 1); continue;
+                }
+            }
+        }
+        // живая вода: соседние капли сливаются в одну побольше (она дрожит после слияния), крупные на скорости иногда рвутся надвое
+        {
+            const idx = [];
+            for (let k = 0; k < D.length; k++) { const d = D[k]; if (!d.b) idx.push(k); if (d.jig) d.jig = Math.max(0, d.jig - 0.04 * dt); }
+            idx.sort((a, b) => D[a].y - D[b].y);
+            let merges = 0; const dead = new Set();
+            for (let a = 0; a < idx.length && merges < 4; a++) {
+                const A = D[idx[a]]; if (dead.has(idx[a])) continue;
+                for (let b = a + 1; b < idx.length; b++) {
+                    const B = D[idx[b]]; if (B.y - A.y > 7) break; if (dead.has(idx[b])) continue;
+                    const dx = B.x - A.x, dy = B.y - A.y, rr = (A.r + B.r) * 0.75;
+                    if (dx * dx + dy * dy < rr * rr && Math.random() < 0.5) {
+                        const ma = A.r * A.r * A.r, mb = B.r * B.r * B.r, m = ma + mb;
+                        A.x = (A.x * ma + B.x * mb) / m; A.y = (A.y * ma + B.y * mb) / m;
+                        A.vx = (A.vx * ma + B.vx * mb) / m; A.vy = (A.vy * ma + B.vy * mb) / m;
+                        A.r = Math.min(5.2, Math.cbrt(m)); A.jig = 1;
+                        dead.add(idx[b]); merges++; break;
+                    }
+                }
+            }
+            if (dead.size) for (let k = D.length - 1; k >= 0; k--) if (dead.has(k)) D.splice(k, 1);
+            // разрыв: большая капля на скорости делится на две, они расходятся в стороны
+            for (let k = D.length - 1; k >= 0; k--) {
+                const d = D[k];
+                if (!d.b && d.r > 3.8 && d.vy > 4 && Math.random() < 0.012 * dt) {
+                    const r2 = d.r / 1.26; d.r = r2; d.vx -= 0.35; d.jig = 1;
+                    D.push({ x: d.x + r2, y: d.y - r2 * 0.5, vx: d.vx + 0.7, vy: d.vy * 0.97, r: r2, sx: d.sx, sy: d.sy, rot: d.rot + 0.6, b: false, ph: d.ph + 1, jig: 1 });
                 }
             }
         }

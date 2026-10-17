@@ -55,6 +55,7 @@ function quizActive() { return QZ.on; }
 
 // собрана ещё одна тема: проверяем рубеж 10%, 20%, …
 function quizOnTheme() {
+    if (!ADMIN_CFG.quizOn) return;   // вопросы выключены в админке (по умолчанию)
     let have = 0, need = 0;
     for (const k of THEME_KEYS_ALL) { have += Math.min(collected[k] || 0, CATEGORIES[k].count); need += CATEGORIES[k].count; }
     if (!need) return;

@@ -17,7 +17,8 @@ function computeRenderScale() {
 // ===== Настройки игры, которые меняются в админке (хранятся в браузере) =====
 const ADMIN_KEY = 'bubo_admin_cfg_v1';
 const ADMIN_DEFAULTS = {
-    themes: { music: 20, logic: 15, kino: 10, series: 10, cartoons: 10, fun: 5 },   // сколько собрать каждой темы для победы
+    themes: { music: 20, logic: 20, kino: 20, series: 20, cartoons: 20, fun: 20 },   // сколько собрать каждой темы для победы (по умолчанию — по 20)
+    quizOn: 0,                           // вопросы и порталы в другой мир: 0 — выключены (по умолчанию), 1 — включены
     overeatEvery: 3, overeatSec: 10,     // порций еды до переедания / его длительность
     drunkEvery: 6, drunkSec: 10,         // напитков до опьянения / его длительность
     freezeEvery: 3, freezeSec: 10,       // порций мороженого до заморозки / её длительность
@@ -33,14 +34,16 @@ const ADMIN_DEFAULTS = {
 const ADMIN_SPEC = {   // [минимум, максимум, шаг]
     overeatEvery: [1, 20, 1], overeatSec: [3, 60, 1], drunkEvery: [1, 30, 1], drunkSec: [3, 60, 1], freezeEvery: [1, 20, 1], freezeSec: [3, 60, 1],
     shieldSec: [3, 60, 1], slowSec: [3, 60, 1], speedSec: [3, 60, 1], compressSec: [3, 60, 1], infiniteSec: [3, 60, 1],
-    crystalFreq: [0, 2, 1], stormFreq: [0, 3, 1], shazamEvery: [1, 20, 1], feathersForMax: [1, 30, 1], attempts: [1, 9, 1], questionsPerAttempt: [10, 500, 10], maxLives: [5, 6, 1], theme: [1, 99, 1]
+    crystalFreq: [0, 2, 1], quizOn: [0, 1, 1], stormFreq: [0, 3, 1], shazamEvery: [1, 20, 1], feathersForMax: [1, 30, 1], attempts: [1, 9, 1], questionsPerAttempt: [10, 500, 10], maxLives: [5, 6, 1], theme: [1, 99, 1]
 };
 function normalizeAdminCfg(raw) {
     const out = JSON.parse(JSON.stringify(ADMIN_DEFAULTS));
     raw = (raw && typeof raw === 'object') ? raw : {};
     const cl = (v, sp, d) => { v = Math.round(Number(v)); return isFinite(v) ? Math.max(sp[0], Math.min(sp[1], v)) : d; };
     for (const k in ADMIN_SPEC) if (k !== 'theme' && k in raw) out[k] = cl(raw[k], ADMIN_SPEC[k], out[k]);
-    if (raw.themes && typeof raw.themes === 'object') for (const k in out.themes) if (k in raw.themes) out.themes[k] = cl(raw.themes[k], ADMIN_SPEC.theme, out.themes[k]);
+    // темы: старые сохранённые значения (до перехода на «по 20») не берём — один раз сбрасываем на новые стандартные
+    if (raw.themesV === 2 && raw.themes && typeof raw.themes === 'object') for (const k in out.themes) if (k in raw.themes) out.themes[k] = cl(raw.themes[k], ADMIN_SPEC.theme, out.themes[k]);
+    out.themesV = 2;
     return out;
 }
 let ADMIN_CFG = (function () { try { return normalizeAdminCfg(JSON.parse(localStorage.getItem(ADMIN_KEY))); } catch (e) { return normalizeAdminCfg(null); } })();

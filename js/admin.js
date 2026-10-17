@@ -18,6 +18,7 @@
         { id: 'test', name: 'Тест', icon: 'fa-flask' }
     ];
     const ROWS = {
+        quiz: [rowDef('quizOn', 'Вопросы и порталы', '', 'fa-circle-nodes', '#38BDF8', (n) => n ? 'включены' : 'выключены')],
         food: [
             rowDef('overeatEvery', 'До переедания', '', 'fa-burger', '#FB923C', (n) => ruPlural(n, ['порция еды', 'порции еды', 'порций еды'])),
             rowDef('overeatSec', 'Длительность', '', 'fa-stopwatch', '#FDBA74', unitSec)
@@ -152,7 +153,7 @@
     function renderBody() {
         const rb = $('admReset'); if (rb) rb.style.display = (tab === 'test' || tab === 'quiz') ? 'none' : '';
         if (tab === 'test') { renderTest(); return; }
-        if (tab === 'quiz') { prevStop(); body.innerHTML = typeof quizAdminHtml === 'function' ? quizAdminHtml() : ''; body.scrollTop = 0; return; }
+        if (tab === 'quiz') { prevStop(); body.innerHTML = ROWS.quiz.map(rowHtml).join('') + (typeof quizAdminHtml === 'function' ? quizAdminHtml() : ''); body.scrollTop = 0; return; }
         prevStop();
         const rows = tab === 'themes' ? themeRows() : ROWS[tab];
         let h = '';
