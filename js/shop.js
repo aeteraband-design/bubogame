@@ -199,10 +199,12 @@ function shopSyncBtn() {
     const POPS = ['rouletteModal', 'quizModal', 'shopModal', 'rulesModal', 'settingsModal', 'adminModal', 'admLogin', 'resetConfirmModal', 'winModal'];
     const sync = () => {
         const ss = document.getElementById('startScreen'); if (!ss) return;
-        const any = POPS.some((id) => { const e = document.getElementById(id); return e && !e.classList.contains('hidden'); });
+        const any = POPS.some((id) => { const e = document.getElementById(id); return e && !e.classList.contains('hidden') && e.style.display !== 'none' && e.offsetParent !== null; });
         ss.classList.toggle('menu-under-pop', any);
     };
-    const gc = document.getElementById('gameContainer') || document.body;
-    try { new MutationObserver(sync).observe(gc, { subtree: true, attributes: true, attributeFilter: ['class'], childList: true }); } catch (e) {}
+    // следим за всей страницей (окна лежат в разных местах), плюс страховка раз в полсекунды
+    let q = 0; const kick = () => { if (!q) q = requestAnimationFrame(() => { q = 0; sync(); }); };
+    try { new MutationObserver(kick).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class', 'style'], childList: true }); } catch (e) {}
+    setInterval(sync, 500);
     sync();
 })();
