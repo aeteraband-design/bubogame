@@ -8,18 +8,22 @@
 
 // ---------- база вопросов: добавлять по этому же шаблону ----------
 const QUIZ_QUESTIONS = [
-    { id: 1, cat: 'Еда', question: 'Из чего делают гуакамоле?', options: { A: 'Из авокадо', B: 'Из баклажанов', C: 'Из кабачков', D: 'Из гороха' }, correct: 'A' },
-    { id: 2, cat: 'Кино', question: 'Как зовут волшебника-подростка со шрамом в виде молнии?', options: { A: 'Фродо Бэггинс', B: 'Гарри Поттер', C: 'Перси Джексон', D: 'Мерлин' }, correct: 'B' },
-    { id: 3, cat: 'Мультики', question: 'Какого цвета Шрек?', options: { A: 'Синего', B: 'Оранжевого', C: 'Зелёного', D: 'Фиолетового' }, correct: 'C' },
-    { id: 4, cat: 'Игры', question: 'Как зовут итальянского сантехника из игр Nintendo?', options: { A: 'Луиджи', B: 'Варио', C: 'Соник', D: 'Марио' }, correct: 'D' },
-    { id: 5, cat: 'Музыка', question: 'Сколько струн у классической гитары?', options: { A: '4', B: '6', C: '8', D: '12' }, correct: 'B' },
-    { id: 6, cat: 'Обо всём', question: 'Какая планета ближе всех к Солнцу?', options: { A: 'Меркурий', B: 'Венера', C: 'Марс', D: 'Земля' }, correct: 'A' },
-    { id: 7, cat: 'Сериалы', question: 'В каком сериале дети из Хокинса сражаются с монстрами из Изнанки?', options: { A: '«Тьма»', B: '«Уэнсдэй»', C: '«Очень странные дела»', D: '«Ведьмак»' }, correct: 'C' },
-    { id: 8, cat: 'Еда', question: 'Какая страна — родина пиццы?', options: { A: 'Франция', B: 'Испания', C: 'Греция', D: 'Италия' }, correct: 'D' },
-    { id: 9, cat: 'Игры', question: 'В какой игре строят мир из кубиков и прячутся от криперов?', options: { A: 'Minecraft', B: 'Tetris', C: 'Roblox', D: 'Fortnite' }, correct: 'A' },
-    { id: 10, cat: 'Обо всём', question: 'Сколько дней в високосном году?', options: { A: '364', B: '365', C: '366', D: '367' }, correct: 'C' },
-    { id: 11, cat: 'Мультики', question: 'Как зовут снеговика из мультфильма «Холодное сердце»?', options: { A: 'Олаф', B: 'Свен', C: 'Кристоф', D: 'Ганс' }, correct: 'A' },
-    { id: 12, cat: 'Кино', question: 'Как называется корабль, затонувший в фильме Джеймса Кэмерона 1997 года?', options: { A: '«Британик»', B: '«Титаник»', C: '«Олимпик»', D: '«Лузитания»' }, correct: 'B' }
+    { id: 101, cat: 'Еда', question: 'Какая специя считается самой дорогой в мире по весу?', options: { A: 'Ваниль', B: 'Шафран', C: 'Кардамон', D: 'Мускатный орех' }, correct: 'B' },
+    { id: 102, cat: 'Еда', question: 'Из какой страны родом блюдо пад-тай?', options: { A: 'Вьетнам', B: 'Китай', C: 'Таиланд', D: 'Малайзия' }, correct: 'C' },
+    { id: 103, cat: 'Кино', question: 'Кто снял фильм «Начало» (Inception)?', options: { A: 'Кристофер Нолан', B: 'Дэвид Финчер', C: 'Дени Вильнёв', D: 'Ридли Скотт' }, correct: 'A' },
+    { id: 104, cat: 'Кино', question: 'За какой фильм Леонардо Ди Каприо получил «Оскар» за лучшую мужскую роль?', options: { A: '«Титаник»', B: '«Волк с Уолл-стрит»', C: '«Выживший»', D: '«Остров проклятых»' }, correct: 'C' },
+    { id: 105, cat: 'Сериалы', question: 'Как зовут учителя химии, ставшего наркобароном в «Во все тяжкие»?', options: { A: 'Джесси Пинкман', B: 'Уолтер Уайт', C: 'Сол Гудман', D: 'Хэнк Шрейдер' }, correct: 'B' },
+    { id: 106, cat: 'Сериалы', question: 'Какой дом сидит на Железном троне в начале «Игры престолов»?', options: { A: 'Старки', B: 'Ланнистеры', C: 'Баратеоны', D: 'Таргариены' }, correct: 'C' },
+    { id: 107, cat: 'Игры', question: 'Какая студия создала серию игр «Ведьмак»?', options: { A: 'Ubisoft', B: 'CD Projekt Red', C: 'BioWare', D: 'Bethesda' }, correct: 'B' },
+    { id: 108, cat: 'Игры', question: 'Как называется вымышленный штат, где происходит действие GTA V?', options: { A: 'Сан-Андреас', B: 'Вайс-Сити', C: 'Либерти-Сити', D: 'Лос-Сантос' }, correct: 'A' },
+    { id: 109, cat: 'Музыка', question: 'Какая группа выпустила альбом «The Dark Side of the Moon»?', options: { A: 'The Beatles', B: 'Led Zeppelin', C: 'Pink Floyd', D: 'Queen' }, correct: 'C' },
+    { id: 110, cat: 'Музыка', question: 'Сколько симфоний написал Бетховен?', options: { A: '5', B: '7', C: '9', D: '12' }, correct: 'C' },
+    { id: 111, cat: 'Мультики', question: 'Какая студия создала мультфильм «Унесённые призраками»?', options: { A: 'Pixar', B: 'Studio Ghibli', C: 'DreamWorks', D: 'Toei Animation' }, correct: 'B' },
+    { id: 112, cat: 'Мультики', question: 'Как зовут льва-злодея из «Короля Льва»?', options: { A: 'Шрам', B: 'Муфаса', C: 'Пумба', D: 'Рафики' }, correct: 'A' },
+    { id: 113, cat: 'Обо всём', question: 'Какой химический элемент обозначается символом Au?', options: { A: 'Серебро', B: 'Аргон', C: 'Золото', D: 'Алюминий' }, correct: 'C' },
+    { id: 114, cat: 'Обо всём', question: 'Какая река считается самой длинной в мире по большинству справочников?', options: { A: 'Амазонка', B: 'Нил', C: 'Янцзы', D: 'Миссисипи' }, correct: 'B' },
+    { id: 115, cat: 'Обо всём', question: 'В каком году человек впервые высадился на Луну?', options: { A: '1961', B: '1965', C: '1969', D: '1972' }, correct: 'C' },
+    { id: 116, cat: 'Наука', question: 'Сколько костей в теле взрослого человека?', options: { A: '186', B: '206', C: '226', D: '256' }, correct: 'B' }
 ];
 const QUIZ_PER_PORTAL = 3;          // вопросов за один заход в портал
 const QUIZ_PORTAL_STEP = 0.10;      // портал — на каждых 10% собранных тем
@@ -44,7 +48,7 @@ const QZ = {
     on: false, t: 0, phase: 'fly', phaseT: 0,
     x: 0, tx: 0, keyL: false, keyR: false, drag: false,
     objs: [], qList: [], qi: -1, q: null, balls: null, picked: null, result: null,
-    flash: 0, exitAt: 0, spawnT: 0, colT: 0, grid: 0, exiting: false
+    flash: 0, exitAt: 0, spawnT: 0, colT: 0, grid: 0, exiting: false, nOk: 0, nBad: 0, nDone: 0
 };
 let quizMs = 0; try { quizMs = parseInt(localStorage.getItem(QUIZ_MS_KEY), 10) || 0; } catch (e) {}
 function quizActive() { return QZ.on; }
@@ -104,7 +108,7 @@ function quizDrawPortal2D() { const P = QZ.portal; if (P && P.r) drawQuizPortal(
 function quizEnter() {
     QZ.portal = null; QZ.on = true; QZ.t = 0; QZ.flash = 1; QZ.x = 0; QZ.tx = 0; QZ.objs = [];
     QZ.qList = quizPick(QUIZ_PER_PORTAL); QZ.qi = -1; QZ.q = null; QZ.balls = null; QZ.exiting = false;
-    QZ.phase = 'fly'; QZ.phaseT = 150; QZ.spawnT = 40; QZ.colT = 0;
+    QZ.phase = 'fly'; QZ.phaseT = 150; QZ.spawnT = 40; QZ.colT = 0; QZ.nOk = 0; QZ.nBad = 0; QZ.nDone = 0;
     try { AudioFX.playStarCollect(); Haptics.powerup(); } catch (e) {}
     quizUI(true);
 }
@@ -152,7 +156,9 @@ function quizUpdate() {
     } else if (QZ.phase === 'read' && QZ.phaseT <= 0) {
         QZ.phase = 'answer'; QZ.phaseT = QUIZ_FLY_SEC * 60;
         const zs = 26, v = (zs - QZ_ZO) / (QUIZ_FLY_SEC * 60);
-        QZ.balls = QZ_LETTERS.filter(L => QZ.q.options[L] !== undefined).map((L, i, arr) => ({ k: 'ball', L, X: (arr.length === 1 ? 0 : (i / (arr.length - 1) * 2 - 1)) * XM * 0.82, Y: QZ_OWL_Y - 0.05, z: zs, v, st: 0 }));
+        const Ls = QZ_LETTERS.filter(L => QZ.q.options[L] !== undefined), gap = Ls.length > 1 ? XM * 1.8 / (Ls.length - 1) : XM;
+        QZ.ballR = Math.min(0.13, gap * 0.38);   // шары не слипаются: радиус меньше половины шага
+        QZ.balls = Ls.map((L, i, arr) => ({ k: 'ball', L, X: (arr.length === 1 ? 0 : (i / (arr.length - 1) * 2 - 1)) * XM * 0.9, Y: QZ_OWL_Y - 0.05, z: zs, v, st: 0 }));
         QZ.objs.push(...QZ.balls);
     } else if (QZ.phase === 'result' && QZ.phaseT <= 0) {
         quizHideQuestion(); QZ.phase = 'fly'; QZ.phaseT = 150; QZ.balls = null;
@@ -160,8 +166,6 @@ function quizUpdate() {
     quizUiTick();
     // по бокам — ряды труб, на пути — бонусные напитки
     if (!reading) {
-        QZ.colT -= dt;
-        if (QZ.colT <= 0) { QZ.colT = 22; QZ.objs.push({ k: 'pipe', X: -(XM + 0.75), z: 30 }, { k: 'pipe', X: XM + 0.75, z: 30 }); }
         if (QZ.phase === 'fly' && !QZ.exiting) {
             QZ.spawnT -= dt;
             if (QZ.spawnT <= 0) {
@@ -196,6 +200,7 @@ function quizAnswer() {
     let best = null, bd = 1e9;
     for (const b of QZ.balls) { const d = Math.abs(b.X - QZ.x); if (d < bd) { bd = d; best = b; } }
     QZ.picked = best.L; const ok = best.L === QZ.q.correct; QZ.result = ok;
+    QZ.nDone++; if (ok) QZ.nOk++; else QZ.nBad++; quizScore();
     for (const b of QZ.balls) b.st = b.L === best.L ? 1 : 0;
     best.res = ok ? 'ok' : 'bad';
     if (!ok) { const c = QZ.balls.find(b => b.L === QZ.q.correct); if (c) c.res = 'right'; }
@@ -243,7 +248,7 @@ function quizDraw() {
     if (QZ.toast && QZ.toast.t > 0) {
         QZ.toast.t -= dtMult;
         const p = qzProj(QZ.x, QZ_OWL_Y, QZ_ZO);
-        ctx.save(); ctx.globalAlpha = Math.min(1, QZ.toast.t / 20); ctx.font = '900 18px Montserrat, sans-serif'; ctx.textAlign = 'center';
+        ctx.save(); ctx.globalAlpha = Math.min(1, QZ.toast.t / 20); ctx.font = '900 18px Onest, sans-serif'; ctx.textAlign = 'center';
         ctx.fillStyle = QZ.toast.col; ctx.shadowColor = QZ.toast.col; ctx.shadowBlur = 10;
         ctx.fillText(QZ.toast.txt, p.x, p.y - 60 - (70 - QZ.toast.t) * 0.4); ctx.restore();
     }
@@ -270,14 +275,14 @@ function quizDrawObj(o) {
         ctx.fillStyle = col; ctx.font = `900 ${Math.max(6, r * 1.05)}px "Font Awesome 6 Free"`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(ic, p.x, p.y + r * 0.04);
     } else if (o.k === 'ball') {
-        const p = qzProj(o.X, o.Y, o.z), r = 0.3 * p.s;
+        const p = qzProj(o.X, o.Y, o.z), r = (QZ.ballR || 0.12) * p.s;
         const base = o.res === 'ok' || o.res === 'right' ? '#22C55E' : o.res === 'bad' ? '#EF4444' : QZ_BALL_COL[o.L];
         const g = ctx.createRadialGradient(p.x - r * 0.35, p.y - r * 0.35, r * 0.1, p.x, p.y, r);
         g.addColorStop(0, '#FFFFFF'); g.addColorStop(0.25, base); g.addColorStop(1, 'rgba(10, 2, 25, 0.9)');
         ctx.shadowColor = base; ctx.shadowBlur = o.res ? 26 : 14;
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
         ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'; ctx.lineWidth = Math.max(1, r * 0.07); ctx.stroke();
-        ctx.fillStyle = '#FFFFFF'; ctx.font = `900 ${Math.max(7, r * 0.95)}px Montserrat, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#FFFFFF'; ctx.font = `900 ${Math.max(7, r * 0.95)}px Onest, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(o.L, p.x, p.y + r * 0.05);
     } else if (o.k === 'exit') {
         const p = qzProj(o.X, o.Y, o.z);
@@ -286,19 +291,70 @@ function quizDrawObj(o) {
     ctx.restore();
 }
 function quizDrawOwl() {
-    const p = qzProj(QZ.x, QZ_OWL_Y, QZ_ZO), k = 1.25;
-    const bob = Math.sin(QZ.t * 0.12) * 5;
+    const p = qzProj(QZ.x, QZ_OWL_Y, QZ_ZO);
+    const bob = Math.sin(QZ.t * 0.12) * 4;
     // тень на полу
     const sh = qzProj(QZ.x, QZ_GROUND, QZ_ZO);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, 26, 7, 0, 0, Math.PI * 2); ctx.fill();
-    const sx = owl.x, sy = owl.y, svy = owl.vy;
-    owl.x = 0; owl.y = 0; owl.vy = Math.cos(QZ.t * 0.12) * -3;
-    // крылья машут сами, в ритме покачивания
-    if (Math.floor(QZ.t / 24) !== Math.floor((QZ.t - dtMult) / 24)) owl.wing = 1; else owl.wing = Math.max(0, (owl.wing || 0) - 0.07 * dtMult);
-    ctx.save(); ctx.translate(p.x, p.y + bob); ctx.scale(k, k);
-    try { owl.draw(); } catch (e) {}
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, 24, 6, 0, 0, Math.PI * 2); ctx.fill();
+    // взмахи: крылья сами поднимаются и опускаются в ритме покачивания; при повороте сова наклоняется в сторону полёта
+    const wing = 0.5 + 0.5 * Math.sin(QZ.t * 0.26);
+    const tilt = Math.max(-0.35, Math.min(0.35, (QZ.tx - QZ.x) * 1.2));
+    quizOwlBack(p.x, p.y + bob, 1.15, wing, tilt);
+}
+// Сова со спины: круглое тело-«капля» вместе с головой (общий контур), маленькие ушки-пёрышки, узор перьев на спине,
+// закруглённые крылья по бокам (машут вверх-вниз), хвостик и оранжевые лапки
+function quizOwlBack(x, y, k, wing, tilt) {
+    const OUT = '#14052a';
+    ctx.save(); ctx.translate(x, y); ctx.rotate(tilt); ctx.scale(k, k);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    // крылья — за телом: округлое крыло с тремя «маховыми» зубчиками по краю
+    for (const sd of [-1, 1]) {
+        ctx.save(); ctx.translate(sd * 14, -2); ctx.rotate(sd * (-0.15 + wing * 0.85));
+        const wg = ctx.createLinearGradient(0, -8, 0, 10);
+        wg.addColorStop(0, '#7c3aed'); wg.addColorStop(1, '#4c1d95');
+        ctx.fillStyle = wg; ctx.strokeStyle = OUT; ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(0, -7);
+        ctx.bezierCurveTo(sd * 10, -12, sd * 22, -9, sd * 27, -2);
+        ctx.quadraticCurveTo(sd * 27, 3, sd * 23, 3);
+        ctx.quadraticCurveTo(sd * 23, 7, sd * 18, 7);
+        ctx.quadraticCurveTo(sd * 16, 11, sd * 11, 10);
+        ctx.bezierCurveTo(sd * 6, 10, sd * 2, 8, 0, 6);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = 'rgba(196, 161, 255, 0.5)'; ctx.lineWidth = 1.1;
+        ctx.beginPath(); ctx.moveTo(sd * 6, -2); ctx.quadraticCurveTo(sd * 14, -5, sd * 22, -2); ctx.stroke();
+        ctx.restore();
+    }
+    // хвостик и лапки
+    ctx.fillStyle = '#5b21b6'; ctx.strokeStyle = OUT; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(-6, 17); ctx.quadraticCurveTo(-7, 25, -3, 26); ctx.quadraticCurveTo(0, 28, 3, 26); ctx.quadraticCurveTo(7, 25, 6, 17); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#FE7600';
+    for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sd * 7, 21, 3.2, 2.3, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    // общий силуэт тела и головы: сначала толстый тёмный контур обеих фигур, потом заливка — получается один гладкий контур
+    const shape = () => {
+        ctx.beginPath(); ctx.ellipse(0, 3, 18.5, 18, 0, 0, Math.PI * 2);
+        ctx.moveTo(15.5, -14); ctx.ellipse(0, -14, 15.5, 12.5, 0, 0, Math.PI * 2);
+        // ушки-пёрышки — короткие и округлые
+        ctx.moveTo(-12, -21); ctx.quadraticCurveTo(-15, -30, -10.5, -31); ctx.quadraticCurveTo(-8, -26, -5, -25.5); ctx.closePath();
+        ctx.moveTo(12, -21); ctx.quadraticCurveTo(15, -30, 10.5, -31); ctx.quadraticCurveTo(8, -26, 5, -25.5); ctx.closePath();
+    };
+    ctx.strokeStyle = OUT; ctx.lineWidth = 5; shape(); ctx.stroke();
+    const bg = ctx.createRadialGradient(-5, -12, 2, 0, 0, 30);
+    bg.addColorStop(0, '#b197fc'); bg.addColorStop(0.45, '#8b5cf6'); bg.addColorStop(1, '#5b21b6');
+    ctx.fillStyle = bg; shape(); ctx.fill();
+    // перья на спине: ряды мягких дуг, книзу темнее
+    for (let r = 0; r < 4; r++) {
+        ctx.strokeStyle = `rgba(221, 214, 254, ${0.5 - r * 0.08})`; ctx.lineWidth = 1.2;
+        const n = r % 2 ? 3 : 4, w = 5.6;
+        for (let c = 0; c < n; c++) {
+            const fx = (c - (n - 1) / 2) * w, fy = -4 + r * 5.2;
+            ctx.beginPath(); ctx.arc(fx, fy, 2.6, 0.12 * Math.PI, 0.88 * Math.PI); ctx.stroke();
+        }
+    }
+    // складка шеи и блик на макушке
+    ctx.strokeStyle = 'rgba(20, 5, 42, 0.3)'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(0, -11, 12, 0.25 * Math.PI, 0.75 * Math.PI); ctx.stroke();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.16)'; ctx.beginPath(); ctx.ellipse(-5, -19, 6, 3.2, -0.3, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
-    owl.x = sx; owl.y = sy; owl.vy = svy;
 }
 
 // ---------- окно вопроса (HTML поверх игры) ----------
@@ -306,8 +362,9 @@ let qzEl = null;
 function quizUI(on) {
     if (on && !qzEl) {
         const st = document.createElement('style');
-        st.textContent = '#qzCard{position:absolute;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 74px);z-index:35;pointer-events:none;opacity:0;transform:translateY(-12px) scale(.97);transition:opacity .35s,transform .35s;'
-            + 'background:rgba(29,9,54,.88);border:1.5px solid rgba(168,120,245,.5);border-radius:20px;padding:14px 14px 12px;box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 24px rgba(168,85,247,.25);backdrop-filter:blur(6px);color:#fff;font-family:Montserrat,sans-serif;max-width:520px;margin:0 auto}'
+        st.textContent = '#gameContainer.qz-on #bottomHud,#gameContainer.qz-on #buffBar{opacity:0!important;pointer-events:none!important;transition:opacity .3s}'
+            + '#qzCard{position:absolute;left:14px;right:14px;top:58px;z-index:35;pointer-events:none;opacity:0;transform:translateY(-12px) scale(.97);transition:opacity .35s,transform .35s;'
+            + 'background:rgba(29,9,54,.88);border:1.5px solid rgba(168,120,245,.5);border-radius:20px;padding:14px 14px 12px;box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 24px rgba(168,85,247,.25);backdrop-filter:blur(6px);color:#fff;font-family:Onest,sans-serif;max-width:520px;margin:0 auto}'
             + '#qzCard.on{opacity:1;transform:none}'
             + '#qzCard .qz-top{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:800;color:#C4A1FF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}'
             + '#qzCard .qz-q{font-size:16px;font-weight:900;line-height:1.3;margin-bottom:10px}'
@@ -316,16 +373,20 @@ function quizUI(on) {
             + '#qzCard .qz-o b{flex:0 0 22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff}'
             + '#qzCard .qz-o.ok{background:rgba(34,197,94,.35);border-color:#22C55E}#qzCard .qz-o.bad{background:rgba(239,68,68,.35);border-color:#EF4444}'
             + '#qzCard .qz-bar{height:5px;border-radius:5px;background:rgba(255,255,255,.12);margin-top:10px;overflow:hidden}#qzCard .qz-bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#FE7600,#A855F7);border-radius:5px}'
-            + '#qzCount{position:absolute;left:0;right:0;top:44%;z-index:35;text-align:center;font:900 64px Montserrat,sans-serif;color:#fff;text-shadow:0 0 18px #A855F7,0 4px 0 rgba(0,0,0,.4);pointer-events:none;opacity:0;transition:opacity .2s}'
-            + '#qzHint{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);z-index:35;text-align:center;font:800 12px Montserrat,sans-serif;color:#C4A1FF;pointer-events:none;opacity:.85}';
+            + '#qzScore{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);transform:translateX(-50%);z-index:35;display:flex;align-items:center;gap:12px;padding:8px 16px;border-radius:9999px;background:rgba(29,9,54,.9);border:1.5px solid rgba(168,120,245,.5);box-shadow:0 6px 18px rgba(0,0,0,.4);font:800 13px Onest,sans-serif;color:#EDE5F8;white-space:nowrap;pointer-events:none}'
+            + '#qzScore b{font-weight:900;color:#fff}#qzScore .ok{color:#22C55E}#qzScore .bad{color:#EF4444}#qzScore i{margin-right:4px}'
+            + '#qzCount{position:absolute;left:0;right:0;top:44%;z-index:35;text-align:center;font:900 64px Onest,sans-serif;color:#fff;text-shadow:0 0 18px #A855F7,0 4px 0 rgba(0,0,0,.4);pointer-events:none;opacity:0;transition:opacity .2s}'
+            + '#qzHint{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 62px);z-index:35;text-align:center;font:700 12px Onest,sans-serif;color:#C4A1FF;pointer-events:none;opacity:.85}';
         document.head.appendChild(st);
-        qzEl = { card: document.createElement('div'), count: document.createElement('div'), hint: document.createElement('div') };
-        qzEl.card.id = 'qzCard'; qzEl.count.id = 'qzCount'; qzEl.hint.id = 'qzHint';
+        qzEl = { card: document.createElement('div'), count: document.createElement('div'), hint: document.createElement('div'), score: document.createElement('div') };
+        qzEl.card.id = 'qzCard'; qzEl.count.id = 'qzCount'; qzEl.hint.id = 'qzHint'; qzEl.score.id = 'qzScore';
+        container.appendChild(qzEl.score);
         qzEl.hint.textContent = 'Веди сову пальцем влево-вправо';
         container.appendChild(qzEl.card); container.appendChild(qzEl.count); container.appendChild(qzEl.hint);
     }
     if (!qzEl) return;
-    qzEl.hint.style.display = on ? '' : 'none';
+    qzEl.hint.style.display = on ? '' : 'none'; qzEl.score.style.display = on ? '' : 'none';
+    container.classList.toggle('qz-on', !!on); if (on) quizScore();
     if (!on) { qzEl.card.classList.remove('on'); qzEl.count.style.opacity = 0; }
 }
 function quizShowQuestion() {
@@ -343,6 +404,10 @@ function quizShowResult() {
         if (L === QZ.q.correct) el.classList.add('ok');
         else if (L === QZ.picked) el.classList.add('bad');
     });
+}
+function quizScore() {
+    if (!qzEl) return;
+    qzEl.score.innerHTML = `<span><i class="fa-solid fa-circle-question"></i>Отвечено <b>${QZ.nDone}/${QZ.qList.length}</b></span><span class="ok"><i class="fa-solid fa-check"></i><b>${QZ.nOk}</b></span><span class="bad"><i class="fa-solid fa-xmark"></i><b>${QZ.nBad}</b></span>`;
 }
 function quizHideQuestion() { if (qzEl) qzEl.card.classList.remove('on'); }
 function quizUiTick() {
@@ -375,13 +440,37 @@ window.addEventListener('keyup', (e) => {
 });
 
 // ---------- админка: список вопросов ----------
+(function () {
+    try {
+        const st = document.createElement('style');
+        st.textContent = '#adminModal .adq-acts{display:flex;gap:8px;flex:0 0 auto}'
+            + '#adminModal .adq-btn{flex:1 1 0;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 10px;border-radius:12px;font:800 12px Onest,sans-serif;color:#fff;cursor:pointer;border:1px solid rgba(168,120,245,.55);background:rgba(120,44,233,.28)}'
+            + '#adminModal .adq-btn.pri{background:linear-gradient(180deg,#FF9F1C,#FE7600);border-color:rgba(255,214,150,.85);box-shadow:0 0 9px rgba(254,118,0,.45)}'
+            + '#adminModal .adq-card{flex:0 0 auto;padding:10px 12px;border-radius:14px;background:#1a0a30;border:1px solid rgba(120,44,233,.32);display:flex;flex-direction:column;gap:7px}'
+            + '#adminModal .adq-card.seen{opacity:.55}'
+            + '#adminModal .adq-head{display:flex;align-items:center;gap:6px}'
+            + '#adminModal .adq-chip{font:800 10px Onest,sans-serif;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:8px;background:rgba(120,44,233,.3);color:#C4A1FF}'
+            + '#adminModal .adq-chip.seen{background:rgba(255,255,255,.08);color:rgba(237,229,248,.75)}'
+            + '#adminModal .adq-num{margin-left:auto;font:800 11px Onest,sans-serif;color:rgba(196,161,255,.7)}'
+            + '#adminModal .adq-q{font:800 13px/1.35 Onest,sans-serif;color:#fff}'
+            + '#adminModal .adq-opts{display:grid;grid-template-columns:1fr 1fr;gap:5px}'
+            + '#adminModal .adq-o{display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid rgba(120,44,233,.25);font:600 11.5px/1.25 Onest,sans-serif;color:rgba(237,229,248,.85);min-width:0}'
+            + '#adminModal .adq-o b{flex:0 0 18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 10px Onest,sans-serif;color:#fff}'
+            + '#adminModal .adq-o.ok{background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.7);color:#fff;font-weight:800}'
+            + '#adminModal .adq-o.ok i{margin-left:auto;color:#22C55E}';
+        document.head.appendChild(st);
+    } catch (e) {}
+})();
 function quizAdminHtml() {
     const seen = quizSeen();
-    return `<div class="adm-sum"><span>Вопросов в базе / уже показано</span><b>${QUIZ_QUESTIONS.length} / ${seen.length}</b></div>`
-        + `<div style="display:flex;gap:8px;margin:8px 0 10px"><button type="button" class="adm-chip-reset" data-q="reset"><i class="fa-solid fa-rotate-left"></i> Сбросить показанные</button>`
-        + `<button type="button" class="adm-chip-reset" data-q="portal"><i class="fa-solid fa-circle-nodes"></i> Портал сейчас</button></div>`
-        + QUIZ_QUESTIONS.map(q => `<div class="adm-row" style="display:block;opacity:${seen.indexOf(q.id) >= 0 ? 0.5 : 1}">`
-            + `<div style="font-size:10px;font-weight:800;color:#C4A1FF;text-transform:uppercase">${q.cat || ''}${seen.indexOf(q.id) >= 0 ? ' · уже был' : ''}</div>`
-            + `<div style="font-weight:800;margin:2px 0 4px">${q.question}</div>`
-            + `<div style="font-size:12px;line-height:1.5">` + QZ_LETTERS.filter(L => q.options[L] !== undefined).map(L => `<span style="color:${L === q.correct ? '#22C55E' : 'rgba(214,196,245,.85)'};font-weight:${L === q.correct ? 900 : 600}">${L}) ${q.options[L]}</span>`).join('<br>') + `</div></div>`).join('');
+    return `<div class="adm-sum"><span>Вопросов в базе / уже показано</span><b>${QUIZ_QUESTIONS.length} / ${seen.filter(id => QUIZ_QUESTIONS.some(q => q.id === id)).length}</b></div>`
+        + `<div class="adq-acts"><button type="button" class="adq-btn pri" data-q="portal"><i class="fa-solid fa-circle-nodes"></i>Портал сейчас</button>`
+        + `<button type="button" class="adq-btn" data-q="reset"><i class="fa-solid fa-rotate-left"></i>Сбросить показанные</button></div>`
+        + QUIZ_QUESTIONS.map((q, n) => {
+            const was = seen.indexOf(q.id) >= 0;
+            return `<div class="adq-card${was ? ' seen' : ''}"><div class="adq-head"><span class="adq-chip">${q.cat || 'Вопрос'}</span>${was ? '<span class="adq-chip seen">уже был</span>' : ''}<span class="adq-num">№${n + 1}</span></div>`
+                + `<div class="adq-q">${q.question}</div><div class="adq-opts">`
+                + QZ_LETTERS.filter(L => q.options[L] !== undefined).map(L => `<div class="adq-o${L === q.correct ? ' ok' : ''}"><b style="background:${QZ_BALL_COL[L]}">${L}</b><span>${q.options[L]}</span>${L === q.correct ? '<i class="fa-solid fa-check"></i>' : ''}</div>`).join('')
+                + `</div></div>`;
+        }).join('');
 }
