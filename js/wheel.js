@@ -10,6 +10,8 @@ const RL_PRIZES = {
                title: '6 ЖИЗНЕЙ', sub: 'Максимальный запас сердец', desc: 'Максимум сердец — 6. Полёт начинается с 4 из 6 сердец, остальные можно добрать в полёте.' },
     life:    { icon: 'fa-heart-circle-plus', col: '#EC4899', w: 22000, card: '+1', cardSub: 'жизнь',
                title: '+1 ЖИЗНЬ', sub: 'Бонус', desc: 'Дополнительное сердце уже добавлено к твоим жизням.' },
+    coins:   { icon: 'fa-coins', col: '#FFC53D', w: 5000, card: '500', cardSub: 'монет', coins: 500,
+               title: '500 МОНЕТ', sub: 'Редкий приз', desc: '500 монет уже в твоём кошельке — потрать их в лавке на попытки и бонусы.' },
     a1:      { icon: 'fa-rotate-right', col: '#FE7600', w: 30000, card: '+1', cardSub: 'попытка', attempts: 1,
                title: '+1 ПОПЫТКА', sub: 'Бонус', desc: 'Ещё одна попытка уже добавлена к твоим попыткам.' },
     bar:     { icon: 'fa-martini-glass-citrus', col: '#E056FD', w: 3000, card: '1 000 ₽', cardSub: 'сертификат<br>в бар',
@@ -29,13 +31,14 @@ const RL_BACK = {
     hearts: 'Максимум жизней становится 6. Полёт начинается с 4 из 6 сердец.',
     life: 'Плюс 1 жизнь: дополнительное сердце уже добавлено к твоим жизням.',
     a1: 'Плюс 1 попытка: она уже добавлена к твоим попыткам.',
+    coins: '500 монет уже в кошельке — загляни в лавку.',
     bar: 'Сертификат в бар на 1 000 ₽. Скоро здесь появится чат, где его забрать.',
     pass: 'Проходка на игру для одного человека. Скоро здесь появится чат, где её забрать.',
     pass4: 'Проходки на игру для 4 человек из твоей команды. Скоро здесь появится чат.',
     passTeam: 'Проходки на игру для всей команды — самый редкий приз. Скоро здесь появится чат.',
     discTeam: 'Скидка 50% на проходки для всей твоей команды. Скоро здесь появится чат.'
 };
-const RL_PATTERN = ['a1', 'hearts', 'bar', 'life', 'pass', 'stamina', 'a1', 'pass4', 'life', 'discTeam', 'hearts', 'a1', 'stamina', 'passTeam', 'life', 'bar'];
+const RL_PATTERN = ['a1', 'hearts', 'bar', 'life', 'coins', 'pass', 'stamina', 'a1', 'pass4', 'life', 'discTeam', 'hearts', 'coins', 'a1', 'stamina', 'passTeam', 'life', 'bar'];
 const RW_GAP = 14;     // промежуток между карточками
 let rouletteSpins = 0;   // попытки вращения рулетки: даются за победу и как приз «ещё одно вращение»
 const rw = { spinning: false, prize: null, pos: 0, pitch: 130, cw: 120, pool: [], N: 0, vw: 300, drag: null, vel: 0, resumeAt: 0, idleRAF: 0, lastT: 0 };
@@ -321,6 +324,7 @@ function claimRoulettePrize() {
     const p = RL_PRIZES[key];
     if (p.attempts) { attempts += p.attempts; updateAttemptsHUD(); }
     if (p.extraSpin) rouletteSpins += p.extraSpin;
+    if (p.coins && typeof coinsAdd === 'function') coinsAdd(p.coins);
     if (key === 'hearts') { startLives = Math.max(startLives, 4.0); maxLives = Math.max(maxLives, 6.0); updateLivesHUD(); }
     if (key === 'life') { const base = lives <= 0.5 ? startLives : lives; lives = Math.min(maxLives, base + 1); updateLivesHUD(); }
     if (key === 'stamina') { maxStamina += 20; stamina = maxStamina; updateStaminaHUD(); }

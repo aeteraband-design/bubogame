@@ -296,7 +296,7 @@ if (restartFromGameOverBtn) restartFromGameOverBtn.addEventListener('click', (e)
     e.stopPropagation();
     const modal = document.getElementById('gameOverModal');
     if (modal) modal.classList.add('hidden');
-    resetEntireGame();
+    resetEntireGame({ keepAttempts: true });
     startOrResumeFlight();
 });
 
