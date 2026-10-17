@@ -231,6 +231,24 @@ if (sfxVolumeSlider) {
     });
 }
 
+// верхняя панель в игре: по умолчанию жизни, перья и вопросы — слева, пауза и музыка — справа; тумблер в настройках меняет местами
+const HUD_SWAP_KEY = 'bubo_hud_swap';
+function hudSwapGet() { try { const v = localStorage.getItem(HUD_SWAP_KEY); return v === null ? true : v === '1'; } catch (e) { return true; } }
+function applyHudSwap() { const t = document.getElementById('topHud'); if (t) t.classList.toggle('hud-swap', hudSwapGet()); }
+applyHudSwap();
+{
+    const hb = document.getElementById('settingsHudSwapToggle'), ht = document.getElementById('settingsHudSwapThumb');
+    if (hb && ht) {
+        updateToggleVisual(hb, ht, hudSwapGet());
+        hb.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const on = !hudSwapGet();
+            try { localStorage.setItem(HUD_SWAP_KEY, on ? '1' : '0'); } catch (er) {}
+            updateToggleVisual(hb, ht, on); applyHudSwap();
+        });
+    }
+}
+
 if (settingsVibeToggle) {
     settingsVibeToggle.addEventListener('click', (e) => {
         e.stopPropagation();

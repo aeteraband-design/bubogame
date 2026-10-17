@@ -286,3 +286,9 @@
 #rouletteModal #rwWindow .rwp-head { margin-top: auto !important; }
 #rouletteModal #rwWindow .rw-spins-pill { margin-bottom: 0 !important; }
 #rouletteModal #rwWindow .rw-btns { margin-top: auto !important; padding-top: 14px; }
+
+/* верхняя панель зеркально: жизни/перья/вопросы слева (жизни у самого края), пауза и музыка справа (пауза у края) */
+#topHud.hud-swap { flex-direction: row-reverse; }
+#topHud.hud-swap > div { flex-direction: row-reverse; gap: calc(6px * var(--hk, 1)); }
+#topHud.hud-swap > div > * { margin-left: 0 !important; margin-right: 0 !important; }
+#topHud.hud-swap #topHudStats > * + * { margin-left: 0 !important; }
