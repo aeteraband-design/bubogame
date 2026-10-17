@@ -227,11 +227,15 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-ready{display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px 10px;border-radius:20px;background:linear-gradient(180deg,rgba(120,44,233,.2),rgba(120,44,233,.06));border:1px dashed rgba(168,120,245,.5);text-align:center}
 #qzWin .qz-ready .n{font-weight:900;font-size:13px;letter-spacing:.08em;color:#C4B5FD;text-transform:uppercase}
 #qzWin .qz-ready .t{font-weight:600;font-size:12px;color:#DDD6FE;line-height:1.4}
-#qzWin .qz-cnt.pop{animation:qzCntPop .7s cubic-bezier(.2,1.5,.4,1)}
-@keyframes qzCntPop{0%{transform:scale(1)}35%{transform:scale(1.3);text-shadow:0 0 12px #FFC53D}100%{transform:scale(1)}}
-.qz-gain{position:absolute;transform:translate(-50%,0);display:flex;align-items:center;gap:5px;font:900 18px Onest,sans-serif;color:#FFE08A;text-shadow:0 0 10px rgba(255,197,61,.9),0 2px 3px rgba(0,0,0,.4);pointer-events:none;z-index:3;white-space:nowrap;animation:qzGain 1.4s cubic-bezier(.2,.8,.3,1) forwards}
+#qzWin .qz-cnt.pop{animation:qzCntPop .6s cubic-bezier(.2,1.5,.4,1)}
+@keyframes qzCntPop{0%{transform:scale(1)}35%{transform:scale(1.18)}100%{transform:scale(1)}}
+#qzWin .qz-cnt.pop .qz-cn{background:linear-gradient(100deg,#FFD66B 0 35%,#FFFFFF 47%,#FFE9A8 53%,#FFD66B 65% 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:qzCnFlow 1.1s ease-out}
+@keyframes qzCnFlow{from{background-position:100% 0}to{background-position:0% 0}}
+#qzWin .qz-cnt.pop .qz-coin{animation:qzCoinFlip .8s ease-out}
+@keyframes qzCoinFlip{0%{transform:rotateY(0) scale(1)}40%{transform:rotateY(180deg) scale(1.25);box-shadow:0 0 14px #FFE08A,0 0 26px rgba(255,197,61,.7)}100%{transform:rotateY(360deg) scale(1)}}
+.qz-gain{position:absolute;transform:translate(-50%,0);display:flex;align-items:center;gap:5px;font:900 16px Onest,sans-serif;color:#FFE08A;text-shadow:0 0 10px rgba(255,197,61,.9),0 2px 3px rgba(0,0,0,.4);pointer-events:none;z-index:3;white-space:nowrap;animation:qzGain .9s cubic-bezier(.2,.8,.3,1) forwards}
 .qz-gain .qz-coin{width:20px;height:20px;font-size:10px}
-@keyframes qzGain{0%{opacity:0;transform:translate(-50%,10px) scale(.5)}18%{opacity:1;transform:translate(-50%,-14px) scale(1.15)}35%{transform:translate(-50%,-20px) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-44px) scale(.9)}}
+@keyframes qzGain{0%{opacity:0;transform:translate(-50%,8px) scale(.6)}25%{opacity:1;transform:translate(-50%,-4px) scale(1.12)}55%{opacity:1;transform:translate(-50%,-7px) scale(1)}100%{opacity:0;transform:translate(-50%,-11px) scale(.92)}}
 .qz-spark{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#FFE08A;box-shadow:0 0 8px #FFC53D;pointer-events:none;z-index:3;animation:qzSpark .75s ease-out forwards}
 @keyframes qzSpark{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
 .qz-plus{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;font:900 26px Onest,sans-serif;color:#FFD66B;text-shadow:0 0 14px rgba(255,197,61,.8);pointer-events:none;animation:qzPlus 1.2s ease-out forwards;z-index:3}
@@ -276,7 +280,7 @@ function qzProg(d, curIdx) {
         const r = d.res[i];
         dots += `<div class="qz-dot${r === 1 ? ' ok' : r === 0 ? ' bad' : i === curIdx ? ' cur' : ''}">${r === 1 ? '<i class="fa-solid fa-check"></i>' : r === 0 ? '<i class="fa-solid fa-xmark"></i>' : ''}</div>`;
     }
-    return `<div class="qz-prog"><div class="qz-dots">${dots}</div><div class="qz-cnt">${QZ_COIN}${d.earned}</div></div>`;
+    return `<div class="qz-prog"><div class="qz-dots">${dots}</div><div class="qz-cnt">${QZ_COIN}<span class="qz-cn">${d.earned}</span></div></div>`;
 }
 function qzUntilTomorrow() {
     const n = new Date(), t = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), s = Math.max(0, Math.floor((t - n) / 1000));
@@ -411,11 +415,11 @@ function qzGainFx(n) {
     const x = r.left - wr.left + r.width / 2, y = r.top - wr.top + w.scrollTop;
     c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop');
     const g = document.createElement('div'); g.className = 'qz-gain';
-    g.style.left = x + 'px'; g.style.top = y + 'px'; g.innerHTML = QZ_COIN + '+' + n;
-    w.appendChild(g); setTimeout(() => g.remove(), 1500);
+    g.style.left = x + 'px'; g.style.top = (y - 6) + 'px'; g.innerHTML = '+' + n;
+    w.appendChild(g); setTimeout(() => g.remove(), 950);
     for (let i = 0; i < 9; i++) {
         const s = document.createElement('i'); s.className = 'qz-spark';
-        const a = Math.PI * 2 * i / 9 + Math.random() * 0.4, d = 22 + Math.random() * 16;
+        const a = Math.PI * 2 * i / 9 + Math.random() * 0.4, d = 14 + Math.random() * 10;
         s.style.left = x + 'px'; s.style.top = (y + r.height / 2) + 'px';
         s.style.setProperty('--dx', (Math.cos(a) * d).toFixed(1) + 'px'); s.style.setProperty('--dy', (Math.sin(a) * d).toFixed(1) + 'px');
         w.appendChild(s); setTimeout(() => s.remove(), 800);
