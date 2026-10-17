@@ -773,7 +773,7 @@ function drawRoundedRect(x, y, w, h, r) {
 // Раньше блик обрезался по форме шляпки (clip) у каждой трубы каждый кадр — на телефоне это заметная нагрузка.
 function drawPipeCap(capX, capY, capW, capH, r, rimY, pw, red) {
     const devR = tokDevScale(ctx), hw = capW / 2 + 1, hh = capH / 2 + 1;
-    const spr = tokSprite(`cap|${red ? red : ''}|${pw}|${capW}|${capH}|${r}|${rimY}|${devR}`, devR, hw, hh, (g) => {
+    const spr = tokSprite(`cap2|${red ? red : ''}|${pw}|${capW}|${capH}|${r}|${rimY}|${devR}`, devR, hw, hh, (g) => {
         g.translate(-(capX + capW / 2), -capH / 2);
         const path = () => {
             g.beginPath();
@@ -800,6 +800,30 @@ function drawPipeCap(capX, capY, capW, capH, r, rimY, pw, red) {
         g.fillStyle = cg; path(); g.fill();
         g.strokeStyle = red === 'w' ? 'rgba(255, 210, 150, 0.35)' : red ? 'rgba(255, 140, 150, 0.3)' : 'rgba(255, 185, 110, 0.28)'; g.lineWidth = 0.8; g.stroke();
         g.save(); path(); g.clip();
+        // объём: шляпка — толстое кольцо. Верх ловит лунный свет, низ уходит в тень (как у цилиндра, лежащего на боку)
+        const vg = g.createLinearGradient(0, 0, 0, capH);
+        vg.addColorStop(0, 'rgba(255, 236, 190, 0.55)'); vg.addColorStop(0.16, 'rgba(255, 210, 140, 0.18)'); vg.addColorStop(0.42, 'rgba(255, 200, 120, 0)');
+        vg.addColorStop(0.62, 'rgba(70, 15, 0, 0)'); vg.addColorStop(0.86, 'rgba(70, 15, 0, 0.3)'); vg.addColorStop(1, 'rgba(45, 8, 0, 0.55)');
+        g.fillStyle = vg; g.fillRect(capX - 1, -1, capW + 2, capH + 2);
+        // торцы закругляются: края чуть темнее, у левого — слабый отражённый свет
+        const eg = g.createLinearGradient(capX, 0, capX + capW, 0);
+        eg.addColorStop(0, 'rgba(40, 6, 0, 0.45)'); eg.addColorStop(0.035, 'rgba(210, 140, 255, 0.28)'); eg.addColorStop(0.09, 'rgba(40, 6, 0, 0)');
+        eg.addColorStop(0.93, 'rgba(40, 6, 0, 0)'); eg.addColorStop(1, 'rgba(40, 6, 0, 0.5)');
+        g.fillStyle = eg; g.fillRect(capX - 1, -1, capW + 2, capH + 2);
+        // тонкая светлая кромка сверху и тёмная снизу
+        const tl = g.createLinearGradient(capX, 0, capX + capW, 0);
+        tl.addColorStop(0, 'rgba(255, 240, 210, 0.15)'); tl.addColorStop(0.7, 'rgba(255, 245, 220, 0.75)'); tl.addColorStop(0.85, 'rgba(255, 245, 220, 0.55)'); tl.addColorStop(1, 'rgba(255, 240, 210, 0.1)');
+        g.fillStyle = tl; g.fillRect(capX, 0.6, capW, 1.1);
+        g.fillStyle = 'rgba(50, 8, 0, 0.5)'; g.fillRect(capX, capH - 1.3, capW, 1.3);
+        // глянцевый блик справа, где светит луна
+        const sx = capX + capW * 0.76, sy = capH * 0.34;
+        const sp = g.createRadialGradient(sx, sy, 0, sx, sy, capW * 0.13);
+        sp.addColorStop(0, 'rgba(255, 252, 235, 0.75)'); sp.addColorStop(0.35, 'rgba(255, 230, 170, 0.3)'); sp.addColorStop(1, 'rgba(255, 220, 150, 0)');
+        g.save(); g.translate(sx, sy); g.scale(1, (capH * 0.32) / (capW * 0.13)); g.translate(-sx, -sy);
+        g.fillStyle = sp; g.beginPath(); g.arc(sx, sy, capW * 0.13, 0, Math.PI * 2); g.fill(); g.restore();
+        g.fillStyle = 'rgba(255, 255, 245, 0.55)'; g.beginPath(); g.ellipse(sx - capW * 0.02, sy - capH * 0.05, capW * 0.045, capH * 0.07, 0, 0, Math.PI * 2); g.fill();
+        // второй, слабый блик слева
+        g.fillStyle = 'rgba(255, 235, 200, 0.18)'; g.beginPath(); g.ellipse(capX + capW * 0.2, capH * 0.32, capW * 0.06, capH * 0.12, 0, 0, Math.PI * 2); g.fill();
         g.strokeStyle = rg; g.lineWidth = 1.8;
         g.beginPath(); g.moveTo(capX - 2, rimY); g.lineTo(capX + capW + 2, rimY); g.stroke();
         g.restore();
@@ -887,9 +911,15 @@ function drawPipe(pipe) {
         bs.addColorStop(1, 'transparent');
         // объём: луна светит справа сверху — узкий мягкий блик справа и затенение левого края
         const vol = ctx.createLinearGradient(0, 0, pipe.width, 0);
-        vol.addColorStop(0, 'rgba(8, 0, 20, 0.35)'); vol.addColorStop(0.16, 'rgba(8, 0, 20, 0)');
+        // слева у самого края — фиолетовый отражённый засвет (как на референсе), за ним тень; справа — блик и еле заметный лунный кант
+        vol.addColorStop(0, 'rgba(8, 0, 20, 0.3)'); vol.addColorStop(0.025, 'rgba(190, 120, 255, 0.1)'); vol.addColorStop(0.06, 'rgba(200, 135, 255, 0.34)');
+        vol.addColorStop(0.11, 'rgba(160, 90, 240, 0.08)'); vol.addColorStop(0.2, 'rgba(8, 0, 20, 0.06)'); vol.addColorStop(0.3, 'rgba(8, 0, 20, 0)');
         vol.addColorStop(0.64, 'rgba(255, 240, 255, 0)'); vol.addColorStop(0.75, 'rgba(255, 240, 255, 0.2)'); vol.addColorStop(0.83, 'rgba(255, 240, 255, 0)');
-        pgc = PIPE_GRADS[pipe.width] = { stem: sg, cap: cg, rim: rg, top: ts, bot: bs, vol };
+        vol.addColorStop(0.94, 'rgba(225, 210, 255, 0)'); vol.addColorStop(0.975, 'rgba(225, 210, 255, 0.14)'); vol.addColorStop(1, 'rgba(225, 210, 255, 0.04)');
+        // мягкое лунное свечение снаружи у правого края трубы
+        const halo = ctx.createLinearGradient(pipe.width, 0, pipe.width + 7, 0);
+        halo.addColorStop(0, 'rgba(210, 190, 255, 0.1)'); halo.addColorStop(1, 'rgba(210, 190, 255, 0)');
+        pgc = PIPE_GRADS[pipe.width] = { stem: sg, cap: cg, rim: rg, top: ts, bot: bs, vol, halo };
     }
     const stemGrad = pgc.stem, capGrad = pgc.cap, rimShineGrad = pgc.rim;
 
@@ -898,6 +928,7 @@ function drawPipe(pipe) {
     const pOv = camZoom < 0.999 ? Math.ceil(height * (1 - camZoom) * 0.6) + 4 : 0;   // запас за краем — только при отдалении камеры
     ctx.fillRect(0, -pOv, pipe.width, topStemH + pOv);
     ctx.fillStyle = pgc.vol; ctx.fillRect(0, -pOv, pipe.width, topStemH + pOv);
+    ctx.fillStyle = pgc.halo; ctx.fillRect(pipe.width, -pOv, 7, topStemH + pOv);
     for (let sy = topStemH - 95; sy > -pOv - 6; sy -= PIPE_SEAM_STEP) drawPipeSeam(pipe.width, sy);   // поперечные швы на болтах
 
     ctx.lineWidth = 0.8;
@@ -931,6 +962,7 @@ function drawPipe(pipe) {
     ctx.fillStyle = stemGrad;
     ctx.fillRect(0, bottomStemY, pipe.width, bottomStemH + pOv);
     ctx.fillStyle = pgc.vol; ctx.fillRect(0, bottomStemY, pipe.width, bottomStemH + pOv);
+    ctx.fillStyle = pgc.halo; ctx.fillRect(pipe.width, bottomStemY, 7, bottomStemH + pOv);
     for (let sy = bottomStemY + 95; sy < height + pOv + 6; sy += PIPE_SEAM_STEP) drawPipeSeam(pipe.width, sy);
 
     ctx.lineWidth = 0.8;
