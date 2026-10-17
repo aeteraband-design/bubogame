@@ -1,4 +1,5 @@
 function draw() {
+    if (typeof quizActive === 'function' && quizActive()) { quizDraw(); return; }   // квиз-мир: вид из-за спины совы
     ctx.setTransform(viewScale * renderScale * WORLD_K, 0, 0, viewScale * renderScale * WORLD_K, 0, 0);
     const df = currentDrunkFactor;
     if (df > 0.001) {
@@ -163,6 +164,7 @@ function drawScene() {
     drawCrystals();   // огненные шары «Опасных труб» — за трубами: выныривают из одной и скрываются в другой
     if (typeof drawWater === 'function') drawWater();   // потоки «Воды из труб» — тоже за трубами
     pipes.forEach(drawPipe);
+    if (typeof quizDrawPortal2D === 'function') quizDrawPortal2D();   // портал в квиз-мир — в проёме между трубами
     if (typeof drawWaterFront === 'function') drawWaterFront();   // пена и водяная пыль «Водонапора» — поверх труб
 
     items.forEach(it => {
@@ -381,6 +383,7 @@ function resetEntireGame(opts) {
     currentDifficultySqueeze = 0;
     pipesSinceTheme = 0; lastThemeKey = '';
     collected = { music: 0, logic: 0, kino: 0, series: 0, cartoons: 0, fun: 0 };
+    if (typeof quizResetProgress === 'function') quizResetProgress();   // новая игра: порталы квиза — снова с 10%
     resetSpecialTimers();
     if (typeof shazamReset === 'function') shazamReset(); shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal'; invulnerableTime = 0;
     if (typeof stormClearNow === 'function') stormClearNow();   // новая игра — с ясного неба

@@ -14,6 +14,7 @@
         { id: 'cold', name: 'Холод', icon: 'fa-snowflake' },
         { id: 'bonus', name: 'Бонусы', icon: 'fa-star' },
         { id: 'game', name: 'Игра', icon: 'fa-gamepad' },
+        { id: 'quiz', name: 'Вопросы', icon: 'fa-circle-question' },
         { id: 'test', name: 'Тест', icon: 'fa-flask' }
     ];
     const ROWS = {
@@ -149,8 +150,9 @@
         }
     }
     function renderBody() {
-        const rb = $('admReset'); if (rb) rb.style.display = tab === 'test' ? 'none' : '';
+        const rb = $('admReset'); if (rb) rb.style.display = (tab === 'test' || tab === 'quiz') ? 'none' : '';
         if (tab === 'test') { renderTest(); return; }
+        if (tab === 'quiz') { prevStop(); body.innerHTML = typeof quizAdminHtml === 'function' ? quizAdminHtml() : ''; body.scrollTop = 0; return; }
         prevStop();
         const rows = tab === 'themes' ? themeRows() : ROWS[tab];
         let h = '';
@@ -220,6 +222,12 @@
         });
     };
 
+    // вкладка «Вопросы»: сброс показанных и портал прямо сейчас (для проверки)
+    body.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-q]'); if (!b || tab !== 'quiz') return;
+        if (b.dataset.q === 'reset') { quizResetSeen(); renderBody(); }
+        else if (b.dataset.q === 'portal') { quizForcePortal(); close(); }
+    });
     body.addEventListener('click', (e) => {
         const c = e.target.closest('[data-e]'); if (!c || tab !== 'test') return;
         const k = c.dataset.e;

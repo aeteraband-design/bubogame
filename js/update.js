@@ -29,6 +29,7 @@ function update() {
     shazamUpdate();
     if (!gameActive) return;
     frame += dtMult;
+    if (typeof quizActive === 'function' && quizActive()) { quizUpdate(); return; }   // квиз-мир: свой полёт, обычный мир стоит
 
     if (infiniteStaminaTime > 0) {
         infiniteStaminaTime -= dtMult;
@@ -251,7 +252,8 @@ function update() {
     }
 
     crystalUpdate(currentSpeed, activeSqueeze);   // эффект «Опасные трубы»
-    if (typeof waterUpdate === 'function') waterUpdate(currentSpeed, activeSqueeze);   // эффект «Вода из труб»
+    if (typeof waterUpdate === 'function') waterUpdate(currentSpeed, activeSqueeze);
+    if (typeof quizUpdate2D === 'function') quizUpdate2D(currentSpeed, activeSqueeze);   // портал в квиз-мир   // эффект «Вода из труб»
     for (let i = items.length - 1; i >= 0; i--) {
         const it = items[i];
 
@@ -446,6 +448,7 @@ function update() {
                 const maxLimit = cat.count;
                 if (collected[it.type] < maxLimit) {
                     collected[it.type]++;
+                    if (typeof quizOnTheme === 'function') quizOnTheme();   // каждые 10% тем — портал в квиз-мир
                     crystalOnTheme();   // редкий значок «Опасные трубы»/«Водонапор»: считаем собранные темы
                     const labelText = collected[it.type] === maxLimit ? `+1 ${cat.name} (${maxLimit}/${maxLimit})` : `+1 ${cat.name}`;
                     it.pendingFX = { target: it.type, text: labelText, color: cat.color, icon: cat.faClass };
@@ -755,6 +758,7 @@ function resetOvereatDrunk() {
     iceCreamCount = 0; freezeTime = 0; currentFreezeFactor = 0;
     crystalReset();
     if (typeof waterReset === 'function') waterReset();
+    if (typeof QZ !== 'undefined' && QZ.on) { QZ.on = false; quizUI(false); }
     owl.spinAngle = 0; owl.spinVel = 0;
     owl.drunkOffset = 0;
     owl.radius = owl.baseRadius;
