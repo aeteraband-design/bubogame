@@ -66,18 +66,32 @@ function drawWater() {
     for (const s of waterStreams) {
         const p = s.pipe; if (!p) continue;
         const x = p.x + s.fx * p.width, y0 = p.top + s.sq, w = s.w;
-        // у кромки трубы набухают капли
-        if (s.on) {
-            const nb = Math.max(3, Math.round(w / 11));
-            for (let k = 0; k < nb; k++) {
-                const u = ((t * 0.04 + k * 0.37 + s.ph) % 1);
-                waterDrawDrop(x + ((k + 0.5) / nb - 0.5) * w * 0.9, y0 + 1 + u * 4, 1.6 + u * 1.8, 0, 1.15);
-            }
+        // по кромке трубы — тонкая плёнка воды, из неё набухают и срываются капли
+        if (s.on || s.drops.length) {
+            const fa = s.on ? 1 : Math.min(1, s.drops.length / 20);
+            const fg = ctx.createLinearGradient(0, y0, 0, y0 + 4);
+            fg.addColorStop(0, `rgba(120, 210, 250, ${0.75 * fa})`); fg.addColorStop(1, 'rgba(120, 210, 250, 0)');
+            ctx.fillStyle = fg; ctx.fillRect(x - w * 0.5, y0, w, 4);
+            ctx.fillStyle = `rgba(225, 248, 255, ${0.6 * fa})`; ctx.fillRect(x - w * 0.46, y0, w * 0.92, 0.9);
         }
         for (const d of s.drops) {
             const dx = p.x + d.x + Math.sin(t * 0.18 + d.ph) * 0.7;
-            if (d.b) waterDrawBubble(dx, d.y, d.r);
-            else waterDrawDrop(dx, d.y, d.r, d.vx * 0.15, 1 + Math.min(0.35, d.vy * 0.03) + 0.06 * Math.sin(t * 0.3 + d.ph));
+            const g0 = d.h > 0 ? 1 - d.h / d.h0 : 1;   // висящая капля ещё набухает
+            const rr = d.r * (0.35 + 0.65 * g0);
+            if (d.b) waterDrawBubble(dx, d.y, rr);
+            else waterDrawDrop(dx, d.y, rr, d.h > 0 ? 0 : d.vx * 0.15, d.h > 0 ? 0.9 + 0.35 * g0 : 1 + Math.min(0.3, d.vy * 0.025) + 0.05 * Math.sin(t * 0.3 + d.ph));
+        }
+        // внизу на шляпке трубы — шапка пены из пузырьков, пока туда льётся вода
+        if (s.hitK > 0.03) {
+            const yb = height - (p.bottom + s.sq), nf = Math.round(w / 3.2);
+            ctx.globalAlpha = Math.min(1, s.hitK * 1.2);
+            for (let k = 0; k < nf; k++) {
+                const h1 = Math.sin(k * 12.9898 + s.ph) * 43758.5453, rnd = h1 - Math.floor(h1);
+                const bx = x + ((k + 0.5) / nf - 0.5) * w * 1.05 + Math.sin(t * 0.21 + k * 1.7) * 1.2;
+                const by = yb - 1.5 - rnd * 5 * s.hitK - Math.abs(Math.sin(t * 0.17 + k * 2.3)) * 1.5;
+                waterDrawBubble(bx, by, 0.9 + rnd * 1.4);
+            }
+            ctx.globalAlpha = 1;
         }
     }
     ctx.restore();
@@ -97,10 +111,10 @@ function drawWater() {
 })();
 
 // брызги: капли-слёзы, летящие веером, вперемешку с пузырьками; на них действует тяжесть
-function waterSplash(x, y, n, dir, spread, power) {
+function waterSplash(x, y, n, dir, spread, power, bubK) {
     for (let i = 0; i < n; i++) {
         if (particles.length >= 520) return;
-        const a2 = dir + (Math.random() - 0.5) * spread, v = power * (0.5 + Math.random() * 0.8), bub = Math.random() < 0.3;
+        const a2 = dir + (Math.random() - 0.5) * spread, v = power * (0.5 + Math.random() * 0.8), bub = Math.random() < (bubK === undefined ? 0.4 : bubK);
         particles.push({ kind: bub ? 'wbub' : 'wdrop', x: x + (Math.random() - 0.5) * 4, y: y + (Math.random() - 0.5) * 4,
             vx: Math.cos(a2) * v, vy: Math.sin(a2) * v, grav: bub ? 0.03 : 0.16, alpha: 0.95, decay: 0.028 + Math.random() * 0.02,
             size: bub ? 1.2 + Math.random() * 2 : 1.1 + Math.random() * 1.9 });
@@ -135,7 +149,7 @@ function waterUpdate(speed, squeeze) {
     // поток во всю ширину трубы; со сложностью — гуще, быстрее и сильнее давит
     const WK = Math.min(0.96, 0.82 + 0.03 * lv), DENS = 0.04 + lv * 0.011, V0 = 2.6 + lv * 0.5, G = 0.22;
     // импульс одной капли: подобран так, чтобы весь поток давил на сову примерно с силой PUSH за кадр
-    const PUSH = 0.1 + 0.07 * lv;
+    const PUSH = 0.045 + 0.06 * lv;   // в начале — лёгкий напор, с каждым уровнем сильнее
     const R = shieldTime > 0 ? owl.radius * 1.4 : owl.radius * 0.95;
     let hits = 0, imp = 0;
     for (let i = waterStreams.length - 1; i >= 0; i--) {
@@ -150,19 +164,21 @@ function waterUpdate(speed, squeeze) {
             while (s.acc >= 1) {
                 s.acc -= 1;
                 const u = (Math.random() + Math.random() - 1);   // гуще к центру
-                const b = Math.random() < 0.22;   // вперемешку с каплями летят пузырьки
-                s.drops.push({ x: cx + (Math.random() - 0.5) * W * 0.6 + u * W * 0.2, y: y0 + 2 + Math.random() * 4, vx: u * 0.14 + (Math.random() - 0.5) * 0.1, vy: (V0 + Math.random() * 1.2) * (b ? 0.7 : 1), r: b ? 1.3 + Math.random() * 1.8 : 1.5 + Math.random() * 2.8, b, ph: Math.random() * 6.28 });
+                const b = Math.random() < 0.42;   // капли вперемешку с пузырьками; капли крупнее пузырьков
+                const h0 = b ? 1 : 5 + Math.random() * 6;   // капля сначала висит на кромке и набухает, потом срывается
+                s.drops.push({ x: cx + (Math.random() - 0.5) * W * 0.7 + u * W * 0.15, y: y0 + 1.5, vx: u * 0.12 + (Math.random() - 0.5) * 0.08, vy: (V0 * 0.45 + Math.random() * 0.8) * (b ? 0.8 : 1), r: b ? 0.9 + Math.random() * 1.1 : 2.2 + Math.random() * 1.8, b, ph: Math.random() * 6.28, h: h0, h0 });
             }
         }
         let hb = 0;
         const D = s.drops;
         for (let k = D.length - 1; k >= 0; k--) {
             const d = D[k];
+            if (d.h > 0) { d.h -= dt; d.y = y0 + 1.5 + d.r * 0.35 * (1 - d.h / d.h0); continue; }   // висит на кромке
             d.vy += G * (d.b ? 0.55 : 1) * dt; d.x += d.vx * dt; d.y += d.vy * dt;
             // удар о нижнюю трубу: капля разбивается на брызги
             if (d.y >= yb) {
                 hb++;
-                if (Math.random() < 0.55) waterSplash(p.x + d.x, yb - 1, 1 + (d.r > 2.8 ? 1 : 0), -Math.PI / 2, 2.4, 2.2 + d.vy * 0.15);   // капля разбивается в брызги и пузырьки
+                if (Math.random() < 0.4) waterSplash(p.x + d.x, yb - 3, 1, -Math.PI / 2, 2.2, 1.2 + d.vy * 0.1, 0.6);   // капля разбивается в брызги и пузырьки
                 D.splice(k, 1); continue;
             }
             // удар о сову
