@@ -68,9 +68,10 @@ function drawWater() {
         const x = p.x + s.fx * p.width, y0 = p.top + s.sq, w = s.w;
         // у кромки трубы набухают капли
         if (s.on) {
-            for (let k = 0; k < 3; k++) {
-                const u = ((t * 0.04 + k / 3 + s.ph) % 1);
-                waterDrawDrop(x + (k - 1) * w * 0.33, y0 + 1 + u * 4, 1.6 + u * 1.8, 0, 1.15);
+            const nb = Math.max(3, Math.round(w / 11));
+            for (let k = 0; k < nb; k++) {
+                const u = ((t * 0.04 + k * 0.37 + s.ph) % 1);
+                waterDrawDrop(x + ((k + 0.5) / nb - 0.5) * w * 0.9, y0 + 1 + u * 4, 1.6 + u * 1.8, 0, 1.15);
             }
         }
         for (const d of s.drops) {
@@ -131,13 +132,15 @@ function waterUpdate(speed, squeeze) {
         }
     }
     // со сложностью поток шире, капель больше и бьют они сильнее: Суперлайт — тонкая струйка, Хард+ — широкий тяжёлый поток
-    const W = 14 + lv * 4.5, RATE = 0.9 + lv * 0.38, V0 = 2.6 + lv * 0.45, G = 0.22;
+    // поток во всю ширину трубы; со сложностью — гуще, быстрее и сильнее давит
+    const WK = Math.min(0.96, 0.82 + 0.03 * lv), DENS = 0.04 + lv * 0.011, V0 = 2.6 + lv * 0.5, G = 0.22;
     // импульс одной капли: подобран так, чтобы весь поток давил на сову примерно с силой PUSH за кадр
-    const PUSH = 0.1 + 0.07 * lv, IMP = PUSH / (RATE * 0.55);
+    const PUSH = 0.1 + 0.07 * lv;
     const R = shieldTime > 0 ? owl.radius * 1.4 : owl.radius * 0.95;
-    let hits = 0;
+    let hits = 0, imp = 0;
     for (let i = waterStreams.length - 1; i >= 0; i--) {
         const s = waterStreams[i], p = s.pipe;
+        const W = p.width * WK, RATE = DENS * W, IMP = PUSH / (RATE * Math.min(1, 2 * R / W) * 0.9);
         s.sq = squeeze; s.w = W;
         if (s.on && waterTime <= 0) s.on = false;
         const cx = p.width * s.fx, y0 = p.top + squeeze, yb = height - (p.bottom + squeeze);
@@ -148,7 +151,7 @@ function waterUpdate(speed, squeeze) {
                 s.acc -= 1;
                 const u = (Math.random() + Math.random() - 1);   // гуще к центру
                 const b = Math.random() < 0.22;   // вперемешку с каплями летят пузырьки
-                s.drops.push({ x: cx + u * W * 0.45, y: y0 + 2 + Math.random() * 4, vx: u * 0.14 + (Math.random() - 0.5) * 0.1, vy: (V0 + Math.random() * 1.2) * (b ? 0.7 : 1), r: b ? 1.3 + Math.random() * 1.8 : 1.5 + Math.random() * 2.8, b, ph: Math.random() * 6.28 });
+                s.drops.push({ x: cx + (Math.random() - 0.5) * W * 0.6 + u * W * 0.2, y: y0 + 2 + Math.random() * 4, vx: u * 0.14 + (Math.random() - 0.5) * 0.1, vy: (V0 + Math.random() * 1.2) * (b ? 0.7 : 1), r: b ? 1.3 + Math.random() * 1.8 : 1.5 + Math.random() * 2.8, b, ph: Math.random() * 6.28 });
             }
         }
         let hb = 0;
@@ -167,7 +170,7 @@ function waterUpdate(speed, squeeze) {
                 const wx = p.x + d.x, ddx = wx - owl.x, ddy = d.y - owl.y;
                 if (ddx * ddx + ddy * ddy < R * R) {
                     if (shz) { if (Math.random() < 0.15) waterSplash(wx, d.y, 1, -Math.PI / 2, 2.5, 2); continue; }   // ШАЗАМ пробивает воду
-                    hits++;
+                    hits++; imp += IMP;
                     // капля разлетается веером от тела: брызги в стороны и вверх
                     const out = Math.atan2(ddy, ddx);
                     waterSplash(wx, d.y, d.b ? 1 : 2 + (d.r > 3 ? 1 : 0), out < 0 ? out : -Math.PI / 2 + (ddx >= 0 ? 0.9 : -0.9), 1.6, 2.6 + d.vy * 0.25);
@@ -181,7 +184,7 @@ function waterUpdate(speed, squeeze) {
     }
     // напор: каждая капля толкает сову вниз
     if (hits && gameActive && !shz) {
-        let k = IMP * hits;
+        let k = imp;
         if (shieldTime > 0) k *= 0.55;            // щит тоже сносит, но слабее
         if (speedBoostTime > 0) k *= 0.4;         // на ускорении сова режет воду
         owl.vy = Math.min(4 + lv * 0.6, owl.vy + k);
