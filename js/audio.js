@@ -11,10 +11,17 @@ const Haptics = {
     },
     // На iPhone вибрацию даёт нажатие на скрытый переключатель <input type="checkbox" switch>; работает в Safari iOS 17.4 и новее.
     // Надёжнее всего срабатывает в момент касания экрана (взмах, нажатие кнопок); из игровых событий — по возможности
+    // Важно: iOS разрешает отклик только в «настоящем» жесте — когда палец ОТПУСКАЕТ экран (touchend / pointerup / click),
+    // а не в момент касания (touchstart). Взмах совы срабатывает на касании, поэтому отклик откладываем до отпускания пальца —
+    // это доли секунды. Отложенный отклик старше 0,8 с выбрасываем, чтобы не дрожало невпопад.
     iosVibrate(pattern) {
         const arr = Array.isArray(pattern) ? pattern : [pattern];
         if (this._gesture) this.iosPlay(arr);
-        else this._pending = arr;   // Safari даёт отклик только в момент касания экрана — запоминаем и сыграем при ближайшем касании
+        else {
+            // из нескольких отложенных оставляем самый сильный (удар важнее взмаха)
+            const sum = (a) => a.reduce((x, y) => x + y, 0);
+            if (!this._pending || sum(arr) >= sum(this._pending) || performance.now() - this._pendingT > 800) { this._pending = arr; this._pendingT = performance.now(); }
+        }
     },
     iosPlay(arr) {
         let t = 0;
@@ -51,10 +58,14 @@ const Haptics = {
     death() { this.vibrate([120, 50, 160, 50, 240]); }
 };
 
-// iPhone: отмечаем момент касания (только тогда Safari разрешает отклик) и проигрываем отложенный
-['pointerdown', 'touchstart', 'click'].forEach((ev) => document.addEventListener(ev, () => {
+// iPhone: отклик разрешён только в жесте, который iOS считает «активацией» — отпускание пальца (touchend / pointerup), клик, клавиша.
+// В этот момент проигрываем отложенный отклик; на время обработки события разрешаем и прямые вызовы.
+['touchend', 'pointerup', 'click', 'keydown'].forEach((ev) => document.addEventListener(ev, () => {
     Haptics._gesture = true;
-    if (Haptics._pending) { const pd = Haptics._pending; Haptics._pending = null; Haptics.iosPlay(pd); }
+    if (Haptics._pending) {
+        const pd = Haptics._pending; Haptics._pending = null;
+        if (performance.now() - (Haptics._pendingT || 0) < 800) Haptics.iosPlay(pd);
+    }
     setTimeout(() => { Haptics._gesture = false; }, 0);
 }, true));
 
