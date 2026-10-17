@@ -130,14 +130,14 @@ function qzShuffleOrd() { const a = QZ_LETTERS.slice(); for (let i = 3; i > 0; i
 #openAdminBtn.rw-menu-btn{zoom:var(--ui-zoom,1);top:100px!important;right:14px!important;width:36px!important;height:36px!important;border-radius:12px!important;font-size:12px!important}
 #quizModal{position:absolute;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(20,3,38,.25);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
 #quizModal.hidden{display:none}
-#qzWin{position:relative;width:100%;max-width:360px;max-height:100%;overflow-y:auto;border-radius:26px;padding:16px 16px 18px;display:flex;flex-direction:column;gap:12px;font-family:Onest,sans-serif;color:#fff;
+#qzWin{position:relative;width:100%;max-width:360px;max-height:100%;overflow-y:auto;border-radius:28px;padding:22px 18px 22px;display:flex;flex-direction:column;gap:16px;font-family:Onest,sans-serif;color:#fff;
  background:radial-gradient(120% 60% at 50% -10%,rgba(56,189,248,.16),transparent 60%),radial-gradient(90% 50% at 100% 110%,rgba(254,118,0,.12),transparent 60%),rgba(29,9,54,.97);border:1px solid rgba(120,44,233,.6);box-shadow:0 10px 40px rgba(0,0,0,.5)}
 #qzWin .qz-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#C4A1FF;background:rgba(120,44,233,.18);border:1px solid rgba(120,44,233,.4);font-size:13px;cursor:pointer}
 #qzWin .qz-head{display:flex;align-items:center;gap:10px;padding-right:38px}
 #qzWin .qz-emb{flex:0 0 40px;height:40px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;background:linear-gradient(135deg,#FE7600,#782CE9);border:1px solid rgba(255,255,255,.3);box-shadow:0 0 16px rgba(254,118,0,.45)}
 #qzWin .qz-title{font-weight:900;font-size:18px;letter-spacing:-.01em;line-height:1}
-#qzWin .qz-sub{font-weight:600;font-size:11px;color:#C4B5FD;margin-top:3px;line-height:1.25}
-#qzWin .qz-prog{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:14px;background:rgba(20,3,38,.7);border:1px solid rgba(120,44,233,.3)}
+#qzWin .qz-sub{font-weight:600;font-size:11.5px;color:#C4B5FD;margin-top:5px;line-height:1.35}
+#qzWin .qz-prog{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(20,3,38,.7);border:1px solid rgba(120,44,233,.3)}
 #qzWin .qz-dots{display:flex;gap:6px}
 #qzWin .qz-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(196,161,255,.3);color:transparent;transition:all .25s}
 #qzWin .qz-dot.cur{border-color:#FE7600;box-shadow:0 0 8px rgba(254,118,0,.6)}
@@ -145,25 +145,25 @@ function qzShuffleOrd() { const a = QZ_LETTERS.slice(); for (let i = 3; i > 0; i
 #qzWin .qz-dot.bad{background:#EF4444;border-color:#FCA5A5;color:#fff}
 #qzWin .qz-cnt{font-weight:800;font-size:11px;color:#C4B5FD;white-space:nowrap}
 #qzWin .qz-cnt b{color:#fff;font-weight:900}
-#qzWin .qz-card{padding:14px 14px 12px;border-radius:18px;background:linear-gradient(180deg,rgba(120,44,233,.22),rgba(120,44,233,.08));border:1px solid rgba(168,120,245,.45);display:flex;flex-direction:column;gap:9px}
+#qzWin .qz-card{padding:16px 14px 14px;border-radius:20px;background:linear-gradient(180deg,rgba(120,44,233,.22),rgba(120,44,233,.08));border:1px solid rgba(168,120,245,.45);display:flex;flex-direction:column;gap:14px}
 #qzWin .qz-meta{display:flex;align-items:center;gap:6px}
 #qzWin .qz-chip{font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:8px;background:rgba(56,189,248,.16);color:#7DD3FC;border:1px solid rgba(56,189,248,.35)}
 #qzWin .qz-n{margin-left:auto;font-weight:800;font-size:11px;color:rgba(196,161,255,.75)}
-#qzWin .qz-q{font-weight:900;font-size:16px;line-height:1.3}
-#qzWin .qz-opts{display:flex;flex-direction:column;gap:6px}
-#qzWin .qz-o{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:13px;background:rgba(20,3,38,.55);border:1px solid rgba(120,44,233,.3);font-weight:700;font-size:13px;line-height:1.25;transition:all .25s}
-#qzWin .qz-o b{flex:0 0 24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+#qzWin .qz-q{font-weight:900;font-size:17px;line-height:1.35;padding:2px 2px 0}
+#qzWin .qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+#qzWin .qz-o{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:74px;padding:10px 11px 11px;border-radius:15px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:13px;line-height:1.3;transition:all .25s}
+#qzWin .qz-o b{flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
 #qzWin .qz-o.ok{background:rgba(34,197,94,.2);border-color:#22C55E}
 #qzWin .qz-o.bad{background:rgba(239,68,68,.2);border-color:#EF4444}
 #qzWin .qz-o.dim{opacity:.45}
-#qzWin .qz-abcd{display:flex;justify-content:space-between;gap:8px;padding:2px 4px 0}
+#qzWin .qz-abcd{display:flex;justify-content:space-between;gap:8px;padding:6px 6px 2px}
 #qzWin .qz-ball{flex:0 0 auto;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:26px;color:#fff;cursor:pointer;border:2px solid rgba(255,255,255,.55);
  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 42%),var(--c);box-shadow:0 0 14px var(--c),inset 0 -5px 0 rgba(0,0,0,.22);text-shadow:0 2px 3px rgba(0,0,0,.3);transition:transform .15s,opacity .25s,filter .25s}
 #qzWin .qz-ball:active{transform:scale(.92)}
 #qzWin .qz-abcd.lock .qz-ball{pointer-events:none;opacity:.35;filter:saturate(.4)}
 #qzWin .qz-abcd.lock .qz-ball.ok{opacity:1;filter:none;--c:#22C55E!important;transform:scale(1.08)}
 #qzWin .qz-abcd.lock .qz-ball.bad{opacity:1;filter:none;--c:#EF4444!important}
-#qzWin .qz-res{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:6px 4px 2px}
+#qzWin .qz-res{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:8px 4px 4px}
 #qzWin .qz-big{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;margin:4px 0}
 #qzWin .qz-big.win{background:radial-gradient(circle at 35% 30%,#FFD27A,#FE7600 60%,#C2410C);box-shadow:0 0 30px rgba(254,118,0,.65);animation:qzPop .6s cubic-bezier(.2,1.6,.4,1)}
 #qzWin .qz-big.lose{background:radial-gradient(circle at 35% 30%,#C4A1FF,#782CE9 60%,#4C1D95);box-shadow:0 0 22px rgba(120,44,233,.55)}
@@ -173,8 +173,8 @@ function qzShuffleOrd() { const a = QZ_LETTERS.slice(); for (let i = 3; i > 0; i
 #qzWin .qz-rt.win{color:#FE7600}
 #qzWin .qz-rd{font-weight:600;font-size:12.5px;line-height:1.4;color:#DDD6FE}
 #qzWin .qz-rd b{color:#fff;font-weight:900}
-#qzWin .qz-rules{display:flex;flex-direction:column;gap:6px;width:100%;margin:2px 0}
-#qzWin .qz-rule{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:13px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.3);font-weight:700;font-size:12px;text-align:left}
+#qzWin .qz-rules{display:flex;flex-direction:column;gap:9px;width:100%;margin:4px 0}
+#qzWin .qz-rule{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:13px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.3);font-weight:700;font-size:12px;text-align:left}
 #qzWin .qz-rule i{flex:0 0 22px;text-align:center;color:#38BDF8;font-size:14px}
 #qzWin .qz-btn{width:100%;padding:13px 10px;border-radius:16px;font-weight:900;font-size:13px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
 #qzWin .qz-btn.sec{background:rgba(45,14,82,.9);border:1px solid rgba(168,85,247,.5);color:#fff;font-size:11px;padding:10px}

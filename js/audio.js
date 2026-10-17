@@ -335,21 +335,22 @@ const AudioFX = {
         osc.connect(lp); lp.connect(g); g.connect(this.sfxGain || ctx.destination);
         osc.start(t); osc.stop(t + dur + 0.05);
     },
-    playPipesHeat() {     // «Опасные трубы» включились: трубы накаляются — нарастающее огненное «вуух», низкий гул и треск искр
+    playPipesHeat() {     // «Опасные трубы» включились: глухой «вух» поджига газа, короткая тревожная двухнотная сирена и треск огня
         try {
             if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime + 0.02;
-            this._noiseBand(t, 1.1, 280, 1600, 1.1, 0.11, 0.55);
-            this._toneSweep(t, 1.1, 55, 120, 300, 900, 0.06, 'sawtooth', 0.5);
-            this._toneSweep(t + 0.1, 0.9, 220, 440, 900, 2400, 0.025, 'triangle', 0.6);
-            this._crackle(t + 0.35, 0.8, 1800, 4200, 0.07, 1.4);
+            this._noiseBand(t, 0.45, 180, 1100, 0.8, 0.13, 0.12);               // поджиг: «вух»
+            this._toneSweep(t, 0.38, 120, 42, 500, 160, 0.09, 'sine', 0.05);     // низкий удар пламени
+            this._toneSweep(t + 0.16, 0.16, 622, 622, 2200, 1600, 0.035, 'triangle', 0.15);   // тревога: «ти-ту»
+            this._toneSweep(t + 0.34, 0.24, 466, 440, 2000, 900, 0.035, 'triangle', 0.12);
+            this._crackle(t + 0.2, 0.6, 2200, 3600, 0.05, 1.5);                 // потрескивание огня
         } catch (e) {}
     },
-    playPipesCool() {     // эффект кончился: трубы остывают — шипение пара сверху вниз и затихающий гул
+    playPipesCool() {     // эффект кончился: короткое «пшш» пара и мягкий светлый звон облегчения
         try {
             if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime + 0.02;
-            this._noiseBand(t, 1.2, 2600, 500, 1.4, 0.07, 0.12);
-            this._toneSweep(t, 1.0, 120, 55, 700, 200, 0.045, 'sawtooth', 0.15);
-            this._crackle(t, 0.45, 2200, 900, 0.04, 1.2);
+            this._noiseBand(t, 0.55, 3400, 1400, 1.2, 0.06, 0.08);
+            this._toneSweep(t + 0.18, 0.3, 523, 523, 2600, 1800, 0.03, 'triangle', 0.1);
+            this._toneSweep(t + 0.32, 0.5, 784, 784, 3000, 1800, 0.028, 'triangle', 0.08);
         } catch (e) {}
     },
     playWaterStart() {    // «Водонапор» включился: в трубах зашумела вода — нарастающий плеск и бульканье
@@ -1199,6 +1200,20 @@ const AudioFX = {
         try {
             if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime;
             this._buzz(t, 0.5, 220, 55, 0.14, 2600); this._crackle(t, 0.45, 5000, 900, 0.2, 1); this._noiseBand(t, 0.9, 500, 2400, 1.2, 0.1, 0.15);
+        } catch (e) {}
+    },
+    playShazamWarn(n) {   // ШАЗАМ скоро кончится: короткий электрический «дзинь», с каждым разом ниже и тише (n = 3, 2, 1)
+        try {
+            if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime;
+            const f = [0, 700, 820, 960][n] || 800, v = 0.03 + 0.012 * n;
+            this._toneSweep(t, 0.16, f, f * 0.92, 3200, 1800, v, 'square', 0.06);
+            this._crackle(t, 0.12, 3600, 2400, 0.05, 2);
+        } catch (e) {}
+    },
+    playShazamPowerDown() {   // заряд ШАЗАМа иссяк: гул уходит вниз, как выключающийся мотор
+        try {
+            if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime;
+            this._buzz(t, 0.9, 340, 55, 0.07, 1400); this._toneSweep(t, 0.9, 520, 90, 2200, 300, 0.035, 'sawtooth', 0.05);
         } catch (e) {}
     },
     playShazamEnd() {     // эффект закончился: разряд стихает

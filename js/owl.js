@@ -74,7 +74,8 @@ const owl = {
         const flapKind = (isSnow && isBubble) ? 'both' : (isSnow ? 'snow' : (isBubble ? 'bubble' : null));
         spawnFlapParticles(this.x, this.y, flapKind, particles);
         if (typeof SHZ !== 'undefined' && SHZ.state === 'active') {
-            for (let i = 0; i < 3; i++) particles.push({ x: this.x - 12, y: this.y + 6 + Math.random() * 6, vx: -2 - Math.random() * 1.5, vy: 0.4 + Math.random() * 0.8, color: i ? '#FF9A3C' : '#FFD08A', alpha: 0.85, size: 2.6 + Math.random() * 1.4, decay: 0.05, isStar: true });
+            const wk = 1 - 0.55 * (SHZ.warn || 0);   // к концу ШАЗАМа искры мельче и их меньше
+            for (let i = 0; i < (wk > 0.7 ? 3 : 2); i++) particles.push({ x: this.x - 12, y: this.y + 6 + Math.random() * 6, vx: -2 - Math.random() * 1.5, vy: 0.4 + Math.random() * 0.8, color: i ? '#FF9A3C' : '#FFD08A', alpha: 0.85, size: (2.6 + Math.random() * 1.4) * wk, decay: 0.05, isStar: true });
         }
     },
     update() {

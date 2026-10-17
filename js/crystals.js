@@ -79,14 +79,13 @@ function drawCrystals() {
     try {
         const st = document.createElement('style');
         const C = '.buff-tag[data-key="crystal"],.fly-label-tag[data-key="crystal"]';
-        // фон как у остальных плашек; в цвет — только контур, текст и иконка, по ним идёт мягкий перелив.
+        // фон как у остальных плашек; цвет ровный, без мигания. Иногда по плашке мягко проходит белый перелив.
         // Свою animation у плашки не трогаем (у улетающей подсказки это её полёт)
         st.textContent = '#buffBar .buff-tag[data-key="crystal"]{position:relative}'
-            + C.split(',').map(x => x + '::before').join(',') + '{content:"";position:absolute;inset:-1.5px;border-radius:inherit;border:1.5px solid #FF4A3D;pointer-events:none;animation:dngB 1.8s ease-in-out infinite}'
-            + C.split(',').map(x => x + '>span').join(',') + '{animation:dngT 1.8s ease-in-out infinite}'
-            + C.split(',').map(x => x + ' i').join(',') + '{animation:dngT 1.8s ease-in-out infinite}'
-            + '@keyframes dngB{0%,100%{border-color:#FF4A3D;opacity:.55}50%{border-color:#FFC9AE;opacity:1}}'
-            + '@keyframes dngT{0%,100%{color:#FF6A55;filter:none}50%{color:#FFC9AE;filter:brightness(1.18)}}';
+            + C + '{overflow:hidden}'
+            + C.split(',').map(x => x + '::after').join(',') + '{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;'
+            + 'background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.26) 50%,transparent 58%) no-repeat;background-size:300% 100%;animation:dngSheen 5s ease-in-out infinite}'
+            + '@keyframes dngSheen{0%{background-position:0 0}38%{background-position:100% 0}100%{background-position:100% 0}}';
         document.head.appendChild(st);
     } catch (e) {}
 })();

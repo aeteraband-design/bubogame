@@ -178,14 +178,13 @@ function drawWaterFront() {
     try {
         const st = document.createElement('style');
         const W = '.buff-tag[data-key="water"],.fly-label-tag[data-key="water"]';
-        // фон как у остальных плашек; в цвет — только контур, текст и иконка, по ним идёт мягкий перелив.
+        // фон как у остальных плашек; цвет ровный, без мигания. Иногда по плашке мягко проходит белый перелив.
         // Свою animation у плашки не трогаем (у улетающей подсказки это её полёт)
         st.textContent = '#buffBar .buff-tag[data-key="water"]{position:relative}'
-            + W.split(',').map(x => x + '::before').join(',') + '{content:"";position:absolute;inset:-1.5px;border-radius:inherit;border:1.5px solid #38BDF8;pointer-events:none;animation:wtrB 1.8s ease-in-out infinite}'
-            + W.split(',').map(x => x + '>span').join(',') + '{animation:wtrT 1.8s ease-in-out infinite}'
-            + W.split(',').map(x => x + ' i').join(',') + '{animation:wtrT 1.8s ease-in-out infinite}'
-            + '@keyframes wtrB{0%,100%{border-color:#38BDF8;opacity:.55}50%{border-color:#E6F7FF;opacity:1}}'
-            + '@keyframes wtrT{0%,100%{color:#7DD3FC;filter:none}50%{color:#E6F7FF;filter:brightness(1.18)}}';
+            + W + '{overflow:hidden}'
+            + W.split(',').map(x => x + '::after').join(',') + '{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;'
+            + 'background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.26) 50%,transparent 58%) no-repeat;background-size:300% 100%;animation:wtrSheen 5s ease-in-out infinite}'
+            + '@keyframes wtrSheen{0%{background-position:0 0}38%{background-position:100% 0}100%{background-position:100% 0}}';
         document.head.appendChild(st);
     } catch (e) {}
 })();

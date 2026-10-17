@@ -5,7 +5,8 @@
 // а все значки впереди сами притягиваются к ней, как магнитом.
 const SHZ = {
     count: 0, state: 'idle', t: 0, left: 0, armUntil: 0,
-    INTRO: 60, DUR: 900, FADE: 150,   // FADE — после 15 с ещё 2,5 с эффект гаснет (молнии затухают), сова всё ещё пролетает трубы
+    INTRO: 60, DUR: 900, FADE: 150, WARN: 180,   // WARN — за 3 с до конца эффект начинает гаснуть и предупреждает звуком
+      // FADE — после 15 с ещё 2,5 с эффект гаснет (молнии затухают), сова всё ещё пролетает трубы
                   // кадры (60 в секунду): 1 с зарядки и 15 с эффекта
     k: 0, shieldK: 0, blur: 0, slow: 1, dx: 0,
     depthBack: 0, depthFront: 0, sideN: 0,
@@ -181,16 +182,26 @@ function shazamUpdate() {
     }
     SHZ.slow = 1; SHZ.dx = 0;   // сова не замирает и не дёргается
     if (SHZ.state === 'active') {
+        const wl0 = SHZ.left - SHZ.FADE;
         SHZ.left -= dtMult; SHZ.t += dtMult;
+        const wl = SHZ.left - SHZ.FADE;
+        // последние 3 секунды: звук-предупреждение каждую секунду, на нуле — «выключение»
+        for (const n of [3, 2, 1]) if (wl0 > n * 60 && wl <= n * 60) { try { AudioFX.playShazamWarn(n); } catch (e) {} SHZ.blink = 1; }
+        if (wl0 > 0 && wl <= 0) { try { AudioFX.playShazamPowerDown(); } catch (e) {} }
         if (SHZ.left <= 0) shazamEnd();
     }
+    // предупреждение: 0 → 1 за последние 3 с перед угасанием
+    SHZ.warn = SHZ.state === 'active' ? Math.max(0, Math.min(1, 1 - (SHZ.left - SHZ.FADE) / SHZ.WARN)) : 0;
+    SHZ.blink = Math.max(0, (SHZ.blink || 0) - dtMult / 14);
 
     // плавные величины для рисования
     const on = SHZ.state === 'active', intro = SHZ.state === 'intro';
     const ease = (v, tgt, sp) => v + (tgt - v) * Math.min(1, sp * dtMult);
-    SHZ.k = ease(SHZ.k, on ? Math.min(1, SHZ.left / SHZ.FADE) : (intro ? 0.35 + 0.65 * Math.min(1, SHZ.t / SHZ.INTRO) : 0), on || intro ? 0.08 : 0.04);
+    // к концу свечение слабеет и на каждой из последних секунд коротко «проседает» — видно, что заряд кончается
+    const kOn = Math.min(1, SHZ.left / SHZ.FADE) * (1 - 0.4 * SHZ.warn) * (1 - 0.6 * SHZ.blink);
+    SHZ.k = ease(SHZ.k, on ? kOn : (intro ? 0.35 + 0.65 * Math.min(1, SHZ.t / SHZ.INTRO) : 0), SHZ.warn > 0 ? 0.3 : (on || intro ? 0.08 : 0.04));
     SHZ.shieldK = 0;   // щит в ШАЗАМе не меняется
-    SHZ.blur = ease(SHZ.blur, on ? (SHZ.t < 50 ? 1 : 0.55 * Math.min(1, SHZ.left / SHZ.FADE)) : 0, on ? 0.1 : 0.04);
+    SHZ.blur = ease(SHZ.blur, on ? (SHZ.t < 50 ? 1 : 0.55 * Math.min(1, SHZ.left / SHZ.FADE) * (1 - 0.6 * SHZ.warn)) : 0, on ? 0.1 : 0.04);
 
     // трубы: по очереди — за трубой, перед трубой
     SHZ.depthBack = 0; SHZ.depthFront = 0;
