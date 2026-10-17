@@ -59,92 +59,65 @@ function waterDrawPart(pt) {
     ctx.globalAlpha = 1;
 }
 // ---------- живой поток ----------
-// Вода — это несколько струй-лент. Каждый кадр из-под шляпки трубы в каждую струю добавляется новая точка воды; точки падают
-// под тяжестью и несут с собой покачивание, поэтому по ленте бегут волны. Ленты соединяют соседние точки: сверху толстые и сплошные,
-// ниже утончаются и рвутся на капли-слёзы и пузырьки. Если на пути сова — точки разбиваются о неё, и лента под ней обрывается.
-// Внизу вода бьёт в шляпку: шапка пены, брызги и облачка водяной пыли.
+// Вода выходит прямо из трубы: капли-слёзы и пузырьки рождаются внутри шляпки (их прикрывает труба) и вываливаются наружу,
+// летят вниз, покачиваясь. Между ними проносятся тонкие штрихи, как у дождя, — видно, куда и как быстро несётся вода.
+// Сова — препятствие: всё, что в неё попадает, разбивается брызгами. Внизу на шляпке — шапка пены и водяная пыль
+// (их рисуем поверх труб, чтобы ничего не обрезалось).
 let __wMist = null;
 function waterMistSprite() {
     if (__wMist) return __wMist;
     const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
     const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-    gr.addColorStop(0, 'rgba(215, 245, 255, 0.55)'); gr.addColorStop(0.45, 'rgba(160, 220, 250, 0.22)'); gr.addColorStop(1, 'rgba(160, 220, 250, 0)');
+    gr.addColorStop(0, 'rgba(215, 245, 255, 0.5)'); gr.addColorStop(0.5, 'rgba(160, 220, 250, 0.18)'); gr.addColorStop(1, 'rgba(160, 220, 250, 0)');
     g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
     return (__wMist = c);
 }
+// за трубами: штрихи потока, капли, пузырьки
 function drawWater() {
     if (!waterStreams.length) return;
     const t = (typeof frame === 'number' ? frame : 0);
     ctx.save();
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    const mist = waterMistSprite();
+    ctx.lineCap = 'round';
     for (const s of waterStreams) {
         const p = s.pipe; if (!p) continue;
-        const x = p.x + s.fx * p.width, y0 = p.top + s.sq, w = s.w, span = Math.max(1, s.breakY - y0);
-        // водяная пыль — позади всего
-        for (const m of s.mist) {
-            ctx.globalAlpha = Math.max(0, m.a) * 0.9;
-            ctx.drawImage(mist, p.x + m.x - m.r, m.y - m.r, m.r * 2, m.r * 2);
+        // штрихи-«дождь» внутри потока: светлая голова, хвост растворяется вверх
+        for (const k of s.streaks) {
+            const x = p.x + k.x, L = k.len;
+            const g = ctx.createLinearGradient(0, k.y - L, 0, k.y);
+            g.addColorStop(0, 'rgba(170, 230, 255, 0)'); g.addColorStop(1, `rgba(200, 240, 255, ${k.a})`);
+            ctx.strokeStyle = g; ctx.lineWidth = k.w;
+            ctx.beginPath(); ctx.moveTo(x, k.y - L); ctx.lineTo(x, k.y); ctx.stroke();
         }
-        ctx.globalAlpha = 1;
-        // мягкое голубое свечение вокруг сплошной части потока
-        if (s.flow > 0.02) {
-            const gl = ctx.createLinearGradient(x - w * 0.7, 0, x + w * 0.7, 0);
-            gl.addColorStop(0, 'rgba(90, 200, 250, 0)'); gl.addColorStop(0.5, `rgba(90, 200, 250, ${0.13 * s.flow})`); gl.addColorStop(1, 'rgba(90, 200, 250, 0)');
-            ctx.fillStyle = gl; ctx.save();
-            ctx.beginPath(); ctx.moveTo(x - w * 0.5, y0); ctx.lineTo(x + w * 0.5, y0); ctx.lineTo(x + w * 0.75, s.breakY + 30); ctx.lineTo(x - w * 0.75, s.breakY + 30); ctx.closePath();
-            ctx.clip(); ctx.fillRect(x - w, y0, w * 2, s.breakY + 30 - y0); ctx.restore();
-        }
-        // ленты: три толщины (сверху толще) × два прохода — тело и светлая бегущая сердцевина
-        for (let band = 0; band < 3; band++) {
-            const lo = band / 3, hi = (band + 1) / 3, wid = (3.2 - band * 0.9) * s.th;
-            ctx.beginPath();
-            for (const st of s.strands) {
-                const P = st.pts;
-                for (let i = 1; i < P.length; i++) {
-                    const a1 = P[i - 1], a2 = P[i]; if (a1.dead || a2.dead) continue;
-                    const u = (a2.y - y0) / span; if (u < lo || u >= hi) continue;
-                    if (a2.y - a1.y > 18 || Math.abs(a2.x - a1.x) > 6) continue;   // разрыв ленты
-                    ctx.moveTo(p.x + a1.x, a1.y); ctx.lineTo(p.x + a2.x, a2.y);
-                }
-            }
-            ctx.strokeStyle = `rgba(48, 150, 225, ${0.6 - band * 0.1})`; ctx.lineWidth = wid; ctx.stroke();
-            ctx.strokeStyle = `rgba(150, 225, 255, ${0.75 - band * 0.12})`; ctx.lineWidth = wid * 0.55; ctx.stroke();
-            ctx.save();
-            ctx.setLineDash([5 + band * 2, 9 + band * 3]); ctx.lineDashOffset = -t * (5 + band);
-            ctx.strokeStyle = `rgba(255, 255, 255, ${0.7 - band * 0.15})`; ctx.lineWidth = Math.max(0.6, wid * 0.22); ctx.stroke();
-            ctx.restore();
-        }
-        // выход воды из трубы: выпуклый «язык» под шляпкой, из него начинаются ленты
-        if (s.flow > 0.02) {
-            const bh = (3 + 1.2 * Math.sin(t * 0.2 + s.ph)) * s.flow;
-            const mg = ctx.createLinearGradient(0, y0 - 1, 0, y0 + bh + 2);
-            mg.addColorStop(0, `rgba(205, 245, 255, ${0.95 * s.flow})`); mg.addColorStop(1, `rgba(70, 175, 235, ${0.75 * s.flow})`);
-            ctx.fillStyle = mg;
-            ctx.beginPath(); ctx.moveTo(x - w * 0.5, y0 - 1);
-            ctx.quadraticCurveTo(x - w * 0.42, y0 + bh, x, y0 + bh + 1);
-            ctx.quadraticCurveTo(x + w * 0.42, y0 + bh, x + w * 0.5, y0 - 1);
-            ctx.closePath(); ctx.fill();
-            ctx.fillStyle = `rgba(255, 255, 255, ${0.55 * s.flow})`; ctx.fillRect(x - w * 0.3, y0, w * 0.6, 0.9);
-        }
-        // капли и пузырьки, на которые распались ленты
         for (const d of s.drops) {
             const dx = p.x + d.x + Math.sin(t * 0.18 + d.ph) * 0.6;
             if (d.b) waterDrawBubble(dx, d.y, d.r);
             else waterDrawDrop(dx, d.y, d.r, d.vx * 0.15, 1 + Math.min(0.3, d.vy * 0.025) + 0.05 * Math.sin(t * 0.3 + d.ph));
         }
-        // внизу на шляпке трубы — шапка пены из пузырьков
+    }
+    ctx.restore();
+}
+// поверх труб: шапка пены на нижней шляпке и водяная пыль
+function drawWaterFront() {
+    if (!waterStreams.length) return;
+    const t = (typeof frame === 'number' ? frame : 0);
+    const mist = waterMistSprite();
+    ctx.save();
+    for (const s of waterStreams) {
+        const p = s.pipe; if (!p) continue;
+        const x = p.x + s.fx * p.width, w = s.w;
+        for (const m of s.mist) {
+            ctx.globalAlpha = Math.max(0, m.a);
+            ctx.drawImage(mist, p.x + m.x - m.r, m.y - m.r, m.r * 2, m.r * 2);
+        }
+        ctx.globalAlpha = 1;
         if (s.hitK > 0.03) {
-            const yb = height - (p.bottom + s.sq), nf = Math.round(w / 3);
+            const yb = height - (p.bottom + s.sq), nf = Math.round(w / 2.6);
             ctx.globalAlpha = Math.min(1, s.hitK * 1.2);
-            const fg = ctx.createLinearGradient(0, yb - 7, 0, yb);
-            fg.addColorStop(0, 'rgba(150, 225, 255, 0)'); fg.addColorStop(1, 'rgba(150, 225, 255, 0.55)');
-            ctx.fillStyle = fg; ctx.fillRect(x - w * 0.6, yb - 7, w * 1.2, 7);
             for (let k = 0; k < nf; k++) {
                 const h1 = Math.sin(k * 12.9898 + s.ph) * 43758.5453, rnd = h1 - Math.floor(h1);
-                const bx = x + ((k + 0.5) / nf - 0.5) * w * 1.1 + Math.sin(t * 0.21 + k * 1.7) * 1.2;
-                const by = yb - 1.5 - rnd * 6 * s.hitK - Math.abs(Math.sin(t * 0.17 + k * 2.3)) * 1.6;
-                waterDrawBubble(bx, by, 0.9 + rnd * 1.5);
+                const bx = x + ((k + 0.5) / nf - 0.5) * w * 1.08 + Math.sin(t * 0.21 + k * 1.7) * 1.2;
+                const by = yb - 1 - rnd * 6 * s.hitK - Math.abs(Math.sin(t * 0.17 + k * 2.3)) * 1.6;
+                waterDrawBubble(bx, by, 0.8 + rnd * 1.5);
             }
             ctx.globalAlpha = 1;
         }
@@ -189,7 +162,6 @@ function waterUpdate(speed, squeeze) {
     const dt = dtMult, shz = typeof shazamBusy === 'function' && shazamBusy();
     if (shz) waterTime = 0;
     let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {}
-    const t = (typeof frame === 'number' ? frame : 0);
     if (waterTime > 0) {
         waterTime -= dt;
         if (waterTime <= 0 && !shz) { try { AudioFX.playWaterEnd(); } catch (e) {} }
@@ -197,109 +169,82 @@ function waterUpdate(speed, squeeze) {
             if (p.x + p.width < -40 || p.x > width + 40) continue;
             if (p._wId !== WATERFX.id) {
                 p._wId = WATERFX.id;
-                waterStreams.push({ pipe: p, fx: 0.5, on: true, ph: Math.random() * 6.28, sq: squeeze, strands: [], drops: [], mist: [], hitK: 0, flow: 0, th: 1, breakY: 0, acc: 0 });
+                waterStreams.push({ pipe: p, fx: 0.5, on: true, ph: Math.random() * 6.28, sq: squeeze, drops: [], streaks: [], mist: [], hitK: 0, acc: 0, sacc: 0 });
             }
         }
     }
-    // поток во всю ширину трубы; со сложностью — больше струй, быстрее и сильнее давит
-    const WK = Math.min(0.96, 0.82 + 0.03 * lv), V0 = 2.4 + lv * 0.45, G = 0.2;
+    // поток во всю ширину трубы; со сложностью — гуще, быстрее и сильнее давит
+    const WK = Math.min(0.96, 0.82 + 0.03 * lv), DENS = 0.05 + lv * 0.012, V0 = 2.6 + lv * 0.45, G = 0.22;
     const PUSH = 0.045 + 0.06 * lv;   // в начале — лёгкий напор, с каждым уровнем сильнее
     const R = shieldTime > 0 ? owl.radius * 1.4 : owl.radius * 0.95;
     let imp = 0, hits = 0;
     for (let i = waterStreams.length - 1; i >= 0; i--) {
         const s = waterStreams[i], p = s.pipe;
-        const W = p.width * WK;
+        const W = p.width * WK, RATE = DENS * W, IMP = PUSH / (RATE * Math.min(1, 2 * R / W) * 1.8);
         s.sq = squeeze; s.w = W;
         if (s.on && waterTime <= 0) s.on = false;
-        s.flow += ((s.on ? 1 : 0) - s.flow) * Math.min(1, 0.12 * dt);
-        s.th = 0.85 + lv * 0.07;
-        const cx = p.width * s.fx, y0 = p.top + squeeze, yb = height - (p.bottom + squeeze), gap = Math.max(20, yb - y0);
-        s.breakY = y0 + gap * (0.42 + 0.04 * lv);   // ниже этой линии ленты рвутся на капли
-        // струи: их число растёт с шириной и уровнем
-        const ns = Math.max(4, Math.round(W / (8.5 - lv * 0.5)));
-        while (s.strands.length < ns) s.strands.push({ off: 0, ph: Math.random() * 6.28, pts: [] });
-        const IMP = PUSH / (ns * Math.min(1, 2 * R / W) * 0.85);
-        // новые точки воды у кромки — по одной в каждую струю за кадр
+        const cx = p.width * s.fx, y0 = p.top + squeeze, yb = height - (p.bottom + squeeze);
         if (s.on) {
-            s.acc += dt;
+            // капли и пузырьки рождаются внутри трубы, над краем шляпки — наружу они выходят уже целыми
+            s.acc += RATE * dt;
             while (s.acc >= 1) {
                 s.acc -= 1;
-                for (let k = 0; k < s.strands.length; k++) {
-                    const st = s.strands[k], u = (k + 0.5) / s.strands.length - 0.5;
-                    const wob = Math.sin(t * 0.09 + st.ph) * 1.6 + Math.sin(t * 0.23 + st.ph * 2) * 0.7;
-                    st.pts.push({ x: cx + u * W * 0.86 + wob, y: y0 + 1, vx: u * 0.22 + (Math.random() - 0.5) * 0.05, vy: V0 * (0.85 + Math.random() * 0.2) });
-                }
+                const b = Math.random() < 0.45;
+                s.drops.push({ x: cx + (Math.random() - 0.5) * W, y: y0 - 4 - Math.random() * 10, vx: (Math.random() - 0.5) * 0.18, vy: V0 * (0.55 + Math.random() * 0.5) * (b ? 0.85 : 1), r: b ? 0.9 + Math.random() * 1.3 : 2 + Math.random() * 1.9, b, ph: Math.random() * 6.28 });
+            }
+            // штрихи «дождя» в потоке
+            s.sacc += (0.5 + lv * 0.15) * dt;
+            while (s.sacc >= 1) {
+                s.sacc -= 1;
+                s.streaks.push({ x: cx + (Math.random() - 0.5) * W * 0.95, y: y0 - Math.random() * 6, vy: V0 * 2 + 3 + Math.random() * 3, len: 10 + Math.random() * 14, w: 0.8 + Math.random() * 0.7, a: 0.35 + Math.random() * 0.3 });
             }
         }
-        // точки падают; ниже линии разрыва превращаются в капли и пузырьки
-        for (const st of s.strands) {
-            const P = st.pts;
-            for (let k = P.length - 1; k >= 0; k--) {
-                const d = P[k];
-                d.vy += G * dt; d.x += d.vx * dt; d.y += d.vy * dt;
-                if (d.y >= s.breakY + Math.sin(k * 1.7 + st.ph) * 10) {
-                    if (d.dead) { P.splice(k, 1); continue; }
-                    const r = Math.random();
-                    if (r < 0.3) s.drops.push({ x: d.x, y: d.y, vx: d.vx, vy: d.vy, r: 1.9 + Math.random() * 1.8, b: false, ph: Math.random() * 6.28 });
-                    else if (r < 0.5) s.drops.push({ x: d.x, y: d.y, vx: d.vx * 0.6, vy: d.vy * 0.75, r: 0.9 + Math.random() * 1.2, b: true, ph: Math.random() * 6.28 });
-                    if (Math.random() < 0.02 && s.mist.length < 14) s.mist.push({ x: d.x, y: d.y, r: 8 + Math.random() * 8, a: 0.25, vy: -0.15 });
-                    P.splice(k, 1); continue;
-                }
-                if (gameActive && !d.dead) {
-                    const wx = p.x + d.x, ddx = wx - owl.x, ddy = d.y - owl.y;
-                    if (ddx * ddx + ddy * ddy < R * R) {
-                        if (shz) { if (Math.random() < 0.05) waterSplash(wx, d.y, 1, -Math.PI / 2, 2.5, 2); continue; }   // ШАЗАМ пробивает воду
-                        hits++; imp += IMP;
-                        const out = Math.atan2(ddy, ddx);
-                        if (Math.random() < 0.45) waterSplash(wx, d.y, 1, out < 0 ? out : -Math.PI / 2 + (ddx >= 0 ? 0.9 : -0.9), 1.6, 2.4 + d.vy * 0.25);
-                        if (Math.random() < 0.04 && s.mist.length < 14) s.mist.push({ x: d.x, y: d.y, r: 7 + Math.random() * 6, a: 0.3, vy: -0.2 });
-                        if (shieldTime <= 0 && Math.random() < 0.5) waterWetOwl(wx, d.y);
-                        d.dead = true;   // лента под совой обрывается
-                    }
-                }
-            }
-        }
-        // капли и пузырьки летят дальше; о нижнюю трубу разбиваются
         let hb = 0;
         const D = s.drops;
         for (let k = D.length - 1; k >= 0; k--) {
             const d = D[k];
-            d.vy += G * (d.b ? 0.55 : 1) * dt; d.x += d.vx * dt; d.y += d.vy * dt;
+            d.vy += G * (d.b ? 0.6 : 1) * dt; d.x += d.vx * dt; d.y += d.vy * dt;
             if (d.y >= yb) {
                 hb++;
                 if (Math.random() < 0.35) waterSplash(p.x + d.x, yb - 3, 1, -Math.PI / 2, 2.2, 1.2 + d.vy * 0.1, 0.6);
-                if (Math.random() < 0.06 && s.mist.length < 14) s.mist.push({ x: d.x + (Math.random() - 0.5) * 10, y: yb - 4, r: 9 + Math.random() * 10, a: 0.35, vy: -0.25 - Math.random() * 0.2 });
+                if (Math.random() < 0.05 && s.mist.length < 12) s.mist.push({ x: d.x + (Math.random() - 0.5) * 10, y: yb - 8, r: 9 + Math.random() * 8, a: 0.3, vy: -0.22 - Math.random() * 0.2 });
                 D.splice(k, 1); continue;
             }
             if (gameActive) {
                 const wx = p.x + d.x, ddx = wx - owl.x, ddy = d.y - owl.y;
                 if (ddx * ddx + ddy * ddy < R * R) {
-                    if (shz) continue;
-                    hits++; imp += IMP * 0.8;
+                    if (shz) { if (Math.random() < 0.1) waterSplash(wx, d.y, 1, -Math.PI / 2, 2.5, 2); continue; }   // ШАЗАМ пробивает воду
+                    hits++; imp += IMP;
                     const out = Math.atan2(ddy, ddx);
-                    waterSplash(wx, d.y, d.b ? 1 : 2, out < 0 ? out : -Math.PI / 2 + (ddx >= 0 ? 0.9 : -0.9), 1.6, 2.6 + d.vy * 0.25);
+                    waterSplash(wx, d.y, d.b ? 1 : 2, out < 0 ? out : -Math.PI / 2 + (ddx >= 0 ? 0.9 : -0.9), 1.6, 2.4 + d.vy * 0.25);
+                    if (Math.random() < 0.03 && s.mist.length < 12) s.mist.push({ x: d.x, y: d.y, r: 7 + Math.random() * 6, a: 0.28, vy: -0.2 });
                     if (shieldTime <= 0) waterWetOwl(wx, d.y);
                     D.splice(k, 1); continue;
                 }
             }
         }
+        // штрихи летят быстрее капель; о сову и нижнюю трубу просто гаснут
+        for (let k = s.streaks.length - 1; k >= 0; k--) {
+            const m = s.streaks[k];
+            m.y += m.vy * dt;
+            let gone = m.y - m.len > yb;
+            if (!gone && m.y > yb) m.len = Math.max(0, m.len - (m.y - yb)), m.y = yb;
+            if (!gone && gameActive && !shz) { const ddx = p.x + m.x - owl.x, ddy = m.y - owl.y; if (ddx * ddx + ddy * ddy < R * R) gone = true; }
+            if (gone || m.len <= 0) s.streaks.splice(k, 1);
+        }
         s.hitK += ((hb > 0 ? 1 : 0) - s.hitK) * Math.min(1, 0.15 * dt);
-        // водяная пыль: поднимается, расплывается и тает
         for (let k = s.mist.length - 1; k >= 0; k--) {
             const m = s.mist[k];
-            m.y += m.vy * dt; m.r += 0.25 * dt; m.a -= 0.006 * dt; m.x += Math.sin(t * 0.03 + k) * 0.1 * dt;
+            m.y += m.vy * dt; m.r += 0.22 * dt; m.a -= 0.005 * dt;
             if (m.a <= 0) s.mist.splice(k, 1);
         }
-        let live = D.length + s.mist.length;
-        for (const st of s.strands) live += st.pts.length;
-        if ((!s.on && !live) || p.x + p.width < -60) { waterStreams.splice(i, 1); continue; }
+        if ((!s.on && !D.length && !s.streaks.length && !s.mist.length) || p.x + p.width < -60) { waterStreams.splice(i, 1); continue; }
     }
-    // напор: каждая струйка, попавшая в сову, толкает её вниз
     if (hits && gameActive && !shz) {
         let k = imp;
         if (shieldTime > 0) k *= 0.55;            // щит тоже сносит, но слабее
         if (speedBoostTime > 0) k *= 0.4;         // на ускорении сова режет воду
         owl.vy = Math.min(4 + lv * 0.6, owl.vy + k);
-        if (owl.vy < 0) owl.vy *= Math.max(0.85, 1 - 0.01 * hits * (speedBoostTime > 0 ? 0.4 : 1));   // взлёт сквозь воду гасится
+        if (owl.vy < 0) owl.vy *= Math.max(0.85, 1 - 0.012 * hits * (speedBoostTime > 0 ? 0.4 : 1));   // взлёт сквозь воду гасится
     }
 }

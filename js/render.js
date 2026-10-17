@@ -163,6 +163,7 @@ function drawScene() {
     drawCrystals();   // огненные шары «Опасных труб» — за трубами: выныривают из одной и скрываются в другой
     if (typeof drawWater === 'function') drawWater();   // потоки «Воды из труб» — тоже за трубами
     pipes.forEach(drawPipe);
+    if (typeof drawWaterFront === 'function') drawWaterFront();   // пена и водяная пыль «Водонапора» — поверх труб
 
     items.forEach(it => {
         if ((it.type === 'stamina' || it.type === 'infinite') && it.trail && it.trail.length > 2) {
