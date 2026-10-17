@@ -183,6 +183,7 @@ function closeShop(e) {
     try { updateHUDAll(); } catch (er) {}
 }
 function shopSyncBtn() {
+    const mc = document.getElementById('menuCoinsN'); if (mc) mc.textContent = String(coinsGet());
     const b = document.getElementById('openShopBtn'); if (!b) return;
     const c = coinsGet(); b.classList.toggle('has-c', c >= Math.min(...SHOP_ITEMS.map(i => i.price)));
 }
@@ -210,4 +211,24 @@ function shopSyncBtn() {
     try { new MutationObserver(kick).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class', 'style'], childList: true }); } catch (e) {}
     setInterval(sync, 500);
     sync();
+})();
+
+// Монеты в левом верхнем углу главного меню (нажатие — лавка). Админка спрятана: открывается касанием тремя пальцами
+// по экрану меню (на компьютере — Ctrl+Shift+A)
+(function () {
+    const st = document.createElement('style');
+    st.textContent = '#openAdminBtn{display:none!important}'
+        + '#menuCoins{position:absolute;z-index:6;zoom:var(--ui-zoom,1);top:12px;left:14px;height:36px;display:flex;align-items:center;gap:7px;padding:0 12px 0 7px;border-radius:12px;'
+        + 'background:rgba(29,9,54,.72);border:1px solid rgba(255,197,61,.55);box-shadow:0 0 10px rgba(255,197,61,.22);font:900 14px Onest,sans-serif;color:#FFD66B;cursor:pointer}'
+        + '#menuCoins:active{transform:scale(.95)}'
+        + '#menuCoins .mc-coin{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:10px;color:#7C4A00;background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);box-shadow:0 0 8px rgba(255,197,61,.6),inset 0 -1.5px 0 rgba(0,0,0,.2)}';
+    document.head.appendChild(st);
+    const mc = document.getElementById('menuCoins');
+    if (mc) mc.addEventListener('click', (e) => { e.stopPropagation(); openShop(); });
+    shopSyncBtn();
+    setInterval(shopSyncBtn, 2000);
+    const openAdm = () => { const b = document.getElementById('openAdminBtn'); if (b) b.click(); };
+    const ss = document.getElementById('startScreen');
+    if (ss) ss.addEventListener('touchstart', (e) => { if (e.touches && e.touches.length >= 3) { e.preventDefault(); openAdm(); } }, { passive: false });
+    window.addEventListener('keydown', (e) => { if (e.ctrlKey && e.shiftKey && (e.code === 'KeyA')) { e.preventDefault(); openAdm(); } });
 })();
