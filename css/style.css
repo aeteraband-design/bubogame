@@ -1216,10 +1216,10 @@
     box-shadow: rgba(0, 0, 0, 0.3) 0px 6px 14px !important;
 }
 
-#openRouletteBtn.rw-menu-btn.has-spins {
-    color: rgb(254, 118, 0) !important;
-    border-color: rgb(254, 118, 0) !important;
-    box-shadow: rgba(254, 118, 0, 0.5) 0px 0px 12px !important;
+#openRouletteBtn.rw-menu-btn.has-spins {   /* есть вращения — розовая подсветка (вопросы — голубая, лавка — золотая) */
+    color: rgb(244, 114, 182) !important;
+    border-color: rgb(244, 114, 182) !important;
+    box-shadow: rgba(244, 114, 182, 0.5) 0px 0px 12px !important;
 }
 
 #openRouletteBtn .rw-badge {
