@@ -234,7 +234,7 @@ if (sfxVolumeSlider) {
 // верхняя панель в игре: по умолчанию жизни, перья и вопросы — слева, пауза и музыка — справа; тумблер в настройках меняет местами
 const HUD_SWAP_KEY = 'bubo_hud_swap';
 function hudSwapGet() { try { const v = localStorage.getItem(HUD_SWAP_KEY); return v === null ? true : v === '1'; } catch (e) { return true; } }
-function applyHudSwap() { const t = document.getElementById('topHud'); if (t) t.classList.toggle('hud-swap', hudSwapGet()); }
+function applyHudSwap() { const on = hudSwapGet(), t = document.getElementById('topHud'); if (t) t.classList.toggle('hud-swap', on); document.documentElement.classList.toggle('hud-ll', on); }   // hud-ll: жизни и таймеры слева, уведомления о бонусах — справа
 applyHudSwap();
 {
     const hb = document.getElementById('settingsHudSwapToggle'), ht = document.getElementById('settingsHudSwapThumb');

@@ -115,27 +115,26 @@ function triggerMaxStaminaUp() {
 // Золотая плашка с билетиком и надписью в одну строку: вспыхивает, разлетаются звёздочки, и она тает
 function showGoldBanner(text, icon, color) {
     if (!fxLayer) return;
-    const el = document.createElement('div');
-    el.className = 'attempt-banner';
     const c = color || '#FFC53D';
-    // в стиле подсказок (тёмная плашка, цветная рамка и свечение), но чуть крупнее; по центру — не налезает на таймеры эффектов слева
-    el.innerHTML = `<div class="att-pill hint-like" style="color:${c};border-color:${c};box-shadow:0 0 14px ${c}88"><i class="fa-solid ${icon}"></i><span>${sentenceCase(text)}</span></div>`;
-    fxLayer.appendChild(el);
-    // уведомление стоит внизу, прямо над нижней панелью (сложность и темы) — с таким же отступом, как таймеры под плашкой жизней сверху
+    // уведомление о бонусе — в верхнем углу напротив таймеров (там, где пауза): жизни слева — справа, и наоборот
+    const right = document.documentElement.classList.contains('hud-ll');
+    const el = document.createElement('div');
+    el.className = 'bonus-tag ' + (right ? 'on-right' : 'on-left');
+    el.style.color = c; el.style.borderColor = c; el.style.boxShadow = `0 0 14px ${c}88`;
+    el.style.setProperty('--bx', (right ? 18 : -18) + 'px');
+    el.innerHTML = `<i class="fa-solid ${icon}"></i><span>${sentenceCase(text)}</span>`;
     try {
-        const pill = el.querySelector('.att-pill'), fr = el.parentNode.getBoundingClientRect();
-        const uz = parseFloat(getComputedStyle(el).scale) || 1, h = pill.offsetHeight * uz;
-        const bh = document.getElementById('bottomHud'), lc = document.getElementById('livesContainer'), bb = document.getElementById('buffBar');
-        let gap = 8 * uz;
-        if (lc && bb && lc.offsetParent) { const g = bb.getBoundingClientRect().top - lc.getBoundingClientRect().bottom; if (g > 0 && g < 40) gap = g; }
-        const btop = bh && bh.offsetParent ? bh.getBoundingClientRect().top - fr.top : -1;
-        if (btop > h * 3 && btop <= fr.height) {
-            const prev = [...fxLayer.querySelectorAll('.attempt-banner.at-bottom')].filter(x => x !== el).length;   // несколько уведомлений подряд — друг над другом
-            el.classList.add('at-bottom');
-            el.style.top = (btop - gap - h / 2 - prev * (h + 6)) + 'px';
-        }
+        const fr = fxLayer.getBoundingClientRect(), uz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom')) || 1;
+        const th = document.getElementById('topHud'), bb = document.getElementById('buffBar');
+        let top = 56 * uz;
+        if (bb && bb.offsetParent) top = bb.getBoundingClientRect().top - fr.top;
+        else if (th && th.offsetParent) top = th.getBoundingClientRect().bottom - fr.top + 8 * uz;
+        const prev = [...fxLayer.querySelectorAll('.bonus-tag.' + (right ? 'on-right' : 'on-left'))].length;   // несколько подряд — столбиком
+        el.style.top = (top + prev * 34 * uz) + 'px';
+        el.style[right ? 'right' : 'left'] = (14 * uz) + 'px';
     } catch (e) {}
-    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 2400);
+    fxLayer.appendChild(el);
+    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 2700);
 }
 function showAttemptBanner(n) {
     AudioFX.playAttemptBonus();
