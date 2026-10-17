@@ -91,7 +91,7 @@ function drawWater() {
         for (const d of s.drops) {
             const dx = p.x + d.x + Math.sin(t * 0.18 + d.ph) * 0.6;
             if (d.b) waterDrawBubble(dx, d.y, d.r);
-            else waterDrawDrop(dx, d.y, d.r, d.vx * 0.15, 1 + Math.min(0.3, d.vy * 0.025) + 0.05 * Math.sin(t * 0.3 + d.ph));
+            else waterDrawDrop(dx, d.y, d.r, d.vx * 0.15, (d.st || 1) * (1 + Math.min(0.3, d.vy * 0.025)) + 0.05 * Math.sin(t * 0.3 + d.ph));
         }
     }
     ctx.restore();
@@ -178,7 +178,7 @@ function waterUpdate(speed, squeeze) {
         }
     }
     // поток во всю ширину трубы; со сложностью — гуще, быстрее и сильнее давит
-    const WK = Math.min(0.96, 0.82 + 0.03 * lv), DENS = 0.05 + lv * 0.012, V0 = 2.6 + lv * 0.45, G = 0.22;
+    const WK = Math.min(0.96, 0.82 + 0.03 * lv), DENS = 0.025 + lv * 0.018, V0 = 2.6 + lv * 0.45, G = 0.22;
     const PUSH = 0.045 + 0.06 * lv;   // в начале — лёгкий напор, с каждым уровнем сильнее
     const R = shieldTime > 0 ? owl.radius * 1.4 : owl.radius * 0.95;
     let imp = 0, hits = 0;
@@ -194,10 +194,10 @@ function waterUpdate(speed, squeeze) {
             while (s.acc >= 1) {
                 s.acc -= 1;
                 const b = Math.random() < 0.55;
-                s.drops.push({ x: cx + (Math.random() - 0.5) * W, y: y0 - 4 - Math.random() * 10, vx: (Math.random() - 0.5) * 0.18, vy: V0 * (0.55 + Math.random() * 0.5) * (b ? 0.85 : 1), r: b ? 1.3 + Math.random() * 1.5 : 2 + Math.random() * 1.9, b, ph: Math.random() * 6.28 });
+                s.drops.push({ x: cx + (Math.random() - 0.5) * W, y: y0 - 4 - Math.random() * 10, vx: (Math.random() - 0.5) * 0.18, vy: V0 * (0.55 + Math.random() * 0.5) * (b ? 0.85 : 1), r: b ? 1.1 + Math.random() * 1.8 : 1.4 + Math.pow(Math.random(), 1.6) * 3.4, st: 0.9 + Math.random() * 0.6, b, ph: Math.random() * 6.28 });   // капли разные: мелкие, крупные, круглые и вытянутые
             }
             // штрихи «дождя» в потоке
-            s.sacc += (0.5 + lv * 0.15) * dt;
+            s.sacc += (0.25 + lv * 0.2) * dt;
             while (s.sacc >= 1) {
                 s.sacc -= 1;
                 s.streaks.push({ x: cx + (Math.random() - 0.5) * W * 0.95, y: y0 - Math.random() * 6, vy: V0 * 2 + 3 + Math.random() * 3, len: 10 + Math.random() * 14, w: 0.8 + Math.random() * 0.7, a: 0.35 + Math.random() * 0.3 });
@@ -265,7 +265,7 @@ function waterUpdate(speed, squeeze) {
         }
         for (let k = s.rip.length - 1; k >= 0; k--) { const q = s.rip[k]; q.r += 0.45 * dt; q.a -= 0.035 * dt; if (q.a <= 0) s.rip.splice(k, 1); }
         // водяная пыль по всей высоте потока
-        if (s.on && Math.random() < 0.18 * dt && s.mist.length < 18) s.mist.push({ x: cx + (Math.random() - 0.5) * W, y: y0 + 15 + Math.random() * (yb - y0 - 15), r: 8 + Math.random() * 7, a: 0.2, vy: -0.05 - Math.random() * 0.08, vx: (Math.random() - 0.5) * 0.25 });
+        if (s.on && Math.random() < (0.16 + lv * 0.09) * dt && s.mist.length < 14 + lv * 5) s.mist.push({ x: cx + (Math.random() - 0.5) * W, y: y0 + 15 + Math.random() * (yb - y0 - 15), r: 8 + Math.random() * 8, a: 0.18 + lv * 0.015, vy: -0.05 - Math.random() * 0.08, vx: (Math.random() - 0.5) * 0.25 });
         // вода переливается через края нижней шляпки и стекает каплями по бокам
         if (s.hitK > 0.3 && Math.random() < 0.3 * s.hitK * dt && particles.length < 520) {
             const side = Math.random() < 0.5 ? -1 : 1;
