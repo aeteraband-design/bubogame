@@ -79,8 +79,8 @@ function drawCrystals() {
 (function () {
     try {
         const st = document.createElement('style');
-        st.textContent = '.buff-tag[data-key="crystal"]{background:linear-gradient(90deg,rgba(120,10,10,.96),rgba(60,4,20,.96))!important;border-color:#FF6A3D!important;color:#FFD9B0!important;animation:dangerPulse 0.9s ease-in-out infinite}'
-            + '.buff-tag[data-key="crystal"] i{color:#FFB347!important;filter:drop-shadow(0 0 3px #FF4A3D)}'
+        st.textContent = '.buff-tag[data-key="crystal"],.fly-label-tag[data-key="crystal"]{background:linear-gradient(90deg,rgba(120,10,10,.96),rgba(60,4,20,.96))!important;border-color:#FF6A3D!important;color:#FFD9B0!important;animation:dangerPulse 0.9s ease-in-out infinite}'
+            + '.buff-tag[data-key="crystal"] i,.fly-label-tag[data-key="crystal"] i{color:#FFB347!important;filter:drop-shadow(0 0 3px #FF4A3D)}'
             + '@keyframes dangerPulse{0%,100%{box-shadow:0 0 8px #FF4A3D99,inset 0 0 6px #FF4A3D55}50%{box-shadow:0 0 18px #FF6A3DEE,inset 0 0 10px #FF8A3D88}}';
         document.head.appendChild(st);
     } catch (e) {}

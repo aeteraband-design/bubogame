@@ -393,6 +393,7 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
         tag.style.justifyContent = 'flex-start';
         tag.style.textAlign = 'left';
         const bKey0 = buffKeyForLabel(textLabel);
+        if (bKey0) tag.dataset.key = bKey0;   // улетающая подсказка в том же стиле, что и её таймер (вода, огонь)
         const timerEl0 = bKey0 && document.querySelector(`#buffBar [data-key="${bKey0}"]`);
         const refreshing = !!(bKey0 && ((buffRefreshed[bKey0] && performance.now() < buffRefreshed[bKey0]) || (timerEl0 && timerEl0.style.opacity !== '0' && !timerEl0.dataset.leaving)));
         layoutHintTag(tag, startX, startY, !!isBonus, !!bKey0 && !refreshing, targetType);

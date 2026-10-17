@@ -543,31 +543,30 @@ const owl = {
             const P = (typeof OWL_BODY_PTS !== 'undefined') ? OWL_BODY_PTS.p : null;
             if (ice > 0.02 && P) {
                 const n = P.length;
-                if (!this._iceSlots) {   // места на контуре и их порядок появления — один раз
-                    const s = []; let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-                    for (let k = 0; k < 22; k++) s.push({ t: (k + rnd() * 0.6) / 22 * n, tilt: (rnd() - 0.5) * 0.7, L: 1.6 + rnd() * 1.3 });
+                if (!this._iceSlots2) {   // места на контуре и их порядок появления — один раз: по всему кругу, под разными углами
+                    const s = []; let seed = 23; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+                    for (let k = 0; k < 30; k++) s.push({ t: (k + rnd() * 0.7) / 30 * n, tilt: (rnd() - 0.5) * 1.6, L: 1.3 + rnd() * 1.6, side: rnd() < 0.55 ? (rnd() < 0.5 ? -1 : 1) : 0, sl: 0.45 + rnd() * 0.3 });
                     for (let k = s.length - 1; k > 0; k--) { const q = Math.floor(rnd() * (k + 1)); [s[k], s[q]] = [s[q], s[k]]; }
-                    this._iceSlots = s;
+                    this._iceSlots2 = s;
                 }
-                const S = this._iceSlots, cnt = S.length * ice;
+                const S = this._iceSlots2, cnt = S.length * ice;
+                // кристаллик: вытянутый ромб с двумя гранями, наполовину «вмёрз» в контур; иногда рядом второй, поменьше, под другим углом
+                const shard = (L, W) => {
+                    ctx.fillStyle = 'rgba(232, 247, 255, 0.95)'; ctx.beginPath(); ctx.moveTo(-L * 0.4, 0); ctx.lineTo(0, -W); ctx.lineTo(L, 0); ctx.closePath(); ctx.fill();
+                    ctx.fillStyle = 'rgba(150, 205, 245, 0.92)'; ctx.beginPath(); ctx.moveTo(-L * 0.4, 0); ctx.lineTo(L, 0); ctx.lineTo(0, W); ctx.closePath(); ctx.fill();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)'; ctx.lineWidth = 0.3; ctx.beginPath(); ctx.moveTo(-L * 0.4, 0); ctx.lineTo(0, -W); ctx.lineTo(L, 0); ctx.lineTo(0, W); ctx.closePath(); ctx.stroke();
+                };
                 for (let k = 0; k < S.length && k < cnt; k++) {
                     const sl = S[k], gr = Math.min(1, cnt - k), i0 = Math.floor(sl.t) % n, i1 = (i0 + 1) % n, f = sl.t - Math.floor(sl.t);
                     const x = P[i0][0] + (P[i1][0] - P[i0][0]) * f, y = P[i0][1] + (P[i1][1] - P[i0][1]) * f;
                     let nx = -(P[i1][1] - P[i0][1]), ny = P[i1][0] - P[i0][0]; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
                     if (nx * (x + 1) + ny * (y - 3) < 0) { nx = -nx; ny = -ny; }   // наружу
-                    if (y > 12 && ny > 0.5) {   // низ брюшка — сосулька вниз
-                        const L = sl.L * 2.2 * gr;
-                        const ig = ctx.createLinearGradient(x, y, x, y + L); ig.addColorStop(0, '#FFFFFF'); ig.addColorStop(1, 'rgba(125, 211, 252, 0.85)');
-                        ctx.fillStyle = ig; ctx.beginPath(); ctx.moveTo(x - 0.9, y - 0.3); ctx.lineTo(x + 0.9, y - 0.3); ctx.lineTo(x, y + L); ctx.closePath(); ctx.fill();
-                        continue;
-                    }
-                    // кристаллик: вытянутый ромб с двумя гранями, наполовину «вмёрз» в контур
                     const a = Math.atan2(ny, nx) + sl.tilt, L = sl.L * gr, W = L * 0.42;
-                    ctx.save(); ctx.translate(x - nx * L * 0.35, y - ny * L * 0.35); ctx.rotate(a);
-                    ctx.fillStyle = 'rgba(232, 247, 255, 0.95)'; ctx.beginPath(); ctx.moveTo(-L * 0.4, 0); ctx.lineTo(0, -W); ctx.lineTo(L, 0); ctx.closePath(); ctx.fill();
-                    ctx.fillStyle = 'rgba(150, 205, 245, 0.92)'; ctx.beginPath(); ctx.moveTo(-L * 0.4, 0); ctx.lineTo(L, 0); ctx.lineTo(0, W); ctx.closePath(); ctx.fill();
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)'; ctx.lineWidth = 0.3; ctx.beginPath(); ctx.moveTo(-L * 0.4, 0); ctx.lineTo(0, -W); ctx.lineTo(L, 0); ctx.lineTo(0, W); ctx.closePath(); ctx.stroke();
-                    ctx.restore();
+                    ctx.save(); ctx.translate(x - nx * L * 0.35, y - ny * L * 0.35); ctx.rotate(a); shard(L, W); ctx.restore();
+                    if (sl.side && gr > 0.5) {
+                        const a2 = Math.atan2(ny, nx) - sl.tilt * 0.6 + sl.side * 0.7, L2 = L * sl.sl;
+                        ctx.save(); ctx.translate(x - nx * L2 * 0.3 + ny * sl.side * 0.8, y - ny * L2 * 0.3 - nx * sl.side * 0.8); ctx.rotate(a2); shard(L2, L2 * 0.42); ctx.restore();
+                    }
                 }
             }
             ctx.restore();

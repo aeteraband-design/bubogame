@@ -59,8 +59,8 @@ function waterDrawBlob(x, y, r, d, t) {
     // падающая капля: смотрит туда, куда летит; снизу круглая и толще, кверху сужается; на скорости вытягивается;
     // после слияния или разрыва дрожит, потом успокаивается
     const jg = d.jig || 0, w = Math.sin(t * (0.25 + jg * 0.35) + (d.ph || 0)) * (0.07 + 0.3 * jg);
-    const sp = Math.hypot(d.vx || 0, d.vy || 0), st = Math.min(0.5, sp * 0.04);
-    const rx = r * (d.sx || 1) * (1 + w - st * 0.25), ry = r * (1 - w * 0.8 + st);
+    const sp = Math.hypot(d.vx || 0, d.vy || 0), st = Math.min(0.95, sp * 0.075);   // на скорости вытягивается, как капля, срывающаяся с трубы
+    const rx = r * (d.sx || 1) * (1 + w - st * 0.32), ry = r * (1 - w * 0.8 + st);
     const rot = sp > 0.3 ? Math.atan2(-(d.vx || 0), d.vy || 1) : 0;
     const A = ctx.globalAlpha;
     ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
@@ -178,10 +178,19 @@ function drawWaterFront() {
 (function () {
     try {
         const st = document.createElement('style');
-        st.textContent = '.buff-tag[data-key="water"]{position:relative;overflow:hidden;background:linear-gradient(100deg,rgba(8,50,100,.96) 0%,rgba(24,110,185,.96) 25%,rgba(8,50,100,.96) 50%,rgba(24,110,185,.96) 75%,rgba(8,50,100,.96) 100%)!important;background-size:200% 100%!important;border-color:#7DD3FC!important;color:#E6F7FF!important;animation:wtrFlow 1.6s linear infinite,wtrGlow 1.8s ease-in-out infinite}'
-            + '.buff-tag[data-key="water"] i{color:#9BE3FF!important;filter:drop-shadow(0 0 3px #38BDF8)}'
-            + '.buff-tag[data-key="water"]::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,rgba(255,255,255,.75) 0 1.1px,transparent 1.6px),radial-gradient(circle,rgba(255,255,255,.55) 0 0.9px,transparent 1.4px),radial-gradient(circle,rgba(255,255,255,.6) 0 1.3px,transparent 1.8px);background-size:23px 18px,31px 22px,41px 26px;background-position:3px 0,14px 6px,27px 11px;animation:wtrBubbles 2.2s linear infinite}'
-            + '@keyframes wtrFlow{from{background-position:0% 0}to{background-position:200% 0}}'
+        // плашка таймера и улетающая подсказка «Водонапор» — одного стиля: внутри течёт вода и поднимаются пузырьки,
+        // по контуру бегает голубой градиент; текст остаётся хорошо читаемым
+        const W = '.buff-tag[data-key="water"],.fly-label-tag[data-key="water"]';
+        const Wi = '.buff-tag[data-key="water"] i,.fly-label-tag[data-key="water"] i';
+        const Wa = '.buff-tag[data-key="water"]::after,.fly-label-tag[data-key="water"]::after';
+        st.textContent = W + '{position:relative;overflow:hidden;border:1.5px solid transparent!important;'
+            + 'background:linear-gradient(100deg,rgba(6,42,88,.97) 0%,rgba(18,96,170,.97) 25%,rgba(6,42,88,.97) 50%,rgba(18,96,170,.97) 75%,rgba(6,42,88,.97) 100%) padding-box,'
+            + 'linear-gradient(90deg,#0EA5E9,#E0F7FF,#38BDF8,#1D4ED8,#7DD3FC,#0EA5E9) border-box!important;'
+            + 'background-size:200% 100%,300% 100%!important;color:#E6F7FF!important;text-shadow:0 1px 2px rgba(0,20,50,.8);animation:wtrFlow 1.6s linear infinite,wtrGlow 1.8s ease-in-out infinite}'
+            + Wi + '{color:#9BE3FF!important;filter:drop-shadow(0 0 3px #38BDF8)}'
+            + W + '>*{position:relative;z-index:1}'
+            + Wa + '{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.8;background-image:radial-gradient(circle,rgba(255,255,255,.7) 0 1.1px,transparent 1.6px),radial-gradient(circle,rgba(255,255,255,.5) 0 0.9px,transparent 1.4px),radial-gradient(circle,rgba(255,255,255,.55) 0 1.3px,transparent 1.8px);background-size:23px 18px,31px 22px,41px 26px;background-position:3px 0,14px 6px,27px 11px;animation:wtrBubbles 2.2s linear infinite}'
+            + '@keyframes wtrFlow{from{background-position:0% 0,0% 0}to{background-position:200% 0,300% 0}}'
             + '@keyframes wtrBubbles{from{background-position:3px 18px,14px 28px,27px 37px}to{background-position:3px 0,14px 6px,27px 11px}}'
             + '@keyframes wtrGlow{0%,100%{box-shadow:0 0 8px #38BDF899}50%{box-shadow:0 0 16px #7DD3FCEE}}';
         document.head.appendChild(st);
@@ -211,7 +220,9 @@ function waterWetOwl(hx, hy) {
 function waterUpdate(speed, squeeze) {
     const dt = dtMult, shz = typeof shazamBusy === 'function' && shazamBusy();
     if (shz) waterTime = 0;
-    let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {}
+    let lv0 = 0; try { lv0 = getDifficultyIndex(); } catch (e) {}
+    // сила по ступеням: Суперлайт/Лайт — слабый напор, Медиум/Медиум+ — средний, Хард/Хард+ — сильный (внутри ступени чуть растёт)
+    const lv = [0, 0.4, 2.2, 2.7, 4.5, 5][Math.max(0, Math.min(5, lv0))];
     if (waterTime > 0) {
         waterTime -= dt;
         if (waterTime <= 0) { WATERFX.wetT = 900; if (!shz) { try { AudioFX.playWaterEnd(); } catch (e) {} } }   // после «Водонапора» трубы ещё ~15 с мокрые, как после дождя
@@ -225,7 +236,7 @@ function waterUpdate(speed, squeeze) {
     }
     // поток во всю ширину трубы; со сложностью — гуще, быстрее и сильнее давит
     const WK = Math.min(0.95, 0.55 + 0.08 * lv), DENS = 0.016 + lv * 0.02, V0 = 2.6 + lv * 0.45, G = 0.22;
-    const PUSH = 0.035 + 0.065 * lv;   // в начале — лёгкий напор, с каждым уровнем сильнее
+    const PUSH = 0.035 + 0.045 * lv;   // в начале — лёгкий напор, к Хард+ сильный, но пролететь можно
     const R = shieldTime > 0 ? owl.radius * 1.4 : owl.radius * 0.95;
     let imp = 0, hits = 0;
     for (let i = waterStreams.length - 1; i >= 0; i--) {
@@ -388,7 +399,7 @@ function waterUpdate(speed, squeeze) {
         let k = imp;
         if (shieldTime > 0) k *= 0.55;            // щит тоже сносит, но слабее
         if (speedBoostTime > 0) k *= 0.4;         // на ускорении сова режет воду
-        owl.vy = Math.min(4 + lv * 0.6, owl.vy + k);
+        owl.vy = Math.min(4 + lv * 0.5, owl.vy + k);
         if (owl.vy < 0) owl.vy *= Math.max(0.85, 1 - 0.012 * hits * (speedBoostTime > 0 ? 0.4 : 1));   // взлёт сквозь воду гасится
     }
 }
