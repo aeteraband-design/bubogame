@@ -141,7 +141,7 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #quizModal.hidden{display:none}
 #qzWin{position:relative;width:100%;max-width:360px;max-height:100%;overflow-y:auto;border-radius:28px;padding:22px 18px 22px;font-family:Onest,sans-serif;color:#fff;
  background:radial-gradient(120% 60% at 50% -10%,rgba(56,189,248,.16),transparent 60%),radial-gradient(90% 50% at 100% 110%,rgba(254,118,0,.12),transparent 60%),rgba(29,9,54,.97);border:1px solid rgba(120,44,233,.6);box-shadow:0 10px 40px rgba(0,0,0,.5)}
-#qzBody{display:flex;flex-direction:column;gap:18px}
+#qzBody{display:flex;flex-direction:column;gap:16px}
 #qzWin .qz-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#C4A1FF;background:rgba(120,44,233,.18);border:1px solid rgba(120,44,233,.4);font-size:13px;cursor:pointer;z-index:2}
 #qzWin .qz-top{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:-4px}
 #qzWin .qz-emb2{position:relative;width:76px;height:76px;display:flex;align-items:center;justify-content:center}
@@ -170,7 +170,7 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-dot.bad{background:#EF4444;border-color:#FCA5A5;color:#fff}
 #qzWin .qz-cnt{display:flex;align-items:center;gap:5px;font-weight:900;font-size:12px;color:#FFD66B;white-space:nowrap}
 .qz-coin{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-size:8px;color:#7C4A00;background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);box-shadow:0 0 6px rgba(255,197,61,.6),inset 0 -1px 0 rgba(0,0,0,.2);flex:0 0 auto}
-#qzWin .qz-card{padding:16px 14px 16px;border-radius:20px;background:linear-gradient(180deg,rgba(120,44,233,.22),rgba(120,44,233,.08));border:1px solid rgba(168,120,245,.45);display:flex;flex-direction:column;gap:14px}
+#qzWin .qz-card{padding:14px 12px 14px;border-radius:20px;background:linear-gradient(180deg,rgba(120,44,233,.22),rgba(120,44,233,.08));border:1px solid rgba(168,120,245,.45);display:flex;flex-direction:column;gap:12px}
 #qzWin .qz-meta{display:flex;align-items:center;gap:7px;min-height:36px}
 #qzWin .qz-chip{font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:8px;background:rgba(56,189,248,.16);color:#7DD3FC;border:1px solid rgba(56,189,248,.35)}
 #qzWin .qz-sep{width:4px;height:4px;border-radius:50%;background:rgba(196,161,255,.55)}
@@ -184,18 +184,18 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-tm.low .fg{stroke:#EF4444}
 #qzWin .qz-tm b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px}
 #qzWin .qz-tm i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#7DD3FC}
-#qzWin .qz-q{font-weight:900;font-size:17px;line-height:1.35;padding:2px 2px 0}
+#qzWin .qz-q{font-weight:900;font-size:16px;line-height:1.33;padding:2px 2px 0}
 #qzWin .qz-rew{display:flex;align-items:center;gap:6px;font-weight:800;font-size:11px;color:#C4B5FD}
 #qzWin .qz-rew b{color:#FFD66B;font-weight:900}
-#qzWin .qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-#qzWin .qz-o{display:flex;align-items:center;gap:8px;min-height:46px;padding:7px 9px;border-radius:12px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:12.5px;line-height:1.25;transition:all .25s;min-width:0}
-#qzWin .qz-o span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-width:0}
-#qzWin .qz-o b{flex:0 0 auto;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+#qzWin .qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#qzWin .qz-o{display:flex;align-items:center;gap:6px;min-height:44px;padding:7px 7px 7px 6px;border-radius:12px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:11.5px;line-height:1.22;transition:all .25s;min-width:0}
+#qzWin .qz-o span{display:block;min-width:0;overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
+#qzWin .qz-o b{flex:0 0 auto;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10.5px;color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
 #qzWin .qz-o.ok{background:rgba(34,197,94,.2);border-color:#22C55E}
 #qzWin .qz-o.bad{background:rgba(239,68,68,.2);border-color:#EF4444}
 #qzWin .qz-o.dim{opacity:.45}
 #qzWin .qz-abcd{display:flex;justify-content:space-between;gap:8px;padding:4px 6px 2px}
-#qzWin .qz-ball{flex:0 0 auto;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:26px;color:#fff;cursor:pointer;border:2px solid rgba(255,255,255,.55);
+#qzWin .qz-ball{flex:0 0 auto;width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;color:#fff;cursor:pointer;border:2px solid rgba(255,255,255,.55);
  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 42%),var(--c);box-shadow:0 0 14px var(--c),inset 0 -5px 0 rgba(0,0,0,.22);text-shadow:0 2px 3px rgba(0,0,0,.3);transition:transform .15s,opacity .25s,filter .25s}
 #qzWin .qz-ball:active{transform:scale(.92)}
 #qzWin .qz-abcd.wait .qz-ball{pointer-events:none;opacity:.4;filter:saturate(.5)}
