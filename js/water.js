@@ -7,7 +7,9 @@ const WATERFX = { SEC: 10, COLOR: '#38BDF8', id: 0 };
 let waterTime = 0;          // сколько кадров ещё идёт эффект
 let waterStreams = [];      // потоки воды (каждый — свой набор капель)
 let waterK = 0;             // (не используется для цвета труб)
-function waterReset() { waterTime = 0; waterStreams.length = 0; waterK = 0; }
+function waterReset() { waterTime = 0; waterStreams.length = 0; waterK = 0; WATERFX.wetT = 0; }
+// насколько мокрые все трубы после «Водонапора» (0..1) — плавно высыхают
+function waterPipeWet() { return WATERFX.wetT > 0 ? Math.min(0.85, WATERFX.wetT / 600) : 0; }
 
 // значок взят: включаем эффект
 function registerWater() {
@@ -54,18 +56,42 @@ function waterDrawBubble(x, y, r) { const s2 = r * 2.4; ctx.drawImage(waterBubbl
 // брызги и пузырьки в общем списке частиц (рисуются поверх совы) — вызывается из drawParticleList
 // живая капля, как бусинки дождя на трубах: неровный комочек воды, который в полёте тянется, сплющивается и покачивается
 function waterDrawBlob(x, y, r, d, t) {
-    const w = Math.sin(t * (0.22 + (d.ph % 1) * 0.2 + (d.jig || 0) * 0.3) + d.ph) * (1 + 1.6 * (d.jig || 0)), st = Math.min(0.45, (d.vy || 0) * 0.035);   // после слияния капля сильнее дрожит
-    const rx = r * (d.sx || 1) * (1 + 0.14 * w - st * 0.4), ry = r * (d.sy || 1) * (1 - 0.12 * w + st);
-    const rot = (d.rot || 0) + (d.vx || 0) * 0.25;
+    // падающая капля: смотрит туда, куда летит; снизу круглая и толще, кверху сужается; на скорости вытягивается;
+    // после слияния или разрыва дрожит, потом успокаивается
+    const jg = d.jig || 0, w = Math.sin(t * (0.25 + jg * 0.35) + (d.ph || 0)) * (0.07 + 0.3 * jg);
+    const sp = Math.hypot(d.vx || 0, d.vy || 0), st = Math.min(0.5, sp * 0.04);
+    const rx = r * (d.sx || 1) * (1 + w - st * 0.25), ry = r * (1 - w * 0.8 + st);
+    const rot = sp > 0.3 ? Math.atan2(-(d.vx || 0), d.vy || 1) : 0;
     const A = ctx.globalAlpha;
     ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
-    ctx.globalAlpha = A * 0.82; ctx.fillStyle = 'rgb(172, 208, 245)';
-    ctx.beginPath(); ctx.ellipse(0, 0, Math.max(0.4, rx), Math.max(0.4, ry), 0, 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = A * 0.35; ctx.fillStyle = 'rgb(90, 150, 220)';
-    ctx.beginPath(); ctx.ellipse(rx * 0.15, ry * 0.25, rx * 0.65, ry * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+    const shape = () => {
+        ctx.beginPath();
+        // яйцо: широкий круглый низ плавно переходит в более узкий верх
+        ctx.moveTo(0, -ry);
+        ctx.bezierCurveTo(rx * 0.55, -ry, rx * 0.95, -ry * 0.25, rx, ry * 0.2);
+        ctx.bezierCurveTo(rx * 1.02, ry * 0.75, rx * 0.55, ry * 0.95, 0, ry * 0.95);
+        ctx.bezierCurveTo(-rx * 0.55, ry * 0.95, -rx * 1.02, ry * 0.75, -rx, ry * 0.2);
+        ctx.bezierCurveTo(-rx * 0.95, -ry * 0.25, -rx * 0.55, -ry, 0, -ry);
+        ctx.closePath();
+    };
+    ctx.globalAlpha = A * 0.84; ctx.fillStyle = 'rgb(172, 208, 245)'; shape(); ctx.fill();
+    ctx.globalAlpha = A * 0.32; ctx.fillStyle = 'rgb(80, 140, 215)';
+    ctx.beginPath(); ctx.ellipse(rx * 0.18, ry * 0.4, rx * 0.6, ry * 0.45, 0, 0, Math.PI * 2); ctx.fill();   // тень внизу справа
     ctx.globalAlpha = A * 0.95; ctx.fillStyle = '#F2FAFF';
-    ctx.fillRect(-rx * 0.45, -ry * 0.55, Math.max(0.6, rx * 0.4), Math.max(0.6, ry * 0.35));
+    ctx.fillRect(-rx * 0.5, -ry * 0.15, Math.max(0.6, rx * 0.38), Math.max(0.6, ry * 0.32));   // блик
     ctx.restore();
+}
+// «перемычка» между каплями, которые сливаются или только что разорвались: вода тянется ниточкой
+function waterDrawNeck(ax, ay, bx, by, w, A) {
+    if (w < 0.25) return;
+    const dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1, nx = -dy / L * w, ny = dx / L * w;
+    ctx.globalAlpha = A * 0.84; ctx.fillStyle = 'rgb(172, 208, 245)';
+    ctx.beginPath(); ctx.moveTo(ax + nx, ay + ny);
+    ctx.quadraticCurveTo((ax + bx) / 2 + nx * 0.35, (ay + by) / 2 + ny * 0.35, bx + nx, by + ny);
+    ctx.lineTo(bx - nx, by - ny);
+    ctx.quadraticCurveTo((ax + bx) / 2 - nx * 0.35, (ay + by) / 2 - ny * 0.35, ax - nx, ay - ny);
+    ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = A;
 }
 function waterDrawPart(pt) {
     ctx.globalAlpha = Math.max(0, Math.min(1, pt.alpha));
@@ -103,8 +129,13 @@ function drawWater() {
             ctx.strokeStyle = g; ctx.lineWidth = k.w;
             ctx.beginPath(); ctx.moveTo(x, k.y - L); ctx.lineTo(x, k.y); ctx.stroke();
         }
+        // перемычки: сливающиеся пары и только что разорвавшиеся
         for (const d of s.drops) {
-            const dx = p.x + d.x + Math.sin(t * 0.18 + d.ph) * 0.6;
+            if (d.lk) waterDrawNeck(p.x + d.x, d.y, p.x + d.lk.x, d.lk.y, Math.min(d.r, d.lk.r) * (0.45 + 0.4 * Math.min(1, d.lkT / 6)), 1);
+            if (d.sep && d.sepT > 0) waterDrawNeck(p.x + d.x, d.y, p.x + d.sep.x, d.sep.y, Math.min(d.r, d.sep.r) * 0.55 * (d.sepT / 9), 1);
+        }
+        for (const d of s.drops) {
+            const dx = p.x + d.x + (d.b ? Math.sin(t * 0.18 + d.ph) * 0.6 : 0);
             if (d.b) waterDrawBubble(dx, d.y, d.r);
             else waterDrawBlob(dx, d.y, d.r, d, t);
         }
@@ -183,7 +214,7 @@ function waterUpdate(speed, squeeze) {
     let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {}
     if (waterTime > 0) {
         waterTime -= dt;
-        if (waterTime <= 0 && !shz) { try { AudioFX.playWaterEnd(); } catch (e) {} }
+        if (waterTime <= 0) { WATERFX.wetT = 900; if (!shz) { try { AudioFX.playWaterEnd(); } catch (e) {} } }   // после «Водонапора» трубы ещё ~15 с мокрые, как после дождя
         for (const p of pipes) {
             if (p.x + p.width < -40 || p.x > width + 40) continue;
             if (p._wId !== WATERFX.id) {
@@ -209,7 +240,7 @@ function waterUpdate(speed, squeeze) {
             while (s.acc >= 1) {
                 s.acc -= 1;
                 const b = Math.random() < 0.55;
-                s.drops.push({ x: cx + (Math.random() - 0.5) * W, y: y0 - 4 - Math.random() * 10, vx: (Math.random() - 0.5) * 0.18, vy: V0 * (0.55 + Math.random() * 0.5) * (b ? 0.85 : 1), r: b ? 1.1 + Math.random() * 1.8 : 1 + Math.pow(Math.random(), 1.7) * 3.4, sx: 0.7 + Math.random() * 0.6, sy: 0.7 + Math.random() * 0.6, rot: Math.random() * 3.14, b, ph: Math.random() * 6.28 });   // капли разные: мелкие, крупные, круглые и вытянутые
+                s.drops.push({ x: cx + (Math.random() - 0.5) * W, y: y0 - 4 - Math.random() * 10, vx: (Math.random() - 0.5) * 0.18, vy: V0 * (0.55 + Math.random() * 0.5) * (b ? 0.85 : 1), r: b ? 1.1 + Math.random() * 1.8 : 1 + Math.pow(Math.random(), 1.7) * 3.4, sx: 0.85 + Math.random() * 0.3, b, ph: Math.random() * 6.28 });   // капли разные: мелкие, крупные, круглые и вытянутые
             }
             // штрихи «дождя» в потоке
             s.sacc += (0.4 + lv * 0.3) * dt;
@@ -258,33 +289,51 @@ function waterUpdate(speed, squeeze) {
                 }
             }
         }
-        // живая вода: соседние капли сливаются в одну побольше (она дрожит после слияния), крупные на скорости иногда рвутся надвое
+        // живая вода: близкие капли притягиваются и тянутся друг к другу ниточкой, через миг сливаются в одну (она дрожит);
+        // крупная капля на скорости иногда вытягивается и рвётся надвое — половинки расходятся, между ними тает перемычка
         {
             const idx = [];
-            for (let k = 0; k < D.length; k++) { const d = D[k]; if (!d.b) idx.push(k); if (d.jig) d.jig = Math.max(0, d.jig - 0.04 * dt); }
+            let links = 0;
+            for (let k = 0; k < D.length; k++) {
+                const d = D[k]; if (d.b) continue; idx.push(k);
+                if (d.jig) d.jig = Math.max(0, d.jig - 0.035 * dt);
+                if (d.sepT > 0) d.sepT -= dt;
+                if (d.lk) links++;
+            }
             idx.sort((a, b) => D[a].y - D[b].y);
-            let merges = 0; const dead = new Set();
-            for (let a = 0; a < idx.length && merges < 4; a++) {
-                const A = D[idx[a]]; if (dead.has(idx[a])) continue;
+            const dead = new Set();
+            // новые пары
+            for (let a = 0; a < idx.length && links < 6; a++) {
+                const A = D[idx[a]]; if (A.lk || A.lkd) continue;
                 for (let b = a + 1; b < idx.length; b++) {
-                    const B = D[idx[b]]; if (B.y - A.y > 7) break; if (dead.has(idx[b])) continue;
-                    const dx = B.x - A.x, dy = B.y - A.y, rr = (A.r + B.r) * 0.75;
-                    if (dx * dx + dy * dy < rr * rr && Math.random() < 0.5) {
-                        const ma = A.r * A.r * A.r, mb = B.r * B.r * B.r, m = ma + mb;
-                        A.x = (A.x * ma + B.x * mb) / m; A.y = (A.y * ma + B.y * mb) / m;
-                        A.vx = (A.vx * ma + B.vx * mb) / m; A.vy = (A.vy * ma + B.vy * mb) / m;
-                        A.r = Math.min(5.2, Math.cbrt(m)); A.jig = 1;
-                        dead.add(idx[b]); merges++; break;
-                    }
+                    const B = D[idx[b]]; if (B.y - A.y > 10) break; if (B.lk || B.lkd) continue;
+                    const dx = B.x - A.x, dy = B.y - A.y, rr = (A.r + B.r) * 1.25;
+                    if (dx * dx + dy * dy < rr * rr && Math.random() < 0.35) { A.lk = B; A.lkT = 0; B.lkd = true; links++; break; }
+                }
+            }
+            // пары тянутся друг к другу и сливаются
+            for (const k of idx) {
+                const A = D[k], B = A.lk; if (!B) continue;
+                const dx = B.x - A.x, dy = B.y - A.y, dist = Math.hypot(dx, dy);
+                if (dist > (A.r + B.r) * 2.4) { A.lk = null; B.lkd = false; continue; }   // разошлись
+                A.lkT += dt;
+                const pull = 0.06 * dt; A.vx += dx * pull * 0.5; A.vy += dy * pull * 0.5; B.vx -= dx * pull * 0.5; B.vy -= dy * pull * 0.5;
+                if (A.lkT >= 6 || dist < Math.max(A.r, B.r) * 0.7) {
+                    const ma = A.r * A.r * A.r, mb = B.r * B.r * B.r, m = ma + mb;
+                    A.x = (A.x * ma + B.x * mb) / m; A.y = (A.y * ma + B.y * mb) / m;
+                    A.vx = (A.vx * ma + B.vx * mb) / m; A.vy = (A.vy * ma + B.vy * mb) / m;
+                    A.r = Math.min(5.2, Math.cbrt(m)); A.jig = 1; A.lk = null;
+                    const bi = D.indexOf(B); if (bi >= 0) dead.add(bi);
                 }
             }
             if (dead.size) for (let k = D.length - 1; k >= 0; k--) if (dead.has(k)) D.splice(k, 1);
-            // разрыв: большая капля на скорости делится на две, они расходятся в стороны
+            // разрыв
             for (let k = D.length - 1; k >= 0; k--) {
                 const d = D[k];
-                if (!d.b && d.r > 3.8 && d.vy > 4 && Math.random() < 0.012 * dt) {
-                    const r2 = d.r / 1.26; d.r = r2; d.vx -= 0.35; d.jig = 1;
-                    D.push({ x: d.x + r2, y: d.y - r2 * 0.5, vx: d.vx + 0.7, vy: d.vy * 0.97, r: r2, sx: d.sx, sy: d.sy, rot: d.rot + 0.6, b: false, ph: d.ph + 1, jig: 1 });
+                if (!d.b && !d.lk && !d.lkd && d.r > 3.6 && d.vy > 4 && Math.random() < 0.01 * dt) {
+                    const r2 = d.r / 1.26; d.r = r2; d.vx -= 0.3; d.jig = 1;
+                    const c = { x: d.x + 0.5, y: d.y - r2 * 1.6, vx: d.vx + 0.6, vy: d.vy * 0.93, r: r2, sx: d.sx, b: false, ph: d.ph + 1, jig: 1 };
+                    D.push(c); d.sep = c; d.sepT = 9;
                 }
             }
         }
@@ -334,7 +383,8 @@ function waterUpdate(speed, squeeze) {
         }
         if ((!s.on && !D.length && !s.streaks.length && !s.mist.length && !s.foam.length && !s.rip.length) || p.x + p.width < -60) { waterStreams.splice(i, 1); continue; }
     }
-    if (owl._wWet) owl._wWet = Math.max(0, owl._wWet - 0.0015 * dt);   // сова понемногу обсыхает
+    if (owl._wWet) owl._wWet = Math.max(0, owl._wWet - 0.0015 * dt);
+    if (WATERFX.wetT > 0) WATERFX.wetT = Math.max(0, WATERFX.wetT - dt);   // сова понемногу обсыхает
     if (hits && gameActive && !shz) {
         let k = imp;
         if (shieldTime > 0) k *= 0.55;            // щит тоже сносит, но слабее

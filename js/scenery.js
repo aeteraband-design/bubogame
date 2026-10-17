@@ -1001,7 +1001,7 @@ function drawPipe(pipe) {
     }
 
     // капельки дождя на верхней грани обеих шляпок (у верхней трубы шляпка перевёрнута — капли всё равно сверху)
-    if (STORM.wet > 0.03 || pipe._wet > 0.03 || (pipe._w && (pipe._w.beads.length || pipe._w.sp.length || pipe._w.drip))) pipeWater(pipe, effectiveTop, topCapY, bottomY, capX, capW);
+    if (STORM.wet > 0.03 || pipe._wet > 0.03 || (typeof waterPipeWet === 'function' && waterPipeWet() > 0.03) || (pipe._w && (pipe._w.beads.length || pipe._w.sp.length || pipe._w.drip))) pipeWater(pipe, effectiveTop, topCapY, bottomY, capX, capW);
 
     ctx.restore();
 }
@@ -1011,7 +1011,8 @@ function pipeWater(pipe, dripY, topCapY, bottomY, capX, capW) {
     const W = pipe._w || (pipe._w = { beads: [], drip: null, sp: [] });
     // мокрость: от дождя — всё; от «Водонапора» — только нижняя шляпка (верхняя, откуда льётся, сухая) и капель снизу после струи
     if (pipe._wet > 0) pipe._wet = Math.max(0, pipe._wet - 0.0012 * dtMult);
-    const wet = Math.max(STORM.wet, pipe._wFlow ? 0 : (pipe._wet || 0)), wetE = [STORM.wet, Math.max(STORM.wet, pipe._wet || 0)], rk = stormRainK(Math.max(0, stormIntensity)), dt = dtMult;
+    const gw = typeof waterPipeWet === 'function' ? waterPipeWet() : 0;   // после «Водонапора» мокрые все трубы, как после дождя
+    const wet = Math.max(STORM.wet, gw, pipe._wFlow ? 0 : (pipe._wet || 0)), wetE = [Math.max(STORM.wet, pipe._wFlow ? 0 : gw), Math.max(STORM.wet, gw, pipe._wet || 0)], rk = stormRainK(Math.max(0, stormIntensity)), dt = dtMult;
     const edges = [topCapY, bottomY];
     const splash = (x, y, n, power) => {
         for (let i = 0; i < n; i++) W.sp.push({ x: x + (Math.random() - 0.5) * 4, y, vx: (Math.random() - 0.5) * 2.4 * power, vy: -(1.2 + Math.random() * 2.2) * power, l: 0, life: 16 + Math.random() * 14, r: 0.6 + Math.random() * 0.6 });

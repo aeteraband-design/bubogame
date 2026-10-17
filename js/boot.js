@@ -147,11 +147,15 @@
             function sfx(key, name) {
                 if (SND[key]) return; SND[key] = 1;
                 try { if (typeof AudioFX !== 'undefined' && AudioFX[name]) { if (AudioFX.ctx && AudioFX.ctx.state === 'running') AudioFX[name](); } } catch (e) {}
+                // вибрация — такая же, как у этих событий в игре (браузер пускает её только после первого касания экрана)
+                var HAP = { playFlap: 'flap', playDrunk: 'powerup', playFreeze: 'powerup', playOverEat: 'powerup', playSpeedUpStart: 'powerup', playFreezeEnd: 'hit', playShazamArm: 'powerup', playMaxStaminaChime: 'powerup' };
+                try { if (HAP[name] && typeof Haptics !== 'undefined') Haptics[HAP[name]](); } catch (e) {}
             }
             function dismiss() {
                 if (dismissed || !ready) return; dismissed = true;
                 exitT0 = performance.now();   // сова улетает вправо, как в ШАЗАМе; экран гаснет следом
                 try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); setTimeout(function () { try { AudioFX.playShazamArm(); } catch (e2) {} }, 150); } } catch (e) {}   // зарядка — мягкий звук ШАЗАМа
+                try { Haptics.powerup(); } catch (e) {}   // зарядка ШАЗАМа — вибрация, как в игре (тап — жест, поэтому сработает и на iPhone)
                 setTimeout(finishDismiss, 1100);
             }
             function finishDismiss() {
@@ -185,7 +189,7 @@
                     MV.shz = Math.min(1, ct * 1.4);
                     if (ct < 1) { MV.exit = 0; MV.x = -4 * Math.sin(ct * Math.PI); MV.y = 0; MV.rot = 0; MV.wing = -1; MV.charge = ct; }
                     else {
-                        if (!MV.flapped) { MV.flapped = true; try { AudioFX.playMaxStaminaChime(); } catch (e) {} }   // рывок — звонкий перелив
+                        if (!MV.flapped) { MV.flapped = true; try { AudioFX.playMaxStaminaChime(); } catch (e) {} try { Haptics.powerup(); } catch (e) {} }   // рывок — звонкий перелив и вибрация, как у ШАЗАМа
                         var q = Math.min(1, (now - exitT0 - 600) / 450); MV.exit = q; MV.charge = 0;
                         MV.x = (MV.half + 90) * q * q; MV.y = -6 * q; MV.rot = -0.05; MV.wing = 0;
                     }
