@@ -16,7 +16,6 @@ function draw() {
     } else {
         drawScene();
     }
-    if (gfxQuality === 'ultra' && typeof ultraPost === 'function') ultraPost();   // «Ультра»: свечение и затемнение по краям
 }
 
 let camZoom = 1;
@@ -204,7 +203,6 @@ function drawScene() {
 
     if (!owlBehind && !booting) {
         drawSpeedStars();
-        if (gfxQuality === 'ultra' && typeof ultraOwlAura === 'function') ultraOwlAura();
         if (currentFreezeFactor > 0.01 && owl.visible) drawFrozenOwl(); else owl.draw();
     }
     shazamDrawFx();
@@ -238,7 +236,7 @@ function gameLoop(timestamp) {
         if (perfCooldown > 0) perfCooldown--;
         else if (perfAvgDt > 22 && gfxQuality !== 'low') {
             if (++perfSlowFrames > 150) {
-                gfxQuality = gfxQuality === 'ultra' ? 'high' : gfxQuality === 'high' ? 'medium' : 'low';
+                gfxQuality = gfxQuality === 'high' ? 'medium' : 'low';
                 applyGfxQuality(true);   // мягко: без пересборки города и заготовок — без рывка
                 perfSlowFrames = 0; perfCooldown = 360; perfAvgDt = 16.7;
             }
