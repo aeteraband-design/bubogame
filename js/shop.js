@@ -119,7 +119,7 @@ function shopBuild() {
             <button type="button" class="sh-x" data-sh="close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button></div>
         <div class="sh-title"><b>ЛАВКА</b><span>Обменивай монеты на попытки и бонусы</span></div>
         <div class="sh-grid" id="shGrid"></div>
-        <div class="sh-earn"><i class="fa-solid fa-circle-question"></i><span>Монеты: вопросы дня (до 100 за ответ) и по 40 за каждые 50 вопросов в полёте</span><button type="button" data-sh="quiz">ВОПРОСЫ</button></div>
+        <div class="sh-earn"><i class="fa-solid fa-circle-question"></i><span>Монеты: вопросы дня (до 100 за ответ) и 50/100/150 за каждые 50 вопросов в полёте</span><button type="button" data-sh="quiz">ВОПРОСЫ</button></div>
         <button type="button" class="sh-back" data-sh="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button>
     </div>`;
     host.appendChild(shRoot);

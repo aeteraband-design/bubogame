@@ -38,7 +38,7 @@ const ADMIN_DEFAULTS = {
     stormTest: 0,                        // проверка погоды: 0 — случайные грозы, 10–100 — сила грозы вручную
     shazamEvery: 4,                      // какое по счёту взятое ускорение включает ШАЗАМ
     feathersForMax: 6,                   // волшебных перьев до роста максимума сил
-    attempts: 2, questionsPerAttempt: 250,   // попытки на сутки; +1 попытка за каждые 250 вопросов, между ними — по 40 монет за каждые 50
+    attempts: 2, questionsPerAttempt: 200,   // попытки на сутки; +1 попытка за каждые 200 вопросов, между ними — 50/100/150 монет
     maxLives: 5                          // максимум сердечек: 5 или 6
 };
 const ADMIN_SPEC = {   // [минимум, максимум, шаг]
@@ -51,8 +51,8 @@ function normalizeAdminCfg(raw) {
     raw = (raw && typeof raw === 'object') ? raw : {};
     const cl = (v, sp, d) => { v = Math.round(Number(v)); return isFinite(v) ? Math.max(sp[0], Math.min(sp[1], v)) : d; };
     for (const k in ADMIN_SPEC) if (k !== 'theme' && k in raw) out[k] = cl(raw[k], ADMIN_SPEC[k], out[k]);
-    if (raw.qpaV !== 3) out.questionsPerAttempt = ADMIN_DEFAULTS.questionsPerAttempt;   // один раз переходим на «попытка за 200 вопросов»
-    out.qpaV = 3;
+    if (raw.qpaV !== 4) out.questionsPerAttempt = ADMIN_DEFAULTS.questionsPerAttempt;   // один раз переходим на «попытка за 200 вопросов»
+    out.qpaV = 4;
     // темы: старые сохранённые значения (до перехода на «по 20») не берём — один раз сбрасываем на новые стандартные
     if (raw.themesV === 2 && raw.themes && typeof raw.themes === 'object') for (const k in out.themes) if (k in raw.themes) out.themes[k] = cl(raw.themes[k], ADMIN_SPEC.theme, out.themes[k]);
     out.themesV = 2;
@@ -140,10 +140,11 @@ function checkAttemptMilestone() {
     if (coinMilestone < 0 || !active) coinMilestone = Math.max(coinMilestone, c);
     else if (c > coinMilestone) {
         let add = 0;
-        for (let k = coinMilestone + 1; k <= c; k++) if ((k * 50) % QUESTIONS_PER_ATTEMPT !== 0) add += 40;   // по 40 монет за каждые 50 вопросов (кроме рубежа попытки)
+        for (let k = coinMilestone + 1; k <= c; k++) if ((k * 50) % QUESTIONS_PER_ATTEMPT !== 0) add += (k * 50) % QUESTIONS_PER_ATTEMPT;   // 50, 100, 150… монет на рубеже (кроме рубежа попытки)
         coinMilestone = c;
         if (add > 0 && typeof coinsAdd === 'function') {
             coinsAdd(add);
+            try { const sb = document.getElementById('scoreBadge'); if (sb) { restartClass(sb, ['score-up'], 'score-up'); setTimeout(() => sb.classList.remove('score-up'), 1300); } } catch (e) {}
             try { AudioFX.playStarCollect(); Haptics.powerup(); } catch (e) {}
             try { showGoldBanner(`+${add} монет`, 'fa-coins', '#FFC53D'); } catch (e) {}
         }

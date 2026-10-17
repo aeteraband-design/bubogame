@@ -836,7 +836,7 @@ function drawPipeCap(capX, capY, capW, capH, r, rimY, pw, red) {
 }
 // поперечный шов трубы — выпуклый обод, окрашенный в тот же градиент, что и труба (повторяет её изгиб: слева в тени, справа блик от луны),
 // посередине щель, сверху и снизу от неё — по ряду болтов. Рисуется один раз в заготовку.
-const PIPE_SEAM_STEP = 110;   // шаг между швами — почти как отступ первого шва от шляпки, чуть реже
+const PIPE_SEAM_STEP = 88;   // шаг между швами — почти как отступ первого шва от шляпки, чуть реже
 const PIPE_STEM_STOPS = [[0, 0x12, 0x02, 0x24], [0.18, 0x26, 0x06, 0x47], [0.5, 0x4a, 0x0d, 0x8a], [0.72, 0x7a, 0x22, 0xd6], [0.8, 0x95, 0x34, 0xed], [0.9, 0x5a, 0x13, 0x99], [1, 0x1c, 0x03, 0x33]];
 function pipeStemCol(f, k, a) {   // цвет трубы в точке f (0..1 по ширине), k>1 — светлее, k<1 — темнее
     const S = PIPE_STEM_STOPS; let i = 0; while (i < S.length - 2 && f > S[i + 1][0]) i++;
@@ -927,7 +927,7 @@ function drawPipe(pipe) {
     const pOv = camZoom < 0.999 ? Math.ceil(height * (1 - camZoom) * 0.6) + 4 : 0;   // запас за краем — только при отдалении камеры
     ctx.fillRect(0, -pOv, pipe.width, topStemH + pOv);
     ctx.fillStyle = pgc.vol; ctx.fillRect(0, -pOv, pipe.width, topStemH + pOv);
-    for (let sy = topStemH - 95; sy > -pOv - 6; sy -= PIPE_SEAM_STEP) drawPipeSeam(pipe.width, sy);   // поперечные швы на болтах
+    for (let sy = topStemH - PIPE_SEAM_STEP; sy > -pOv - 6; sy -= PIPE_SEAM_STEP) drawPipeSeam(pipe.width, sy);   // поперечные швы на болтах
 
     ctx.lineWidth = 0.8;
     ctx.strokeStyle = 'rgba(147, 51, 234, 0.22)';   // слева приглушён, в тон трубе
@@ -960,7 +960,7 @@ function drawPipe(pipe) {
     ctx.fillStyle = stemGrad;
     ctx.fillRect(0, bottomStemY, pipe.width, bottomStemH + pOv);
     ctx.fillStyle = pgc.vol; ctx.fillRect(0, bottomStemY, pipe.width, bottomStemH + pOv);
-    for (let sy = bottomStemY + 95; sy < height + pOv + 6; sy += PIPE_SEAM_STEP) drawPipeSeam(pipe.width, sy);
+    for (let sy = bottomStemY + PIPE_SEAM_STEP; sy < height + pOv + 6; sy += PIPE_SEAM_STEP) drawPipeSeam(pipe.width, sy);
 
     ctx.lineWidth = 0.8;
     ctx.strokeStyle = 'rgba(147, 51, 234, 0.22)';   // слева приглушён, в тон трубе

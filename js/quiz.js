@@ -215,7 +215,7 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-rd b{color:#fff;font-weight:900}
 #qzWin .qz-rules{display:flex;flex-direction:column;gap:9px;width:100%;margin:2px 0}
 #qzWin .qz-rule{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:13px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.3);font-weight:700;font-size:12px;text-align:left;line-height:1.35}
-#qzWin .qz-rule>i{flex:0 0 22px;text-align:center;color:#38BDF8;font-size:14px}
+#qzWin .qz-rule>i{flex:0 0 28px;text-align:center;color:#38BDF8;font-size:18px}
 #qzWin .qz-btns{display:flex;flex-direction:column;gap:10px}
 #qzWin .qz-btn{width:100%;padding:13px 10px;border-radius:16px;font-weight:900;font-size:13px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
 #qzWin .qz-btn.sec{background:rgba(45,14,82,.9);border:1px solid rgba(168,85,247,.5);color:#fff;font-size:11px;padding:10px}
