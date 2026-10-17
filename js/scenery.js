@@ -503,7 +503,7 @@ function moonPhaseTarget() {
 function drawMoon() {
     const moonRadius = 40;
     const moonX = Math.min(width - 64, Math.max(416, width * 2 / 3));
-    const moonY = 92;   // выше, чтобы в меню не перекрывать надпись GAME (в игре и на загрузке — так же)
+    const moonY = Math.round(height * 0.455);   // ниже логотипа меню, чтобы не перекрывать надпись GAME (в игре и на загрузке — там же)
     const half = Math.ceil(moonRadius * 2.8) + 2;
     const S = Math.max(1, viewScale * renderScale);
     // плавно подтягиваем показанную фазу к целевой — смена почти незаметна
