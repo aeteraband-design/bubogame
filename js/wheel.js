@@ -75,9 +75,10 @@ function rwLayout() {
     const pad = RW_GAP * 1.2;
     const freeH = Math.max(150, total - others - 8);
     // ширина карточки — чтобы в ленте было видно ~2 карточки; высота — сколько позволяет экран (карточка может быть чуть вытянутой)
-    let cw = Math.max(76, Math.min(W / 1.8, (freeH - pad * 2) / 1.22));
-    let ch = Math.max(cw * 1.22, Math.min(freeH - pad * 2, cw * 1.6));
-    const reelH = Math.max(ch + pad * 2, freeH);   // окно ленты занимает всю свободную высоту, карточки — по центру
+    // лента компактная: карточки не вытягиваются на всю высоту, а свободное место делится поровну сверху и снизу (как в окне победы)
+    let cw = Math.max(76, Math.min(W / 2.1, (freeH - pad * 2) / 1.3));
+    let ch = cw * 1.3;
+    const reelH = ch + pad * 2;
     reel.style.height = reelH.toFixed(1) + 'px';
     const cwd = cw * 0.9;
     reel.style.setProperty('--cw', cw.toFixed(1) + 'px'); reel.style.setProperty('--cwd', cwd.toFixed(1) + 'px'); reel.style.setProperty('--ch', ch.toFixed(1) + 'px');

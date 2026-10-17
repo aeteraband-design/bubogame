@@ -421,8 +421,11 @@ function stormDrawRain() {
             const len = (4 + 20 * heavy) * d.z;
             ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - len * wind, d.y - len);
         }
-        ctx.globalAlpha = pass ? (0.2 + 0.28 * heavy) : (0.14 + 0.22 * heavy);
-        ctx.lineWidth = pass ? 1.1 : 0.8;
+        // толщина — не тоньше ~1,2 экранного пикселя: иначе при пониженном качестве косые штрихи «рвутся» лесенкой
+        const S = Math.max(0.5, (typeof viewScale === 'number' ? viewScale : 1) * renderScale * (typeof WORLD_K === 'number' ? WORLD_K : 1));
+        const lw = Math.max(pass ? 1.1 : 0.8, (pass ? 1.5 : 1.2) / S);
+        ctx.globalAlpha = (pass ? (0.2 + 0.28 * heavy) : (0.14 + 0.22 * heavy)) * Math.min(1, (pass ? 1.1 : 0.8) / lw * 1.15);
+        ctx.lineWidth = lw;
         ctx.stroke();
     }
     ctx.globalAlpha = 1;

@@ -137,6 +137,7 @@ function drawScene() {
     const isGameOverOpen = !dsEl.g.classList.contains('hidden');
     drawMoon();
     stormDrawBack();      // гроза: тучи, зарницы и разряды — позади домов
+    drawBackClouds();     // в обычную погоду редкие облачка тоже иногда плывут за домами
     if (!gameActive) cityOffset += 0.5 * dtMult;   // в меню и на паузе город медленно плывёт
     drawCity();
     stormDrawCityLight(); // мокрые крыши и подсветка фасадов вспышкой

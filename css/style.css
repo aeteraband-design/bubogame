@@ -1880,9 +1880,9 @@
 
 #rwWindow .rwp-head + .rw-reel { margin-top: 18px !important; }
 
-#rwWindow .rw-spins-pill { margin-top: 18px !important; margin-bottom: auto !important; }
+#rwWindow .rw-spins-pill { margin-top: 18px !important; margin-bottom: 0 !important; }
    /* счётчик ближе к подписи под лентой */
-#rwWindow .rw-btns { margin-top: var(--rw-btn-gap, 36px) !important; }
+#rwWindow .rw-btns { margin-top: auto !important; padding-top: 14px; }   /* как в окне победы: содержимое по центру между верхом окна и кнопками */
    /* такой же отступ, как сверху до заголовка — блок ровно по центру */
 
 

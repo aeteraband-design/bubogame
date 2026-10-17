@@ -571,6 +571,27 @@ function drawMoon() {
 
 let cloudSprite = null;
 const CLOUD_OX = 42, CLOUD_OY = 58, CLOUD_W = 140, CLOUD_H = 106;
+// ===== Редкие облачка у горизонта, за домами (в обычную погоду; в грозу там свои тучи) =====
+let backClouds = null;
+function drawBackClouds() {
+    if (!cloudSprite) return;   // заготовку облака создаёт drawClouds
+    if (!backClouds) {
+        backClouds = [];
+        for (let i = 0; i < 3; i++) backClouds.push({ x: Math.random() * width * 2.2, y: 0, ry: Math.random(), scale: 0.55 + Math.random() * 0.35, speed: 0.07 + Math.random() * 0.08 });
+    }
+    const sk = stormSmooth(0, 0.85, stormCover);
+    const a = 0.8 * (1 - sk);
+    for (const cl of backClouds) {
+        if (!gameActive) cl.x -= 0.25 * dtMult * 0.5;
+        cl.x -= cl.speed * dtMult;
+        if (cl.x < -150) { cl.x = width + 80 + Math.random() * width * 1.6; cl.ry = Math.random(); cl.scale = 0.55 + Math.random() * 0.35; }   // появляются редко
+        if (a < 0.01) continue;
+        const k = cl.scale, y = height * (0.42 + cl.ry * 0.12);
+        ctx.globalAlpha = a;
+        ctx.drawImage(cloudSprite, cl.x - CLOUD_OX * k, y - CLOUD_OY * k, CLOUD_W * k, CLOUD_H * k);
+    }
+    ctx.globalAlpha = 1;
+}
 function drawClouds() {
     if (!cloudSprite) {
         cloudSprite = makeSprite(CLOUD_W, CLOUD_H, Math.max(1, viewScale * renderScale), (c) => {

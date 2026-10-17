@@ -143,8 +143,8 @@ function crystalUpdate(speed, squeeze) {
         if (inGap && particles.length < 450) {
             c.sp = (c.sp || 0) - dt;
             while (c.sp <= 0) {
-                c.sp += 0.6 + Math.random() * 0.6;
-                particles.push({ x: c.x + (Math.random() - 0.5) * 2, y: c.y - c.d * Math.random() * 3, vx: -speed + (Math.random() - 0.5) * 0.12,   /* искры едут вместе с трубой — хвост ровно по линии полёта */ vy: -c.vy * (0.12 + Math.random() * 0.18), color: Math.random() < 0.55 ? '#FFD27A' : (Math.random() < 0.5 ? '#FF4A3D' : '#FFFFFF'), alpha: 1, size: 0.9 + Math.random() * 1.3, decay: 0.065 + Math.random() * 0.04, isStar: true });
+                c.sp += 1.3 + Math.random() * 1.5;   // искр меньше, хвост — рассыпчатый, а не тонкая струйка
+                particles.push({ x: c.x + (Math.random() - 0.5) * 7, y: c.y - c.d * Math.random() * 4, vx: -speed + (Math.random() - 0.5) * 0.9,   /* искры едут вместе с трубой и чуть разлетаются в стороны */ vy: -c.vy * (0.04 + Math.random() * 0.32) + (Math.random() - 0.5) * 0.5, color: Math.random() < 0.55 ? '#FFD27A' : (Math.random() < 0.5 ? '#FF4A3D' : '#FFFFFF'), alpha: 1, size: 0.7 + Math.random() * 2, decay: 0.05 + Math.random() * 0.06, isStar: true });
             }
         }
         // пролетел проём и скрылся в противоположной трубе
