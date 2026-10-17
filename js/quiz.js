@@ -219,6 +219,9 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-btns{display:flex;flex-direction:column;gap:10px}
 #qzWin .qz-btn{width:100%;padding:13px 10px;border-radius:16px;font-weight:900;font-size:13px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
 #qzWin .qz-btn.sec{background:rgba(45,14,82,.9);border:1px solid rgba(168,85,247,.5);color:#fff;font-size:11px;padding:10px}
+#qzWin.busy .qz-x{opacity:.3;pointer-events:none}
+#qzWin .qz-btn.sec[disabled]{opacity:.35;pointer-events:none;filter:saturate(.5)}
+#qzWin .qz-btn.sec i{color:#FE7600}
 #qzWin .qz-btn.gold{background:linear-gradient(180deg,#FFD66B,#FFB020);color:#4A2600;border:1px solid rgba(255,240,190,.8);box-shadow:0 0 14px rgba(255,197,61,.45)}
 #qzWin .qz-timer{font-weight:800;font-size:11px;color:#7DD3FC}
 #qzWin .qz-ready{display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px 10px;border-radius:20px;background:linear-gradient(180deg,rgba(120,44,233,.2),rgba(120,44,233,.06));border:1px dashed rgba(168,120,245,.5);text-align:center}
@@ -252,7 +255,7 @@ function qzBuild() {
     ['click', 'pointerdown', 'touchstart'].forEach((ev) => qzRoot.addEventListener(ev, (e) => e.stopPropagation()));
     qzRoot.querySelector('.qz-x').addEventListener('click', closeQuiz);
     qzRoot.addEventListener('click', (e) => {
-        if (e.target === qzRoot) { closeQuiz(); return; }
+        if (e.target === qzRoot) { const w = document.getElementById('qzWin'); if (!(w && w.classList.contains('busy'))) closeQuiz(); return; }
         const b = e.target.closest('[data-qa]'); if (!b) return;
         const a = b.dataset.qa;
         if (a === 'go') qzStartQuestion();
@@ -284,6 +287,7 @@ function qzBody() { return document.getElementById('qzBody'); }
 // экран «готов?» перед каждым вопросом (и первый экран с правилами)
 function qzRenderReady() {
     const d = quizDay(), body = qzBody(); if (!body) return;
+    { const w = document.getElementById('qzWin'); if (w) w.classList.remove('busy'); }
     QS.phase = 'ready';
     if (d.ids.length >= QUIZ_PER_DAY) { qzRenderDone(); return; }
     const n = d.ids.length + 1;
@@ -298,6 +302,7 @@ function qzRenderReady() {
 }
 function qzRenderDone() {
     const d = quizDay(), body = qzBody(); if (!body) return;
+    { const w = document.getElementById('qzWin'); if (w) w.classList.remove('busy'); }
     QS.phase = 'done';
     const ok = d.res.filter(r => r === 1).length;
     body.innerHTML = qzHead() + qzProg(d, -1) + `<div class="qz-res"><div class="qz-big win"><i class="fa-solid fa-coins"></i></div>`
@@ -325,8 +330,14 @@ function qzRenderQ(reveal) {
         const okA = pickL === corL;
         note = okA ? `<div class="qz-note ok">Верно! +${di.coins} монет</div>` : (pickL ? '<div class="qz-note bad">Неверно</div>' : '<div class="qz-note bad">Время вышло</div>');
         const last = d.ids.length >= QUIZ_PER_DAY;
-        if (pickL) btns = `<div class="qz-btns"><button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid ${last ? 'fa-flag-checkered' : 'fa-forward'}"></i>${last ? 'ИТОГИ ДНЯ' : 'СЛЕДУЮЩИЙ ВОПРОС'}</button></div>`;
-    } else note = `<div class="qz-note read" id="qzNote">${QS.phase === 'read' ? 'Читайте вопрос…' : 'Выбирайте ответ!'}</div>`;
+        btns = `<div class="qz-btns">${pickL ? `<button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid ${last ? 'fa-flag-checkered' : 'fa-forward'}"></i>${last ? 'ИТОГИ ДНЯ' : 'СЛЕДУЮЩИЙ ВОПРОС'}</button>` : ''}`
+            + `<button type="button" class="qz-btn sec" data-qa="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button></div>`;
+    } else {
+        note = `<div class="qz-note read" id="qzNote">${QS.phase === 'read' ? 'Читайте вопрос…' : 'Выбирайте ответ!'}</div>`;
+        // пока идёт вопрос — выйти в меню нельзя: кнопка неактивна, включится, когда покажется ответ
+        btns = `<div class="qz-btns"><button type="button" class="qz-btn sec" data-qa="close" disabled><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button></div>`;
+    }
+    { const w = document.getElementById('qzWin'); if (w) w.classList.toggle('busy', !reveal); }
     body.innerHTML = qzHead() + qzProg(d, idx)
         + `<div class="qz-card"><div class="qz-meta"><span class="qz-chip">${q.cat || 'Вопрос'}</span><span class="qz-sep"></span><span class="qz-diff" style="color:${di.col}">${di.name}</span>${reveal ? '' : ring}</div>`
         + `<div class="qz-q">${q.question}</div><div class="qz-rew">${QZ_COIN}<span>За верный ответ: <b>+${di.coins}</b></span></div><div class="qz-opts">${opts}</div></div>`
