@@ -224,7 +224,7 @@ function waterUpdate(speed, squeeze) {
         }
     }
     // поток во всю ширину трубы; со сложностью — гуще, быстрее и сильнее давит
-    const WK = Math.min(0.96, 0.82 + 0.03 * lv), DENS = 0.016 + lv * 0.02, V0 = 2.6 + lv * 0.45, G = 0.22;
+    const WK = Math.min(0.95, 0.55 + 0.08 * lv), DENS = 0.016 + lv * 0.02, V0 = 2.6 + lv * 0.45, G = 0.22;
     const PUSH = 0.035 + 0.065 * lv;   // в начале — лёгкий напор, с каждым уровнем сильнее
     const R = shieldTime > 0 ? owl.radius * 1.4 : owl.radius * 0.95;
     let imp = 0, hits = 0;
@@ -265,7 +265,6 @@ function waterUpdate(speed, squeeze) {
                 const rel = (d.x - cx) / (W / 2), side = rel < 0 ? -1 : 1;
                 if (Math.random() < 0.45) waterSplash(p.x + d.x, yb - 2, 1, -Math.PI / 2 + side * (0.75 + Math.abs(rel) * 0.45), 0.7, 1.8 + d.vy * 0.14 + Math.abs(rel) * 0.8, 0.3);
                 // от удара по воде на шляпке расходится кольцо
-                if (!d.b && Math.random() < 0.3 && s.rip.length < 14) s.rip.push({ x: d.x, r: 1 + d.r * 0.6, a: 0.7 });
                 // на шляпке рождается пузырёк пены и ползёт к краю
                 if (Math.random() < 0.35 && s.foam.length < 60) s.foam.push({ x: d.x, y: yb - 1.5, vx: side * (0.25 + Math.random() * 0.55) + rel * 0.2, vy: -0.4 - Math.random() * 0.5, r: 0.8 + Math.random() * 1.4, a: 0.95, life: 50 + Math.random() * 50, bot: true, ph: Math.random() * 6.28 });
                 if (Math.random() < 0.05 && s.mist.length < 12) s.mist.push({ x: d.x + (Math.random() - 0.5) * 10, y: yb - 8, r: 9 + Math.random() * 8, a: 0.3, vy: -0.22 - Math.random() * 0.2 });
