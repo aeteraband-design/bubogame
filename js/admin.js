@@ -18,7 +18,7 @@
         { id: 'test', name: 'Тест', icon: 'fa-flask' }
     ];
     const ROWS = {
-        quiz: [rowDef('quizOn', 'Вопросы и порталы', '', 'fa-circle-nodes', '#38BDF8', (n) => n ? 'включены' : 'выключены')],
+        quiz: [],
         food: [
             rowDef('overeatEvery', 'До переедания', '', 'fa-burger', '#FB923C', (n) => ruPlural(n, ['порция еды', 'порции еды', 'порций еды'])),
             rowDef('overeatSec', 'Длительность', '', 'fa-stopwatch', '#FDBA74', unitSec)
@@ -227,7 +227,7 @@
     body.addEventListener('click', (e) => {
         const b = e.target.closest('[data-q]'); if (!b || tab !== 'quiz') return;
         if (b.dataset.q === 'reset') { quizResetSeen(); renderBody(); }
-        else if (b.dataset.q === 'portal') { quizForcePortal(); close(); }
+        else if (b.dataset.q === 'today') { quizResetDay(); renderBody(); }
     });
     body.addEventListener('click', (e) => {
         const c = e.target.closest('[data-e]'); if (!c || tab !== 'test') return;

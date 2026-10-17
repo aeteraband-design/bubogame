@@ -1,10 +1,7 @@
-// ===== КВИЗ-МИР (тестовая версия) =====
-// Каждые 10% собранных тем между трубами появляется портал. Влетели — камера уходит за спину совы (псевдо-3D, мир летит на нас
-// из глубины), сова машет крыльями сама, игрок водит её только влево-вправо (палец/мышь, стрелки, A/D).
-// В этом мире нет значков тем — только бонусные напитки и 3 вопроса. Вопрос: 5 секунд на чтение (мир замирает), потом из глубины
-// медленно летят шары с буквами A, B, C, D — влетаешь в нужный. Верно — шар и ответ зелёные, неверно — красные.
-// После трёх вопросов — выходной портал и возврат в обычный полёт.
-// Каждый вопрос показывается игроку только один раз (запоминается в браузере); сбросить можно в админке, вкладка «Вопросы».
+// ===== ВОПРОСЫ ЗА ПОПЫТКИ =====
+// Кнопка в главном меню (под рулеткой) открывает окно «Вопросы дня». В день — до 5 вопросов; 3 верных ответа дают +1 попытку,
+// после этого (или когда 3 верных уже не набрать) вопросы закрываются до завтра. Вопросы не повторяются, пока не пройдена вся база.
+// Порядок вариантов перемешивается при каждом показе. Админка, вкладка «Вопросы»: список, сброс показанных и сброс дня.
 
 // ---------- база вопросов: добавлять по этому же шаблону ----------
 const QUIZ_QUESTIONS = [
@@ -23,429 +20,299 @@ const QUIZ_QUESTIONS = [
     { id: 113, cat: 'Обо всём', question: 'Какой химический элемент обозначается символом Au?', options: { A: 'Серебро', B: 'Аргон', C: 'Золото', D: 'Алюминий' }, correct: 'C' },
     { id: 114, cat: 'Обо всём', question: 'Какая река считается самой длинной в мире по большинству справочников?', options: { A: 'Амазонка', B: 'Нил', C: 'Янцзы', D: 'Миссисипи' }, correct: 'B' },
     { id: 115, cat: 'Обо всём', question: 'В каком году человек впервые высадился на Луну?', options: { A: '1961', B: '1965', C: '1969', D: '1972' }, correct: 'C' },
-    { id: 116, cat: 'Наука', question: 'Сколько костей в теле взрослого человека?', options: { A: '186', B: '206', C: '226', D: '256' }, correct: 'B' }
+    { id: 116, cat: 'Наука', question: 'Сколько костей в теле взрослого человека?', options: { A: '186', B: '206', C: '226', D: '256' }, correct: 'B' },
+    // ----- история -----
+    { id: 117, cat: 'История', question: 'В каком году пала Берлинская стена?', options: { A: '1987', B: '1989', C: '1991', D: '1985' }, correct: 'B' },
+    { id: 118, cat: 'История', question: 'Кто стал первым императором Рима?', options: { A: 'Юлий Цезарь', B: 'Нерон', C: 'Октавиан Август', D: 'Траян' }, correct: 'C' },
+    { id: 119, cat: 'История', question: 'Какое сражение 1812 года подробно описано в «Войне и мире»?', options: { A: 'Полтавская битва', B: 'Ледовое побоище', C: 'Бородинское сражение', D: 'Куликовская битва' }, correct: 'C' },
+    { id: 120, cat: 'История', question: 'В каком году был основан Санкт-Петербург?', options: { A: '1703', B: '1721', C: '1689', D: '1712' }, correct: 'A' },
+    { id: 121, cat: 'История', question: 'Какая страна подарила США Статую Свободы?', options: { A: 'Великобритания', B: 'Испания', C: 'Италия', D: 'Франция' }, correct: 'D' },
+    { id: 122, cat: 'История', question: 'Как звали первую женщину-космонавта?', options: { A: 'Светлана Савицкая', B: 'Валентина Терешкова', C: 'Салли Райд', D: 'Елена Кондакова' }, correct: 'B' },
+    { id: 123, cat: 'История', question: 'В каком городе в 1914 году убили эрцгерцога Франца Фердинанда?', options: { A: 'Вена', B: 'Белград', C: 'Сараево', D: 'Будапешт' }, correct: 'C' },
+    // ----- литература -----
+    { id: 124, cat: 'Литература', question: 'Кто написал роман «Мастер и Маргарита»?', options: { A: 'Борис Пастернак', B: 'Михаил Булгаков', C: 'Владимир Набоков', D: 'Андрей Платонов' }, correct: 'B' },
+    { id: 125, cat: 'Литература', question: 'Как звали коня Дон Кихота?', options: { A: 'Буцефал', B: 'Пегас', C: 'Росинант', D: 'Серко' }, correct: 'C' },
+    { id: 126, cat: 'Литература', question: 'Кто автор антиутопии «1984»?', options: { A: 'Олдос Хаксли', B: 'Рэй Брэдбери', C: 'Евгений Замятин', D: 'Джордж Оруэлл' }, correct: 'D' },
+    { id: 127, cat: 'Литература', question: 'В каком произведении Пушкина есть верный слуга Савельич?', options: { A: '«Капитанская дочка»', B: '«Дубровский»', C: '«Евгений Онегин»', D: '«Пиковая дама»' }, correct: 'A' },
+    { id: 128, cat: 'Литература', question: 'Как зовут главного героя «Преступления и наказания»?', options: { A: 'Лев Мышкин', B: 'Родион Раскольников', C: 'Дмитрий Карамазов', D: 'Николай Ставрогин' }, correct: 'B' },
+    { id: 129, cat: 'Литература', question: 'Кто написал роман «Сто лет одиночества»?', options: { A: 'Хорхе Луис Борхес', B: 'Хулио Кортасар', C: 'Пабло Неруда', D: 'Габриэль Гарсиа Маркес' }, correct: 'D' },
+    { id: 130, cat: 'Литература', question: 'Какой номер у «нехорошей квартиры» в «Мастере и Маргарите»?', options: { A: '13', B: '66', C: '50', D: '7' }, correct: 'C' },
+    { id: 131, cat: 'Литература', question: 'Кто написал сказку «Маленький принц»?', options: { A: 'Антуан де Сент-Экзюпери', B: 'Жюль Верн', C: 'Виктор Гюго', D: 'Альбер Камю' }, correct: 'A' },
+    { id: 132, cat: 'Литература', question: 'На какой улице жил Шерлок Холмс?', options: { A: 'Даунинг-стрит', B: 'Пикадилли', C: 'Флит-стрит', D: 'Бейкер-стрит' }, correct: 'D' },
+    { id: 133, cat: 'Литература', question: 'Кто написал комедию «Горе от ума»?', options: { A: 'Денис Фонвизин', B: 'Александр Грибоедов', C: 'Александр Островский', D: 'Николай Гоголь' }, correct: 'B' },
+    { id: 134, cat: 'Литература', question: 'Кому принадлежат строки «Я помню чудное мгновенье»?', options: { A: 'Михаил Лермонтов', B: 'Фёдор Тютчев', C: 'Александр Пушкин', D: 'Сергей Есенин' }, correct: 'C' },
+    // ----- искусство -----
+    { id: 135, cat: 'Искусство', question: 'Кто написал картину «Звёздная ночь»?', options: { A: 'Клод Моне', B: 'Винсент Ван Гог', C: 'Поль Гоген', D: 'Эдвард Мунк' }, correct: 'B' },
+    { id: 136, cat: 'Искусство', question: 'В каком музее хранится «Мона Лиза»?', options: { A: 'Прадо', B: 'Эрмитаж', C: 'Уффици', D: 'Лувр' }, correct: 'D' },
+    { id: 137, cat: 'Искусство', question: 'Кто автор картины «Утро в сосновом лесу» (вместе с Савицким)?', options: { A: 'Иван Шишкин', B: 'Исаак Левитан', C: 'Илья Репин', D: 'Архип Куинджи' }, correct: 'A' },
+    { id: 138, cat: 'Искусство', question: 'Кто расписал потолок Сикстинской капеллы?', options: { A: 'Рафаэль', B: 'Леонардо да Винчи', C: 'Микеланджело', D: 'Сандро Боттичелли' }, correct: 'C' },
+    { id: 139, cat: 'Искусство', question: 'Кто автор «Чёрного квадрата»?', options: { A: 'Василий Кандинский', B: 'Марк Шагал', C: 'Александр Родченко', D: 'Казимир Малевич' }, correct: 'D' },
+    { id: 140, cat: 'Искусство', question: 'Кто написал картину «Девятый вал»?', options: { A: 'Василий Суриков', B: 'Иван Айвазовский', C: 'Виктор Васнецов', D: 'Алексей Саврасов' }, correct: 'B' },
+    // ----- кино -----
+    { id: 141, cat: 'Кино', question: 'Как зовут героя Брюса Уиллиса в «Крепком орешке»?', options: { A: 'Джон Макклейн', B: 'Рик Декард', C: 'Джон Коннор', D: 'Мартин Риггс' }, correct: 'A' },
+    { id: 142, cat: 'Кино', question: 'Как зовут героя Юрия Никулина в «Бриллиантовой руке»?', options: { A: 'Геша Козодоев', B: 'Лёлик', C: 'Семён Горбунков', D: 'Михаил Иванович' }, correct: 'C' },
+    { id: 143, cat: 'Кино', question: 'Кто снял «Криминальное чтиво»?', options: { A: 'Мартин Скорсезе', B: 'Гай Ричи', C: 'Роберт Родригес', D: 'Квентин Тарантино' }, correct: 'D' },
+    { id: 144, cat: 'Кино', question: 'Как называется корабль капитана Джека Воробья?', options: { A: '«Летучий голландец»', B: '«Чёрная жемчужина»', C: '«Месть королевы Анны»', D: '«Разящий»' }, correct: 'B' },
+    { id: 145, cat: 'Кино', question: 'Сколько «Оскаров» получил фильм «Титаник»?', options: { A: '7', B: '9', C: '11', D: '14' }, correct: 'C' },
+    { id: 146, cat: 'Кино', question: 'Кто сыграл Данилу Багрова в фильме «Брат»?', options: { A: 'Константин Хабенский', B: 'Сергей Бодров', C: 'Виктор Сухоруков', D: 'Владимир Машков' }, correct: 'B' },
+    { id: 147, cat: 'Кино', question: 'Как зовут мага, который ведёт Братство Кольца?', options: { A: 'Гэндальф', B: 'Саруман', C: 'Радагаст', D: 'Элронд' }, correct: 'A' },
+    { id: 148, cat: 'Кино', question: 'Куда по ошибке улетел Женя Лукашин в «Иронии судьбы»?', options: { A: 'Киев', B: 'Рига', C: 'Минск', D: 'Ленинград' }, correct: 'D' },
+    // ----- сериалы -----
+    { id: 149, cat: 'Сериалы', question: 'В каком городе живут герои сериала «Друзья»?', options: { A: 'Лос-Анджелес', B: 'Чикаго', C: 'Нью-Йорк', D: 'Бостон' }, correct: 'C' },
+    { id: 150, cat: 'Сериалы', question: 'Как называется тёмное измерение в «Очень странных делах»?', options: { A: 'Изнанка', B: 'Тень', C: 'Зазеркалье', D: 'Пустота' }, correct: 'A' },
+    { id: 151, cat: 'Сериалы', question: 'Кто сыграл Шерлока в сериале BBC «Шерлок»?', options: { A: 'Мартин Фримен', B: 'Бенедикт Камбербэтч', C: 'Том Хиддлстон', D: 'Мэтт Смит' }, correct: 'B' },
+    { id: 152, cat: 'Сериалы', question: 'Какое прозвище у главного героя сериала «Бригада»?', options: { A: 'Космос', B: 'Пчёла', C: 'Фил', D: 'Белый' }, correct: 'D' },
+    { id: 153, cat: 'Сериалы', question: 'Кто играл Геральта в первых сезонах «Ведьмака» от Netflix?', options: { A: 'Генри Кавилл', B: 'Крис Хемсворт', C: 'Лиам Хемсворт', D: 'Мадс Миккельсен' }, correct: 'A' },
+    // ----- музыка -----
+    { id: 154, cat: 'Музыка', question: 'Кто написал музыку к балету «Лебединое озеро»?', options: { A: 'Николай Римский-Корсаков', B: 'Игорь Стравинский', C: 'Пётр Чайковский', D: 'Сергей Прокофьев' }, correct: 'C' },
+    { id: 155, cat: 'Музыка', question: 'Кто был лидером группы «Кино»?', options: { A: 'Борис Гребенщиков', B: 'Виктор Цой', C: 'Юрий Шевчук', D: 'Майк Науменко' }, correct: 'B' },
+    { id: 156, cat: 'Музыка', question: 'Из какого города группа The Beatles?', options: { A: 'Лондон', B: 'Манчестер', C: 'Бирмингем', D: 'Ливерпуль' }, correct: 'D' },
+    { id: 157, cat: 'Музыка', question: 'Кто исполнил хит «Thriller»?', options: { A: 'Майкл Джексон', B: 'Принс', C: 'Стиви Уандер', D: 'Уитни Хьюстон' }, correct: 'A' },
+    { id: 158, cat: 'Музыка', question: 'Какая группа исполняет песню «Группа крови»?', options: { A: 'ДДТ', B: 'Алиса', C: 'Кино', D: 'Наутилус Помпилиус' }, correct: 'C' },
+    { id: 159, cat: 'Музыка', question: 'Как по-настоящему звали Фредди Меркьюри?', options: { A: 'Ричард Старки', B: 'Фарух Булсара', C: 'Гордон Самнер', D: 'Реджинальд Дуайт' }, correct: 'B' },
+    { id: 160, cat: 'Музыка', question: 'Кто написал скрипичные концерты «Времена года»?', options: { A: 'Иоганн Себастьян Бах', B: 'Георг Гендель', C: 'Вольфганг Моцарт', D: 'Антонио Вивальди' }, correct: 'D' },
+    { id: 161, cat: 'Музыка', question: 'Какая группа выпустила песню «Smells Like Teen Spirit»?', options: { A: 'Nirvana', B: 'Pearl Jam', C: 'Soundgarden', D: 'Foo Fighters' }, correct: 'A' },
+    // ----- слова -----
+    { id: 162, cat: 'Слова', question: 'Что изучает орнитология?', options: { A: 'Насекомых', B: 'Рыб', C: 'Птиц', D: 'Змей' }, correct: 'C' },
+    { id: 163, cat: 'Слова', question: 'Как называется слово, которое одинаково читается в обе стороны, как «шалаш»?', options: { A: 'Анаграмма', B: 'Палиндром', C: 'Омоним', D: 'Акроним' }, correct: 'B' },
+    { id: 164, cat: 'Слова', question: 'Сколько букв в современном русском алфавите?', options: { A: '31', B: '32', C: '33', D: '34' }, correct: 'C' },
+    { id: 165, cat: 'Слова', question: 'Что такое оксюморон?', options: { A: 'Повтор одинаковых звуков', B: 'Сильное преувеличение', C: 'Скрытое сравнение', D: 'Сочетание противоположных по смыслу слов' }, correct: 'D' },
+    { id: 166, cat: 'Слова', question: 'Какого рода слово «кофе» по литературной норме?', options: { A: 'Мужского', B: 'Среднего', C: 'Женского', D: 'Рода нет' }, correct: 'A' },
+    // ----- мир и наука -----
+    { id: 167, cat: 'География', question: 'Какая гора самая высокая в Африке?', options: { A: 'Кения', B: 'Килиманджаро', C: 'Тубкаль', D: 'Эльбрус' }, correct: 'B' },
+    { id: 168, cat: 'География', question: 'Какой город — столица Австралии?', options: { A: 'Сидней', B: 'Мельбурн', C: 'Канберра', D: 'Перт' }, correct: 'C' },
+    { id: 169, cat: 'География', question: 'Сколько часовых поясов в России?', options: { A: '9', B: '10', C: '12', D: '11' }, correct: 'D' },
+    { id: 170, cat: 'Наука', question: 'Какая планета Солнечной системы самая большая?', options: { A: 'Юпитер', B: 'Сатурн', C: 'Нептун', D: 'Уран' }, correct: 'A' }
 ];
-const QUIZ_PER_PORTAL = 3;          // вопросов за один заход в портал
-const QUIZ_PORTAL_AT = [0.30, 0.60];   // порталы за всю игру: на 30% и на 60% собранных тем
-const QUIZ_READ_SEC = 5;            // пауза на чтение вопроса
-const QUIZ_FLY_SEC = 12;            // сколько летят шары с ответами (10–15 с)
-const QUIZ_SEEN_KEY = 'bubo_quiz_seen', QUIZ_MS_KEY = 'bubo_quiz_ms';
+
+const QUIZ_PER_DAY = 5, QUIZ_NEED_OK = 3;
+const QUIZ_SEEN_KEY = 'bubo_quiz_seen', QUIZ_DAY_KEY = 'bubo_quiz_day';
+const QZ_LETTERS = ['A', 'B', 'C', 'D'];
+const QZ_BALL_COL = { A: '#FE7600', B: '#A855F7', C: '#38BDF8', D: '#F43F5E' };
+
+// старый «квиз-мир» убран: заглушки для мест, которые его вызывали
+const QZ = { on: false, phase: '' };
+function quizActive() { return false; }
+function quizUpdate() {} function quizUpdate2D() {} function quizDraw() {} function quizDrawPortal2D() {}
+function quizOnTheme() {} function quizResetProgress() {} function quizAbort() {} function quizUI() {} function quizForcePortal() {}
 
 // ---------- какие вопросы игрок уже видел ----------
 function quizSeen() { try { return JSON.parse(localStorage.getItem(QUIZ_SEEN_KEY)) || []; } catch (e) { return []; } }
 function quizMarkSeen(id) { try { const s = quizSeen(); if (s.indexOf(id) < 0) { s.push(id); localStorage.setItem(QUIZ_SEEN_KEY, JSON.stringify(s)); } } catch (e) {} }
 function quizResetSeen() { try { localStorage.removeItem(QUIZ_SEEN_KEY); } catch (e) {} }
-function quizPick(n) {
-    const seen = quizSeen();
-    const free = QUIZ_QUESTIONS.filter(q => seen.indexOf(q.id) < 0);
-    for (let i = free.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [free[i], free[j]] = [free[j], free[i]]; }
-    return free.slice(0, n);
+function quizNextId(day) {
+    let seen = quizSeen();
+    let free = QUIZ_QUESTIONS.filter(q => seen.indexOf(q.id) < 0 && day.ids.indexOf(q.id) < 0);
+    if (!free.length) { quizResetSeen(); free = QUIZ_QUESTIONS.filter(q => day.ids.indexOf(q.id) < 0); }   // вся база пройдена — идём по кругу
+    return free.length ? free[Math.floor(Math.random() * free.length)].id : QUIZ_QUESTIONS[0].id;
 }
 
-// ---------- состояние ----------
-const QZ = {
-    pending: false, portal: null,          // портал в обычном мире
-    on: false, t: 0, phase: 'fly', phaseT: 0,
-    x: 0, tx: 0, keyL: false, keyR: false, drag: false,
-    objs: [], qList: [], qi: -1, q: null, balls: null, picked: null, result: null,
-    flash: 0, exitAt: 0, spawnT: 0, colT: 0, grid: 0, exiting: false, nOk: 0, nBad: 0, nDone: 0
-};
-let quizMs = 0; try { quizMs = parseInt(localStorage.getItem(QUIZ_MS_KEY), 10) || 0; } catch (e) {}
-function quizActive() { return QZ.on; }
+// ---------- прогресс дня ----------
+function qzToday() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function quizDay() {
+    let d = null; try { d = JSON.parse(localStorage.getItem(QUIZ_DAY_KEY)); } catch (e) {}
+    if (!d || d.d !== qzToday()) d = { d: qzToday(), ids: [], res: [], ok: 0, cur: 0, ord: '', got: false, done: false };
+    return d;
+}
+function quizSaveDay(d) { try { localStorage.setItem(QUIZ_DAY_KEY, JSON.stringify(d)); } catch (e) {} }
+function quizResetDay() { try { localStorage.removeItem(QUIZ_DAY_KEY); } catch (e) {} quizMenuBadge(); }
+function quizDayLeft() { const d = quizDay(); return !d.done; }
+function qzShuffleOrd() { const a = QZ_LETTERS.slice(); for (let i = 3; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.join(''); }
 
-// собрана ещё одна тема: проверяем рубеж 10%, 20%, …
-function quizOnTheme() {
-    if (!ADMIN_CFG.quizOn) return;   // вопросы выключены в админке (по умолчанию)
-    let have = 0, need = 0;
-    for (const k of THEME_KEYS_ALL) { have += Math.min(collected[k] || 0, CATEGORIES[k].count); need += CATEGORIES[k].count; }
-    if (!need) return;
-    const pct = have / need + 1e-9, m = QUIZ_PORTAL_AT.filter(a => pct >= a).length;
-    if (m > quizMs) { quizMs = m; try { localStorage.setItem(QUIZ_MS_KEY, String(m)); } catch (e) {} if (quizPick(1).length) QZ.pending = true; }
-}
-// новая игра: рубежи с нуля
-function quizResetProgress() { quizMs = 0; QZ.pending = false; QZ.portal = null; try { localStorage.removeItem(QUIZ_MS_KEY); } catch (e) {} }
-// из админки: портал прямо сейчас
-function quizForcePortal() { QZ.pending = true; }
-
-// ---------- портал в обычном мире ----------
-function quizUpdate2D(speed, sq) {
-    if (QZ.pending && !QZ.portal && !QZ.on) {
-        // вешаем портал в проём ближайшей трубы, которая ещё за правым краем экрана
-        const p = pipes.find(pp => pp.x > width * 0.75 && !pp.portal);
-        if (p) { p.portal = true; QZ.portal = { pipe: p }; QZ.pending = false; }
-    }
-    quizUpdateExit2D(sq);
-    const P = QZ.portal; if (!P) return;
-    const p = P.pipe;
-    if (pipes.indexOf(p) < 0) { QZ.portal = null; QZ.pending = true; return; }
-    const top = p.top + sq, bot = height - (p.bottom + sq);
-    P.x = p.x + p.width / 2; P.y = (top + bot) / 2; P.r = Math.min(46, (bot - top) * 0.36);
-    quizClearItemsNear(P.x);   // в проёме с порталом — никаких значков, только портал
-    if (!gameActive) return;
-    if (owl.x > P.x - 6 && owl.x < P.x + 14 && owl.y > top && owl.y < bot) quizEnter();
-    else if (P.x < owl.x - 60) { QZ.portal = null; QZ.pending = true; }   // промахнулись (например, разбились) — портал появится у следующей трубы
-}
-// Портал как в игре Portal: овал с толстой огненной кромкой (несколько слоёв свечения), изнутри — тёмная «дверь» в другой мир
-// с цветным отсветом от кромки, по краю бегут языки энергии и слетают искры. Вход — голубой, выход — оранжевый.
-const QZ_PORTAL_COL = { in: { c: [56, 170, 255], hi: [205, 240, 255], dark: [3, 14, 40] }, out: { c: [255, 138, 30], hi: [255, 232, 196], dark: [40, 12, 2] } };
-function drawQuizPortal(x, y, r, a, kind) {
-    const t = (typeof frame === 'number' ? frame : 0), P = QZ_PORTAL_COL[kind || 'in'], [cr, cg, cb] = P.c, [hr, hg, hb] = P.hi, [dr, dg, db] = P.dark;
-    const rx = r * 0.66, ry = r * 1.12, rgba = (c, al) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${al})`;
-    ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y);
-    // мягкое свечение вокруг: градиент растянут по форме овала и плавно уходит в ноль — без видимой границы
-    ctx.save(); ctx.scale(rx / ry, 1);
-    const gl = ctx.createRadialGradient(0, 0, ry * 0.8, 0, 0, ry * 2.2);
-    gl.addColorStop(0, rgba(P.c, 0.38)); gl.addColorStop(0.35, rgba(P.c, 0.16)); gl.addColorStop(0.7, rgba(P.c, 0.05)); gl.addColorStop(1, rgba(P.c, 0));
-    ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(0, 0, ry * 2.2, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-    // «дверь»: тёмная середина, к кромке — цветной отсвет; внутри медленно вращаются туманные завитки
-    const edge = (i, n, w) => { const an = i / n * Math.PI * 2; const j = 1 + 0.03 * Math.sin(an * 6 + t * 0.18) + 0.02 * Math.sin(an * 11 - t * 0.27) + w; return [Math.cos(an) * rx * j, Math.sin(an) * ry * j]; };
-    const oval = (w) => { ctx.beginPath(); for (let i = 0; i <= 60; i++) { const [px, py] = edge(i, 60, w); if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); } ctx.closePath(); };
-    ctx.save(); oval(0); ctx.clip();
-    ctx.save(); ctx.scale(rx / ry, 1);
-    const ig = ctx.createRadialGradient(0, 0, 0, 0, 0, ry);
-    ig.addColorStop(0, rgba(P.dark, 1)); ig.addColorStop(0.55, `rgba(${(dr + cr) >> 1}, ${(dg + cg) >> 1}, ${(db + cb) >> 1}, 0.95)`); ig.addColorStop(0.85, rgba(P.c, 0.95)); ig.addColorStop(1, rgba(P.hi, 1));
-    ctx.fillStyle = ig; ctx.fillRect(-ry, -ry, ry * 2, ry * 2);
-    ctx.globalCompositeOperation = 'lighter';
-    for (let k = 0; k < 3; k++) {
-        const an = t * (0.012 + k * 0.006) * (k % 2 ? -1 : 1) + k * 2.1, cx2 = Math.cos(an) * ry * 0.3, cy2 = Math.sin(an) * ry * 0.3;
-        const sg = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, ry * 0.55);
-        sg.addColorStop(0, rgba(P.c, 0.22)); sg.addColorStop(1, rgba(P.c, 0));
-        ctx.fillStyle = sg; ctx.fillRect(-ry, -ry, ry * 2, ry * 2);
-    }
-    ctx.restore(); ctx.restore();
-    // кромка: широкий мягкий слой, яркий цветной, тонкий почти белый
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = rgba(P.c, 0.28); ctx.lineWidth = Math.max(3, r * 0.3); oval(0.02); ctx.stroke();
-    ctx.shadowColor = rgba(P.c, 1); ctx.shadowBlur = r * 0.35;
-    ctx.strokeStyle = rgba(P.c, 1); ctx.lineWidth = Math.max(2, r * 0.13); oval(0); ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = rgba(P.hi, 0.95); ctx.lineWidth = Math.max(1, r * 0.04); oval(-0.01); ctx.stroke();
-    // языки энергии: короткие вспышки, бегущие по кромке
-    ctx.lineCap = 'round';
-    for (let k = 0; k < 6; k++) {
-        const s0 = ((t * 0.006 * (k % 2 ? 1 : -1.3) + k / 6) % 1 + 1) % 1, n = 60, i0 = Math.floor(s0 * n);
-        ctx.strokeStyle = rgba(P.hi, 0.85); ctx.lineWidth = Math.max(1, r * 0.06);
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) { const [px, py] = edge((i0 + i) % n, n, 0.01); if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
-        ctx.stroke();
-    }
-    // искры слетают с кромки наружу и гаснут
-    for (let k = 0; k < 12; k++) {
-        const ph = (t * 0.018 + k * 0.083) % 1, an = k * 0.52 + Math.floor(t * 0.018 + k * 0.083) * 1.7, d = 1.02 + ph * 0.5;
-        ctx.globalAlpha = a * (1 - ph) * 0.9;
-        ctx.fillStyle = k % 3 ? rgba(P.hi, 1) : '#FFFFFF';
-        ctx.beginPath(); ctx.arc(Math.cos(an) * rx * d, Math.sin(an) * ry * d, Math.max(0.7, r * 0.03) * (1 - ph * 0.6), 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.restore();
-}
-function quizClearItemsNear(x) {
-    if (typeof items === 'undefined') return;
-    for (let i = items.length - 1; i >= 0; i--) { const it = items[i]; if (!it.collected && Math.abs(it.x - x) < 70) items.splice(i, 1); }
-}
-// выходной портал в обычном мире: стоит в проёме трубы, сова из него выскакивает; потом уезжает вместе с трубой и гаснет
-function quizUpdateExit2D(sq) {
-    const E = QZ.exitP; if (!E) return;
-    const p = E.pipe;
-    if (pipes.indexOf(p) < 0) { QZ.exitP = null; return; }
-    const top = p.top + sq, bot = height - (p.bottom + sq);
-    E.x = p.x + p.width / 2; E.y = (top + bot) / 2; E.r = Math.min(46, (bot - top) * 0.36);
-    E.t += dtMult; if (E.t > 70) E.a = Math.max(0, (E.a == null ? 1 : E.a) - 0.02 * dtMult);
-    quizClearItemsNear(E.x);
-    if (E.a === 0 || E.x < -80) QZ.exitP = null;
-}
-function quizDrawPortal2D() {
-    const P = QZ.portal; if (P && P.r) drawQuizPortal(P.x, P.y, P.r, 1, 'in');
-    const E = QZ.exitP; if (E && E.r) drawQuizPortal(E.x, E.y, E.r, E.a == null ? 1 : E.a, 'out');
-}
-
-// ---------- вход и выход ----------
-function quizEnter() {
-    QZ.portal = null; QZ.on = true; QZ.t = 0; QZ.flash = 1; QZ.objs = []; QZ.scroll = 0; QZ.hinted = false;
-    owl.vy = 0; owl.y = height * 0.45;
-    QZ.qList = quizPick(QUIZ_PER_PORTAL); QZ.qi = -1; QZ.q = null; QZ.balls = null; QZ.exiting = false;
-    QZ.phase = 'fly'; QZ.phaseT = 150; QZ.spawnT = 40; QZ.colT = 0; QZ.nOk = 0; QZ.nBad = 0; QZ.nDone = 0;
-    try { AudioFX.playStarCollect(); Haptics.powerup(); } catch (e) {}
-    quizUI(true);
-}
-function quizAbort() { QZ.on = false; QZ.objs = []; QZ.portal = null; QZ.exitP = null; quizUI(false); }
-function quizExit() {
-    QZ.on = false; QZ.flash = 1; QZ.objs = []; quizUI(false);
-    // возвращаемся в обычный полёт: сова выскакивает из оранжевого портала в проёме трубы, вокруг — чисто
-    pipes = pipes.filter(p => p.x + p.width < owl.x - 160 || p.x > owl.x + 280);
-    let sq = 0; try { sq = currentDifficultySqueeze + currentCompressionFactor * compressionMaxForLevel(); } catch (e) {}
-    let gap = 230; try { gap = pipeGapForLevel(); } catch (e) {}
-    owl.y = Math.max(gap / 2 + 70, Math.min(height - gap / 2 - 90, height * 0.45));
-    const np = { x: owl.x - 43, width: 86, top: owl.y - gap / 2 - sq, gap, bottom: height - owl.y - gap / 2 - sq, passed: true, portal: true };
-    pipes.push(np); pipes.sort((a, b) => a.x - b.x);
-    QZ.exitP = { pipe: np, t: 0 };
-    quizClearItemsNear(owl.x);
-    try { owl.flap(); } catch (e) { owl.vy = 0; }
-    invulnerableTime = Math.max(invulnerableTime, 120);
-    try { AudioFX.playStarCollect(); } catch (e) {}
-}
-
-// ---------- другой мир: вид сбоку, как в игре ----------
-// Небо другого мира (бирюзово-индиговое, с северным сиянием и огромной планетой), летающие острова-скалы на трёх планах.
-// Сова летит как обычно — тапами. Шары-ответы A, B, C, D плывут справа столбиком; в какой влетишь — тот ответ.
-const QZ_LETTERS = ['A', 'B', 'C', 'D'];
-const QZ_BALL_COL = { A: '#FE7600', B: '#A855F7', C: '#38BDF8', D: '#F43F5E' };
-const QZ_SPEED = 1.6;   // скорость мира, пикселей за кадр
-function qzBand() { return { top: 120, bot: height - 110 }; }   // где летают шары и бонусы (под карточкой вопроса и над табличкой)
-
-// ---------- логика ----------
-function quizUpdate() {
-    const dt = dtMult; QZ.t += dt;
-    if (QZ.flash > 0) QZ.flash = Math.max(0, QZ.flash - 0.03 * dt);
-    const reading = QZ.phase === 'read';
-    // сова: на чтении вопроса парит на месте, в остальное время летит тапами, как в игре (разбиться нельзя — края мягко отталкивают)
-    if (reading) { owl.vy = 0; owl.y += (QZ.hoverY - owl.y) * Math.min(1, 0.1 * dt) + Math.sin(QZ.t * 0.06) * 0.25; owl.rotation = 0; if (owl.wing > 0) owl.wing -= 0.05 * dt; }
-    else {
-        try { owl.update(); } catch (e) { owl.vy += 0.26 * dt; owl.y += owl.vy * dt; }
-        if (owl.y < 70) { owl.y = 70; owl.vy = Math.max(0, owl.vy); }
-        if (owl.y > height - 80) { owl.y = height - 80; owl.vy = Math.min(-3.6, owl.vy); }   // у земли — сама подпрыгивает
-    }
-    const sp = reading ? 0 : QZ_SPEED;
-    QZ.scroll += sp * dt;
-    // фазы вопросов
-    QZ.phaseT -= dt;
-    if (QZ.phase === 'fly' && QZ.phaseT <= 0) {
-        if (QZ.qi + 1 < QZ.qList.length) {
-            QZ.qi++; QZ.q = QZ.qList[QZ.qi]; QZ.phase = 'read'; QZ.phaseT = QUIZ_READ_SEC * 60; QZ.picked = null; QZ.result = null; QZ.hoverY = Math.max(140, Math.min(height - 140, owl.y));
-            quizMarkSeen(QZ.q.id); quizShowQuestion();
-            try { AudioFX.playStarCollect(); } catch (e) {}
-        } else if (!QZ.exiting) {
-            QZ.exiting = true; QZ.objs.push({ k: 'exit', x: width + 70, y: height * 0.48 });
-        }
-    } else if (QZ.phase === 'read' && QZ.phaseT <= 0) {
-        QZ.phase = 'answer'; QZ.phaseT = QUIZ_FLY_SEC * 60;
-        const B = qzBand(), Ls = QZ_LETTERS.filter(L => QZ.q.options[L] !== undefined), n = Ls.length;
-        const x0 = width + 40, v = (x0 - owl.x) / (QUIZ_FLY_SEC * 60);
-        QZ.ballR = Math.min(26, (B.bot - B.top) / n * 0.32);
-        QZ.balls = Ls.map((L, i) => ({ k: 'ball', L, x: x0, y: B.top + (i + 0.5) / n * (B.bot - B.top), v, ph: i * 1.3 }));
-        QZ.objs.push(...QZ.balls);
-    } else if (QZ.phase === 'result' && QZ.phaseT <= 0) {
-        quizHideQuestion(); QZ.phase = 'fly'; QZ.phaseT = 170;
-        for (const b of (QZ.balls || [])) b.gone = true;
-        QZ.balls = null;
-    }
-    quizUiTick();
-    // бонусы на пути — только между вопросами
-    if (!reading && QZ.phase === 'fly' && !QZ.exiting) {
-        QZ.spawnT -= dt;
-        if (QZ.spawnT <= 0) {
-            QZ.spawnT = 70 + Math.random() * 60;
-            const B = qzBand(), kinds = ['beer', 'cocktail', 'icecream', 'feather'];
-            QZ.objs.push({ k: 'item', t: kinds[Math.floor(Math.random() * kinds.length)], x: width + 30, y: B.top + Math.random() * (B.bot - B.top) });
-        }
-    }
-    for (let i = QZ.objs.length - 1; i >= 0; i--) {
-        const o = QZ.objs[i];
-        if (!reading) o.x -= (o.v || sp) * dt;
-        if (o.k === 'ball' && o.gone) { o.fade = (o.fade == null ? 1 : o.fade) - 0.04 * dt; if (o.fade <= 0) { QZ.objs.splice(i, 1); continue; } }
-        if (o.k === 'item' && Math.hypot(o.x - owl.x, o.y - owl.y) < owl.radius + 16) { quizCollect(o); QZ.objs.splice(i, 1); continue; }
-        if (o.k === 'ball' && QZ.phase === 'answer' && o.x <= owl.x + 6) { quizAnswer(); }
-        if (o.k === 'exit' && o.x <= owl.x + 4) { quizExit(); return; }
-        if (o.x < -80) QZ.objs.splice(i, 1);
-    }
-}
-function quizCollect(o) {
-    const add = { beer: 10, cocktail: 15, icecream: 20, feather: 30 }[o.t] || 10;
-    stamina = Math.min(maxStamina, stamina + add);
-    try { updateStaminaHUD(); AudioFX.playStarCollect(); Haptics.collectTheme(); } catch (e) {}
-    QZ.toast = { txt: `+${add}% сил`, t: 70, col: '#00F0FF' };
-}
-function quizAnswer() {
-    // выбран шар, в который влетела сова: ближайший к ней по высоте
-    let best = null, bd = 1e9;
-    for (const b of QZ.balls) { const d = Math.abs(b.y - owl.y); if (d < bd) { bd = d; best = b; } }
-    QZ.picked = best.L; const ok = best.L === QZ.q.correct; QZ.result = ok;
-    QZ.nDone++; if (ok) QZ.nOk++; else QZ.nBad++; quizScore();
-    best.res = ok ? 'ok' : 'bad'; best.pop = 1;
-    if (!ok) { const c = QZ.balls.find(b => b.L === QZ.q.correct); if (c) c.res = 'right'; }
-    for (const b of QZ.balls) b.v = QZ_SPEED;
-    if (ok) { stamina = Math.min(maxStamina, stamina + 25); try { updateStaminaHUD(); AudioFX.playThemeCollect(); Haptics.collectTheme(); } catch (e) {} QZ.toast = { txt: 'Верно! +25% сил', t: 90, col: '#22C55E' }; }
-    else { try { (AudioFX.playThemeLose || AudioFX.playStarCollect).call(AudioFX); Haptics.hit(); } catch (e) {} QZ.toast = { txt: 'Неверно', t: 90, col: '#EF4444' }; }
-    for (let i = 0; i < 14 && particles.length < 500; i++) { const an = Math.random() * Math.PI * 2, v = 1 + Math.random() * 2.5; particles.push({ x: best.x, y: best.y, vx: Math.cos(an) * v, vy: Math.sin(an) * v, color: ok ? '#4ADE80' : '#F87171', alpha: 1, size: 1.2 + Math.random() * 1.6, decay: 0.035, isStar: true }); }
-    quizShowResult();
-    QZ.phase = 'result'; QZ.phaseT = 100;
-}
-
-// ---------- отрисовка ----------
-// слои летающих островов: заготовки рисуются один раз, дальше просто сдвигаются (дальние — медленнее)
-let __qzIsl = null, __qzIslKey = '';
-function quizIslands() {
-    const key = Math.round(width) + 'x' + Math.round(height);
-    if (__qzIslKey === key && __qzIsl) return __qzIsl;
-    __qzIslKey = key; __qzIsl = [];
-    const L = [{ k: 0.18, col: '#1b2f63', top: 0.45, n: 5, sc: 0.8 }, { k: 0.4, col: '#1a1f4f', top: 0.58, n: 4, sc: 1.1 }, { k: 0.75, col: '#120f33', top: 0.72, n: 3, sc: 1.5 }];
-    for (const l of L) {
-        const W = Math.round(width * 1.5), H = Math.round(height * 0.5), S = 2, c = document.createElement('canvas');
-        c.width = W * S; c.height = H * S; const g = c.getContext('2d'); g.scale(S, S);
-        for (let i = 0; i < l.n; i++) {
-            const cx = (i + 0.5) / l.n * W + (Math.random() - 0.5) * W / l.n * 0.5, cy = H * (0.25 + Math.random() * 0.45), w = (40 + Math.random() * 50) * l.sc, h = w * (0.55 + Math.random() * 0.3);
-            // остров: плоская трава-крыша сверху и острый скальный низ, с бирюзовыми кристаллами
-            g.fillStyle = l.col;
-            g.beginPath(); g.moveTo(cx - w / 2, cy);
-            g.quadraticCurveTo(cx - w * 0.3, cy - h * 0.12, cx, cy - h * 0.08); g.quadraticCurveTo(cx + w * 0.3, cy - h * 0.14, cx + w / 2, cy);
-            g.lineTo(cx + w * 0.3, cy + h * 0.35); g.lineTo(cx + w * 0.08, cy + h); g.lineTo(cx - w * 0.12, cy + h * 0.5); g.lineTo(cx - w * 0.35, cy + h * 0.3); g.closePath(); g.fill();
-            g.fillStyle = 'rgba(94, 234, 212, 0.35)';
-            for (let j = 0; j < 3; j++) { const kx = cx + (Math.random() - 0.5) * w * 0.6, ky = cy - h * 0.08; g.beginPath(); g.moveTo(kx - 3 * l.sc, ky); g.lineTo(kx, ky - (8 + Math.random() * 10) * l.sc); g.lineTo(kx + 3 * l.sc, ky); g.closePath(); g.fill(); }
-            g.fillStyle = 'rgba(94, 234, 212, 0.18)'; g.fillRect(cx - w / 2, cy - 1, w, 2);
-        }
-        __qzIsl.push({ c, W, H, k: l.k, y: height * l.top - H * 0.35 });
-    }
-    return __qzIsl;
-}
-function quizDraw() {
-    ctx.setTransform(viewScale * renderScale * WORLD_K, 0, 0, viewScale * renderScale * WORLD_K, 0, 0);
-    ctx.clearRect(0, 0, width, height);
-    const t = QZ.t;
-    // небо другого мира
-    const sky = ctx.createLinearGradient(0, 0, 0, height);
-    sky.addColorStop(0, '#071a33'); sky.addColorStop(0.45, '#0e1446'); sky.addColorStop(1, '#22093f');
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = '#FFFFFF';
-    for (const st of stars) { ctx.globalAlpha = st.alpha * (0.6 + 0.4 * Math.sin(t * 0.05 + st.x)); ctx.fillRect(st.x, st.y, st.size, st.size); }
-    ctx.globalAlpha = 1;
-    // огромная планета с кольцом
-    {
-        const px = width * 0.22, py = height * 0.2, pr = Math.min(width, height) * 0.16;
-        const pg = ctx.createRadialGradient(px - pr * 0.4, py - pr * 0.4, pr * 0.1, px, py, pr);
-        pg.addColorStop(0, '#7dd3fc'); pg.addColorStop(0.5, '#3b5bdb'); pg.addColorStop(1, '#1a1a5e');
-        ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = 'rgba(165, 243, 252, 0.55)'; ctx.lineWidth = 2.5;
-        ctx.beginPath(); ctx.ellipse(px, py, pr * 1.7, pr * 0.38, -0.35, 0, Math.PI * 2); ctx.stroke();
-    }
-    // северное сияние: мягкие волнистые ленты
-    ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    for (let k = 0; k < 2; k++) {
-        const g = ctx.createLinearGradient(0, height * 0.1, 0, height * 0.42);
-        g.addColorStop(0, 'rgba(45, 212, 191, 0)'); g.addColorStop(0.5, k ? 'rgba(168, 85, 247, 0.12)' : 'rgba(45, 212, 191, 0.14)'); g.addColorStop(1, 'rgba(45, 212, 191, 0)');
-        ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, height * 0.42);
-        for (let x = 0; x <= width + 10; x += 10) ctx.lineTo(x, height * (0.16 + k * 0.06) + Math.sin(x * 0.012 + t * 0.012 + k * 2) * 26 + Math.sin(x * 0.03 - t * 0.02) * 9);
-        ctx.lineTo(width, height * 0.42); ctx.closePath(); ctx.fill();
-    }
-    ctx.restore();
-    // острова на трёх планах
-    for (const L of quizIslands()) {
-        const off = (QZ.scroll * L.k) % L.W;
-        for (let x = -off; x < width; x += L.W) ctx.drawImage(L.c, x, L.y, L.W, L.H);
-    }
-    // дымка снизу
-    const fog = ctx.createLinearGradient(0, height * 0.7, 0, height);
-    fog.addColorStop(0, 'rgba(45, 212, 191, 0)'); fog.addColorStop(1, 'rgba(45, 212, 191, 0.14)');
-    ctx.fillStyle = fog; ctx.fillRect(0, height * 0.7, width, height * 0.3);
-    // объекты и сова
-    for (const o of QZ.objs) quizDrawObj(o);
-    try { owl.draw(); } catch (e) {}
-    drawParticleList(particles);
-    if (QZ.toast && QZ.toast.t > 0) {
-        QZ.toast.t -= dtMult;
-        ctx.save(); ctx.globalAlpha = Math.min(1, QZ.toast.t / 20); ctx.font = '900 18px Onest, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillStyle = QZ.toast.col; ctx.shadowColor = QZ.toast.col; ctx.shadowBlur = 10;
-        ctx.fillText(QZ.toast.txt, owl.x, owl.y - 40 - (90 - QZ.toast.t) * 0.3); ctx.restore();
-    }
-    if (QZ.flash > 0) { ctx.fillStyle = `rgba(200, 235, 255, ${QZ.flash * 0.85})`; ctx.fillRect(0, 0, width, height); }
-}
-function quizDrawObj(o) {
-    ctx.save();
-    if (o.k === 'item') {
-        const r = 15, col = { beer: '#FACC15', cocktail: '#2DD4BF', icecream: '#B5E4FF', feather: '#00F0FF' }[o.t];
-        const ic = { beer: '', cocktail: '', icecream: '', feather: '' }[o.t];
-        const y = o.y + Math.sin(QZ.t * 0.06 + o.x * 0.02) * 4;
-        ctx.fillStyle = 'rgba(20, 3, 38, 0.85)'; ctx.strokeStyle = col; ctx.lineWidth = 2;
-        ctx.shadowColor = col; ctx.shadowBlur = 12;
-        ctx.beginPath(); ctx.arc(o.x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
-        ctx.fillStyle = col; ctx.font = `900 ${r * 1.05}px "Font Awesome 6 Free"`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(ic, o.x, y + 1);
-    } else if (o.k === 'ball') {
-        const r = (QZ.ballR || 22) * (1 + (o.pop ? 0.25 * Math.sin(Math.min(1, (QZ.t % 1000)) * Math.PI) : 0)), y = o.y + Math.sin(QZ.t * 0.05 + o.ph) * 5;
-        ctx.globalAlpha = o.fade == null ? 1 : Math.max(0, o.fade);
-        const base = o.res === 'ok' || o.res === 'right' ? '#22C55E' : o.res === 'bad' ? '#EF4444' : QZ_BALL_COL[o.L];
-        const g = ctx.createRadialGradient(o.x - r * 0.35, y - r * 0.35, r * 0.1, o.x, y, r);
-        g.addColorStop(0, '#FFFFFF'); g.addColorStop(0.25, base); g.addColorStop(1, 'rgba(10, 2, 25, 0.9)');
-        ctx.shadowColor = base; ctx.shadowBlur = o.res ? 26 : 14;
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(o.x, y, r, 0, Math.PI * 2); ctx.fill();
-        ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)'; ctx.lineWidth = 2; ctx.stroke();
-        ctx.fillStyle = '#FFFFFF'; ctx.font = `900 ${r * 0.95}px Onest, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(o.L, o.x, y + r * 0.05);
-    } else if (o.k === 'exit') {
-        drawQuizPortal(o.x, o.y, 44, 1, 'out');
-    }
-    ctx.restore();
-}
-
-// ---------- окно вопроса (HTML поверх игры) ----------
-let qzEl = null;
-function quizUI(on) {
-    if (on && !qzEl) {
+// ---------- окно ----------
+(function () {
+    try {
         const st = document.createElement('style');
-        st.textContent = '#gameContainer.qz-on #bottomHud,#gameContainer.qz-on #buffBar{opacity:0!important;pointer-events:none!important;transition:opacity .3s}'
-            + '#qzCard{position:absolute;left:14px;right:14px;top:58px;z-index:35;pointer-events:none;opacity:0;transform:translateY(-12px) scale(.97);transition:opacity .35s,transform .35s;'
-            + 'background:rgba(29,9,54,.88);border:1.5px solid rgba(168,120,245,.5);border-radius:20px;padding:14px 14px 12px;box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 24px rgba(168,85,247,.25);backdrop-filter:blur(6px);color:#fff;font-family:Onest,sans-serif;max-width:520px;margin:0 auto}'
-            + '#qzCard.on{opacity:1;transform:none}'
-            + '#qzCard .qz-top{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:800;color:#C4A1FF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}'
-            + '#qzCard .qz-q{font-size:16px;font-weight:900;line-height:1.3;margin-bottom:10px}'
-            + '#qzCard .qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:6px}'
-            + '#qzCard .qz-o{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:12px;background:rgba(120,44,233,.22);border:1px solid rgba(168,120,245,.3);font-size:12.5px;font-weight:700;transition:background .3s,border-color .3s}'
-            + '#qzCard .qz-o b{flex:0 0 22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff}'
-            + '#qzCard .qz-o.ok{background:rgba(34,197,94,.35);border-color:#22C55E}#qzCard .qz-o.bad{background:rgba(239,68,68,.35);border-color:#EF4444}'
-            + '#qzCard .qz-bar{height:5px;border-radius:5px;background:rgba(255,255,255,.12);margin-top:10px;overflow:hidden}#qzCard .qz-bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#FE7600,#A855F7);border-radius:5px}'
-            + '#qzScore{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);transform:translateX(-50%);z-index:35;display:flex;align-items:center;gap:12px;padding:8px 16px;border-radius:9999px;background:rgba(29,9,54,.9);border:1.5px solid rgba(168,120,245,.5);box-shadow:0 6px 18px rgba(0,0,0,.4);font:800 13px Onest,sans-serif;color:#EDE5F8;white-space:nowrap;pointer-events:none}'
-            + '#qzScore b{font-weight:900;color:#fff}#qzScore .ok{color:#22C55E}#qzScore .bad{color:#EF4444}#qzScore i{margin-right:4px}'
-            + '#qzCount{position:absolute;left:0;right:0;top:44%;z-index:35;text-align:center;font:900 64px Onest,sans-serif;color:#fff;text-shadow:0 0 18px #A855F7,0 4px 0 rgba(0,0,0,.4);pointer-events:none;opacity:0;transition:opacity .2s}'
-            + '#qzHint{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 64px);transform:translateX(-50%);z-index:35;display:flex;flex-direction:column;align-items:center;gap:6px;font:800 12px Onest,sans-serif;color:#EDE5F8;pointer-events:none;transition:opacity .5s;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap}'
-            + '#qzHint.off{opacity:0}#qzHint .qh-row{display:flex;align-items:center;gap:10px;font-size:18px;color:#C4A1FF}#qzHint .qh-hand{font-size:24px;color:#fff;animation:qzSwipe 1.6s ease-in-out infinite;filter:drop-shadow(0 0 6px #A855F7)}'
-                        + '@keyframes qzSwipe{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(6px) scale(.9)}60%{transform:translateY(0) scale(1)}}';
+        st.textContent = `
+#openQuizBtn.rw-menu-btn{z-index:6;zoom:var(--ui-zoom,1);position:absolute!important;top:56px!important;right:14px!important;left:auto!important;width:36px!important;height:36px!important;border-radius:12px!important;font-size:13px!important;color:#E9D5FF!important;background-color:rgba(29,9,54,.72)!important;border:1px solid rgba(120,44,233,.6)!important;box-shadow:0 6px 14px rgba(0,0,0,.3)!important}
+#openQuizBtn.rw-menu-btn.has-q{color:#38BDF8!important;border-color:#38BDF8!important;box-shadow:0 0 12px rgba(56,189,248,.5)!important}
+#openQuizBtn .rw-badge{top:-5px;right:-5px;min-width:10px;width:10px;height:10px;padding:0;background:#38BDF8;border:1.5px solid #1d0936;font-size:0}
+#openAdminBtn.rw-menu-btn{zoom:var(--ui-zoom,1);top:100px!important;right:14px!important;width:36px!important;height:36px!important;border-radius:12px!important;font-size:12px!important}
+#quizModal{position:absolute;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(20,3,38,.25);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+#quizModal.hidden{display:none}
+#qzWin{position:relative;width:100%;max-width:360px;max-height:100%;overflow-y:auto;border-radius:26px;padding:16px 16px 18px;display:flex;flex-direction:column;gap:12px;font-family:Onest,sans-serif;color:#fff;
+ background:radial-gradient(120% 60% at 50% -10%,rgba(56,189,248,.16),transparent 60%),radial-gradient(90% 50% at 100% 110%,rgba(254,118,0,.12),transparent 60%),rgba(29,9,54,.97);border:1px solid rgba(120,44,233,.6);box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#qzWin .qz-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#C4A1FF;background:rgba(120,44,233,.18);border:1px solid rgba(120,44,233,.4);font-size:13px;cursor:pointer}
+#qzWin .qz-head{display:flex;align-items:center;gap:10px;padding-right:38px}
+#qzWin .qz-emb{flex:0 0 40px;height:40px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;background:linear-gradient(135deg,#FE7600,#782CE9);border:1px solid rgba(255,255,255,.3);box-shadow:0 0 16px rgba(254,118,0,.45)}
+#qzWin .qz-title{font-weight:900;font-size:18px;letter-spacing:-.01em;line-height:1}
+#qzWin .qz-sub{font-weight:600;font-size:11px;color:#C4B5FD;margin-top:3px;line-height:1.25}
+#qzWin .qz-prog{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:14px;background:rgba(20,3,38,.7);border:1px solid rgba(120,44,233,.3)}
+#qzWin .qz-dots{display:flex;gap:6px}
+#qzWin .qz-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(196,161,255,.3);color:transparent;transition:all .25s}
+#qzWin .qz-dot.cur{border-color:#FE7600;box-shadow:0 0 8px rgba(254,118,0,.6)}
+#qzWin .qz-dot.ok{background:#22C55E;border-color:#86EFAC;color:#fff}
+#qzWin .qz-dot.bad{background:#EF4444;border-color:#FCA5A5;color:#fff}
+#qzWin .qz-cnt{font-weight:800;font-size:11px;color:#C4B5FD;white-space:nowrap}
+#qzWin .qz-cnt b{color:#fff;font-weight:900}
+#qzWin .qz-card{padding:14px 14px 12px;border-radius:18px;background:linear-gradient(180deg,rgba(120,44,233,.22),rgba(120,44,233,.08));border:1px solid rgba(168,120,245,.45);display:flex;flex-direction:column;gap:9px}
+#qzWin .qz-meta{display:flex;align-items:center;gap:6px}
+#qzWin .qz-chip{font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:8px;background:rgba(56,189,248,.16);color:#7DD3FC;border:1px solid rgba(56,189,248,.35)}
+#qzWin .qz-n{margin-left:auto;font-weight:800;font-size:11px;color:rgba(196,161,255,.75)}
+#qzWin .qz-q{font-weight:900;font-size:16px;line-height:1.3}
+#qzWin .qz-opts{display:flex;flex-direction:column;gap:6px}
+#qzWin .qz-o{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:13px;background:rgba(20,3,38,.55);border:1px solid rgba(120,44,233,.3);font-weight:700;font-size:13px;line-height:1.25;transition:all .25s}
+#qzWin .qz-o b{flex:0 0 24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+#qzWin .qz-o.ok{background:rgba(34,197,94,.2);border-color:#22C55E}
+#qzWin .qz-o.bad{background:rgba(239,68,68,.2);border-color:#EF4444}
+#qzWin .qz-o.dim{opacity:.45}
+#qzWin .qz-abcd{display:flex;justify-content:space-between;gap:8px;padding:2px 4px 0}
+#qzWin .qz-ball{flex:0 0 auto;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:26px;color:#fff;cursor:pointer;border:2px solid rgba(255,255,255,.55);
+ background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 42%),var(--c);box-shadow:0 0 14px var(--c),inset 0 -5px 0 rgba(0,0,0,.22);text-shadow:0 2px 3px rgba(0,0,0,.3);transition:transform .15s,opacity .25s,filter .25s}
+#qzWin .qz-ball:active{transform:scale(.92)}
+#qzWin .qz-abcd.lock .qz-ball{pointer-events:none;opacity:.35;filter:saturate(.4)}
+#qzWin .qz-abcd.lock .qz-ball.ok{opacity:1;filter:none;--c:#22C55E!important;transform:scale(1.08)}
+#qzWin .qz-abcd.lock .qz-ball.bad{opacity:1;filter:none;--c:#EF4444!important}
+#qzWin .qz-res{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:6px 4px 2px}
+#qzWin .qz-big{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;margin:4px 0}
+#qzWin .qz-big.win{background:radial-gradient(circle at 35% 30%,#FFD27A,#FE7600 60%,#C2410C);box-shadow:0 0 30px rgba(254,118,0,.65);animation:qzPop .6s cubic-bezier(.2,1.6,.4,1)}
+#qzWin .qz-big.lose{background:radial-gradient(circle at 35% 30%,#C4A1FF,#782CE9 60%,#4C1D95);box-shadow:0 0 22px rgba(120,44,233,.55)}
+#qzWin .qz-big.start{background:radial-gradient(circle at 35% 30%,#BAE6FD,#38BDF8 55%,#0369A1);box-shadow:0 0 26px rgba(56,189,248,.55)}
+@keyframes qzPop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+#qzWin .qz-rt{font-weight:900;font-size:20px;line-height:1.1}
+#qzWin .qz-rt.win{color:#FE7600}
+#qzWin .qz-rd{font-weight:600;font-size:12.5px;line-height:1.4;color:#DDD6FE}
+#qzWin .qz-rd b{color:#fff;font-weight:900}
+#qzWin .qz-rules{display:flex;flex-direction:column;gap:6px;width:100%;margin:2px 0}
+#qzWin .qz-rule{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:13px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.3);font-weight:700;font-size:12px;text-align:left}
+#qzWin .qz-rule i{flex:0 0 22px;text-align:center;color:#38BDF8;font-size:14px}
+#qzWin .qz-btn{width:100%;padding:13px 10px;border-radius:16px;font-weight:900;font-size:13px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+#qzWin .qz-btn.sec{background:rgba(45,14,82,.9);border:1px solid rgba(168,85,247,.5);color:#fff;font-size:11px;padding:10px}
+#qzWin .qz-timer{font-weight:800;font-size:11px;color:#7DD3FC}
+`;
         document.head.appendChild(st);
-        qzEl = { card: document.createElement('div'), count: document.createElement('div'), hint: document.createElement('div'), score: document.createElement('div') };
-        qzEl.card.id = 'qzCard'; qzEl.count.id = 'qzCount'; qzEl.hint.id = 'qzHint'; qzEl.score.id = 'qzScore';
-        container.appendChild(qzEl.score);
-        qzEl.hint.innerHTML = '<div class="qh-row"><i class="fa-solid fa-hand-pointer qh-hand"></i></div><div>Тапай и влетай в шар с ответом</div>';
-        container.appendChild(qzEl.card); container.appendChild(qzEl.count); container.appendChild(qzEl.hint);
-    }
-    if (!qzEl) return;
-    qzEl.hint.style.display = on ? '' : 'none'; qzEl.hint.classList.remove('off'); QZ.moved = false; qzEl.score.style.display = on ? '' : 'none';
-    container.classList.toggle('qz-on', !!on); if (on) quizScore();
-    if (!on) { qzEl.card.classList.remove('on'); qzEl.count.style.opacity = 0; }
-}
-function quizShowQuestion() {
-    const q = QZ.q; if (!qzEl) return;
-    qzEl.card.innerHTML = `<div class="qz-top"><span>Вопрос ${QZ.qi + 1} из ${QZ.qList.length}</span><span>${q.cat || ''}</span></div>`
-        + `<div class="qz-q">${q.question}</div><div class="qz-opts">`
-        + QZ_LETTERS.filter(L => q.options[L] !== undefined).map(L => `<div class="qz-o" data-l="${L}"><b style="background:${QZ_BALL_COL[L]}">${L}</b><span>${q.options[L]}</span></div>`).join('')
-        + `</div><div class="qz-bar"><i></i></div>`;
-    qzEl.card.classList.add('on');
-}
-function quizShowResult() {
-    if (!qzEl) return;
-    qzEl.card.querySelectorAll('.qz-o').forEach(el => {
-        const L = el.dataset.l;
-        if (L === QZ.q.correct) el.classList.add('ok');
-        else if (L === QZ.picked) el.classList.add('bad');
-    });
-}
-function quizScore() {
-    if (!qzEl) return;
-    qzEl.score.innerHTML = `<span><i class="fa-solid fa-circle-question"></i>Отвечено <b>${QZ.nDone}/${QZ.qList.length}</b></span><span class="ok"><i class="fa-solid fa-check"></i><b>${QZ.nOk}</b></span><span class="bad"><i class="fa-solid fa-xmark"></i><b>${QZ.nBad}</b></span>`;
-}
-function quizHideQuestion() { if (qzEl) qzEl.card.classList.remove('on'); }
-function quizUiTick() {
-    if (!qzEl) return;
-    if (QZ.phase === 'read') {
-        const n = Math.ceil(QZ.phaseT / 60);
-        qzEl.count.style.opacity = 1; if (qzEl.count.textContent !== String(n)) qzEl.count.textContent = n;
-    } else qzEl.count.style.opacity = 0;
-    const bar = qzEl.card.querySelector('.qz-bar i');
-    if (bar) bar.style.width = (QZ.phase === 'answer' ? Math.max(0, QZ.phaseT / (QUIZ_FLY_SEC * 60)) * 100 : QZ.phase === 'read' ? 100 : 0).toFixed(1) + '%';
-}
+    } catch (e) {}
+})();
 
-// ---------- управление ----------
-// в другом мире сова летит тапами, как обычно; на чтении вопроса тапы не нужны. Подсказка исчезает после первого тапа.
-function quizMoved() { if (QZ.moved) return; QZ.moved = true; if (qzEl) qzEl.hint.classList.add('off'); }
-container.addEventListener('pointerdown', () => { if (QZ.on) quizMoved(); }, true);
-window.addEventListener('keydown', (e) => { if (QZ.on && (e.code === 'Space' || e.code === 'ArrowUp')) quizMoved(); });
+let qzRoot = null, qzLock = false;
+function qzBuild() {
+    if (qzRoot) return qzRoot;
+    const host = document.getElementById('gameContainer') || document.body;
+    qzRoot = document.createElement('div');
+    qzRoot.id = 'quizModal'; qzRoot.className = 'hidden';
+    qzRoot.innerHTML = '<div id="qzWin"><button type="button" class="qz-x" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button><div id="qzBody"></div></div>';
+    host.appendChild(qzRoot);
+    ['click', 'pointerdown', 'touchstart'].forEach((ev) => qzRoot.addEventListener(ev, (e) => e.stopPropagation()));
+    qzRoot.querySelector('.qz-x').addEventListener('click', closeQuiz);
+    qzRoot.addEventListener('click', (e) => {
+        if (e.target === qzRoot) { closeQuiz(); return; }
+        const b = e.target.closest('[data-qa]'); if (!b) return;
+        const a = b.dataset.qa;
+        if (a === 'start') qzNext();
+        else if (a === 'close') closeQuiz();
+        else if (a.length === 1) qzPick(a);
+    });
+    return qzRoot;
+}
+function qzHead() {
+    return '<div class="qz-head"><div class="qz-emb"><i class="fa-solid fa-circle-question"></i></div><div><div class="qz-title">ВОПРОСЫ ДНЯ</div>'
+        + '<div class="qz-sub">Отвечая на вопросы, вы можете заработать попытки в игре</div></div></div>';
+}
+function qzProg(d, curIdx) {
+    let dots = '';
+    for (let i = 0; i < QUIZ_PER_DAY; i++) {
+        const r = d.res[i];
+        dots += `<div class="qz-dot${r === 1 ? ' ok' : r === 0 ? ' bad' : i === curIdx ? ' cur' : ''}">${r === 1 ? '<i class="fa-solid fa-check"></i>' : r === 0 ? '<i class="fa-solid fa-xmark"></i>' : ''}</div>`;
+    }
+    return `<div class="qz-prog"><div class="qz-dots">${dots}</div><div class="qz-cnt">Верно: <b>${d.ok}</b> / ${QUIZ_NEED_OK}</div></div>`;
+}
+function qzUntilTomorrow() {
+    const n = new Date(), t = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), s = Math.max(0, Math.floor((t - n) / 1000));
+    const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60;
+    return `${h} ч ${String(m).padStart(2, '0')} мин`;
+}
+function qzRender(pickL, dShow) {
+    const body = document.getElementById('qzBody'); if (!body) return;
+    const d = dShow || quizDay();
+    if (d.done) {
+        const win = d.got;
+        body.innerHTML = qzHead() + qzProg(d, -1) + `<div class="qz-res"><div class="qz-big ${win ? 'win' : 'lose'}"><i class="fa-solid ${win ? 'fa-rotate-right' : 'fa-moon'}"></i></div>`
+            + (win ? `<div class="qz-rt win">+1 ПОПЫТКА!</div><div class="qz-rd">Отлично! <b>${d.ok} верных ответа</b> — попытка уже добавлена. Новые вопросы будут завтра.</div>`
+                   : `<div class="qz-rt">Сегодня не вышло</div><div class="qz-rd">Верных ответов: <b>${d.ok} из ${QUIZ_NEED_OK}</b>. Завтра будут новые вопросы и новый шанс заработать попытку.</div>`)
+            + `<div class="qz-timer"><i class="fa-regular fa-clock"></i> Новые вопросы через ${qzUntilTomorrow()}</div></div>`
+            + `<button type="button" class="btn-bubo qz-btn" data-qa="close"><i class="fa-solid fa-check"></i>ПОНЯТНО</button>`;
+        return;
+    }
+    if (!d.cur) {
+        body.innerHTML = qzHead() + `<div class="qz-res"><div class="qz-big start"><i class="fa-solid fa-lightbulb"></i></div>`
+            + `<div class="qz-rules"><div class="qz-rule"><i class="fa-solid fa-list-ol"></i><span>В день — ${QUIZ_PER_DAY} вопросов из разных тем</span></div>`
+            + `<div class="qz-rule"><i class="fa-solid fa-circle-check"></i><span>Ответьте верно на ${QUIZ_NEED_OK} — и получите <b style="color:#FE7600">+1 попытку</b></span></div>`
+            + `<div class="qz-rule"><i class="fa-solid fa-hand-pointer"></i><span>Выбирайте ответ большими кнопками A, B, C, D</span></div></div>`
+            + (d.ids.length ? `<div class="qz-rd">Отвечено: <b>${d.ids.length} из ${QUIZ_PER_DAY}</b>, верно: <b>${d.ok}</b></div>` : '')
+            + `</div><button type="button" class="btn-bubo qz-btn" data-qa="start"><i class="fa-solid fa-play"></i>${d.ids.length ? 'ПРОДОЛЖИТЬ' : 'НАЧАТЬ'}</button>`;
+        return;
+    }
+    const q = QUIZ_QUESTIONS.find(x => x.id === d.cur) || QUIZ_QUESTIONS[0];
+    const ord = (d.ord || 'ABCD').split('');   // ord[i] — какой исходный вариант стоит под буквой QZ_LETTERS[i]
+    const idx = d.ids.indexOf(q.id) >= 0 ? d.ids.indexOf(q.id) : d.ids.length;
+    const corL = QZ_LETTERS[ord.indexOf(q.correct)];
+    const opts = QZ_LETTERS.map((L, i) => {
+        const cls = pickL ? (L === corL ? ' ok' : L === pickL ? ' bad' : ' dim') : '';
+        return `<div class="qz-o${cls}"><b style="background:${QZ_BALL_COL[L]}">${L}</b><span>${q.options[ord[i]]}</span></div>`;
+    }).join('');
+    const balls = QZ_LETTERS.map(L => `<button type="button" class="qz-ball${pickL ? (L === corL ? ' ok' : L === pickL ? ' bad' : '') : ''}" data-qa="${L}" style="--c:${QZ_BALL_COL[L]}">${L}</button>`).join('');
+    body.innerHTML = qzHead() + qzProg(d, idx)
+        + `<div class="qz-card"><div class="qz-meta"><span class="qz-chip">${q.cat || 'Вопрос'}</span><span class="qz-n">Вопрос ${idx + 1} из ${QUIZ_PER_DAY}</span></div><div class="qz-q">${q.question}</div><div class="qz-opts">${opts}</div></div>`
+        + `<div class="qz-abcd${pickL ? ' lock' : ''}">${balls}</div>`;
+}
+function qzNext() {
+    const d = quizDay(); if (d.done) { qzRender(); return; }
+    if (!d.cur) { d.cur = quizNextId(d); d.ord = qzShuffleOrd(); quizSaveDay(d); }
+    qzRender();
+}
+function qzPick(L) {
+    if (qzLock) return;
+    const d = quizDay(); if (d.done || !d.cur) return;
+    const q = QUIZ_QUESTIONS.find(x => x.id === d.cur); if (!q) return;
+    const ord = (d.ord || 'ABCD').split('');
+    const ok = ord[QZ_LETTERS.indexOf(L)] === q.correct;
+    d.ids.push(q.id); d.res.push(ok ? 1 : 0); if (ok) d.ok++;
+    quizMarkSeen(q.id);
+    const cur = d.cur; d.cur = 0;
+    let award = false;
+    if (d.ok >= QUIZ_NEED_OK) { d.done = true; d.got = true; award = true; }
+    else if (d.ids.length >= QUIZ_PER_DAY || (QUIZ_PER_DAY - d.ids.length) < (QUIZ_NEED_OK - d.ok)) d.done = true;   // 3 верных уже не набрать — до завтра
+    quizSaveDay(d);
+    if (award) qzAward();
+    try { if (ok) { AudioFX.playThemeCollect(); Haptics.collectTheme(); } else { (AudioFX.playThemeLose || AudioFX.playHit).call(AudioFX); Haptics.hit(); } } catch (e) {}
+    // показываем ответ на том же вопросе, потом — следующий или итог
+    const dd = Object.assign({}, d, { cur: cur, ids: d.ids.slice(0, -1).concat([cur]) });
+    dd.done = false; qzLock = true; qzRender(L, dd);
+    setTimeout(() => { qzLock = false; if (qzRoot && !qzRoot.classList.contains('hidden')) { const d2 = quizDay(); if (d2.done) qzRender(); else qzNext(); } }, 1500);
+    quizMenuBadge();
+}
+function qzAward() {
+    try {
+        attempts = Math.min(99, attempts + 1); zeroDay = '';
+        StorageManager.save(); updateHUDAll();
+        setTimeout(() => { try { AudioFX.playAttemptBonus(); Haptics.powerup(); } catch (e) {} }, 350);
+    } catch (e) {}
+}
+function openQuiz(e) {
+    if (e) e.stopPropagation();
+    try { AudioFX.resume(); } catch (er) {}
+    qzBuild(); qzLock = false;
+    qzRender();
+    qzRoot.classList.remove('hidden');
+}
+function closeQuiz(e) {
+    if (e) e.stopPropagation();
+    if (qzRoot) qzRoot.classList.add('hidden');
+    quizMenuBadge();
+    try { updateHUDAll(); } catch (er) {}
+}
+function quizMenuBadge() {
+    const b = document.getElementById('openQuizBtn'); if (!b) return;
+    const on = quizDayLeft(); b.classList.toggle('has-q', on);
+    const dot = document.getElementById('qzMenuBadge'); if (dot) dot.classList.toggle('hidden', !on);
+}
+(function () {
+    const b = document.getElementById('openQuizBtn'); if (b) b.addEventListener('click', openQuiz);
+    const g = document.getElementById('earnAttemptBtn');
+    if (g) g.addEventListener('click', (e) => { e.stopPropagation(); try { returnToHome(); } catch (er) {} openQuiz(); });
+    quizMenuBadge();
+    setInterval(quizMenuBadge, 60000);   // наступил новый день — значок снова светится
+})();
 
 // ---------- админка: список вопросов ----------
 (function () {
@@ -472,7 +339,7 @@ window.addEventListener('keydown', (e) => { if (QZ.on && (e.code === 'Space' || 
 function quizAdminHtml() {
     const seen = quizSeen();
     return `<div class="adm-sum"><span>Вопросов в базе / уже показано</span><b>${QUIZ_QUESTIONS.length} / ${seen.filter(id => QUIZ_QUESTIONS.some(q => q.id === id)).length}</b></div>`
-        + `<div class="adq-acts"><button type="button" class="adq-btn pri" data-q="portal"><i class="fa-solid fa-circle-nodes"></i>Портал сейчас</button>`
+        + `<div class="adq-acts"><button type="button" class="adq-btn pri" data-q="today"><i class="fa-solid fa-calendar-day"></i>Сбросить день</button>`
         + `<button type="button" class="adq-btn" data-q="reset"><i class="fa-solid fa-rotate-left"></i>Сбросить показанные</button></div>`
         + QUIZ_QUESTIONS.map((q, n) => {
             const was = seen.indexOf(q.id) >= 0;

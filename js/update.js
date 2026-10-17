@@ -1055,6 +1055,7 @@ function showGameOverScreen(reason) {
     if (restartBtn) restartBtn.classList.add('hidden');
     if (homeBtn) homeBtn.classList.toggle('hidden', !has);
     if (okBtn) okBtn.classList.toggle('hidden', has);
+    if ($('earnAttemptBtn')) $('earnAttemptBtn').classList.toggle('hidden', has || !(typeof quizDayLeft === 'function' && quizDayLeft()));   // попыток нет — можно заработать на вопросах дня
     updateMenuVisibility();
     const modal = $('gameOverModal');
     if (modal) modal.classList.remove('hidden');

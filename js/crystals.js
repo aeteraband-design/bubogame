@@ -79,17 +79,15 @@ function drawCrystals() {
 (function () {
     try {
         const st = document.createElement('style');
-        // плашка таймера и улетающая подсказка «Опасные трубы» — красные: по ним бегут переливы, контур переливается огнём,
-        // текст и иконка мерцают
         const C = '.buff-tag[data-key="crystal"],.fly-label-tag[data-key="crystal"]';
-        st.textContent = C + '{border:1.5px solid transparent!important;'
-            + 'background:linear-gradient(100deg,#6e0a0a 0%,#b3161c 25%,#6e0a0a 50%,#b3161c 75%,#6e0a0a 100%) padding-box,'
-            + 'linear-gradient(90deg,#FF4A3D,#FFD9B0,#FF7A1E,#FF9A7A,#FF4A3D) border-box!important;'
-            + 'background-size:200% 100%,300% 100%!important;animation:dngFlow 2s linear infinite,dngTxt 1.6s ease-in-out infinite,dangerPulse 0.9s ease-in-out infinite!important}'
-            + C.split(',').map(x => x + ' i').join(',') + '{animation:dngTxt 1.6s ease-in-out infinite;filter:drop-shadow(0 0 3px #FF4A3D)}'
-            + '@keyframes dngFlow{from{background-position:0% 0,0% 0}to{background-position:200% 0,300% 0}}'
-            + '@keyframes dngTxt{0%,100%{color:#FFE4D2}50%{color:#FFB070}}'
-            + '@keyframes dangerPulse{0%,100%{box-shadow:0 0 8px #FF4A3D99}50%{box-shadow:0 0 16px #FF6A3DEE}}';
+        // фон как у остальных плашек; в цвет — только контур, текст и иконка, по ним идёт мягкий перелив.
+        // Свою animation у плашки не трогаем (у улетающей подсказки это её полёт)
+        st.textContent = '#buffBar .buff-tag[data-key="crystal"]{position:relative}'
+            + C.split(',').map(x => x + '::before').join(',') + '{content:"";position:absolute;inset:-1.5px;border-radius:inherit;border:1.5px solid #FF4A3D;pointer-events:none;animation:dngB 1.8s ease-in-out infinite}'
+            + C.split(',').map(x => x + '>span').join(',') + '{animation:dngT 1.8s ease-in-out infinite}'
+            + C.split(',').map(x => x + ' i').join(',') + '{animation:dngT 1.8s ease-in-out infinite}'
+            + '@keyframes dngB{0%,100%{border-color:#FF4A3D;opacity:.55}50%{border-color:#FFC9AE;opacity:1}}'
+            + '@keyframes dngT{0%,100%{color:#FF6A55;filter:none}50%{color:#FFC9AE;filter:brightness(1.18)}}';
         document.head.appendChild(st);
     } catch (e) {}
 })();

@@ -178,17 +178,15 @@ function drawWaterFront() {
 (function () {
     try {
         const st = document.createElement('style');
-        // плашка таймера и улетающая подсказка «Водонапор» — одного стиля: синяя, по ней бегут переливы,
-        // контур переливается голубым, текст и иконка мягко мерцают
         const W = '.buff-tag[data-key="water"],.fly-label-tag[data-key="water"]';
-        st.textContent = W + '{border:1.5px solid transparent!important;'
-            + 'background:linear-gradient(100deg,#0b3a75 0%,#1767b8 25%,#0b3a75 50%,#1767b8 75%,#0b3a75 100%) padding-box,'
-            + 'linear-gradient(90deg,#38BDF8,#E0F7FF,#0EA5E9,#7DD3FC,#38BDF8) border-box!important;'
-            + 'background-size:200% 100%,300% 100%!important;animation:wtrFlow 2s linear infinite,wtrTxt 1.8s ease-in-out infinite,wtrGlow 1.8s ease-in-out infinite!important}'
-            + W.split(',').map(x => x + ' i').join(',') + '{animation:wtrTxt 1.8s ease-in-out infinite;filter:drop-shadow(0 0 3px #38BDF8)}'
-            + '@keyframes wtrFlow{from{background-position:0% 0,0% 0}to{background-position:200% 0,300% 0}}'
-            + '@keyframes wtrTxt{0%,100%{color:#E6F7FF}50%{color:#8FDDFF}}'
-            + '@keyframes wtrGlow{0%,100%{box-shadow:0 0 8px #38BDF899}50%{box-shadow:0 0 16px #7DD3FCEE}}';
+        // фон как у остальных плашек; в цвет — только контур, текст и иконка, по ним идёт мягкий перелив.
+        // Свою animation у плашки не трогаем (у улетающей подсказки это её полёт)
+        st.textContent = '#buffBar .buff-tag[data-key="water"]{position:relative}'
+            + W.split(',').map(x => x + '::before').join(',') + '{content:"";position:absolute;inset:-1.5px;border-radius:inherit;border:1.5px solid #38BDF8;pointer-events:none;animation:wtrB 1.8s ease-in-out infinite}'
+            + W.split(',').map(x => x + '>span').join(',') + '{animation:wtrT 1.8s ease-in-out infinite}'
+            + W.split(',').map(x => x + ' i').join(',') + '{animation:wtrT 1.8s ease-in-out infinite}'
+            + '@keyframes wtrB{0%,100%{border-color:#38BDF8;opacity:.55}50%{border-color:#E6F7FF;opacity:1}}'
+            + '@keyframes wtrT{0%,100%{color:#7DD3FC;filter:none}50%{color:#E6F7FF;filter:brightness(1.18)}}';
         document.head.appendChild(st);
     } catch (e) {}
 })();
@@ -218,7 +216,7 @@ function waterUpdate(speed, squeeze) {
     if (shz) waterTime = 0;
     let lv0 = 0; try { lv0 = getDifficultyIndex(); } catch (e) {}
     // сила по ступеням: Суперлайт/Лайт — слабый напор, Медиум/Медиум+ — средний, Хард/Хард+ — сильный (внутри ступени чуть растёт)
-    const lv = [0, 0.4, 2.2, 2.7, 4.5, 5][Math.max(0, Math.min(5, lv0))];
+    const lv = [0, 0.8, 1.8, 2.8, 4, 5][Math.max(0, Math.min(5, lv0))];
     if (waterTime > 0) {
         waterTime -= dt;
         if (waterTime <= 0) { WATERFX.wetT = 900; if (!shz) { try { AudioFX.playWaterEnd(); } catch (e) {} } }   // после «Водонапора» трубы ещё ~15 с мокрые, как после дождя
@@ -231,7 +229,7 @@ function waterUpdate(speed, squeeze) {
         }
     }
     // поток во всю ширину трубы; со сложностью — гуще, быстрее и сильнее давит
-    const WK = Math.min(0.95, 0.55 + 0.08 * lv), DENS = 0.027 + lv * 0.018, V0 = 2.6 + lv * 0.45, G = 0.22;
+    const WK = Math.min(0.95, 0.66 + 0.058 * lv), DENS = 0.045 + lv * 0.021, V0 = 2.6 + lv * 0.45, G = 0.22;
     const PUSH = 0.035 + 0.045 * lv;   // в начале — лёгкий напор, к Хард+ сильный, но пролететь можно
     const R = shieldTime > 0 ? owl.radius * 1.4 : owl.radius * 0.95;
     let imp = 0, hits = 0;
