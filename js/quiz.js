@@ -143,6 +143,21 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
  background:radial-gradient(120% 60% at 50% -10%,rgba(56,189,248,.16),transparent 60%),radial-gradient(90% 50% at 100% 110%,rgba(254,118,0,.12),transparent 60%),rgba(29,9,54,.97);border:1px solid rgba(120,44,233,.6);box-shadow:0 10px 40px rgba(0,0,0,.5)}
 #qzBody{display:flex;flex-direction:column;gap:18px}
 #qzWin .qz-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#C4A1FF;background:rgba(120,44,233,.18);border:1px solid rgba(120,44,233,.4);font-size:13px;cursor:pointer;z-index:2}
+#qzWin .qz-top{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:-4px}
+#qzWin .qz-emb2{position:relative;width:76px;height:76px;display:flex;align-items:center;justify-content:center}
+#qzWin .qz-glow{position:absolute;inset:10px;border-radius:50%;background:radial-gradient(circle,rgba(56,189,248,.28),rgba(168,85,247,.12) 55%,transparent 72%);animation:qzPulse 3.2s ease-in-out infinite}
+@property --qzA{syntax:'<angle>';inherits:false;initial-value:0deg}
+#qzWin .qz-ring{position:absolute;inset:4px;border-radius:50%;padding:1.5px;background:conic-gradient(from var(--qzA),rgba(56,189,248,0) 0deg,#7DD3FC 70deg,#C4A1FF 140deg,rgba(168,85,247,0) 200deg,rgba(56,189,248,0) 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:qzRing 3.6s linear infinite}
+#qzWin .qz-core{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+#qzWin .qz-core i{font-size:32px;background:linear-gradient(110deg,#7DD3FC 0%,#E0F2FE 22%,#7DD3FC 40%,#C4A1FF 60%,#7DD3FC 80%,#E0F2FE 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 6px rgba(56,189,248,.45));animation:qzFlow 4.5s linear infinite}
+#qzWin .qz-tw{position:absolute;font-style:normal;font-size:var(--s);color:#E0F2FE;text-shadow:0 0 8px #38BDF8;animation:qzTw 2.4s ease-in-out infinite;animation-delay:var(--d)}
+@keyframes qzRing{to{--qzA:360deg}}
+@keyframes qzFlow{to{background-position:-250% 0}}
+@keyframes qzPulse{0%,100%{opacity:.6;transform:scale(.95)}50%{opacity:1;transform:scale(1.06)}}
+@keyframes qzTw{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:1;transform:scale(1.1)}}
+#qzWin .qz-title2{text-align:center}
+#qzWin .qz-title2 b{display:block;font-weight:900;font-size:22px;letter-spacing:.02em;line-height:1;background:linear-gradient(90deg,#7DD3FC,#E0F2FE 45%,#C4A1FF);-webkit-background-clip:text;background-clip:text;color:transparent}
+#qzWin .qz-title2 span{display:block;margin-top:6px;font-weight:600;font-size:11.5px;color:#C4B5FD}
 #qzWin .qz-head{display:flex;align-items:center;gap:12px;padding-right:38px}
 #qzWin .qz-emb{flex:0 0 54px;width:54px;height:54px;border-radius:17px;display:flex;align-items:center;justify-content:center;font-size:24px;background:linear-gradient(135deg,#FE7600,#782CE9);border:1px solid rgba(255,255,255,.3);box-shadow:0 0 16px rgba(254,118,0,.45)}
 #qzWin .qz-title{font-weight:900;font-size:18px;letter-spacing:-.01em;line-height:1}
@@ -248,8 +263,9 @@ function qzBuild() {
     return qzRoot;
 }
 function qzHead() {
-    return '<div class="qz-head"><div class="qz-emb"><i class="fa-solid fa-circle-question"></i></div><div><div class="qz-title">ВОПРОСЫ ДНЯ</div>'
-        + '<div class="qz-sub">Отвечайте на вопросы и зарабатывайте монеты для лавки</div></div></div>';
+    return '<div class="qz-top"><div class="qz-emb2"><div class="qz-glow"></div><div class="qz-ring"></div><div class="qz-core"><i class="fa-solid fa-comments"></i></div>'
+        + '<i class="qz-tw" style="left:-6px;top:10px;--s:8px;--d:0s">✦</i><i class="qz-tw" style="right:-8px;top:22px;--s:7px;--d:.9s">✦</i><i class="qz-tw" style="right:4px;top:-6px;--s:6px;--d:1.7s">✦</i></div>'
+        + '<div class="qz-title2"><b>ВОПРОСЫ ДНЯ</b><span>Отвечайте и зарабатывайте монеты для лавки</span></div></div>';
 }
 function qzProg(d, curIdx) {
     let dots = '';
