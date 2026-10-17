@@ -793,7 +793,7 @@ function checkVictoryCondition() {
 
 function updateMenuVisibility() {
     try { rwUpdateUI(); } catch (e) {}
-    try { const sb = document.getElementById('startBtnSub'); if (sb) sb.innerText = attempts > 0 ? 'ОСТАЛОСЬ ПОПЫТОК: ' + attempts : 'НОВАЯ ИГРА — ' + MAX_ATTEMPTS + ' ПОПЫТКИ (ПРОГРЕСС СГОРИТ)'; } catch (e) {}
+    try { const sb = document.getElementById('startBtnSub'); if (sb) sb.innerText = attempts > 0 ? 'ОСТАЛОСЬ ПОПЫТОК: ' + attempts : 'КУПИТЕ В ЛАВКЕ ИЛИ ЖДИТЕ ЗАВТРА'; } catch (e) {}
     try { const sbt = document.getElementById('startBtn'); if (sbt) sbt.classList.toggle('no-attempts', attempts <= 0); } catch (e) {}
     const statsCard = document.getElementById('statsCard');
     const menuDiffCard = document.getElementById('menuDiffCard');
@@ -807,7 +807,7 @@ function updateMenuVisibility() {
     const hasProgress = hasStartedCampaign || score > 0 || total > 0 || attempts < MAX_ATTEMPTS || isFlightPaused;
 
     if (startBtnLabel) {
-        startBtnLabel.innerText = (attempts <= 0) ? 'НАЧАТЬ НОВУЮ ИГРУ' : (hasWonGame ? 'НАЧАТЬ НОВЫЙ ПОЛЕТ' : (hasProgress ? 'ПРОДОЛЖИТЬ ПОЛЕТ' : 'НАЧАТЬ ПОЛЕТ'));
+        startBtnLabel.innerText = (attempts <= 0) ? 'ПОПЫТКИ КОНЧИЛИСЬ' : (hasWonGame ? 'НАЧАТЬ НОВЫЙ ПОЛЕТ' : (hasProgress ? 'ПРОДОЛЖИТЬ ПОЛЕТ' : 'НАЧАТЬ ПОЛЕТ'));
     }
 
     if (statsCard) {
@@ -1056,6 +1056,7 @@ function handleTap(e) {
         if (tapMsg) tapMsg.classList.add('hidden');
         
         if (pipes.length === 0) spawnInitialPipes();
+        if (typeof shopOnFlightStart === 'function') shopOnFlightStart();   // бонусы, купленные в лавке «на старт»
 
         owl.flap();
         return;

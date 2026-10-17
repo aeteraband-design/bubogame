@@ -16,6 +16,16 @@ function computeRenderScale() {
 }
 // ===== Настройки игры, которые меняются в админке (хранятся в браузере) =====
 const ADMIN_KEY = 'bubo_admin_cfg_v1';
+// один раз обнуляем игру у всех (новые правила: 2 попытки на сутки, монеты, лавка) — прогресс, монеты, вопросы, настройки
+(function () {
+    try {
+        const W = 'bubo_wipe', V = '2026-10-17b';
+        if (localStorage.getItem(W) !== V) {
+            ['bubo_owl_flight_progress_v3', ADMIN_KEY, 'bubo_coins', 'bubo_shop_pending', 'bubo_quiz_day10', 'bubo_quiz_seen', 'bubo_quiz_prog', 'bubo_quiz_day', 'bubo_last_prize'].forEach((k) => localStorage.removeItem(k));
+            localStorage.setItem(W, V);
+        }
+    } catch (e) {}
+})();
 const ADMIN_DEFAULTS = {
     themes: { music: 20, logic: 20, kino: 20, series: 20, cartoons: 20, fun: 20 },   // сколько собрать каждой темы для победы (по умолчанию — по 20)
     quizOn: 0,                           // вопросы и порталы в другой мир: 0 — выключены (по умолчанию), 1 — включены
@@ -28,7 +38,7 @@ const ADMIN_DEFAULTS = {
     stormTest: 0,                        // проверка погоды: 0 — случайные грозы, 10–100 — сила грозы вручную
     shazamEvery: 4,                      // какое по счёту взятое ускорение включает ШАЗАМ
     feathersForMax: 6,                   // волшебных перьев до роста максимума сил
-    attempts: 2, questionsPerAttempt: 100,
+    attempts: 2, questionsPerAttempt: 250,   // попытки на сутки; +1 попытка за каждые 250 вопросов, между ними — по 40 монет за каждые 50
     maxLives: 5                          // максимум сердечек: 5 или 6
 };
 const ADMIN_SPEC = {   // [минимум, максимум, шаг]
@@ -41,6 +51,8 @@ function normalizeAdminCfg(raw) {
     raw = (raw && typeof raw === 'object') ? raw : {};
     const cl = (v, sp, d) => { v = Math.round(Number(v)); return isFinite(v) ? Math.max(sp[0], Math.min(sp[1], v)) : d; };
     for (const k in ADMIN_SPEC) if (k !== 'theme' && k in raw) out[k] = cl(raw[k], ADMIN_SPEC[k], out[k]);
+    if (raw.qpaV !== 3) out.questionsPerAttempt = ADMIN_DEFAULTS.questionsPerAttempt;   // один раз переходим на «попытка за 200 вопросов»
+    out.qpaV = 3;
     // темы: старые сохранённые значения (до перехода на «по 20») не берём — один раз сбрасываем на новые стандартные
     if (raw.themesV === 2 && raw.themes && typeof raw.themes === 'object') for (const k in out.themes) if (k in raw.themes) out.themes[k] = cl(raw.themes[k], ADMIN_SPEC.theme, out.themes[k]);
     out.themesV = 2;
@@ -118,11 +130,24 @@ function updateLivesHUD() { scheduleHud('heart'); }
 
 // ===== Каждые 100 вопросов — +1 попытка =====
 let QUESTIONS_PER_ATTEMPT = ADMIN_CFG.questionsPerAttempt;
-let attemptMilestone = -1;
+let attemptMilestone = -1, coinMilestone = -1;
 function checkAttemptMilestone() {
     let active = false;
     try { active = gameActive; } catch (e) {}
     const m = Math.floor(score / QUESTIONS_PER_ATTEMPT);
+    // монеты за каждые 50 вопросов (рубеж попытки монет не даёт — там попытка)
+    const c = Math.floor(score / 50);
+    if (coinMilestone < 0 || !active) coinMilestone = Math.max(coinMilestone, c);
+    else if (c > coinMilestone) {
+        let add = 0;
+        for (let k = coinMilestone + 1; k <= c; k++) if ((k * 50) % QUESTIONS_PER_ATTEMPT !== 0) add += 40;   // по 40 монет за каждые 50 вопросов (кроме рубежа попытки)
+        coinMilestone = c;
+        if (add > 0 && typeof coinsAdd === 'function') {
+            coinsAdd(add);
+            try { AudioFX.playStarCollect(); Haptics.powerup(); } catch (e) {}
+            try { showGoldBanner(`+${add} монет`, 'fa-coins', '#FFC53D'); } catch (e) {}
+        }
+    }
     if (attemptMilestone < 0 || !active) { attemptMilestone = Math.max(attemptMilestone, m); return; }
     if (m > attemptMilestone) {
         const gained = m - attemptMilestone;
@@ -230,7 +255,7 @@ let lives = 3.0;
 let maxLives = ADMIN_CFG.maxLives;
 let startLives = 3.0;   // с сколькими сердцами начинается полёт (бонус рулетки: 4 из 6)
 let heartOverflow = 0;   // сердца, пойманные при полном запасе: каждые 2 → «Макс. жизнь +1»
-let zeroDay = '';       // день (ГГГГ-ММ-ДД), когда закончились попытки: на следующий день — 1 новая попытка и полный сброс
+let zeroDay = '', playDay = '';   // playDay — день, к которому относится весь текущий прогресс (новый день — всё с начала)
 function todayKey() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 let stamina = 100.0;
 // Запас сил: после FEATHERS_FOR_MAX_UP волшебных перьев за игру максимум растёт со 100 до 130%
@@ -385,6 +410,7 @@ const StorageManager = {
                 if (typeof data.maxLives === 'number') maxLives = Math.max(5, Math.min(99, data.maxLives));
                 if (typeof data.heartOverflow === 'number') heartOverflow = Math.max(0, Math.min(1, data.heartOverflow));
                 if (typeof data.zeroDay === 'string') zeroDay = data.zeroDay;
+                if (typeof data.playDay === 'string') playDay = data.playDay;
                 if (typeof data.rouletteSpins === 'number') rouletteSpins = Math.max(0, Math.min(99, data.rouletteSpins));
                 if (typeof data.featherMaxBonus === 'number') featherMaxBonus = Math.max(0, data.featherMaxBonus);
                 if (data.collected) {
@@ -409,7 +435,7 @@ const StorageManager = {
     saveLocal() {
         try {
             const payload = {
-                attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins, heartOverflow, zeroDay,
+                attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins, heartOverflow, zeroDay, playDay,
                 collected: { ...collected },
                 settings: {
                     musicVolume: AudioFX.musicVolume,
@@ -508,7 +534,7 @@ const StorageManager = {
             const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
             const progressRef = doc(this.db, 'artifacts', this.appId, 'users', this.userId, 'progress', 'game_state');
             await setDoc(progressRef, {
-                attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins, heartOverflow, zeroDay,
+                attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins, heartOverflow, zeroDay, playDay,
                 collected: { ...collected },
                 settings: {
                     musicVolume: AudioFX.musicVolume,

@@ -423,7 +423,7 @@ function update() {
                 speedBoostTime = ADMIN_CFG.speedSec * 60; const shz = shazamOnSpeedup();
                 AudioFX.onSpeedChanged();
                 Haptics.powerup();
-                if (!shzWas) it.pendingFX = shz ? { target: 'other', text: `ШАЗАМ ${Math.round(SHZ.DUR / 60)}с`, color: '#FF7A00', icon: 'fa-bolt-lightning' }
+                if (!shzWas) it.pendingFX = shz ? { target: 'other', text: `ШАЗАМ ${Math.round((SHZ.DUR + SHZ.FADE) / 60)}с`, color: '#FF7A00', icon: 'fa-bolt-lightning' }
                                    : { target: 'other', text: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#FACC15', icon: 'fa-bolt' };
             } else if (it.type === 'slowmo') {
                 AudioFX.playStarCollect();
@@ -572,7 +572,7 @@ function updateBuffHUD() {
     lastBuffSig = sig;
 
     const activeBuffs = [];
-    if (shazamBusy() && !(SHZ.state === 'active' && SHZ.left <= SHZ.FADE)) activeBuffs.push({ key: 'shazam', left: 1e9, text: `ШАЗАМ: ${shazamSecLeft()}с`, color: '#FF7A00', icon: 'fa-bolt-lightning' });
+    if (shazamBusy()) activeBuffs.push({ key: 'shazam', left: 1e9, text: `ШАЗАМ: ${shazamSecLeft()}с`, color: '#FF7A00', icon: 'fa-bolt-lightning' });
     if (shieldTime > 0) {
         activeBuffs.push({
             key: 'shield', left: shieldTime, text: `ЩИТ: ${Math.ceil(shieldTime / 60)}с`,
@@ -851,7 +851,7 @@ function handleSecretRoulette(originX, originY) {
                 AudioFX.playStarCollect();
                 slowMotionTime = 0;
                 speedBoostTime = ADMIN_CFG.speedSec * 60;
-                if (shazamOnSpeedup()) { AudioFX.onSpeedChanged(); Haptics.powerup(); return { label: `ШАЗАМ ${Math.round(SHZ.DUR / 60)}с`, color: '#FF7A00', icon: 'fa-bolt-lightning', isScoreAdd: false }; }
+                if (shazamOnSpeedup()) { AudioFX.onSpeedChanged(); Haptics.powerup(); return { label: `ШАЗАМ ${Math.round((SHZ.DUR + SHZ.FADE) / 60)}с`, color: '#FF7A00', icon: 'fa-bolt-lightning', isScoreAdd: false }; }
                 AudioFX.onSpeedChanged();
                 Haptics.powerup();
                 return { label: `Ускорение ${ADMIN_CFG.speedSec}с`, color: '#FACC15', icon: 'fa-bolt', isScoreAdd: false };
@@ -1046,7 +1046,7 @@ function showGameOverScreen(reason) {
         info.classList.toggle('go-warn', !has);
         info.innerHTML = has
             ? `<i class="fa-solid fa-floppy-disk"></i><div><b>Прогресс сохранён.</b> Можно продолжить с текущего этапа${lvlName ? ` (сложность <span class="go-lvl">${lvlName}</span>)` : ''}: вопросы, темы, перья и силы остаются.</div>`
-            : `<i class="fa-solid fa-triangle-exclamation"></i><div><b>Попыток больше нет.</b> Нажмите «Начать новую игру»: прогресс сбросится, снова будет ${MAX_ATTEMPTS} попытки.</div>`;
+            : `<i class="fa-solid fa-triangle-exclamation"></i><div><b>Попытки на сегодня закончились.</b> Прогресс сохранён до конца дня: купите попытку в лавке (монеты — за вопросы дня) и продолжайте. Завтра — ${MAX_ATTEMPTS} новые попытки и всё с начала.</div>`;
     }
     const contBtn = $('continueAttemptBtn'), restartBtn = $('restartFromGameOverBtn'), homeBtn = $('gameOverHomeBtn'), okBtn = $('gameOverOkBtn');
     if (contBtn) contBtn.classList.toggle('hidden', !has);
@@ -1055,7 +1055,7 @@ function showGameOverScreen(reason) {
     if (restartBtn) restartBtn.classList.add('hidden');
     if (homeBtn) homeBtn.classList.toggle('hidden', !has);
     if (okBtn) okBtn.classList.toggle('hidden', has);
-    if ($('earnAttemptBtn')) $('earnAttemptBtn').classList.toggle('hidden', has || !(typeof quizDayLeft === 'function' && quizDayLeft()));   // попыток нет — можно заработать на вопросах дня
+    if ($('earnAttemptBtn')) $('earnAttemptBtn').classList.toggle('hidden', has);   // попыток нет — можно купить в лавке
     updateMenuVisibility();
     const modal = $('gameOverModal');
     if (modal) modal.classList.remove('hidden');

@@ -159,6 +159,8 @@
         let h = '';
         if (tab === 'themes') h += `<div class="adm-sum"><span>Всего тем для победы</span><b id="admTotal">${themesTotal()}</b></div>`;
         h += rows.map(rowHtml).join('');
+        if (tab === 'game') h += `<div class="adq-acts"><button type="button" class="adq-btn" data-g="coins"><i class="fa-solid fa-coins"></i>+1000 монет</button></div>`
+            + `<div class="adq-acts"><button type="button" class="adq-btn" data-g="out"><i class="fa-solid fa-right-from-bracket"></i>Выйти из админки</button></div>`;
         body.innerHTML = h;
         body.scrollTop = 0;
     }
@@ -202,7 +204,7 @@
         }
         TOTAL_THEMES = Object.keys(CATEGORIES).reduce((a, k) => a + (CATEGORIES[k].count || 0), 0);
         if (attempts === oldMax) attempts = MAX_ATTEMPTS;                        // игра ещё не начата — берём новое число попыток
-        try { attemptMilestone = Math.floor(score / QUESTIONS_PER_ATTEMPT); } catch (e) {}   // не выдаём попытки задним числом
+        try { attemptMilestone = Math.floor(score / QUESTIONS_PER_ATTEMPT); coinMilestone = Math.floor(score / 50); } catch (e) {}   // не выдаём попытки задним числом
         syncAll();
     };
     function syncAll() {
@@ -223,6 +225,15 @@
         });
     };
 
+    // большая кнопка внизу окна: вернуть попытки дня (снова ${MAX_ATTEMPTS})
+    { const ab = $('admAttBtn'); if (ab) ab.addEventListener('click', (e) => { e.stopPropagation(); attempts = Math.max(attempts, MAX_ATTEMPTS); zeroDay = ''; try { StorageManager.save(); updateHUDAll(); } catch (er) {} ab.querySelector('span').textContent = 'ГОТОВО: ПОПЫТОК ' + attempts; setTimeout(() => { ab.querySelector('span').textContent = 'СБРОСИТЬ ПОПЫТКИ ДНЯ'; }, 1800); }); }
+    // вкладка «Игра»: вернуть дневные попытки, тестовые монеты, выход
+    body.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-g]'); if (!b || tab !== 'game') return;
+        if (b.dataset.g === 'att') { attempts = Math.max(attempts, MAX_ATTEMPTS); zeroDay = ''; try { StorageManager.save(); updateHUDAll(); } catch (er) {} b.innerHTML = '<i class="fa-solid fa-check"></i>Попытки: ' + attempts; }
+        else if (b.dataset.g === 'coins') { if (typeof coinsAdd === 'function') coinsAdd(1000); b.innerHTML = '<i class="fa-solid fa-check"></i>Монет: ' + (typeof coinsGet === 'function' ? coinsGet() : ''); }
+        else if (b.dataset.g === 'out') { try { localStorage.removeItem(AUTH); } catch (er) {} close(); }
+    });
     // вкладка «Вопросы»: сброс показанных и портал прямо сейчас (для проверки)
     body.addEventListener('click', (e) => {
         const b = e.target.closest('[data-q]'); if (!b || tab !== 'quiz') return;
@@ -277,7 +288,41 @@
         window.applyAdminConfig(ADMIN_DEFAULTS); renderBody();
     });
 
-    const open = (e) => { if (e) e.stopPropagation(); try { AudioFX.resume(); } catch (er) {} renderTabs(); renderBody(); modal.classList.remove('hidden'); };
+    const openReal = () => { try { AudioFX.resume(); } catch (er) {} renderTabs(); renderBody(); modal.classList.remove('hidden'); };
+    // вход по логину и паролю (запоминается на этом устройстве)
+    const AUTH = 'bubo_adm_ok';
+    let login = null;
+    const showLogin = () => {
+        if (!login) {
+            const st = document.createElement('style');
+            st.textContent = '#admLogin{position:absolute;inset:0;z-index:46;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(20,3,38,.6);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}'
+                + '#admLogin.hidden{display:none}#admLogin .al-box{width:100%;max-width:300px;display:flex;flex-direction:column;gap:12px;padding:20px 18px;border-radius:22px;background:linear-gradient(180deg,rgba(36,10,66,.98),rgba(24,6,46,.98));border:1px solid rgba(254,118,0,.45);box-shadow:0 20px 50px rgba(0,0,0,.55);font-family:Onest,sans-serif;color:#fff}'
+                + '#admLogin .al-t{display:flex;align-items:center;gap:8px;font-weight:900;font-size:14px;letter-spacing:.06em}#admLogin .al-t i{color:#FE7600}'
+                + '#admLogin input{width:100%;padding:11px 12px;border-radius:12px;background:#140326;border:1px solid rgba(120,44,233,.5);color:#fff;font:700 14px Onest,sans-serif;outline:none}#admLogin input:focus{border-color:#FE7600}'
+                + '#admLogin .al-err{min-height:14px;font-weight:700;font-size:11.5px;color:#F87171}#admLogin .al-row{display:flex;gap:8px}'
+                + '#admLogin button{flex:1;padding:11px;border-radius:12px;font:900 12px Onest,sans-serif;letter-spacing:.05em;color:#fff;cursor:pointer;border:1px solid rgba(168,85,247,.5);background:rgba(45,14,82,.9)}'
+                + '#admLogin button.pri{background:linear-gradient(180deg,#FF9F1C,#FE7600);border-color:rgba(255,214,150,.85)}'
+                + '#admLogin .al-box.shake{animation:alShake .35s}@keyframes alShake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}';
+            document.head.appendChild(st);
+            login = document.createElement('div'); login.id = 'admLogin'; login.className = 'hidden';
+            login.innerHTML = '<form class="al-box" autocomplete="off"><div class="al-t"><i class="fa-solid fa-lock"></i>ВХОД В АДМИНКУ</div>'
+                + '<input id="alU" type="text" placeholder="Логин" autocapitalize="off" spellcheck="false"><input id="alP" type="password" placeholder="Пароль">'
+                + '<div class="al-err" id="alE"></div><div class="al-row"><button type="button" id="alC">ОТМЕНА</button><button type="submit" class="pri">ВОЙТИ</button></div></form>';
+            (document.getElementById('gameContainer') || document.body).appendChild(login);
+            ['click', 'pointerdown', 'touchstart', 'keydown'].forEach((ev) => login.addEventListener(ev, (e) => e.stopPropagation()));
+            login.querySelector('#alC').addEventListener('click', () => login.classList.add('hidden'));
+            login.querySelector('form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const u = login.querySelector('#alU').value.trim().toLowerCase(), p = login.querySelector('#alP').value.trim();
+                if (u === 'admin' && p === '1988-1988') { try { localStorage.setItem(AUTH, '1'); } catch (er) {} login.classList.add('hidden'); openReal(); }
+                else { login.querySelector('#alE').textContent = 'Неверный логин или пароль'; const b = login.querySelector('.al-box'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); }
+            });
+        }
+        login.querySelector('#alU').value = ''; login.querySelector('#alP').value = ''; login.querySelector('#alE').textContent = '';
+        login.classList.remove('hidden');
+        setTimeout(() => { try { login.querySelector('#alU').focus(); } catch (er) {} }, 50);
+    };
+    const open = (e) => { if (e) e.stopPropagation(); let ok = false; try { ok = localStorage.getItem(AUTH) === '1'; } catch (er) {} if (ok) openReal(); else showLogin(); };
     const close = (e) => { if (e) e.stopPropagation(); stopHold(); prevStop(); modal.classList.add('hidden'); syncAll(); };
     openBtn.addEventListener('click', open);
     $('admClose').addEventListener('click', close);

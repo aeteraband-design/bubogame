@@ -13,22 +13,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BUBOGAME v0.10</title>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.12.80">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.12.82">
     <!-- Onest: локальные файлы -->
-    <link rel="stylesheet" href="css/fonts.css?v=0.12.80">
+    <link rel="stylesheet" href="css/fonts.css?v=0.12.82">
 
-    <script src="js/music-hold.js?v=0.12.80"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.12.80">
+    <script src="js/music-hold.js?v=0.12.82"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.12.82">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.12.80" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.12.82" id="adminStyle">
     <!-- Tailwind: готовый файл стилей вместо онлайн-компилятора (тот следил за каждым изменением страницы и пересобирал стили прямо во время игры) -->
-    <link rel="stylesheet" href="css/tailwind.css?v=0.12.80">
+    <link rel="stylesheet" href="css/tailwind.css?v=0.12.82">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.12.80">
-    <link rel="stylesheet" href="css/features.css?v=0.12.80">
+    <link rel="stylesheet" href="css/boot.css?v=0.12.82">
+    <link rel="stylesheet" href="css/features.css?v=0.12.82">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -44,9 +44,9 @@
             </div>
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
-        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.12.80</div>
+        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.12.82</div>
     </div>
-    <script src="js/boot.js?v=0.12.80"></script>
+    <script src="js/boot.js?v=0.12.82"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 backdrop-blur-[7px] overflow-y-auto custom-scroll">
@@ -57,6 +57,9 @@
             <button id="openQuizBtn" class="rw-menu-btn h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 shrink-0" title="Вопросы">
                 <i class="fa-solid fa-circle-question text-xs"></i>
                 <span id="qzMenuBadge" class="rw-badge hidden"></span>
+            </button>
+            <button id="openShopBtn" class="rw-menu-btn h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 shrink-0" title="Лавка">
+                <i class="fa-solid fa-store text-xs"></i>
             </button>
             <button id="openAdminBtn" class="rw-menu-btn h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 shrink-0" title="Админка">
                 <i class="fa-solid fa-sliders text-xs"></i>
@@ -291,6 +294,7 @@
                 </div>
                 <div id="admTabs" class="adm-tabs"></div>
                 <div id="admBody" class="adm-body"></div>
+                <button id="admAttBtn" type="button" style="flex:0 0 auto;width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:14px 10px;border-radius:14px;font:900 13px Onest,sans-serif;letter-spacing:.06em;color:#fff;cursor:pointer;background:linear-gradient(180deg,#22C55E,#15803D);border:1px solid rgba(187,247,208,.8);box-shadow:0 0 14px rgba(34,197,94,.4)"><i class="fa-solid fa-rotate-right"></i><span>СБРОСИТЬ ПОПЫТКИ ДНЯ</span></button>
                 <div class="adm-foot">
                     <button id="admReset" class="adm-btn adm-btn-2"><i class="fa-solid fa-rotate-left"></i><span>Сбросить</span></button>
                     <button id="admDone" class="adm-btn adm-btn-1">Сохранить</button>
@@ -335,11 +339,11 @@
                         </div>
                         <div class="flex items-center space-x-3.5">
                             <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FE760026;border-color:#FE76004D;color:#FE7600"><i class="fa-solid fa-rotate-right text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Попытки:</strong> в начале их <span data-num="attempts">2</span>. Закончились сердца — сгорает попытка, но темы остаются. Закончились попытки — игра начинается заново.</span>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Попытки:</strong> в начале их <span data-num="attempts">2</span>. Даются на сутки. Закончились сердца — сгорает попытка, но темы остаются. Закончились попытки — можно купить ещё в лавке за монеты (их дают вопросы дня), а завтра — новый день: снова 2 попытки и всё с начала.</span>
                         </div>
                         <div class="flex items-center space-x-3.5">
                             <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FE760026;border-color:#FE76004D;color:#FE7600"><i class="fa-solid fa-circle-question text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Вопросы:</strong> собирай их, они идут в счёт. Каждые <span data-num="questionsPerAttempt">100</span> вопросов дают +1 попытку. Вопросы копятся, пока остаются попытки, и сгорают, когда игра начинается заново.</span>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Вопросы:</strong> собирай их, они идут в счёт. Каждые 50 вопросов дают 40 монет, а каждые <span data-num="questionsPerAttempt">250</span> — +1 попытку. Вопросы копятся весь день и сгорают с началом нового дня.</span>
                         </div>
                         <div class="flex items-center space-x-3.5">
                             <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#A855F726;border-color:#A855F74D;color:#A855F7"><i class="fa-solid fa-layer-group text-base sm:text-lg font-black "></i></div>
@@ -410,7 +414,7 @@
                         </div>
                         <div class="flex items-center space-x-3.5">
                             <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FF7A0026;border-color:#FF7A004D;color:#FF7A00"><i class="fa-solid fa-bolt-lightning text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#FFA24D">ШАЗАМ (15 секунд):</strong> каждое <span data-num="shazamEvery">4</span>-е взятое ускорение включает суперскорость — сова неуязвима, сама облетает трубы и притягивает все значки. Значок, который включит ШАЗАМ, искрит молниями.</span>
+                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#FFA24D">ШАЗАМ (20 секунд):</strong> каждое <span data-num="shazamEvery">4</span>-е взятое ускорение включает суперскорость — сова неуязвима, сама облетает трубы и притягивает все значки. Значок, который включит ШАЗАМ, искрит молниями.</span>
                         </div>
                         <div class="flex items-center space-x-3.5">
                             <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#D946EF26;border-color:#D946EF4D;color:#D946EF"><svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5"/></svg></div>
@@ -622,8 +626,8 @@
                     <span class="font-black">ПОНЯТНО</span>
                 </button>
                 <button id="earnAttemptBtn" class="hidden w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black border border-[#38BDF8]/70 text-white shadow-md active:scale-95 transition-all" style="background:rgba(14,60,110,.55);box-shadow:0 0 12px rgba(56,189,248,.35)">
-                    <i class="fa-solid fa-circle-question text-sm font-black" style="color:#38BDF8"></i>
-                    <span class="font-black text-white">ЗАРАБОТАТЬ ПОПЫТКУ</span>
+                    <i class="fa-solid fa-store text-sm font-black" style="color:#FFC53D"></i>
+                    <span class="font-black text-white">КУПИТЬ ПОПЫТКУ В ЛАВКЕ</span>
                 </button>
                 <button id="gameOverHomeBtn" class="w-full py-2 rounded-xl text-[10px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black bg-[#2d0e52]/90 hover:bg-[#381267] border border-[#a855f7]/50 text-purple-300 shadow-md active:scale-95 transition-all">
                     <i class="fa-solid fa-house text-xs font-black text-[#FE7600]"></i>
@@ -727,23 +731,24 @@
         </div>
     </div>
 
-    <script src="js/audio.js?v=0.12.80"></script>
-    <script src="js/game-core.js?v=0.12.80"></script>
-    <script src="js/owl.js?v=0.12.80"></script>
-    <script src="js/hud.js?v=0.12.80"></script>
-    <script src="js/scenery.js?v=0.12.80"></script>
-    <script src="js/items.js?v=0.12.80"></script>
-    <script src="js/shazam.js?v=0.12.80"></script>
-    <script src="js/crystals.js?v=0.12.80"></script>
-    <script src="js/water.js?v=0.12.80"></script>
-    <script src="js/quiz.js?v=0.12.80"></script>
-    <script src="js/weather.js?v=0.12.80"></script>
-    <script src="js/update.js?v=0.12.80"></script>
-    <script src="js/render.js?v=0.12.80"></script>
-    <script src="js/wheel.js?v=0.12.80"></script>
-    <script src="js/ui.js?v=0.12.80"></script>
-<script src="js/admin.js?v=0.12.80"></script>
-<script src="js/text-measure.js?v=0.12.80"></script>
-<script src="js/fullscreen.js?v=0.12.80"></script>
+    <script src="js/audio.js?v=0.12.82"></script>
+    <script src="js/game-core.js?v=0.12.82"></script>
+    <script src="js/owl.js?v=0.12.82"></script>
+    <script src="js/hud.js?v=0.12.82"></script>
+    <script src="js/scenery.js?v=0.12.82"></script>
+    <script src="js/items.js?v=0.12.82"></script>
+    <script src="js/shazam.js?v=0.12.82"></script>
+    <script src="js/crystals.js?v=0.12.82"></script>
+    <script src="js/water.js?v=0.12.82"></script>
+    <script src="js/quiz.js?v=0.12.82"></script>
+    <script src="js/shop.js?v=0.12.82"></script>
+    <script src="js/weather.js?v=0.12.82"></script>
+    <script src="js/update.js?v=0.12.82"></script>
+    <script src="js/render.js?v=0.12.82"></script>
+    <script src="js/wheel.js?v=0.12.82"></script>
+    <script src="js/ui.js?v=0.12.82"></script>
+<script src="js/admin.js?v=0.12.82"></script>
+<script src="js/text-measure.js?v=0.12.82"></script>
+<script src="js/fullscreen.js?v=0.12.82"></script>
 </body>
 </html>

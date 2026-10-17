@@ -5,7 +5,7 @@
 // а все значки впереди сами притягиваются к ней, как магнитом.
 const SHZ = {
     count: 0, state: 'idle', t: 0, left: 0, armUntil: 0,
-    INTRO: 60, DUR: 900, FADE: 150, WARN: 180,   // WARN — за 3 с до конца эффект начинает гаснуть и предупреждает звуком
+    INTRO: 60, DUR: 900, FADE: 300,   // всего 20 с: 15 с в полную силу + 5 с плавного спада (скорость и свечение снижаются, звучат «дзинь»)
       // FADE — после 15 с ещё 2,5 с эффект гаснет (молнии затухают), сова всё ещё пролетает трубы
                   // кадры (60 в секунду): 1 с зарядки и 15 с эффекта
     k: 0, shieldK: 0, blur: 0, slow: 1, dx: 0,
@@ -16,7 +16,7 @@ const SHZ = {
 function shazamActive() { return SHZ.state === 'active'; }
 function shazamBusy() { return SHZ.state === 'intro' || SHZ.state === 'active'; }
 function shazamBlocksTap() { return false; }   // сова всегда слушается тапов
-function shazamSecLeft() { return SHZ.state === 'active' ? Math.ceil(Math.max(0, SHZ.left - SHZ.FADE) / 60) : (SHZ.state === 'intro' ? Math.ceil(SHZ.DUR / 60) : 0); }
+function shazamSecLeft() { return SHZ.state === 'active' ? Math.ceil(Math.max(0, SHZ.left) / 60) : (SHZ.state === 'intro' ? Math.ceil((SHZ.DUR + SHZ.FADE) / 60) : 0); }
 function shazamOwlBehind() { return SHZ.depthBack > 0.02; }
 
 // ---- кнопка ----
@@ -141,7 +141,10 @@ function shazamReset() {
 
 // множитель скорости игры на время зарядки (почти стоп) и цель ускорения на время эффекта
 function shazamSpeedMul() { return SHZ.slow; }
-function shazamGsTarget() { return SHZ.state === 'active' ? 2.0 : 0; }   // обычное ускорение — 1,3
+function shazamGsTarget() {   // в спаде скорость ступеньками по 0,1 плавно сходит с 2,0 до 1,3
+    if (SHZ.state !== 'active') return 0;
+    return Math.round((2.0 - 0.7 * (SHZ.warn || 0)) * 10) / 10;
+}   // обычное ускорение — 1,3
 
 function shazamAddStreak(burst) {
     SHZ.streaks.push({ x: width + Math.random() * width * (burst ? 0.6 : 0.2), y: height * (0.08 + Math.random() * 0.84),
@@ -183,23 +186,23 @@ function shazamUpdate() {
     SHZ.slow = 1; SHZ.dx = 0;   // сова не замирает и не дёргается
     if (SHZ.state === 'active') {
         SHZ.left -= dtMult; SHZ.t += dtMult;
-        // под самый конец — три «дзинь» (последние ~1,5 с), а когда эффект кончился совсем — звук «выключения» (в shazamEnd)
+        // последние 5 с — «дзинь» каждую секунду (всё ниже), а когда эффект кончился совсем — звук «выключения» (в shazamEnd)
         const l0 = SHZ.left + dtMult;
-        for (const [n, at] of [[3, 135], [2, 90], [1, 45]]) if (l0 > at && SHZ.left <= at) { try { AudioFX.playShazamWarn(n); } catch (e) {} SHZ.blink = 1; }
+        for (let n = 5; n >= 1; n--) { const at = n * 60; if (l0 > at && SHZ.left <= at) { try { AudioFX.playShazamWarn(n); } catch (e) {} SHZ.blink = 1; } }
         if (SHZ.left <= 0) shazamEnd();
     }
-    // предупреждение: 0 → 1 за последние 3 с перед угасанием
-    SHZ.warn = SHZ.state === 'active' ? Math.max(0, Math.min(1, 1 - (SHZ.left - SHZ.FADE) / SHZ.WARN)) : 0;
+    // спад: 0 → 1 за последние 5 с
+    SHZ.warn = SHZ.state === 'active' ? Math.max(0, Math.min(1, 1 - SHZ.left / SHZ.FADE)) : 0;
     SHZ.blink = Math.max(0, (SHZ.blink || 0) - dtMult / 14);
 
     // плавные величины для рисования
     const on = SHZ.state === 'active', intro = SHZ.state === 'intro';
     const ease = (v, tgt, sp) => v + (tgt - v) * Math.min(1, sp * dtMult);
     // к концу свечение слабеет и на каждой из последних секунд коротко «проседает» — видно, что заряд кончается
-    const kOn = Math.min(1, SHZ.left / SHZ.FADE) * (1 - 0.4 * SHZ.warn) * (1 - 0.6 * SHZ.blink);
+    const kOn = (1 - 0.85 * SHZ.warn) * (1 - 0.5 * SHZ.blink);
     SHZ.k = ease(SHZ.k, on ? kOn : (intro ? 0.35 + 0.65 * Math.min(1, SHZ.t / SHZ.INTRO) : 0), SHZ.warn > 0 ? 0.3 : (on || intro ? 0.08 : 0.04));
     SHZ.shieldK = 0;   // щит в ШАЗАМе не меняется
-    SHZ.blur = ease(SHZ.blur, on ? (SHZ.t < 50 ? 1 : 0.55 * Math.min(1, SHZ.left / SHZ.FADE) * (1 - 0.6 * SHZ.warn)) : 0, on ? 0.1 : 0.04);
+    SHZ.blur = ease(SHZ.blur, on ? (SHZ.t < 50 ? 1 : 0.55 * (1 - SHZ.warn)) : 0, on ? 0.1 : 0.04);
 
     // трубы: по очереди — за трубой, перед трубой
     SHZ.depthBack = 0; SHZ.depthFront = 0;

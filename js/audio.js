@@ -18,43 +18,31 @@ const Haptics = {
     // это доли секунды. Отложенный отклик старше 0,8 с выбрасываем, чтобы не дрожало невпопад.
     iosVibrate(pattern) {
         const arr = Array.isArray(pattern) ? pattern : [pattern];
-        if (this._gesture) this.iosPlay(arr);
-        else {
-            // игровое событие без касания (поймал тему, удар, бонус): пробуем отдать отклик сразу — пока после последнего касания
-            // прошло меньше секунды, iOS обычно его пропускает; и на всякий случай повторяем при ближайшем отпускании пальца
-            if (performance.now() - (this._lastAct || -1e9) < 1000) this.iosPlay(arr);
-            // из нескольких отложенных оставляем самый сильный (удар важнее взмаха)
-            const sum = (a) => a.reduce((x, y) => x + y, 0);
-            if (!this._pending || sum(arr) >= sum(this._pending) || performance.now() - this._pendingT > 1500) { this._pending = arr; this._pendingT = performance.now(); }
-        }
+        if (this._gesture) { this.iosPlay(arr); return; }
+        // игровое событие без касания (поймал тему, удар, бонус): сразу пробуем отдать отклик (iOS разрешает его ещё какое-то время
+        // после последнего касания), и на всякий случай повторяем на ближайшем отпускании пальца. Лучше лишний лёгкий отклик, чем никакого
+        if (!this._down) this.iosPlay(arr);   // палец сейчас на экране — отдадим при отпускании, без двойного щелчка
+        const sum = (a) => a.reduce((x, y) => x + y, 0);
+        if (!this._pending || sum(arr) >= sum(this._pending) || performance.now() - this._pendingT > 1200) { this._pending = arr; this._pendingT = performance.now(); }
     },
+    // узор → не больше двух щелчков: первый сразу (внутри жеста), второй через 90 мс, пока жест ещё «свежий»
     iosPlay(arr) {
-        let t = 0;
-        arr.forEach((d, i) => {
-            if (i % 2 === 0) { if (t === 0) this.iosTick(); else setTimeout(() => this.iosTick(), t); }
-            t += d;
-        });
+        this.iosTick();
+        if (arr.length > 2 && arr[2] > 0) setTimeout(() => this.iosTick(), 90);
     },
+    // как в библиотеке ios-haptics: каждый раз новый скрытый переключатель в <head>, нажатие и удаление — так iOS отдаёт отклик надёжнее
     iosTick() {
-        if (this._iosBusy) return;
-        this._iosBusy = true;
         try {
-            if (!this._iosLabel) {
-                const lb = document.createElement('label');
-                lb.setAttribute('aria-hidden', 'true');
-                lb.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;overflow:hidden;pointer-events:none;';
-                const inp = document.createElement('input');
-                inp.type = 'checkbox'; inp.setAttribute('switch', ''); inp.tabIndex = -1;
-                lb.appendChild(inp);
-                // клик по скрытому переключателю не должен доходить до игры и менять фокус
-                ['click', 'change', 'pointerdown', 'mousedown', 'touchstart'].forEach(t => lb.addEventListener(t, (e) => e.stopPropagation()));
-                inp.addEventListener('focus', () => { try { inp.blur(); } catch (e2) {} });
-                document.body.appendChild(lb);
-                this._iosLabel = lb;
-            }
-            this._iosLabel.click();
+            const lb = document.createElement('label');
+            lb.ariaHidden = 'true'; lb.style.display = 'none';
+            const inp = document.createElement('input');
+            inp.type = 'checkbox'; inp.setAttribute('switch', '');
+            lb.appendChild(inp);
+            ['click', 'change'].forEach(t => lb.addEventListener(t, (e) => e.stopPropagation()));
+            document.head.appendChild(lb);
+            lb.click();
+            document.head.removeChild(lb);
         } catch (e) {}
-        this._iosBusy = false;
     },
     flap() { this.vibrate(8); },
     collectTheme() { this.vibrate([35, 25, 45]); },
@@ -65,11 +53,13 @@ const Haptics = {
 
 // iPhone: отклик разрешён только в жесте, который iOS считает «активацией» — отпускание пальца (touchend / pointerup), клик, клавиша.
 // В этот момент проигрываем отложенный отклик; на время обработки события разрешаем и прямые вызовы.
+['touchstart', 'pointerdown'].forEach((ev) => document.addEventListener(ev, () => { Haptics._down = true; }, true));
+document.addEventListener('touchcancel', () => { Haptics._down = false; }, true);
 ['touchend', 'pointerup', 'click', 'keydown'].forEach((ev) => document.addEventListener(ev, () => {
-    Haptics._gesture = true; Haptics._lastAct = performance.now();
+    Haptics._down = false; Haptics._gesture = true; Haptics._lastAct = performance.now();
     if (Haptics._pending) {
         const pd = Haptics._pending; Haptics._pending = null;
-        if (performance.now() - (Haptics._pendingT || 0) < 1500) Haptics.iosPlay(pd);
+        if (performance.now() - (Haptics._pendingT || 0) < 1200) Haptics.iosPlay(pd);
     }
     setTimeout(() => { Haptics._gesture = false; }, 0);
 }, true));
@@ -90,6 +80,9 @@ const AudioFX = {
 
     victoryMelody: [523.25, 659.25, 783.99, 1046.50, 783.99, 880.00, 1046.50, 1318.51, 1174.66, 1046.50, 880.00, 783.99, 880.00, 1046.50, 1174.66, 1046.50],
     victoryBass: [130.81, 130.81, 174.61, 174.61, 196.00, 196.00, 130.81, 196.00],
+    quizMelody:  [329.63, 0, 392.00, 0, 440.00, 0, 392.00, 329.63, 349.23, 0, 329.63, 0, 261.63, 0, 293.66, 0],
+    quizMelody2: [329.63, 0, 392.00, 0, 523.25, 0, 440.00, 392.00, 329.63, 0, 293.66, 0, 261.63, 0, 246.94, 0],
+    quizBass:    [110.00, 87.31, 130.81, 98.00],
     menuMelody: [293.66, 349.23, 440.00, 349.23, 523.25, 440.00, 392.00, 329.63, 440.00, 523.25, 587.33, 523.25, 440.00, 392.00, 349.23, 329.63],
     gameBass:   [146.83, 146.83, 174.61, 146.83, 196.00, 174.61, 130.81, 164.81],
     gameArp:    [293.66, 349.23, 440.00, 587.33, 523.25, 440.00, 349.23, 392.00],
@@ -431,8 +424,8 @@ const AudioFX = {
                     // ноты ставятся заранее (на 0.35 с вперёд) точно по времени аудио — подвисания игры музыку не рвут
                     while (this.nextNoteTime < t + 0.35) {
                         this.playMusicStep(this.nextNoteTime);
-                        let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : 0.29));
-                        if (this.mode !== 'death' && this.mode !== 'victory' && this.mode !== 'menu') {   // в меню темп всегда стандартный — не зависит ни от сложности, ни от ускорения
+                        let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : (this.mode === 'quiz' ? 0.3 : 0.29)));
+                        if (this.mode !== 'death' && this.mode !== 'victory' && this.mode !== 'menu' && this.mode !== 'quiz') {   // в меню темп всегда стандартный — не зависит ни от сложности, ни от ускорения
                             const diff = getDifficultyMultipliers();
                             if (diff.musicTempoMult) d /= diff.musicTempoMult;
                             d /= this.updateSpeedFactor();
@@ -474,7 +467,7 @@ const AudioFX = {
         const now = when || this.ctx.currentTime;
         let pitchMultiplier = 1.0;
 
-        if (this.mode !== 'menu') {   // музыка меню всегда в стандартном темпе и высоте — сложность и ускорение на неё не влияют
+        if (this.mode !== 'menu' && this.mode !== 'quiz') {   // музыка меню всегда в стандартном темпе и высоте — сложность и ускорение на неё не влияют
             const diff = getDifficultyMultipliers();
             if (diff.musicTempoMult) {
                 pitchMultiplier *= diff.musicTempoMult;
@@ -531,6 +524,31 @@ const AudioFX = {
                 ns.buffer = this._iceNoise(); fl.type = 'bandpass'; fl.frequency.setValueAtTime(1900, now);
                 g.gain.setValueAtTime(0.18, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
                 ns.connect(fl); fl.connect(g); g.connect(this.musicGain); ns.start(now); ns.stop(now + 0.14);
+            }
+        } else if (this.mode === 'quiz') {
+            // вопросы: спокойный «лоу-фай» — мягкая мелодия, тёплый бас, приглушённая бочка и тихие хэты (Am – F – C – G)
+            const s = this.step, s16 = s % 16, ph = Math.floor(s / 16) % 2;
+            const mel = ph ? this.quizMelody2 : this.quizMelody;
+            const f = mel[s16];
+            const tone = (type, fr, vol, dur, att) => {
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain(), lp = this.ctx.createBiquadFilter();
+                o.type = type; o.frequency.setValueAtTime(fr, now); lp.type = 'lowpass'; lp.frequency.setValueAtTime(1500, now);
+                g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + (att || 0.03)); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                o.connect(lp); lp.connect(g); g.connect(this.musicGain); o.start(now); o.stop(now + dur + 0.02);
+            };
+            if (f) tone('triangle', f, 0.26, 0.55, 0.04);
+            if (s % 4 === 0) tone('sine', this.quizBass[Math.floor(s / 4) % this.quizBass.length], 0.34, 1.0, 0.05);
+            if (s % 8 === 0 || s % 8 === 5) {   // мягкая бочка
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+                o.type = 'sine'; o.frequency.setValueAtTime(110, now); o.frequency.exponentialRampToValueAtTime(42, now + 0.16);
+                g.gain.setValueAtTime(0.32, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                o.connect(g); g.connect(this.musicGain); o.start(now); o.stop(now + 0.22);
+            }
+            if (s % 2 === 1) {   // тихий хэт
+                const ns = this.ctx.createBufferSource(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+                ns.buffer = this._iceNoise(); fl.type = 'highpass'; fl.frequency.setValueAtTime(6500, now);
+                g.gain.setValueAtTime(s % 4 === 3 ? 0.05 : 0.03, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                ns.connect(fl); fl.connect(g); g.connect(this.musicGain); ns.start(now); ns.stop(now + 0.08);
             }
         } else if (this.mode === 'menu') {
             const freq = this.menuMelody[this.step % this.menuMelody.length];
@@ -1205,7 +1223,7 @@ const AudioFX = {
     playShazamWarn(n) {   // ШАЗАМ скоро кончится: короткий электрический «дзинь», с каждым разом ниже и тише (n = 3, 2, 1)
         try {
             if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime;
-            const f = [0, 700, 820, 960][n] || 800, v = 0.03 + 0.012 * n;
+            const f = 560 + 90 * n, v = 0.03 + 0.008 * n;   // n = 5…1: каждый следующий ниже
             this._toneSweep(t, 0.16, f, f * 0.92, 3200, 1800, v, 'square', 0.06);
             this._crackle(t, 0.12, 3600, 2400, 0.05, 2);
         } catch (e) {}

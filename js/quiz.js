@@ -1,9 +1,10 @@
-// ===== ВОПРОСЫ ЗА ПОПЫТКИ =====
-// Кнопка в главном меню (под рулеткой) открывает окно «Вопросы». Отвечать можно без ограничений; каждые 5 верных ответов — +1 попытка
-// (ошибки счёт не сбрасывают). Вопросы не повторяются, пока не пройдена вся база; порядок вариантов перемешивается.
-// Админка, вкладка «Вопросы»: список, сброс показанных и сброс счёта.
+// ===== ВОПРОСЫ ДНЯ =====
+// Кнопка в главном меню (под рулеткой). В день — 10 вопросов: перед каждым — кнопка «К вопросу», 5 с на чтение, 10 с на ответ
+// (таймер — кольцо справа). За верный ответ — монеты по сложности: лёгкий 30, средний 60, сложный 100. Монеты тратятся в лавке (shop.js).
+// Выйти можно в любой момент между вопросами; закрыли окно посреди вопроса — он засчитывается как неотвеченный.
+// Вопросы не повторяются, пока не пройдена вся база; порядок вариантов перемешивается. Админка, «Вопросы»: список, сброс показанных и дня.
 
-// ---------- база вопросов: добавлять по этому же шаблону ----------
+// ---------- база вопросов: добавлять по этому же шаблону (diff: 'e' — лёгкий, 'm' — средний, 'h' — сложный; без diff — по списку ниже) ----------
 const QUIZ_QUESTIONS = [
     { id: 101, cat: 'Еда', question: 'Какая специя считается самой дорогой в мире по весу?', options: { A: 'Ваниль', B: 'Шафран', C: 'Кардамон', D: 'Мускатный орех' }, correct: 'B' },
     { id: 102, cat: 'Еда', question: 'Из какой страны родом блюдо пад-тай?', options: { A: 'Вьетнам', B: 'Китай', C: 'Таиланд', D: 'Малайзия' }, correct: 'C' },
@@ -85,8 +86,16 @@ const QUIZ_QUESTIONS = [
     { id: 170, cat: 'Наука', question: 'Какая планета Солнечной системы самая большая?', options: { A: 'Юпитер', B: 'Сатурн', C: 'Нептун', D: 'Уран' }, correct: 'A' }
 ];
 
-const QUIZ_NEED_OK = 5;   // столько верных ответов — +1 попытка (отвечать можно без ограничений)
-const QUIZ_SEEN_KEY = 'bubo_quiz_seen', QUIZ_DAY_KEY = 'bubo_quiz_prog';
+// ---------- сложность вопросов: лёгкий — 30 монет, средний — 60, сложный — 100 ----------
+const QZ_DIFF = {
+    e: [103, 105, 111, 112, 113, 115, 119, 121, 122, 124, 128, 131, 132, 133, 134, 135, 136, 139, 140, 142, 143, 144, 146, 147, 148, 149, 151, 153, 154, 155, 156, 157, 158, 162, 164, 170],
+    h: [106, 108, 120, 130, 145, 159, 165, 169, 101, 104, 110, 118, 129]
+};
+const QZ_DIFF_INFO = { e: { name: 'Легко', coins: 30, col: '#4ADE80' }, m: { name: 'Средне', coins: 60, col: '#FACC15' }, h: { name: 'Сложно', coins: 100, col: '#F87171' } };
+QUIZ_QUESTIONS.forEach(q => { if (!q.diff) q.diff = QZ_DIFF.e.includes(q.id) ? 'e' : QZ_DIFF.h.includes(q.id) ? 'h' : 'm'; });
+
+const QUIZ_PER_DAY = 10, QZ_READ = 5, QZ_ANSWER = 10;   // вопросов в день; секунд на чтение и на ответ
+const QUIZ_SEEN_KEY = 'bubo_quiz_seen', QUIZ_DAY_KEY = 'bubo_quiz_day10';
 const QZ_LETTERS = ['A', 'B', 'C', 'D'];
 const QZ_BALL_COL = { A: '#FE7600', B: '#A855F7', C: '#38BDF8', D: '#F43F5E' };
 
@@ -101,23 +110,24 @@ function quizSeen() { try { return JSON.parse(localStorage.getItem(QUIZ_SEEN_KEY
 function quizMarkSeen(id) { try { const s = quizSeen(); if (s.indexOf(id) < 0) { s.push(id); localStorage.setItem(QUIZ_SEEN_KEY, JSON.stringify(s)); } } catch (e) {} }
 function quizResetSeen() { try { localStorage.removeItem(QUIZ_SEEN_KEY); } catch (e) {} }
 function quizNextId(day) {
-    let seen = quizSeen();
-    let free = QUIZ_QUESTIONS.filter(q => seen.indexOf(q.id) < 0 && day.recent.indexOf(q.id) < 0);
-    if (!free.length) { quizResetSeen(); free = QUIZ_QUESTIONS.filter(q => day.recent.indexOf(q.id) < 0); }   // вся база пройдена — идём по кругу
+    const seen = quizSeen();
+    let free = QUIZ_QUESTIONS.filter(q => seen.indexOf(q.id) < 0 && day.ids.indexOf(q.id) < 0);
+    if (!free.length) { quizResetSeen(); free = QUIZ_QUESTIONS.filter(q => day.ids.indexOf(q.id) < 0); }   // вся база пройдена — идём по кругу
     return free.length ? free[Math.floor(Math.random() * free.length)].id : QUIZ_QUESTIONS[0].id;
 }
 
-// ---------- прогресс: сколько верных ответов набрано к следующей попытке ----------
+// ---------- день: 10 вопросов ----------
+function qzToday() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 function quizDay() {
     let d = null; try { d = JSON.parse(localStorage.getItem(QUIZ_DAY_KEY)); } catch (e) {}
-    if (!d || typeof d.ok !== 'number') d = { ok: 0, cur: 0, ord: '', won: false, recent: [] };
-    if (!d.recent) d.recent = [];
+    if (!d || d.d !== qzToday()) d = { d: qzToday(), ids: [], res: [], earned: 0, cur: 0, ord: '', shown: false };
     return d;
 }
 function quizSaveDay(d) { try { localStorage.setItem(QUIZ_DAY_KEY, JSON.stringify(d)); } catch (e) {} }
 function quizResetDay() { try { localStorage.removeItem(QUIZ_DAY_KEY); } catch (e) {} quizMenuBadge(); }
-function quizDayLeft() { return true; }
+function quizDayLeft() { return quizDay().ids.length < QUIZ_PER_DAY; }
 function qzShuffleOrd() { const a = QZ_LETTERS.slice(); for (let i = 3; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.join(''); }
+function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0; }
 
 // ---------- окно ----------
 (function () {
@@ -129,27 +139,39 @@ function qzShuffleOrd() { const a = QZ_LETTERS.slice(); for (let i = 3; i > 0; i
 #openQuizBtn .rw-badge{top:-4px!important;right:-4px!important;left:auto!important;transform:none!important;min-width:0!important;width:10px!important;height:10px!important;padding:0!important;background:#38BDF8;border:1.5px solid #1d0936;font-size:0}
 #quizModal{position:absolute;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(20,3,38,.25);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
 #quizModal.hidden{display:none}
-#qzWin{position:relative;width:100%;max-width:360px;max-height:100%;overflow-y:auto;border-radius:28px;padding:22px 18px 22px;display:flex;flex-direction:column;gap:16px;font-family:Onest,sans-serif;color:#fff;
+#qzWin{position:relative;width:100%;max-width:360px;max-height:100%;overflow-y:auto;border-radius:28px;padding:22px 18px 22px;font-family:Onest,sans-serif;color:#fff;
  background:radial-gradient(120% 60% at 50% -10%,rgba(56,189,248,.16),transparent 60%),radial-gradient(90% 50% at 100% 110%,rgba(254,118,0,.12),transparent 60%),rgba(29,9,54,.97);border:1px solid rgba(120,44,233,.6);box-shadow:0 10px 40px rgba(0,0,0,.5)}
 #qzBody{display:flex;flex-direction:column;gap:18px}
-#qzWin .qz-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#C4A1FF;background:rgba(120,44,233,.18);border:1px solid rgba(120,44,233,.4);font-size:13px;cursor:pointer}
+#qzWin .qz-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#C4A1FF;background:rgba(120,44,233,.18);border:1px solid rgba(120,44,233,.4);font-size:13px;cursor:pointer;z-index:2}
 #qzWin .qz-head{display:flex;align-items:center;gap:10px;padding-right:38px}
 #qzWin .qz-emb{flex:0 0 40px;height:40px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;background:linear-gradient(135deg,#FE7600,#782CE9);border:1px solid rgba(255,255,255,.3);box-shadow:0 0 16px rgba(254,118,0,.45)}
 #qzWin .qz-title{font-weight:900;font-size:18px;letter-spacing:-.01em;line-height:1}
 #qzWin .qz-sub{font-weight:600;font-size:11.5px;color:#C4B5FD;margin-top:5px;line-height:1.35}
 #qzWin .qz-prog{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(20,3,38,.7);border:1px solid rgba(120,44,233,.3)}
-#qzWin .qz-dots{display:flex;gap:6px}
-#qzWin .qz-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(196,161,255,.3);color:transparent;transition:all .25s}
-#qzWin .qz-dot.cur{border-color:#FE7600;box-shadow:0 0 8px rgba(254,118,0,.6)}
+#qzWin .qz-dots{display:flex;gap:5px}
+#qzWin .qz-dot{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;background:rgba(255,255,255,.06);border:1.5px solid rgba(196,161,255,.3);color:transparent;transition:all .25s}
+#qzWin .qz-dot.cur{border-color:#FE7600;box-shadow:0 0 7px rgba(254,118,0,.6)}
 #qzWin .qz-dot.ok{background:#22C55E;border-color:#86EFAC;color:#fff}
 #qzWin .qz-dot.bad{background:#EF4444;border-color:#FCA5A5;color:#fff}
-#qzWin .qz-cnt{font-weight:800;font-size:11px;color:#C4B5FD;white-space:nowrap}
-#qzWin .qz-cnt b{color:#fff;font-weight:900}
+#qzWin .qz-cnt{display:flex;align-items:center;gap:5px;font-weight:900;font-size:12px;color:#FFD66B;white-space:nowrap}
+.qz-coin{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-size:8px;color:#7C4A00;background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);box-shadow:0 0 6px rgba(255,197,61,.6),inset 0 -1px 0 rgba(0,0,0,.2);flex:0 0 auto}
 #qzWin .qz-card{padding:16px 14px 16px;border-radius:20px;background:linear-gradient(180deg,rgba(120,44,233,.22),rgba(120,44,233,.08));border:1px solid rgba(168,120,245,.45);display:flex;flex-direction:column;gap:14px}
-#qzWin .qz-meta{display:flex;align-items:center;gap:6px}
+#qzWin .qz-meta{display:flex;align-items:center;gap:7px;min-height:36px}
 #qzWin .qz-chip{font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:8px;background:rgba(56,189,248,.16);color:#7DD3FC;border:1px solid rgba(56,189,248,.35)}
-#qzWin .qz-n{margin-left:auto;font-weight:800;font-size:11px;color:rgba(196,161,255,.75)}
+#qzWin .qz-sep{width:4px;height:4px;border-radius:50%;background:rgba(196,161,255,.55)}
+#qzWin .qz-diff{font-weight:900;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em}
+#qzWin .qz-tm{margin-left:auto;position:relative;width:36px;height:36px;flex:0 0 36px}
+#qzWin .qz-tm svg{position:absolute;inset:0;transform:rotate(-90deg)}
+#qzWin .qz-tm circle{fill:none;stroke-width:3.2;stroke-linecap:round}
+#qzWin .qz-tm .bg{stroke:rgba(196,161,255,.18)}
+#qzWin .qz-tm .fg{stroke:#38BDF8;transition:stroke .3s}
+#qzWin .qz-tm.ans .fg{stroke:#FE7600}
+#qzWin .qz-tm.low .fg{stroke:#EF4444}
+#qzWin .qz-tm b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px}
+#qzWin .qz-tm i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#7DD3FC}
 #qzWin .qz-q{font-weight:900;font-size:17px;line-height:1.35;padding:2px 2px 0}
+#qzWin .qz-rew{display:flex;align-items:center;gap:6px;font-weight:800;font-size:11px;color:#C4B5FD}
+#qzWin .qz-rew b{color:#FFD66B;font-weight:900}
 #qzWin .qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #qzWin .qz-o{display:flex;align-items:center;gap:8px;min-height:46px;padding:7px 9px;border-radius:12px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:12.5px;line-height:1.25;transition:all .25s;min-width:0}
 #qzWin .qz-o span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-width:0}
@@ -157,35 +179,47 @@ function qzShuffleOrd() { const a = QZ_LETTERS.slice(); for (let i = 3; i > 0; i
 #qzWin .qz-o.ok{background:rgba(34,197,94,.2);border-color:#22C55E}
 #qzWin .qz-o.bad{background:rgba(239,68,68,.2);border-color:#EF4444}
 #qzWin .qz-o.dim{opacity:.45}
-#qzWin .qz-abcd{display:flex;justify-content:space-between;gap:8px;padding:6px 6px 2px}
+#qzWin .qz-abcd{display:flex;justify-content:space-between;gap:8px;padding:4px 6px 2px}
 #qzWin .qz-ball{flex:0 0 auto;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:26px;color:#fff;cursor:pointer;border:2px solid rgba(255,255,255,.55);
  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 42%),var(--c);box-shadow:0 0 14px var(--c),inset 0 -5px 0 rgba(0,0,0,.22);text-shadow:0 2px 3px rgba(0,0,0,.3);transition:transform .15s,opacity .25s,filter .25s}
 #qzWin .qz-ball:active{transform:scale(.92)}
+#qzWin .qz-abcd.wait .qz-ball{pointer-events:none;opacity:.4;filter:saturate(.5)}
 #qzWin .qz-abcd.lock .qz-ball{pointer-events:none;opacity:.35;filter:saturate(.4)}
 #qzWin .qz-abcd.lock .qz-ball.ok{opacity:1;filter:none;--c:#22C55E!important;transform:scale(1.08)}
 #qzWin .qz-abcd.lock .qz-ball.bad{opacity:1;filter:none;--c:#EF4444!important}
-#qzWin .qz-res{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:8px 4px 4px}
+#qzWin .qz-note{text-align:center;font-weight:800;font-size:12.5px;min-height:18px}
+#qzWin .qz-note.ok{color:#4ADE80} #qzWin .qz-note.bad{color:#F87171} #qzWin .qz-note.read{color:#7DD3FC}
+#qzWin .qz-res{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:6px 4px 2px}
 #qzWin .qz-big{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;margin:4px 0}
-#qzWin .qz-big.win{background:radial-gradient(circle at 35% 30%,#FFD27A,#FE7600 60%,#C2410C);box-shadow:0 0 30px rgba(254,118,0,.65);animation:qzPop .6s cubic-bezier(.2,1.6,.4,1)}
-#qzWin .qz-big.lose{background:radial-gradient(circle at 35% 30%,#C4A1FF,#782CE9 60%,#4C1D95);box-shadow:0 0 22px rgba(120,44,233,.55)}
+#qzWin .qz-big.win{background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);color:#7C4A00;box-shadow:0 0 30px rgba(255,197,61,.6);animation:qzPop .6s cubic-bezier(.2,1.6,.4,1)}
 #qzWin .qz-big.start{background:radial-gradient(circle at 35% 30%,#BAE6FD,#38BDF8 55%,#0369A1);box-shadow:0 0 26px rgba(56,189,248,.55)}
 @keyframes qzPop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
 #qzWin .qz-rt{font-weight:900;font-size:20px;line-height:1.1}
-#qzWin .qz-rt.win{color:#FE7600}
-#qzWin .qz-rd{font-weight:600;font-size:12.5px;line-height:1.4;color:#DDD6FE}
+#qzWin .qz-rt.win{color:#FFC53D}
+#qzWin .qz-rd{font-weight:600;font-size:12.5px;line-height:1.45;color:#DDD6FE}
 #qzWin .qz-rd b{color:#fff;font-weight:900}
-#qzWin .qz-rules{display:flex;flex-direction:column;gap:9px;width:100%;margin:4px 0}
-#qzWin .qz-rule{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:13px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.3);font-weight:700;font-size:12px;text-align:left}
-#qzWin .qz-rule i{flex:0 0 22px;text-align:center;color:#38BDF8;font-size:14px}
+#qzWin .qz-rules{display:flex;flex-direction:column;gap:9px;width:100%;margin:2px 0}
+#qzWin .qz-rule{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:13px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.3);font-weight:700;font-size:12px;text-align:left;line-height:1.35}
+#qzWin .qz-rule>i{flex:0 0 22px;text-align:center;color:#38BDF8;font-size:14px}
+#qzWin .qz-btns{display:flex;flex-direction:column;gap:10px}
 #qzWin .qz-btn{width:100%;padding:13px 10px;border-radius:16px;font-weight:900;font-size:13px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
 #qzWin .qz-btn.sec{background:rgba(45,14,82,.9);border:1px solid rgba(168,85,247,.5);color:#fff;font-size:11px;padding:10px}
+#qzWin .qz-btn.gold{background:linear-gradient(180deg,#FFD66B,#FFB020);color:#4A2600;border:1px solid rgba(255,240,190,.8);box-shadow:0 0 14px rgba(255,197,61,.45)}
 #qzWin .qz-timer{font-weight:800;font-size:11px;color:#7DD3FC}
+#qzWin .qz-ready{display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px 10px;border-radius:20px;background:linear-gradient(180deg,rgba(120,44,233,.2),rgba(120,44,233,.06));border:1px dashed rgba(168,120,245,.5);text-align:center}
+#qzWin .qz-ready .n{font-weight:900;font-size:13px;letter-spacing:.08em;color:#C4B5FD;text-transform:uppercase}
+#qzWin .qz-ready .t{font-weight:600;font-size:12px;color:#DDD6FE;line-height:1.4}
+.qz-plus{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;font:900 26px Onest,sans-serif;color:#FFD66B;text-shadow:0 0 14px rgba(255,197,61,.8);pointer-events:none;animation:qzPlus 1.2s ease-out forwards;z-index:3}
+.qz-plus .qz-coin{width:24px;height:24px;font-size:12px}
+@keyframes qzPlus{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-140%) scale(1)}}
 `;
         document.head.appendChild(st);
     } catch (e) {}
 })();
 
-let qzRoot = null, qzLock = false;
+const QZ_COIN = '<span class="qz-coin"><i class="fa-solid fa-star"></i></span>';
+const QS = { phase: 'idle', t0: 0, raf: 0, pick: null, autoT: 0 };   // phase: ready / read / answer / reveal / done
+let qzRoot = null, qzPrevMusic = null;
 function qzBuild() {
     if (qzRoot) return qzRoot;
     const host = document.getElementById('gameContainer') || document.body;
@@ -199,97 +233,166 @@ function qzBuild() {
         if (e.target === qzRoot) { closeQuiz(); return; }
         const b = e.target.closest('[data-qa]'); if (!b) return;
         const a = b.dataset.qa;
-        if (a === 'start' || a === 'more') qzNext();
+        if (a === 'go') qzStartQuestion();
         else if (a === 'close') closeQuiz();
+        else if (a === 'shop') { closeQuiz(); if (typeof openShop === 'function') openShop(); }
         else if (a.length === 1) qzPick(a);
     });
     return qzRoot;
 }
 function qzHead() {
-    return '<div class="qz-head"><div class="qz-emb"><i class="fa-solid fa-circle-question"></i></div><div><div class="qz-title">ВОПРОСЫ</div>'
-        + '<div class="qz-sub">Отвечая на вопросы, вы можете заработать попытки в игре</div></div></div>';
+    return '<div class="qz-head"><div class="qz-emb"><i class="fa-solid fa-circle-question"></i></div><div><div class="qz-title">ВОПРОСЫ ДНЯ</div>'
+        + '<div class="qz-sub">Отвечайте на вопросы и зарабатывайте монеты для лавки</div></div></div>';
 }
-function qzProg(d) {
+function qzProg(d, curIdx) {
     let dots = '';
-    for (let i = 0; i < QUIZ_NEED_OK; i++) dots += `<div class="qz-dot${i < d.ok ? ' ok' : i === d.ok ? ' cur' : ''}">${i < d.ok ? '<i class="fa-solid fa-check"></i>' : ''}</div>`;
-    return `<div class="qz-prog"><div class="qz-dots">${dots}</div><div class="qz-cnt">Верно: <b>${d.ok}</b> / ${QUIZ_NEED_OK}</div></div>`;
+    for (let i = 0; i < QUIZ_PER_DAY; i++) {
+        const r = d.res[i];
+        dots += `<div class="qz-dot${r === 1 ? ' ok' : r === 0 ? ' bad' : i === curIdx ? ' cur' : ''}">${r === 1 ? '<i class="fa-solid fa-check"></i>' : r === 0 ? '<i class="fa-solid fa-xmark"></i>' : ''}</div>`;
+    }
+    return `<div class="qz-prog"><div class="qz-dots">${dots}</div><div class="qz-cnt">${QZ_COIN}+${d.earned}</div></div>`;
 }
-function qzRender(pickL, dShow) {
-    const body = document.getElementById('qzBody'); if (!body) return;
-    const d = dShow || quizDay();
-    if (d.won && !pickL) {   // набрали 5 верных — попытка уже начислена
-        body.innerHTML = qzHead() + qzProg({ ok: QUIZ_NEED_OK }) + `<div class="qz-res"><div class="qz-big win"><i class="fa-solid fa-rotate-right"></i></div>`
-            + `<div class="qz-rt win">+1 ПОПЫТКА!</div><div class="qz-rd">Отлично! <b>${QUIZ_NEED_OK} верных ответов</b> — попытка уже добавлена. Можно отвечать дальше и заработать ещё.</div></div>`
-            + `<button type="button" class="btn-bubo qz-btn" data-qa="more"><i class="fa-solid fa-play"></i>ОТВЕЧАТЬ ДАЛЬШЕ</button>`
-            + `<button type="button" class="qz-btn sec" data-qa="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button>`;
-        return;
-    }
-    if (!d.cur) {
-        body.innerHTML = qzHead() + qzProg(d) + `<div class="qz-res"><div class="qz-big start"><i class="fa-solid fa-lightbulb"></i></div>`
-            + `<div class="qz-rules"><div class="qz-rule"><i class="fa-solid fa-infinity"></i><span>Отвечайте на вопросы сколько угодно</span></div>`
-            + `<div class="qz-rule"><i class="fa-solid fa-circle-check"></i><span>Каждые ${QUIZ_NEED_OK} верных ответов — <b style="color:#FE7600">+1 попытка</b></span></div>`
-            + `<div class="qz-rule"><i class="fa-solid fa-hand-pointer"></i><span>Выбирайте ответ большими кнопками A, B, C, D</span></div></div>`
-            + `</div><button type="button" class="btn-bubo qz-btn" data-qa="start"><i class="fa-solid fa-play"></i>${d.ok ? 'ПРОДОЛЖИТЬ' : 'НАЧАТЬ'}</button>`;
-        return;
-    }
+function qzUntilTomorrow() {
+    const n = new Date(), t = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1), s = Math.max(0, Math.floor((t - n) / 1000));
+    return `${Math.floor(s / 3600)} ч ${String(Math.floor(s / 60) % 60).padStart(2, '0')} мин`;
+}
+function qzBody() { return document.getElementById('qzBody'); }
+
+// экран «готов?» перед каждым вопросом (и первый экран с правилами)
+function qzRenderReady() {
+    const d = quizDay(), body = qzBody(); if (!body) return;
+    QS.phase = 'ready';
+    if (d.ids.length >= QUIZ_PER_DAY) { qzRenderDone(); return; }
+    const n = d.ids.length + 1;
+    const rules = d.ids.length ? '' : `<div class="qz-rules">`
+        + `<div class="qz-rule"><i class="fa-solid fa-list-ol"></i><span>В день — ${QUIZ_PER_DAY} вопросов. ${QZ_READ} с на чтение, потом ${QZ_ANSWER} с на ответ</span></div>`
+        + `<div class="qz-rule"><i class="fa-solid fa-coins"></i><span>За верный ответ: <b style="color:#4ADE80">лёгкий</b> — 30, <b style="color:#FACC15">средний</b> — 60, <b style="color:#F87171">сложный</b> — 100 монет</span></div>`
+        + `<div class="qz-rule"><i class="fa-solid fa-store"></i><span>Монеты тратятся в лавке на попытки, жизни и бонусы</span></div></div>`;
+    body.innerHTML = qzHead() + qzProg(d, d.ids.length) + rules
+        + `<div class="qz-ready"><div class="n">Вопрос ${n} из ${QUIZ_PER_DAY}</div><div class="t">Как будете готовы — нажмите кнопку. Можно выйти и вернуться позже: продолжите с этого места.</div></div>`
+        + `<div class="qz-btns"><button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid fa-play"></i>${n === 1 ? 'НАЧАТЬ' : 'К ВОПРОСУ'}</button>`
+        + `<div class="qz-rd" style="text-align:center">Монет сейчас: <b style="color:#FFD66B">${qzCoinsTotal()}</b></div></div>`;
+}
+function qzRenderDone() {
+    const d = quizDay(), body = qzBody(); if (!body) return;
+    QS.phase = 'done';
+    const ok = d.res.filter(r => r === 1).length;
+    body.innerHTML = qzHead() + qzProg(d, -1) + `<div class="qz-res"><div class="qz-big win"><i class="fa-solid fa-coins"></i></div>`
+        + `<div class="qz-rt win">+${d.earned} МОНЕТ</div><div class="qz-rd">На сегодня всё! Верных ответов: <b>${ok} из ${QUIZ_PER_DAY}</b>.<br>Всего монет: <b style="color:#FFD66B">${qzCoinsTotal()}</b></div>`
+        + `<div class="qz-timer"><i class="fa-regular fa-clock"></i> Новые вопросы через ${qzUntilTomorrow()}</div></div>`
+        + `<div class="qz-btns"><button type="button" class="qz-btn gold" data-qa="shop"><i class="fa-solid fa-store"></i>В ЛАВКУ</button>`
+        + `<button type="button" class="qz-btn sec" data-qa="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button></div>`;
+}
+// вопрос: pickL — что выбрали (после ответа), reveal — показать правильный
+function qzRenderQ(reveal) {
+    const d = quizDay(), body = qzBody(); if (!body) return;
     const q = QUIZ_QUESTIONS.find(x => x.id === d.cur) || QUIZ_QUESTIONS[0];
     const ord = (d.ord || 'ABCD').split('');   // ord[i] — какой исходный вариант стоит под буквой QZ_LETTERS[i]
-    const corL = QZ_LETTERS[ord.indexOf(q.correct)];
+    const corL = QZ_LETTERS[ord.indexOf(q.correct)], pickL = QS.pick, di = QZ_DIFF_INFO[q.diff] || QZ_DIFF_INFO.m;
+    const idx = reveal ? d.ids.length - 1 : d.ids.length;
     const opts = QZ_LETTERS.map((L, i) => {
-        const cls = pickL ? (L === corL ? ' ok' : L === pickL ? ' bad' : ' dim') : '';
+        const cls = reveal ? (L === corL ? ' ok' : L === pickL ? ' bad' : ' dim') : '';
         return `<div class="qz-o${cls}"><b style="background:${QZ_BALL_COL[L]}">${L}</b><span>${q.options[ord[i]]}</span></div>`;
     }).join('');
-    const balls = QZ_LETTERS.map(L => `<button type="button" class="qz-ball${pickL ? (L === corL ? ' ok' : L === pickL ? ' bad' : '') : ''}" data-qa="${L}" style="--c:${QZ_BALL_COL[L]}">${L}</button>`).join('');
-    body.innerHTML = qzHead() + qzProg(d)
-        + `<div class="qz-card"><div class="qz-meta"><span class="qz-chip">${q.cat || 'Вопрос'}</span><span class="qz-n">До попытки: ${QUIZ_NEED_OK - d.ok}</span></div><div class="qz-q">${q.question}</div><div class="qz-opts">${opts}</div></div>`
-        + `<div class="qz-abcd${pickL ? ' lock' : ''}">${balls}</div>`;
+    const balls = QZ_LETTERS.map(L => `<button type="button" class="qz-ball${reveal ? (L === corL ? ' ok' : L === pickL ? ' bad' : '') : ''}" data-qa="${L}" style="--c:${QZ_BALL_COL[L]}">${L}</button>`).join('');
+    const C = 2 * Math.PI * 15;
+    const ring = `<div class="qz-tm" id="qzTm"><svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="15"/><circle class="fg" id="qzTmFg" cx="18" cy="18" r="15" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${C.toFixed(2)}"/></svg><i class="fa-solid fa-eye" id="qzTmI"></i><b id="qzTmN"></b></div>`;
+    let note = '', btns = '';
+    if (reveal) {
+        const okA = pickL === corL;
+        note = okA ? `<div class="qz-note ok">Верно! +${di.coins} монет</div>` : (pickL ? '<div class="qz-note bad">Неверно</div>' : '<div class="qz-note bad">Время вышло</div>');
+        const last = d.ids.length >= QUIZ_PER_DAY;
+        if (pickL) btns = `<div class="qz-btns"><button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid ${last ? 'fa-flag-checkered' : 'fa-forward'}"></i>${last ? 'ИТОГИ ДНЯ' : 'СЛЕДУЮЩИЙ ВОПРОС'}</button></div>`;
+    } else note = `<div class="qz-note read" id="qzNote">${QS.phase === 'read' ? 'Читайте вопрос…' : 'Выбирайте ответ!'}</div>`;
+    body.innerHTML = qzHead() + qzProg(d, idx)
+        + `<div class="qz-card"><div class="qz-meta"><span class="qz-chip">${q.cat || 'Вопрос'}</span><span class="qz-sep"></span><span class="qz-diff" style="color:${di.col}">${di.name}</span>${reveal ? '' : ring}</div>`
+        + `<div class="qz-q">${q.question}</div><div class="qz-rew">${QZ_COIN}<span>За верный ответ: <b>+${di.coins}</b></span></div><div class="qz-opts">${opts}</div></div>`
+        + `<div class="qz-abcd${reveal ? ' lock' : (QS.phase === 'read' ? ' wait' : '')}" id="qzAbcd">${balls}</div>` + note + btns;
 }
-function qzNext() {
+// таймер на обводке: при чтении кольцо заполняется голубым (5 с), потом убывает оранжевым — 10 с на ответ
+function qzTick() {
+    cancelAnimationFrame(QS.raf);
+    if (QS.phase !== 'read' && QS.phase !== 'answer') return;
+    const t = (performance.now() - QS.t0) / 1000, C = 2 * Math.PI * 15;
+    const fg = document.getElementById('qzTmFg'), tm = document.getElementById('qzTm'), nb = document.getElementById('qzTmN'), ic = document.getElementById('qzTmI');
+    if (QS.phase === 'read') {
+        const k = Math.min(1, t / QZ_READ);
+        if (fg) fg.setAttribute('stroke-dashoffset', (C * (1 - k)).toFixed(2));
+        if (t >= QZ_READ) {
+            QS.phase = 'answer'; QS.t0 = performance.now();
+            const ab = document.getElementById('qzAbcd'); if (ab) ab.classList.remove('wait');
+            const nt = document.getElementById('qzNote'); if (nt) { nt.textContent = 'Выбирайте ответ!'; nt.className = 'qz-note'; }
+            if (tm) tm.classList.add('ans'); if (ic) ic.style.display = 'none';
+            try { AudioFX.playShazamArm && AudioFX.playShazamArm(); } catch (e) {}
+        }
+    } else {
+        const left = Math.max(0, QZ_ANSWER - t);
+        if (fg) fg.setAttribute('stroke-dashoffset', (C * (1 - left / QZ_ANSWER)).toFixed(2));
+        if (nb) nb.textContent = String(Math.ceil(left));
+        if (tm) tm.classList.toggle('low', left <= 3);
+        if (left <= 0) { qzAnswer(null); return; }
+    }
+    QS.raf = requestAnimationFrame(qzTick);
+}
+function qzStartQuestion() {
     const d = quizDay();
-    if (d.won) { d.won = false; }
-    if (!d.cur) { d.cur = quizNextId(d); d.ord = qzShuffleOrd(); }
-    quizSaveDay(d);
-    qzRender();
+    if (QS.phase === 'reveal' || QS.phase === 'ready' || QS.phase === 'idle') {
+        if (d.ids.length >= QUIZ_PER_DAY) { qzRenderDone(); return; }
+        if (!d.cur) { d.cur = quizNextId(d); d.ord = qzShuffleOrd(); }
+        d.shown = true; quizSaveDay(d);
+        QS.phase = 'read'; QS.pick = null; QS.t0 = performance.now();
+        clearTimeout(QS.autoT);
+        qzRenderQ(false); qzTick();
+    }
 }
-function qzPick(L) {
-    if (qzLock) return;
+// ответ (L) или время вышло (null)
+function qzAnswer(L) {
+    if (QS.phase !== 'answer' && !(QS.phase === 'read' && L === null)) return;
+    cancelAnimationFrame(QS.raf);
     const d = quizDay(); if (!d.cur) return;
     const q = QUIZ_QUESTIONS.find(x => x.id === d.cur); if (!q) return;
     const ord = (d.ord || 'ABCD').split('');
-    const ok = ord[QZ_LETTERS.indexOf(L)] === q.correct;
-    if (ok) d.ok++;
+    const ok = !!L && ord[QZ_LETTERS.indexOf(L)] === q.correct;
+    const di = QZ_DIFF_INFO[q.diff] || QZ_DIFF_INFO.m;
+    d.ids.push(q.id); d.res.push(ok ? 1 : 0);
+    if (ok) { d.earned += di.coins; if (typeof coinsAdd === 'function') coinsAdd(di.coins); }
     quizMarkSeen(q.id);
-    d.recent.push(q.id); if (d.recent.length > 10) d.recent.shift();
-    // показываем ответ на этом же вопросе (счётчик уже с новым верным), потом — следующий вопрос или «+1 попытка»
-    const shown = Object.assign({}, d, { ok: Math.min(QUIZ_NEED_OK, d.ok) });
-    d.cur = 0;
-    let award = false;
-    if (d.ok >= QUIZ_NEED_OK) { d.ok = 0; d.won = true; award = true; }
-    quizSaveDay(d);
-    if (award) qzAward();
-    try { if (ok) { AudioFX.playThemeCollect(); Haptics.collectTheme(); } else { (AudioFX.playThemeLose || AudioFX.playHit).call(AudioFX); Haptics.hit(); } } catch (e) {}
-    qzLock = true; qzRender(L, shown);
-    setTimeout(() => { qzLock = false; if (qzRoot && !qzRoot.classList.contains('hidden')) { const d2 = quizDay(); if (d2.won) qzRender(); else qzNext(); } }, 1500);
-}
-function qzAward() {
+    d.shown = false; quizSaveDay(d);
+    QS.phase = 'reveal'; QS.pick = L;
+    qzRenderQ(true);
+    d.cur = 0; d.ord = ''; quizSaveDay(d);
     try {
-        attempts = Math.min(99, attempts + 1); zeroDay = '';
-        StorageManager.save(); updateHUDAll();
-        setTimeout(() => { try { AudioFX.playAttemptBonus(); Haptics.powerup(); } catch (e) {} }, 350);
+        if (ok) { AudioFX.playThemeCollect(); Haptics.collectTheme(); }
+        else { (AudioFX.playThemeLose || AudioFX.playHit).call(AudioFX); Haptics.hit(); }
     } catch (e) {}
+    if (ok) { const w = document.getElementById('qzWin'); if (w) { const p = document.createElement('div'); p.className = 'qz-plus'; p.innerHTML = QZ_COIN + '+' + di.coins; w.appendChild(p); setTimeout(() => p.remove(), 1300); } }
+    quizMenuBadge();
+    // время вышло — сразу следующий вопрос (через миг, чтобы увидеть правильный ответ)
+    if (!L) QS.autoT = setTimeout(() => { if (qzRoot && !qzRoot.classList.contains('hidden') && QS.phase === 'reveal') { if (d.ids.length >= QUIZ_PER_DAY) qzRenderDone(); else qzStartQuestion(); } }, 1800);
+}
+function qzPick(L) {
+    if (QS.phase === 'reveal') return;
+    qzAnswer(L);
 }
 function openQuiz(e) {
     if (e) e.stopPropagation();
     try { AudioFX.resume(); } catch (er) {}
-    qzBuild(); qzLock = false;
-    qzRender();
+    qzBuild();
+    // вопрос был показан и окно закрыли, не ответив, — он засчитывается как неотвеченный
+    const d = quizDay();
+    if (d.cur && d.shown) { d.ids.push(d.cur); d.res.push(0); quizMarkSeen(d.cur); d.cur = 0; d.ord = ''; d.shown = false; quizSaveDay(d); }
+    qzRenderReady();
     qzRoot.classList.remove('hidden');
+    try { if (AudioFX.mode !== 'quiz') { qzPrevMusic = AudioFX.mode; AudioFX.setMode('quiz'); } } catch (er) {}
 }
 function closeQuiz(e) {
     if (e) e.stopPropagation();
+    cancelAnimationFrame(QS.raf); clearTimeout(QS.autoT);
+    QS.phase = 'idle';
     if (qzRoot) qzRoot.classList.add('hidden');
     quizMenuBadge();
-    try { updateHUDAll(); } catch (er) {}
+    try { if (AudioFX.mode === 'quiz') AudioFX.setMode(qzPrevMusic && qzPrevMusic !== 'quiz' ? qzPrevMusic : 'menu'); } catch (er) {}
+    try { updateHUDAll(); if (typeof shopSyncBtn === 'function') shopSyncBtn(); } catch (er) {}
 }
 function quizMenuBadge() {
     const b = document.getElementById('openQuizBtn'); if (!b) return;
@@ -298,9 +401,8 @@ function quizMenuBadge() {
 }
 (function () {
     const b = document.getElementById('openQuizBtn'); if (b) b.addEventListener('click', openQuiz);
-    const g = document.getElementById('earnAttemptBtn');
-    if (g) g.addEventListener('click', (e) => { e.stopPropagation(); try { returnToHome(); } catch (er) {} openQuiz(); });
     quizMenuBadge();
+    setInterval(quizMenuBadge, 60000);   // наступил новый день — значок снова светится
 })();
 
 // ---------- админка: список вопросов ----------
@@ -328,11 +430,11 @@ function quizMenuBadge() {
 function quizAdminHtml() {
     const seen = quizSeen();
     return `<div class="adm-sum"><span>Вопросов в базе / уже показано</span><b>${QUIZ_QUESTIONS.length} / ${seen.filter(id => QUIZ_QUESTIONS.some(q => q.id === id)).length}</b></div>`
-        + `<div class="adq-acts"><button type="button" class="adq-btn pri" data-q="today"><i class="fa-solid fa-rotate-left"></i>Сбросить счёт</button>`
+        + `<div class="adq-acts"><button type="button" class="adq-btn pri" data-q="today"><i class="fa-solid fa-calendar-day"></i>Сбросить день</button>`
         + `<button type="button" class="adq-btn" data-q="reset"><i class="fa-solid fa-rotate-left"></i>Сбросить показанные</button></div>`
         + QUIZ_QUESTIONS.map((q, n) => {
             const was = seen.indexOf(q.id) >= 0;
-            return `<div class="adq-card${was ? ' seen' : ''}"><div class="adq-head"><span class="adq-chip">${q.cat || 'Вопрос'}</span>${was ? '<span class="adq-chip seen">уже был</span>' : ''}<span class="adq-num">№${n + 1}</span></div>`
+            return `<div class="adq-card${was ? ' seen' : ''}"><div class="adq-head"><span class="adq-chip">${q.cat || 'Вопрос'}</span><span class="adq-chip" style="color:${(QZ_DIFF_INFO[q.diff] || QZ_DIFF_INFO.m).col}">${(QZ_DIFF_INFO[q.diff] || QZ_DIFF_INFO.m).name} · ${(QZ_DIFF_INFO[q.diff] || QZ_DIFF_INFO.m).coins}</span>${was ? '<span class="adq-chip seen">уже был</span>' : ''}<span class="adq-num">№${n + 1}</span></div>`
                 + `<div class="adq-q">${q.question}</div><div class="adq-opts">`
                 + QZ_LETTERS.filter(L => q.options[L] !== undefined).map(L => `<div class="adq-o${L === q.correct ? ' ok' : ''}"><b style="background:${QZ_BALL_COL[L]}">${L}</b><span>${q.options[L]}</span>${L === q.correct ? '<i class="fa-solid fa-check"></i>' : ''}</div>`).join('')
                 + `</div></div>`;

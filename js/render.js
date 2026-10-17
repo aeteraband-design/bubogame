@@ -275,7 +275,7 @@ function initMenuScenery() {
 function startOrResumeFlight() {
     // попытки закончились — стартуем новую игру с полным набором попыток
     try { checkDailyReset(); } catch (e) {}
-    if (attempts <= 0) { returnToHome(); return; }
+    if (attempts <= 0) { returnToHome(); try { openShop(); } catch (e) {} return; }   // попытки на сегодня кончились — в лавку
     // после победы — новый поход с первого уровня (иначе несколько секунд играла бы музыка и светила луна прошлого прохождения)
     if (hasWonGame) startNewQuestKeepScore();
     snapProgressVisuals();
@@ -365,7 +365,7 @@ function startNewQuestKeepScore() {
     // победа: попытка не тратится, все бонусы (вопросы, перья, сила, прокачанные сердца) переходят в новый поход; темы и сложность — с первого уровня
     const keep = { score, attempts, attemptMilestone, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, lives, heartOverflow, zeroDay };
     resetEntireGame();
-    score = keep.score; attempts = keep.attempts; attemptMilestone = keep.attemptMilestone;
+    score = keep.score; attempts = keep.attempts; attemptMilestone = keep.attemptMilestone; coinMilestone = Math.floor(keep.score / 50);
     maxStamina = keep.maxStamina; magicFeathersCaught = keep.magicFeathersCaught; featherMaxBonus = keep.featherMaxBonus; stamina = maxStamina;
     startLives = keep.startLives; maxLives = keep.maxLives; heartOverflow = keep.heartOverflow; zeroDay = keep.zeroDay;
     lives = Math.min(maxLives, Math.max(startLives, keep.lives));
@@ -386,7 +386,7 @@ function resetEntireGame(opts) {
     // Новая игра: сложность сбрасывается, и трубы СРАЗУ становятся стандартной ширины
     // (а не расширяются на глазах у игрока из сжатого состояния прошлой игры)
     lastKnownDiffIdx = 0;
-    attemptMilestone = 0;
+    attemptMilestone = 0; coinMilestone = 0;
     currentDifficultySqueeze = 0;
     pipesSinceTheme = 0; lastThemeKey = '';
     collected = { music: 0, logic: 0, kino: 0, series: 0, cartoons: 0, fun: 0 };
@@ -401,11 +401,18 @@ function resetEntireGame(opts) {
 }
 
 // Попытки закончились — новая игра: прогресс сбрасывается, снова MAX_ATTEMPTS попыток (без ожидания до завтра)
+// Сутки: каждый новый день — 2 попытки и прогресс с нуля. В течение дня прогресс сохраняется; кончились попытки —
+// их можно купить в лавке (монеты — за вопросы дня), иначе ждать завтра.
 function checkDailyReset() {
-    if (attempts > 0) { if (zeroDay) { zeroDay = ''; StorageManager.saveLocal(); } return false; }
-    resetEntireGame({ attempts: MAX_ATTEMPTS });
-    return true;
+    const t = todayKey();
+    if (playDay === t) return false;
+    const fresh = !playDay;
+    playDay = t;
+    if (!fresh) resetEntireGame({ attempts: MAX_ATTEMPTS });
+    try { StorageManager.save(); updateHUDAll(); } catch (e) {}
+    return !fresh;
 }
+setInterval(() => { try { if (!gameActive && playDay && playDay !== todayKey()) { checkDailyReset(); updateMenuVisibility(); } } catch (e) {} }, 30000);
 
 // Пауза: запоминаем, где именно были сова, трубы и предметы (только до закрытия вкладки)
 let pausedSnapshot = null;
@@ -449,3 +456,4 @@ function returnToHome() {
 
 // Запуск сохранения/интерфейса после загрузки всех файлов игры
 StorageManager.init();
+try { checkDailyReset(); } catch (e) {}
