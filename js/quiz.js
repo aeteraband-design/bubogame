@@ -188,7 +188,7 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-rew{display:flex;align-items:center;gap:6px;font-weight:800;font-size:11px;color:#C4B5FD}
 #qzWin .qz-rew b{color:#FFD66B;font-weight:900}
 #qzWin .qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-#qzWin .qz-o{display:flex;align-items:center;gap:6px;min-height:44px;padding:7px 7px 7px 6px;border-radius:12px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:11.5px;line-height:1.22;transition:all .25s;min-width:0}
+#qzWin .qz-o{display:flex;align-items:center;gap:7px;min-height:40px;box-sizing:border-box;padding:6px 7px 6px 6px;border-radius:12px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:11.5px;line-height:1.22;transition:all .25s;min-width:0}
 #qzWin .qz-o span{display:block;min-width:0;overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
 #qzWin .qz-o b{flex:0 0 auto;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10.5px;color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
 #qzWin .qz-o.ok{background:rgba(34,197,94,.2);border-color:#22C55E}
