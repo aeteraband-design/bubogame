@@ -225,8 +225,20 @@
         });
     };
 
-    // большая кнопка внизу окна: вернуть попытки дня (снова ${MAX_ATTEMPTS})
-    { const ab = $('admAttBtn'); if (ab) ab.addEventListener('click', (e) => { e.stopPropagation(); attempts = Math.max(attempts, MAX_ATTEMPTS); zeroDay = ''; try { StorageManager.save(); updateHUDAll(); } catch (er) {} ab.querySelector('span').textContent = 'ГОТОВО: ПОПЫТОК ' + attempts; setTimeout(() => { ab.querySelector('span').textContent = 'СБРОСИТЬ ПОПЫТКИ ДНЯ'; }, 1800); }); }
+    // большая кнопка внизу окна: сбросить игру, как будто начался новый день — попытки снова полные, прогресс с нуля,
+    // вопросы дня можно пройти заново (монеты остаются). Нажать дважды: первое нажатие — «Точно?»
+    { const ab = $('admAttBtn'); let sure = false, t = 0;
+      if (ab) ab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const lbl = ab.querySelector('span');
+        if (!sure) { sure = true; lbl.textContent = 'ТОЧНО СБРОСИТЬ?'; clearTimeout(t); t = setTimeout(() => { sure = false; lbl.textContent = 'СБРОСИТЬ ИГРУ'; }, 3000); return; }
+        sure = false; clearTimeout(t);
+        try { resetEntireGame({ attempts: MAX_ATTEMPTS }); playDay = todayKey(); zeroDay = ''; } catch (er) {}
+        try { if (typeof quizResetDay === 'function') quizResetDay(); } catch (er) {}
+        try { StorageManager.save(); updateHUDAll(); updateMenuVisibility(); } catch (er) {}
+        lbl.textContent = 'ГОТОВО: НОВЫЙ ДЕНЬ';
+        t = setTimeout(() => { lbl.textContent = 'СБРОСИТЬ ИГРУ'; }, 1800);
+      }); }
     // вкладка «Игра»: вернуть дневные попытки, тестовые монеты, выход
     body.addEventListener('click', (e) => {
         const b = e.target.closest('[data-g]'); if (!b || tab !== 'game') return;
