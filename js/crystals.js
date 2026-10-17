@@ -111,7 +111,7 @@ function crystalUpdate(speed, squeeze) {
             // из устьев труб всё время вылетают крошечные огненные искорки
             if (Math.random() < 0.3 * dt && particles.length < 500) {
                 const top = Math.random() < 0.5, sx = p.x + 4 + Math.random() * (p.width - 8), sy = top ? p.top + squeeze + 1 : height - (p.bottom + squeeze) - 1;
-                particles.push({ x: sx, y: sy, vx: (Math.random() - 0.5) * 0.25 - speed * 0.05, vy: (top ? 1 : -1) * (0.7 + Math.random() * 1.1), color: Math.random() < 0.5 ? '#FFD27A' : (Math.random() < 0.6 ? '#FF4A3D' : '#FFFFFF'), alpha: 0.95, size: 0.6 + Math.random() * 0.9, decay: 0.03 + Math.random() * 0.025, isStar: true });
+                particles.push({ x: sx, y: sy, vx: (Math.random() - 0.5) * 0.25 - speed, vy: (top ? 1 : -1) * (0.7 + Math.random() * 1.1), color: Math.random() < 0.5 ? '#FFD27A' : (Math.random() < 0.6 ? '#FF4A3D' : '#FFFFFF'), alpha: 0.95, size: 0.6 + Math.random() * 0.9, decay: 0.03 + Math.random() * 0.025, isStar: true });
             }
             p._cT -= dt;
             if (p._cT > 0) continue;
@@ -144,7 +144,7 @@ function crystalUpdate(speed, squeeze) {
             c.sp = (c.sp || 0) - dt;
             while (c.sp <= 0) {
                 c.sp += 0.6 + Math.random() * 0.6;
-                particles.push({ x: c.x + (Math.random() - 0.5) * 4, y: c.y - c.d * Math.random() * 3, vx: (Math.random() - 0.5) * 0.35, vy: -c.vy * (0.12 + Math.random() * 0.18), color: Math.random() < 0.55 ? '#FFD27A' : (Math.random() < 0.5 ? '#FF4A3D' : '#FFFFFF'), alpha: 1, size: 0.9 + Math.random() * 1.3, decay: 0.065 + Math.random() * 0.04, isStar: true });
+                particles.push({ x: c.x + (Math.random() - 0.5) * 2, y: c.y - c.d * Math.random() * 3, vx: -speed + (Math.random() - 0.5) * 0.12,   /* искры едут вместе с трубой — хвост ровно по линии полёта */ vy: -c.vy * (0.12 + Math.random() * 0.18), color: Math.random() < 0.55 ? '#FFD27A' : (Math.random() < 0.5 ? '#FF4A3D' : '#FFFFFF'), alpha: 1, size: 0.9 + Math.random() * 1.3, decay: 0.065 + Math.random() * 0.04, isStar: true });
             }
         }
         // пролетел проём и скрылся в противоположной трубе

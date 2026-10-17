@@ -896,7 +896,7 @@ function drawPipe(pipe) {
         bs.addColorStop(1, 'transparent');
         // объём: луна светит справа сверху — узкий мягкий блик справа и затенение левого края
         const vol = ctx.createLinearGradient(0, 0, pipe.width, 0);
-        vol.addColorStop(0, 'rgba(8, 0, 20, 0.3)'); vol.addColorStop(0.025, 'rgba(185, 125, 255, 0.05)'); vol.addColorStop(0.055, 'rgba(190, 130, 255, 0.13)'); vol.addColorStop(0.1, 'rgba(160, 100, 240, 0.03)'); vol.addColorStop(0.18, 'rgba(8, 0, 20, 0)');   // еле заметный фиолетовый засвет у левого края
+        vol.addColorStop(0, 'rgba(190, 130, 255, 0.15)'); vol.addColorStop(0.035, 'rgba(180, 120, 255, 0.07)'); vol.addColorStop(0.075, 'rgba(8, 0, 20, 0.14)'); vol.addColorStop(0.18, 'rgba(8, 0, 20, 0)');   // одна лёгкая фиолетовая полоска прямо у левого края
         vol.addColorStop(0.64, 'rgba(255, 240, 255, 0)'); vol.addColorStop(0.75, 'rgba(255, 240, 255, 0.2)'); vol.addColorStop(0.83, 'rgba(255, 240, 255, 0)');
         pgc = PIPE_GRADS[pipe.width] = { stem: sg, cap: cg, rim: rg, top: ts, bot: bs, vol };
     }
