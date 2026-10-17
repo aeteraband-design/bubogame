@@ -136,9 +136,13 @@
                     logo.style.display = 'none';
                 }
                 var z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;
-                const LZ = 0.95;   // логотип на экране загрузки: на 10% меньше, чем было (крупнее на 17% от обычного)
-                clone.style.zoom = z * LZ;
-                cloneWrap.style.transform = 'translateY(-50%)'; cloneWrap.style.top = (r.top + r.height / 2) + 'px';   // увеличиваем от центра
+                // размер — как у логотипа в главном меню (копия вне меню, поэтому размеры задаём ей явно), место — вверху экрана, как раньше
+                clone.style.zoom = z;
+                var box = clone.querySelector('.shrink-0'), gi = clone.querySelector('.fa-gamepad'), tx = clone.querySelector('.tracking-tight');
+                if (box) { box.style.width = '56px'; box.style.height = '56px'; box.style.borderRadius = '18px'; }
+                if (gi) { gi.style.fontSize = '24px'; gi.style.lineHeight = '1'; }
+                if (tx) tx.style.fontSize = (window.innerWidth >= 640 ? 38 : 32) + 'px';
+                cloneWrap.style.transform = 'none'; cloneWrap.style.top = Math.round(46 * z) + 'px';
             }
             var dismissed = false, exitT0 = 0, entryT0 = 0, revealed = false;
             var ENTRY = 1.1;   // секунд на прилёт совы
