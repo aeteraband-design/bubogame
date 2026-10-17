@@ -1001,7 +1001,7 @@ function drawPipe(pipe) {
     }
 
     // капельки дождя на верхней грани обеих шляпок (у верхней трубы шляпка перевёрнута — капли всё равно сверху)
-    if (STORM.wet > 0.03 || (pipe._w && (pipe._w.beads.length || pipe._w.sp.length || pipe._w.drip))) pipeWater(pipe, effectiveTop, topCapY, bottomY, capX, capW);
+    if (STORM.wet > 0.03 || pipe._wet > 0.03 || (pipe._w && (pipe._w.beads.length || pipe._w.sp.length || pipe._w.drip))) pipeWater(pipe, effectiveTop, topCapY, bottomY, capX, capW);
 
     ctx.restore();
 }
@@ -1009,7 +1009,9 @@ function drawPipe(pipe) {
 // при ударе о нижнюю шляпку и от дождя на кромках — мелкие брызги. Всё считается в системе координат трубы (после translate(pipe.x, 0)).
 function pipeWater(pipe, dripY, topCapY, bottomY, capX, capW) {
     const W = pipe._w || (pipe._w = { beads: [], drip: null, sp: [] });
-    const wet = STORM.wet, rk = stormRainK(Math.max(0, stormIntensity)), dt = dtMult;
+    // мокрость: от дождя — всё; от «Водонапора» — только нижняя шляпка (верхняя, откуда льётся, сухая) и капель снизу после струи
+    if (pipe._wet > 0) pipe._wet = Math.max(0, pipe._wet - 0.0012 * dtMult);
+    const wet = Math.max(STORM.wet, pipe._wFlow ? 0 : (pipe._wet || 0)), wetE = [STORM.wet, Math.max(STORM.wet, pipe._wet || 0)], rk = stormRainK(Math.max(0, stormIntensity)), dt = dtMult;
     const edges = [topCapY, bottomY];
     const splash = (x, y, n, power) => {
         for (let i = 0; i < n; i++) W.sp.push({ x: x + (Math.random() - 0.5) * 4, y, vx: (Math.random() - 0.5) * 2.4 * power, vy: -(1.2 + Math.random() * 2.2) * power, l: 0, life: 16 + Math.random() * 14, r: 0.6 + Math.random() * 0.6 });
@@ -1018,7 +1020,8 @@ function pipeWater(pipe, dripY, topCapY, bottomY, capX, capW) {
     // новые капли на кромках: чем мокрее, тем чаще; от дождя — с маленьким всплеском
     for (let c = 0; c < 2; c++) {
         let cnt = 0; for (const b of W.beads) if (b.c === c) cnt++;
-        if (cnt < 3 + Math.round(wet * 4) && Math.random() < 0.05 * wet * dt) {
+        const we = wetE[c];
+        if (cnt < 3 + Math.round(we * 4) && Math.random() < 0.05 * we * dt) {
             const x = capX + 5 + Math.random() * (capW - 10);
             W.beads.push({ c, x, rm: 1.0 + Math.random() * 1.2, age: 0, life: 260 + Math.random() * 360 });
             if (rk > 0.05) splash(x, edges[c], 2 + (Math.random() * 2 | 0), 0.8);
@@ -1030,7 +1033,7 @@ function pipeWater(pipe, dripY, topCapY, bottomY, capX, capW) {
     // лежащие капли-бусинки: появляются, чуть набухают и со временем высыхают
     for (let i = W.beads.length - 1; i >= 0; i--) {
         const b = W.beads[i]; b.age += dt;
-        if (b.age > b.life || wet < 0.02) { W.beads.splice(i, 1); continue; }
+        if (b.age > b.life || wetE[b.c] < 0.02) { W.beads.splice(i, 1); continue; }
         const gr = Math.min(1, b.age / 35), fd = Math.min(1, (b.life - b.age) / 60), r = b.rm * (0.4 + 0.6 * gr) * (0.6 + 0.4 * fd), y = edges[b.c];
         ctx.globalAlpha = 0.72 * Math.min(1, fd + 0.2);
         ctx.beginPath(); ctx.ellipse(b.x, y, r, r * 1.15, 0, Math.PI, 0); ctx.ellipse(b.x, y, r, r * 0.4, 0, 0, Math.PI); ctx.fill();

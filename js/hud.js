@@ -1061,7 +1061,7 @@ function handleTap(e) {
     }
     if (!gameActive) return;
     if (typeof shazamBlocksTap === 'function' && shazamBlocksTap()) return;   // на зарядке ШАЗАМа сова скачет сама
-    if (typeof quizActive === 'function' && quizActive()) return;   // в квиз-мире сова машет сама, тап только ведёт её влево-вправо
+    if (typeof quizActive === 'function' && quizActive() && QZ.phase === 'read') return;   // в другом мире пока читаешь вопрос — сова парит сама
     owl.flap();
 }
 
