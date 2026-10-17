@@ -237,16 +237,19 @@ function hudSwapGet() { try { const v = localStorage.getItem(HUD_SWAP_KEY); retu
 function applyHudSwap() { const on = hudSwapGet(), t = document.getElementById('topHud'); if (t) t.classList.toggle('hud-swap', on); document.documentElement.classList.toggle('hud-ll', on); }   // hud-ll: жизни и таймеры слева, уведомления о бонусах — справа
 applyHudSwap();
 {
+    // тумблер «Где жизни в игре»: влево — слева (по умолчанию), вправо — справа
     const hb = document.getElementById('settingsHudSwapToggle'), ht = document.getElementById('settingsHudSwapThumb');
-    if (hb && ht) {
-        updateToggleVisual(hb, ht, hudSwapGet());
-        hb.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const on = !hudSwapGet();
-            try { localStorage.setItem(HUD_SWAP_KEY, on ? '1' : '0'); } catch (er) {}
-            updateToggleVisual(hb, ht, on); applyHudSwap();
-        });
-    }
+    const sl = document.getElementById('hudSideL'), sr = document.getElementById('hudSideR');
+    const paint = () => {
+        const left = hudSwapGet();
+        if (ht) { ht.classList.toggle('translate-x-0', left); ht.classList.toggle('translate-x-5', !left); }
+        if (sl) { sl.classList.toggle('text-white', left); sl.classList.toggle('text-purple-300', !left); sl.style.opacity = left ? '1' : '.55'; }
+        if (sr) { sr.classList.toggle('text-white', !left); sr.classList.toggle('text-purple-300', left); sr.style.opacity = left ? '.55' : '1'; }
+    };
+    const setSide = (left) => { try { localStorage.setItem(HUD_SWAP_KEY, left ? '1' : '0'); } catch (er) {} paint(); applyHudSwap(); try { _hudFitKey = ''; fitTopHud(); } catch (er) {} };
+    if (hb) { paint(); hb.addEventListener('click', (e) => { e.stopPropagation(); setSide(!hudSwapGet()); }); }
+    if (sl) sl.addEventListener('click', (e) => { e.stopPropagation(); setSide(true); });
+    if (sr) sr.addEventListener('click', (e) => { e.stopPropagation(); setSide(false); });
 }
 
 if (settingsVibeToggle) {

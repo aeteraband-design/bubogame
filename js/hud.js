@@ -580,11 +580,11 @@ function fitTopHud() {
     // размер зависит только от ширины панели, числа сердец и разрядности счёта 
     // пересчёт только когда меняется один из этих параметров — внутри одного разряда ничего не прыгает
     const digits = String(document.getElementById('scoreVal')?.textContent || '').length;
-    const key = hud.offsetWidth + '|' + Math.ceil(maxLives) + '|' + digits;
+    const key = hud.offsetWidth + '|' + Math.ceil(maxLives) + '|' + digits + '|' + hud.classList.contains('hud-swap');
     if (key === _hudFitKey) return;
     let k = 1; hud.style.setProperty('--hk', '1');
     // меряем в координатах самой панели (offset*): у панели свой zoom, getBoundingClientRect тут врёт
-    const gap = () => right.offsetLeft - (left.offsetLeft + left.offsetWidth);   // зазор между группами (кнопки слева, показатели справа)
+    const gap = () => Math.max(right.offsetLeft - (left.offsetLeft + left.offsetWidth), left.offsetLeft - (right.offsetLeft + right.offsetWidth));   // зазор между группами (панель может быть зеркальной)
     for (let i = 0; i < 12 && gap() < 8; i++) {
         k = Math.max(0.7, k - 0.03); hud.style.setProperty('--hk', k.toFixed(2));
         if (k <= 0.7) break;
