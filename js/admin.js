@@ -314,7 +314,7 @@
             login.querySelector('form').addEventListener('submit', (e) => {
                 e.preventDefault();
                 const u = login.querySelector('#alU').value.trim().toLowerCase(), p = login.querySelector('#alP').value.trim();
-                if (u === 'admin' && p === '1988-1988') { try { localStorage.setItem(AUTH, '1'); } catch (er) {} login.classList.add('hidden'); openReal(); }
+                if (u === 'admin' && p === '19881988') { try { localStorage.setItem(AUTH, '1'); } catch (er) {} login.classList.add('hidden'); openReal(); }
                 else { login.querySelector('#alE').textContent = 'Неверный логин или пароль'; const b = login.querySelector('.al-box'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); }
             });
         }
