@@ -281,3 +281,8 @@
 #resetNoBtn { color: #EF4444 !important; }
 #resetYesBtn:hover { background: rgba(34, 197, 94, 0.12) !important; }
 #resetNoBtn:hover { background: rgba(239, 68, 68, 0.12) !important; }
+
+/* Окно рулетки — как окно победы: содержимое (колесо … счётчик попыток) ровно по центру между верхом окна и кнопкой «Крутить» */
+#rouletteModal #rwWindow .rwp-head { margin-top: auto !important; }
+#rouletteModal #rwWindow .rw-spins-pill { margin-bottom: 0 !important; }
+#rouletteModal #rwWindow .rw-btns { margin-top: auto !important; padding-top: 14px; }

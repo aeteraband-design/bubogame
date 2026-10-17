@@ -91,6 +91,14 @@ function rwLayout() {
     const headPad = parseFloat(getComputedStyle(win.querySelector('.rwp-head') || win).paddingTop) || 0;
     win.style.setProperty('--rw-btn-gap', (parseFloat(getComputedStyle(win).paddingTop) + headPad).toFixed(1) + 'px');
     rwEnsurePool(); rwRender(rw.pos);
+    // тёплое свечение за колесом-эмблемой — всегда ровно вокруг неё, куда бы ни сместилось содержимое
+    try {
+        const em = win.querySelector('.rwp-emblem'), b1 = win.querySelector('.rwp-blob.b1');
+        if (em && b1) {
+            const wr = win.getBoundingClientRect(), er = em.getBoundingClientRect(), k = win.offsetHeight / (wr.height || 1);
+            b1.style.top = ((er.top - wr.top + er.height / 2) * k - b1.offsetHeight / 2).toFixed(1) + 'px';
+        }
+    } catch (e) {}
     // фоновые искорки не должны перекрывать ничего в окне (текст, эмблему, ленту, счётчик, кнопки, крестик)
     try {
         const blocks = [...win.querySelectorAll('.rwp-emblem, .rwp-title, .rwp-sub, #rwReel, .rw-hint, #rwSpinsPill, #rwSpinBtn, #rwLaterBtn, #closeRouletteBtn')].map(e => e.getBoundingClientRect());
