@@ -126,10 +126,7 @@ function shazamLaunch() {
 
 function shazamEnd() {
     SHZ.state = 'idle'; SHZ.left = 0;
-    // если эффект кончился, когда сова внутри трубы, — даём секунду неуязвимости, чтобы спокойно вылететь
-    for (const p of pipes) if (owl.x + owl.radius > p.x && owl.x - owl.radius < p.x + p.width) { invulnerableTime = Math.max(invulnerableTime, 60); p.shieldPass = true; }
-    // трубы, которые уже рядом (сова их облетала или вот-вот облетит), до конца пролетаются насквозь — врезаться можно только в новые
-    for (const p of pipes) if (p.x < owl.x + 220) p.shzPass = true;
+    // после ШАЗАМа никакой защиты (и «головокружения») нет: о конце предупреждают таймер и звуки, игрок сам успевает выйти из труб
     try { AudioFX.playShazamPowerDown(); AudioFX.onSpeedChanged(); } catch (e) {}   // эффект кончился совсем — последний звук
 }
 
