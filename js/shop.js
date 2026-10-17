@@ -62,7 +62,9 @@ const SHOP_ITEMS = [
 #shWin .sh-coins.bump{animation:shBump .5s ease}
 @keyframes shBump{40%{transform:scale(1.12)}}
 .sh-coin{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:8.5px;color:#7C4A00;background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);box-shadow:0 0 8px rgba(255,197,61,.6),inset 0 -1.5px 0 rgba(0,0,0,.2);flex:0 0 auto}
-#shWin .sh-x{justify-self:end;width:34px;height:34px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#C4A1FF;background:rgba(120,44,233,.18);border:1px solid rgba(120,44,233,.4);font-size:14px;cursor:pointer}
+#shWin .sh-x{position:absolute;top:10px;right:10px;z-index:2;width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:rgba(233,213,255,.8);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:14px;cursor:pointer}
+#shWin .sh-x:active{transform:scale(.92)}
+#shWin.full{height:100%}
 #shWin .sh-emb{position:relative;width:92px;height:92px;display:flex;align-items:center;justify-content:center}
 #shWin .sh-glow{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(circle,rgba(255,197,61,.22),transparent 70%);animation:shPulse 3.2s ease-in-out infinite}
 #shWin .sh-ring{position:absolute;inset:6px;border-radius:50%;padding:1.5px;background:conic-gradient(from var(--shA),rgba(255,197,61,0) 0deg,#FFE08A 70deg,#5EEAD4 140deg,rgba(94,234,212,0) 200deg,rgba(255,197,61,0) 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:shRing 3.6s linear infinite;opacity:.9}
@@ -83,7 +85,7 @@ const SHOP_ITEMS = [
 #shWin>*:not(.sh-grid){flex-shrink:0}
 #shWin .sh-earn.gone{display:none}
 #shWin .sh-earn b{color:#FFD66B}
-#shWin .sh-earn .sh-ex{flex:0 0 auto;width:26px;height:26px;padding:0;margin-left:-4px;display:flex;align-items:center;justify-content:center;border-radius:9px;background:transparent;border:none;color:#A78BFA;font-size:13px}
+#shWin .sh-earn .sh-ex{position:absolute;top:-8px;right:-8px;width:22px;height:22px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#2a0f4d;border:1px solid rgba(255,255,255,.14);color:rgba(233,213,255,.75);font-size:10px;cursor:pointer}
 #shWin .sh-earn .sh-go i{margin-left:5px}
 #shWin .sh-it{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 6px 9px;border-radius:16px;text-align:center;
  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 14%,transparent),rgba(20,3,38,.65) 70%);border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
@@ -100,10 +102,10 @@ const SHOP_ITEMS = [
 #shWin .sh-buy.own{cursor:default;color:#BBF7D0;background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.5);box-shadow:none;font-size:10.5px}
 #shWin .sh-it.bought{animation:shBought .7s ease}
 @keyframes shBought{30%{transform:scale(1.07);box-shadow:0 0 22px var(--c)}}
-#shWin .sh-earn{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;background:rgba(20,3,38,.6);border:1px solid rgba(56,189,248,.35)}
+#shWin .sh-earn{position:relative;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px;border-radius:14px;background:rgba(20,3,38,.6);border:1px solid rgba(56,189,248,.35)}
 #shWin .sh-earn>i{color:#38BDF8;font-size:18px;flex:0 0 22px;text-align:center}
-#shWin .sh-earn span{flex:1;font-weight:700;font-size:11.5px;line-height:1.35;color:#DDD6FE}
-#shWin .sh-earn button{flex:0 0 auto;padding:8px 11px;border-radius:11px;font-weight:900;font-size:11px;color:#fff;background:rgba(56,189,248,.22);border:1px solid rgba(56,189,248,.6);cursor:pointer}
+#shWin .sh-earn span{flex:1;min-width:0;font-weight:700;font-size:12px;line-height:1.3;color:#DDD6FE}
+#shWin .sh-earn .sh-go{flex:0 0 auto;display:flex;align-items:center;padding:9px 12px;border-radius:11px;font-weight:900;font-size:11px;letter-spacing:.04em;color:#fff;background:rgba(56,189,248,.24);border:1px solid rgba(56,189,248,.65);cursor:pointer;white-space:nowrap}
 #shWin .sh-back{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 10px;border-radius:16px;font-weight:900;font-size:12px;letter-spacing:.06em;color:#fff;cursor:pointer;background:rgba(45,14,82,.9);border:1px solid rgba(168,85,247,.5)}
 #shWin .sh-back i{color:#FE7600}
 #shWin .sh-toast{position:absolute;left:50%;top:132px;transform:translate(-50%,0);padding:9px 14px;border-radius:14px;font-weight:900;font-size:13px;white-space:nowrap;background:rgba(22,101,52,.95);border:1px solid #4ADE80;box-shadow:0 0 18px rgba(34,197,94,.5);pointer-events:none;animation:shToast 1.8s ease forwards;z-index:3}
@@ -122,10 +124,11 @@ function shopBuild() {
     shRoot.innerHTML = `<div id="shWin">
         <div class="sh-top"><div class="sh-coins" id="shCoins"><span class="sh-coin"><i class="fa-solid fa-star"></i></span><span id="shCoinsN">0</span></div>
             <div class="sh-emb"><div class="sh-glow"></div><div class="sh-ring"></div><div class="sh-core"><i class="fa-solid fa-store"></i></div>${tw}</div>
-            <button type="button" class="sh-x" data-sh="close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button></div>
+            <div></div></div>
+        <button type="button" class="sh-x" data-sh="close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
         <div class="sh-title"><b>ЛАВКА</b><span>Обменивай монеты на попытки и бонусы</span></div>
         <div class="sh-grid" id="shGrid"></div>
-        <div class="sh-earn" id="shEarn"><i class="fa-solid fa-coins"></i><span><b>Монеты дают:</b> вопросы дня — до 100 за верный ответ; в полёте — 50, 100 и 150 за каждые 50 вопросов</span><button type="button" class="sh-go" data-sh="quiz">ЗАРАБОТАТЬ<i class="fa-solid fa-arrow-right"></i></button><button type="button" class="sh-ex" data-sh="hideearn" aria-label="Скрыть"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="sh-earn" id="shEarn"><i class="fa-solid fa-circle-question"></i><span>Получить монеты можно, отвечая на <b>вопросы</b></span><button type="button" class="sh-go" data-sh="quiz">ЗАРАБОТАТЬ<i class="fa-solid fa-arrow-right"></i></button><button type="button" class="sh-ex" data-sh="hideearn" aria-label="Скрыть"><i class="fa-solid fa-xmark"></i></button></div>
         <button type="button" class="sh-back" data-sh="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button>
     </div>`;
     host.appendChild(shRoot);
@@ -136,10 +139,18 @@ function shopBuild() {
         const a = b.dataset.sh;
         if (a === 'close') closeShop();
         else if (a === 'quiz') { closeShop(); if (typeof openQuiz === 'function') openQuiz(); }
-        else if (a === 'hideearn') { try { localStorage.setItem('bubo_shop_earn_hidden', '1'); } catch (er) {} const el = document.getElementById('shEarn'); if (el) el.classList.add('gone'); }
+        else if (a === 'hideearn') { try { localStorage.setItem('bubo_shop_earn_hidden', '1'); } catch (er) {} const el = document.getElementById('shEarn'); if (el) el.classList.add('gone'); shopFit(); }
         else shopTap(a, b);
     });
     return shRoot;
+}
+// окно на всю высоту, если товары не помещаются: тогда список листается, а скрыли подсказку — список дотягивается до низа
+function shopFit() {
+    const w = document.getElementById('shWin'); if (!w || !shRoot) return;
+    w.classList.remove('full');
+    const avail = shRoot.clientHeight - 24, g = document.getElementById('shGrid');
+    const over = g ? g.scrollHeight - g.clientHeight : 0;
+    if (w.offsetHeight >= avail - 1 || over > 1) w.classList.add('full');
 }
 function shopRender() {
     const g = document.getElementById('shGrid'); if (!g) return;
@@ -182,6 +193,7 @@ function openShop(e) {
     try { const el = document.getElementById('shEarn'); if (el) el.classList.toggle('gone', localStorage.getItem('bubo_shop_earn_hidden') === '1'); } catch (er) {}
     try { const g = document.getElementById('shGrid'); if (g) g.scrollTop = 0; } catch (er) {}
     shRoot.classList.remove('hidden');
+    shopFit();
     try { AudioFX.setMode('shop', { fade: true }); } catch (er) {}
 }
 function closeShop(e) {
@@ -242,3 +254,4 @@ function shopSyncBtn() {
     if (ss) ss.addEventListener('touchstart', (e) => { if (e.touches && e.touches.length >= 3) { e.preventDefault(); openAdm(); } }, { passive: false });
     window.addEventListener('keydown', (e) => { if (e.ctrlKey && e.shiftKey && (e.code === 'KeyA')) { e.preventDefault(); openAdm(); } });
 })();
+window.addEventListener('resize', () => { try { if (shRoot && !shRoot.classList.contains('hidden')) shopFit(); } catch (e) {} });
