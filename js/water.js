@@ -13,7 +13,6 @@ function waterPipeWet() { return WATERFX.wetT > 0 ? Math.min(0.85, WATERFX.wetT 
 
 // значок взят: включаем эффект
 function registerWater() {
-    if (typeof shazamBusy === 'function' && shazamBusy()) return null;
     waterTime = WATERFX.SEC * 60; WATERFX.id++;
     try { AudioFX.playStarCollect(); AudioFX.playWaterStart(); Haptics.powerup(); } catch (e) {}
     return { target: 'other', text: `Водонапор ${WATERFX.SEC}с`, color: WATERFX.COLOR, icon: 'fa-droplet' };
@@ -213,7 +212,6 @@ function waterWetOwl(hx, hy) {
 }
 function waterUpdate(speed, squeeze) {
     const dt = dtMult, shz = typeof shazamBusy === 'function' && shazamBusy();
-    if (shz) waterTime = 0;
     let lv0 = 0; try { lv0 = getDifficultyIndex(); } catch (e) {}
     // сила по ступеням: Суперлайт/Лайт — слабый напор, Медиум/Медиум+ — средний, Хард/Хард+ — сильный (внутри ступени чуть растёт)
     const lv = [0, 0.8, 1.8, 2.8, 4, 5][Math.max(0, Math.min(5, lv0))];

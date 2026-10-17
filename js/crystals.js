@@ -41,7 +41,6 @@ function crystalReset() { crystalTime = 0; crystals.length = 0; crystalRedK = 0;
 
 // значок взят: включаем эффект
 function registerCrystal() {
-    if (typeof shazamBusy === 'function' && shazamBusy()) return null;   // в ШАЗАМе не действует
     crystalTime = CRYSTAL.SEC * 60; CRYSTAL.id++;
     try { AudioFX.playStarCollect(); AudioFX.playPipesHeat(); Haptics.powerup(); } catch (e) {}
     return { target: 'other', text: `Опасные трубы ${CRYSTAL.SEC}с`, color: CRYSTAL.COLOR, icon: 'fa-fire' };
@@ -102,7 +101,6 @@ function crystalBurst(x, y, n) {
 // вызывается каждый кадр после движения труб: speed — скорость, с которой уезжают трубы, squeeze — текущее сужение проёма
 function crystalUpdate(speed, squeeze) {
     const dt = dtMult, shz = typeof shazamBusy === 'function' && shazamBusy();
-    if (shz) crystalTime = 0;
     // новая игра (тем снова 0): план выпадения — заново
     if (CRYSTAL.plan && CRYSTAL.plan.some((q) => q.done) && getTotalCollectedThemes() === 0) { CRYSTAL.plan = null; crystalPending = false; }
     crystalRedK = Math.max(0, Math.min(1, crystalRedK + (crystalTime > 0 ? 1 : -1) * dt / 50));   // трубы краснеют и остывают ~0,8 с
