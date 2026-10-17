@@ -110,6 +110,18 @@ function drawWaterFront() {
             ctx.drawImage(mist, p.x + m.x - m.r, m.y - m.r, m.r * 2, m.r * 2);
         }
         ctx.globalAlpha = 1;
+        // у выхода из верхней трубы — мелкие пузырьки, как пена внизу, только меньше
+        if (s.on || s.drops.length > 20) {
+            const y0 = p.top + s.sq, nt = Math.round(w / 3.4);
+            ctx.globalAlpha = s.on ? 0.95 : Math.min(1, s.drops.length / 120);
+            for (let k = 0; k < nt; k++) {
+                const h1 = Math.sin(k * 7.233 + s.ph * 3) * 24634.6345, rnd = h1 - Math.floor(h1);
+                const bx = x + ((k + 0.5) / nt - 0.5) * w * 0.98 + Math.sin(t * 0.25 + k * 2.1) * 0.8;
+                const by = y0 + 1 + rnd * 3.5 + Math.abs(Math.sin(t * 0.2 + k * 1.9)) * 1.4;
+                waterDrawBubble(bx, by, 0.55 + rnd * 0.7);
+            }
+            ctx.globalAlpha = 1;
+        }
         if (s.hitK > 0.03) {
             const yb = height - (p.bottom + s.sq), nf = Math.round(w / 2.6);
             ctx.globalAlpha = Math.min(1, s.hitK * 1.2);
@@ -150,7 +162,7 @@ function waterSplash(x, y, n, dir, spread, power, bubK) {
 }
 // капля попала в сову: на теле появляется бусинка воды в месте удара (контур OWL_BODY_PTS, масштаб тела 1.29)
 function waterWetOwl(hx, hy) {
-    if (typeof STORM !== 'undefined') STORM.wet = Math.min(1, Math.max(STORM.wet || 0, 0.5) + 0.02);
+    owl._wWet = Math.min(1, Math.max(owl._wWet || 0, 0.5) + 0.02);   // мокнет только сова, на трубы капли не ложатся
     const P = (typeof OWL_BODY_PTS !== 'undefined') ? OWL_BODY_PTS.p : null; if (!P) return;
     const B = owl._wb || (owl._wb = []); if (B.length >= 16 || Math.random() > 0.35) return;
     const lx = (hx - owl.x) / 1.29, ly = (hy - owl.y) / 1.29;
@@ -189,8 +201,8 @@ function waterUpdate(speed, squeeze) {
             s.acc += RATE * dt;
             while (s.acc >= 1) {
                 s.acc -= 1;
-                const b = Math.random() < 0.45;
-                s.drops.push({ x: cx + (Math.random() - 0.5) * W, y: y0 - 4 - Math.random() * 10, vx: (Math.random() - 0.5) * 0.18, vy: V0 * (0.55 + Math.random() * 0.5) * (b ? 0.85 : 1), r: b ? 0.9 + Math.random() * 1.3 : 2 + Math.random() * 1.9, b, ph: Math.random() * 6.28 });
+                const b = Math.random() < 0.55;
+                s.drops.push({ x: cx + (Math.random() - 0.5) * W, y: y0 - 4 - Math.random() * 10, vx: (Math.random() - 0.5) * 0.18, vy: V0 * (0.55 + Math.random() * 0.5) * (b ? 0.85 : 1), r: b ? 1.3 + Math.random() * 1.5 : 2 + Math.random() * 1.9, b, ph: Math.random() * 6.28 });
             }
             // штрихи «дождя» в потоке
             s.sacc += (0.5 + lv * 0.15) * dt;
@@ -206,7 +218,7 @@ function waterUpdate(speed, squeeze) {
             d.vy += G * (d.b ? 0.6 : 1) * dt; d.x += d.vx * dt; d.y += d.vy * dt;
             if (d.y >= yb) {
                 hb++;
-                if (Math.random() < 0.35) waterSplash(p.x + d.x, yb - 3, 1, -Math.PI / 2, 2.2, 1.2 + d.vy * 0.1, 0.6);
+                if (Math.random() < 0.4) waterSplash(p.x + d.x, yb - 3, 1 + (Math.random() < 0.3 ? 1 : 0), -Math.PI / 2 + (d.x - cx) / W * 1.6, 2.6, 1.4 + d.vy * 0.12, 0.55);   // плещется вверх и в стороны
                 if (Math.random() < 0.05 && s.mist.length < 12) s.mist.push({ x: d.x + (Math.random() - 0.5) * 10, y: yb - 8, r: 9 + Math.random() * 8, a: 0.3, vy: -0.22 - Math.random() * 0.2 });
                 D.splice(k, 1); continue;
             }
@@ -233,13 +245,21 @@ function waterUpdate(speed, squeeze) {
             if (gone || m.len <= 0) s.streaks.splice(k, 1);
         }
         s.hitK += ((hb > 0 ? 1 : 0) - s.hitK) * Math.min(1, 0.15 * dt);
+        // водяная пыль по всей высоте потока
+        if (s.on && Math.random() < 0.18 * dt && s.mist.length < 18) s.mist.push({ x: cx + (Math.random() - 0.5) * W, y: y0 + 15 + Math.random() * (yb - y0 - 15), r: 8 + Math.random() * 7, a: 0.2, vy: -0.05 - Math.random() * 0.08, vx: (Math.random() - 0.5) * 0.25 });
+        // вода переливается через края нижней шляпки и стекает каплями по бокам
+        if (s.hitK > 0.3 && Math.random() < 0.3 * s.hitK * dt && particles.length < 520) {
+            const side = Math.random() < 0.5 ? -1 : 1;
+            particles.push({ kind: Math.random() < 0.3 ? 'wbub' : 'wdrop', x: p.x + cx + side * (p.width / 2 + 4 + Math.random() * 2), y: yb + 4 + Math.random() * 10, vx: side * (0.3 + Math.random() * 0.5), vy: 0.5 + Math.random(), grav: 0.14, alpha: 0.95, decay: 0.02, size: 1.1 + Math.random() * 1.3 });
+        }
         for (let k = s.mist.length - 1; k >= 0; k--) {
             const m = s.mist[k];
-            m.y += m.vy * dt; m.r += 0.22 * dt; m.a -= 0.005 * dt;
+            m.y += m.vy * dt; m.x += (m.vx || 0) * dt; m.r += 0.18 * dt; m.a -= 0.004 * dt;
             if (m.a <= 0) s.mist.splice(k, 1);
         }
         if ((!s.on && !D.length && !s.streaks.length && !s.mist.length) || p.x + p.width < -60) { waterStreams.splice(i, 1); continue; }
     }
+    if (owl._wWet) owl._wWet = Math.max(0, owl._wWet - 0.0015 * dt);   // сова понемногу обсыхает
     if (hits && gameActive && !shz) {
         let k = imp;
         if (shieldTime > 0) k *= 0.55;            // щит тоже сносит, но слабее

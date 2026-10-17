@@ -431,7 +431,7 @@ function stormDrawRain() {
 // ---------- мокрая сова: крошечные капли лежат прямо на контуре совы (как бусинки на трубах), медленно стекают вниз и срываются ----------
 // вызывается из owl.draw в координатах тела совы; контур — тот же, что у тела (OWL_BODY_PTS)
 function stormDrawOwlWet(g, o) {
-    const wet = STORM.wet || 0, P = (typeof OWL_BODY_PTS !== 'undefined') ? OWL_BODY_PTS.p : null;
+    const wet = Math.max(STORM.wet || 0, o._wWet || 0), P = (typeof OWL_BODY_PTS !== 'undefined') ? OWL_BODY_PTS.p : null;   // мокнет в дождь или под «Водонапором»
     const B = o._wb || (o._wb = []);
     if (!P || (wet < 0.03 && !B.length)) return;
     const n = P.length, dt = (typeof dtMult === 'number' ? dtMult : 1);
