@@ -126,12 +126,12 @@ function qzShuffleOrd() { const a = QZ_LETTERS.slice(); for (let i = 3; i > 0; i
         st.textContent = `
 #openQuizBtn.rw-menu-btn{z-index:6;zoom:var(--ui-zoom,1);position:absolute!important;top:56px!important;right:14px!important;left:auto!important;width:36px!important;height:36px!important;border-radius:12px!important;font-size:13px!important;color:#E9D5FF!important;background-color:rgba(29,9,54,.72)!important;border:1px solid rgba(120,44,233,.6)!important;box-shadow:0 6px 14px rgba(0,0,0,.3)!important}
 #openQuizBtn.rw-menu-btn.has-q{color:#38BDF8!important;border-color:#38BDF8!important;box-shadow:0 0 12px rgba(56,189,248,.5)!important}
-#openQuizBtn .rw-badge{top:-5px;right:-5px;min-width:10px;width:10px;height:10px;padding:0;background:#38BDF8;border:1.5px solid #1d0936;font-size:0}
-#openAdminBtn.rw-menu-btn{zoom:var(--ui-zoom,1);top:100px!important;right:14px!important;width:36px!important;height:36px!important;border-radius:12px!important;font-size:12px!important}
+#openQuizBtn .rw-badge{top:-4px!important;right:-4px!important;left:auto!important;transform:none!important;min-width:0!important;width:10px!important;height:10px!important;padding:0!important;background:#38BDF8;border:1.5px solid #1d0936;font-size:0}
 #quizModal{position:absolute;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(20,3,38,.25);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
 #quizModal.hidden{display:none}
 #qzWin{position:relative;width:100%;max-width:360px;max-height:100%;overflow-y:auto;border-radius:28px;padding:22px 18px 22px;display:flex;flex-direction:column;gap:16px;font-family:Onest,sans-serif;color:#fff;
  background:radial-gradient(120% 60% at 50% -10%,rgba(56,189,248,.16),transparent 60%),radial-gradient(90% 50% at 100% 110%,rgba(254,118,0,.12),transparent 60%),rgba(29,9,54,.97);border:1px solid rgba(120,44,233,.6);box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#qzBody{display:flex;flex-direction:column;gap:18px}
 #qzWin .qz-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#C4A1FF;background:rgba(120,44,233,.18);border:1px solid rgba(120,44,233,.4);font-size:13px;cursor:pointer}
 #qzWin .qz-head{display:flex;align-items:center;gap:10px;padding-right:38px}
 #qzWin .qz-emb{flex:0 0 40px;height:40px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;background:linear-gradient(135deg,#FE7600,#782CE9);border:1px solid rgba(255,255,255,.3);box-shadow:0 0 16px rgba(254,118,0,.45)}
@@ -145,14 +145,15 @@ function qzShuffleOrd() { const a = QZ_LETTERS.slice(); for (let i = 3; i > 0; i
 #qzWin .qz-dot.bad{background:#EF4444;border-color:#FCA5A5;color:#fff}
 #qzWin .qz-cnt{font-weight:800;font-size:11px;color:#C4B5FD;white-space:nowrap}
 #qzWin .qz-cnt b{color:#fff;font-weight:900}
-#qzWin .qz-card{padding:16px 14px 14px;border-radius:20px;background:linear-gradient(180deg,rgba(120,44,233,.22),rgba(120,44,233,.08));border:1px solid rgba(168,120,245,.45);display:flex;flex-direction:column;gap:14px}
+#qzWin .qz-card{padding:16px 14px 16px;border-radius:20px;background:linear-gradient(180deg,rgba(120,44,233,.22),rgba(120,44,233,.08));border:1px solid rgba(168,120,245,.45);display:flex;flex-direction:column;gap:14px}
 #qzWin .qz-meta{display:flex;align-items:center;gap:6px}
 #qzWin .qz-chip{font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:8px;background:rgba(56,189,248,.16);color:#7DD3FC;border:1px solid rgba(56,189,248,.35)}
 #qzWin .qz-n{margin-left:auto;font-weight:800;font-size:11px;color:rgba(196,161,255,.75)}
 #qzWin .qz-q{font-weight:900;font-size:17px;line-height:1.35;padding:2px 2px 0}
-#qzWin .qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-#qzWin .qz-o{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:74px;padding:10px 11px 11px;border-radius:15px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:13px;line-height:1.3;transition:all .25s}
-#qzWin .qz-o b{flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+#qzWin .qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#qzWin .qz-o{display:flex;align-items:center;gap:8px;min-height:46px;padding:7px 9px;border-radius:12px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:12.5px;line-height:1.25;transition:all .25s;min-width:0}
+#qzWin .qz-o span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-width:0}
+#qzWin .qz-o b{flex:0 0 auto;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
 #qzWin .qz-o.ok{background:rgba(34,197,94,.2);border-color:#22C55E}
 #qzWin .qz-o.bad{background:rgba(239,68,68,.2);border-color:#EF4444}
 #qzWin .qz-o.dim{opacity:.45}
