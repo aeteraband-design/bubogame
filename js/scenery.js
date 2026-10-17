@@ -773,60 +773,46 @@ function drawRoundedRect(x, y, w, h, r) {
 // Раньше блик обрезался по форме шляпки (clip) у каждой трубы каждый кадр — на телефоне это заметная нагрузка.
 function drawPipeCap(capX, capY, capW, capH, r, rimY, pw, red) {
     const devR = tokDevScale(ctx), hw = capW / 2 + 1, hh = capH / 2 + 1;
-    const spr = tokSprite(`cap3|${red ? red : ''}|${pw}|${capW}|${capH}|${r}|${rimY}|${devR}`, devR, hw, hh, (g) => {
+    const spr = tokSprite(`cap4|${red ? red : ''}|${pw}|${capW}|${capH}|${r}|${rimY}|${devR}`, devR, hw, hh, (g) => {
         g.translate(-(capX + capW / 2), -capH / 2);
+        const R = Math.min(capH * 0.42, r + 2);   // торцы скруглены сильнее — кольцо, а не брусок
         const path = () => {
             g.beginPath();
-            g.moveTo(capX + r, 0);
-            g.lineTo(capX + capW - r, 0);
-            g.quadraticCurveTo(capX + capW, 0, capX + capW, r);
-            g.lineTo(capX + capW, capH - r);
-            g.quadraticCurveTo(capX + capW, capH, capX + capW - r, capH);
-            g.lineTo(capX + r, capH);
-            g.quadraticCurveTo(capX, capH, capX, capH - r);
-            g.lineTo(capX, r);
-            g.quadraticCurveTo(capX, 0, capX + r, 0);
+            g.moveTo(capX + R, 0); g.lineTo(capX + capW - R, 0);
+            g.quadraticCurveTo(capX + capW, 0, capX + capW, R);
+            g.lineTo(capX + capW, capH - R);
+            g.quadraticCurveTo(capX + capW, capH, capX + capW - R, capH);
+            g.lineTo(capX + R, capH);
+            g.quadraticCurveTo(capX, capH, capX, capH - R);
+            g.lineTo(capX, R);
+            g.quadraticCurveTo(capX, 0, capX + R, 0);
             g.closePath();
         };
+        // по горизонтали: слева тёмно-красная тень, к центру оранжевый, справа (от луны) светло-оранжевый, у самого правого торца — светлый кант
+        const P = red === 'w' ? ['#4a2000', '#7a3a00', '#c06a10', '#ffa23a', '#ffc070', '#f5d8a8', '#8a4a10']
+            : red ? ['#4e000c', '#80081a', '#c81a2e', '#ff4a5a', '#ff8088', '#ffc0c4', '#7a0a18']
+            : ['#7a2208', '#a8380a', '#e06810', '#ff9a2e', '#ffb54e', '#ffd9a0', '#9a4410'];
         const cg = g.createLinearGradient(capX, 0, capX + capW, 0);
-        const C = red === 'w' ? ['#5a2a00', '#8a4500', '#e07a10', '#ffb347', '#c46a0a', '#5a2a00'] : red ? ['#5e0010', '#8e0a1c', '#dc1f32', '#ff5262', '#b3122a', '#5e0010'] : ['#8c2400', '#bc3a00', '#f36500', '#ff8e24', '#d64d00', '#8c2400'];
-        [0, 0.25, 0.58, 0.78, 0.92, 1].forEach((p, i) => cg.addColorStop(p, C[i]));
-        const rg = g.createLinearGradient(capX, 0, capX + capW, 0);
-        rg.addColorStop(0.0, 'rgba(255, 255, 255, 0.10)');
-        rg.addColorStop(0.35, 'rgba(255, 255, 255, 0.22)');
-        rg.addColorStop(0.76, 'rgba(255, 255, 255, 0.50)');
-        rg.addColorStop(0.90, 'rgba(255, 255, 255, 0.24)');
-        rg.addColorStop(1.0, 'rgba(255, 255, 255, 0.10)');
+        [0, 0.14, 0.46, 0.74, 0.88, 0.955, 1].forEach((q, i) => cg.addColorStop(q, P[i]));
         g.fillStyle = cg; path(); g.fill();
-        g.strokeStyle = red === 'w' ? 'rgba(255, 210, 150, 0.35)' : red ? 'rgba(255, 140, 150, 0.3)' : 'rgba(255, 185, 110, 0.28)'; g.lineWidth = 0.8; g.stroke();
         g.save(); path(); g.clip();
-        // объём: шляпка — толстое кольцо. Верх ловит лунный свет, низ уходит в тень (как у цилиндра, лежащего на боку)
+        // по вертикали: сверху — полоса тени от трубы, снизу — светлая губа кольца и тонкая тёмная кромка
         const vg = g.createLinearGradient(0, 0, 0, capH);
-        vg.addColorStop(0, 'rgba(255, 236, 190, 0.28)'); vg.addColorStop(0.16, 'rgba(255, 210, 140, 0.08)'); vg.addColorStop(0.42, 'rgba(255, 200, 120, 0)');
-        vg.addColorStop(0.62, 'rgba(70, 15, 0, 0)'); vg.addColorStop(0.86, 'rgba(70, 15, 0, 0.14)'); vg.addColorStop(1, 'rgba(45, 8, 0, 0.28)');
+        vg.addColorStop(0, 'rgba(70, 12, 0, 0.42)'); vg.addColorStop(0.2, 'rgba(70, 12, 0, 0.12)'); vg.addColorStop(0.34, 'rgba(70, 12, 0, 0)');
+        vg.addColorStop(0.7, 'rgba(255, 210, 140, 0)'); vg.addColorStop(0.84, 'rgba(255, 215, 150, 0.32)'); vg.addColorStop(0.92, 'rgba(255, 215, 150, 0.12)');
+        vg.addColorStop(1, 'rgba(70, 14, 0, 0.35)');
         g.fillStyle = vg; g.fillRect(capX - 1, -1, capW + 2, capH + 2);
-        // торцы закругляются: края чуть темнее, у левого — слабый отражённый свет
-        const eg = g.createLinearGradient(capX, 0, capX + capW, 0);
-        eg.addColorStop(0, 'rgba(40, 6, 0, 0.22)'); eg.addColorStop(0.035, 'rgba(210, 140, 255, 0.16)'); eg.addColorStop(0.09, 'rgba(40, 6, 0, 0)');
-        eg.addColorStop(0.93, 'rgba(40, 6, 0, 0)'); eg.addColorStop(1, 'rgba(40, 6, 0, 0.25)');
-        g.fillStyle = eg; g.fillRect(capX - 1, -1, capW + 2, capH + 2);
-        // тонкая светлая кромка сверху и тёмная снизу
+        // тонкий светлый край сверху
         const tl = g.createLinearGradient(capX, 0, capX + capW, 0);
-        tl.addColorStop(0, 'rgba(255, 240, 210, 0.15)'); tl.addColorStop(0.7, 'rgba(255, 245, 220, 0.4)'); tl.addColorStop(0.85, 'rgba(255, 245, 220, 0.28)'); tl.addColorStop(1, 'rgba(255, 240, 210, 0.1)');
-        g.fillStyle = tl; g.fillRect(capX, 0.6, capW, 1.1);
-        g.fillStyle = 'rgba(50, 8, 0, 0.25)'; g.fillRect(capX, capH - 1.3, capW, 1.3);
-        // глянцевый блик справа, где светит луна
-        const sx = capX + capW * 0.76, sy = capH * 0.34;
-        const sp = g.createRadialGradient(sx, sy, 0, sx, sy, capW * 0.13);
-        sp.addColorStop(0, 'rgba(255, 252, 235, 0.35)'); sp.addColorStop(0.35, 'rgba(255, 230, 170, 0.12)'); sp.addColorStop(1, 'rgba(255, 220, 150, 0)');
-        g.save(); g.translate(sx, sy); g.scale(1, (capH * 0.32) / (capW * 0.13)); g.translate(-sx, -sy);
-        g.fillStyle = sp; g.beginPath(); g.arc(sx, sy, capW * 0.13, 0, Math.PI * 2); g.fill(); g.restore();
-        g.fillStyle = 'rgba(255, 255, 245, 0.22)'; g.beginPath(); g.ellipse(sx - capW * 0.02, sy - capH * 0.05, capW * 0.045, capH * 0.07, 0, 0, Math.PI * 2); g.fill();
-        // второй, слабый блик слева
-        g.fillStyle = 'rgba(255, 235, 200, 0.08)'; g.beginPath(); g.ellipse(capX + capW * 0.2, capH * 0.32, capW * 0.06, capH * 0.12, 0, 0, Math.PI * 2); g.fill();
-        g.strokeStyle = rg; g.lineWidth = 1.8;
-        g.beginPath(); g.moveTo(capX - 2, rimY); g.lineTo(capX + capW + 2, rimY); g.stroke();
+        tl.addColorStop(0, 'rgba(255, 200, 150, 0.1)'); tl.addColorStop(0.75, 'rgba(255, 230, 190, 0.45)'); tl.addColorStop(1, 'rgba(255, 220, 180, 0.15)');
+        g.fillStyle = tl; g.fillRect(capX, 0.5, capW, 0.9);
+        // скруглённые торцы: левый в тени, правый подсвечен
+        const eg = g.createLinearGradient(capX, 0, capX + capW, 0);
+        eg.addColorStop(0, 'rgba(50, 6, 0, 0.4)'); eg.addColorStop(0.05, 'rgba(50, 6, 0, 0)');
+        eg.addColorStop(0.965, 'rgba(255, 235, 200, 0)'); eg.addColorStop(0.985, 'rgba(255, 235, 200, 0.35)'); eg.addColorStop(1, 'rgba(80, 20, 0, 0.3)');
+        g.fillStyle = eg; g.fillRect(capX - 1, -1, capW + 2, capH + 2);
         g.restore();
+        g.strokeStyle = red === 'w' ? 'rgba(255, 210, 150, 0.3)' : red ? 'rgba(255, 140, 150, 0.25)' : 'rgba(255, 190, 120, 0.22)'; g.lineWidth = 0.7; path(); g.stroke();
     });
     ctx.drawImage(spr.c, capX + capW / 2 + spr.x, capY + capH / 2 + spr.y, spr.w, spr.h);
 }
@@ -912,8 +898,8 @@ function drawPipe(pipe) {
         // объём: луна светит справа сверху — узкий мягкий блик справа и затенение левого края
         const vol = ctx.createLinearGradient(0, 0, pipe.width, 0);
         // слева у самого края — фиолетовый отражённый засвет (как на референсе), за ним тень; справа — блик и еле заметный лунный кант
-        vol.addColorStop(0, 'rgba(8, 0, 20, 0.2)'); vol.addColorStop(0.025, 'rgba(190, 120, 255, 0.06)'); vol.addColorStop(0.06, 'rgba(200, 135, 255, 0.2)');
-        vol.addColorStop(0.11, 'rgba(160, 90, 240, 0.05)'); vol.addColorStop(0.2, 'rgba(8, 0, 20, 0.03)'); vol.addColorStop(0.3, 'rgba(8, 0, 20, 0)');
+        vol.addColorStop(0, 'rgba(150, 95, 245, 0.35)'); vol.addColorStop(0.04, 'rgba(175, 120, 255, 0.5)'); vol.addColorStop(0.09, 'rgba(160, 105, 250, 0.36)');
+        vol.addColorStop(0.16, 'rgba(140, 80, 235, 0.14)'); vol.addColorStop(0.25, 'rgba(8, 0, 20, 0.02)'); vol.addColorStop(0.3, 'rgba(8, 0, 20, 0)');
         vol.addColorStop(0.64, 'rgba(255, 240, 255, 0)'); vol.addColorStop(0.75, 'rgba(255, 240, 255, 0.12)'); vol.addColorStop(0.83, 'rgba(255, 240, 255, 0)');
         vol.addColorStop(0.94, 'rgba(225, 210, 255, 0)'); vol.addColorStop(0.975, 'rgba(225, 210, 255, 0.08)'); vol.addColorStop(1, 'rgba(225, 210, 255, 0.04)');
         // мягкое лунное свечение снаружи у правого края трубы
