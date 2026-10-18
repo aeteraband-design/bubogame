@@ -456,14 +456,39 @@ function stormDrawRain() {
 function stormDrawOwlWet(g, o) {
     const wet = Math.max(STORM.wet || 0, o._wWet || 0), P = (typeof OWL_BODY_PTS !== 'undefined') ? OWL_BODY_PTS.p : null;   // мокнет в дождь или под «Водонапором»
     const B = o._wb || (o._wb = []);
-    if (!P || (wet < 0.03 && !B.length)) return;
+    if (!P || (wet < 0.03 && !B.length && !(o._wbb && o._wbb.length))) return;
     const n = P.length, dt = (typeof dtMult === 'number' ? dtMult : 1);
     const at = (t) => { const i = ((Math.floor(t) % n) + n) % n, j = (i + 1) % n, f = t - Math.floor(t); return [P[i][0] + (P[j][0] - P[i][0]) * f, P[i][1] + (P[j][1] - P[i][1]) * f, i, j]; };
     // новые капли — на верхней половине контура (голова, спина, грудка)
     if (wet > 0.1 && B.length < 6 + Math.round(wet * 8) && Math.random() < 0.05 * wet * dt) {
         let t = 0, tries = 0;
         do { t = Math.random() * n; tries++; } while (at(t)[1] > 3 && tries < 8);
-        if (at(t)[1] <= 3) B.push({ t, r: 0.95 + Math.random() * 0.6, age: 0, v: 0 });
+        if (at(t)[1] <= 3) B.push({ t, r: 0.4 + Math.random() * 1.15, age: 0, v: 0 });
+    }
+    // капли и на самом теле: на голове, боку, крыле — разного размера, медленно сползают вниз и пропадают
+    const BB = o._wbb || (o._wbb = []);
+    const inBody = (x, y) => { let c = false; for (let i = 0, j = n - 1; i < n; j = i++) { const xi = P[i][0], yi = P[i][1], xj = P[j][0], yj = P[j][1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+    if (wet > 0.1 && BB.length < 3 + Math.round(wet * 7) && Math.random() < 0.04 * wet * dt) {
+        for (let tr = 0; tr < 10; tr++) {
+            const x = -13 + Math.random() * 24, y = -13 + Math.random() * 24;
+            if (inBody(x, y) && Math.hypot(x - 5.2, y + 4) > 6.5) { BB.push({ x, y, r: 0.35 + Math.random() * 1.0, age: 0, v: 0.004 + Math.random() * 0.012 }); break; }
+        }
+    }
+    for (let k = BB.length - 1; k >= 0; k--) {
+        const b = BB[k]; b.age += dt;
+        b.v = Math.min(0.09, b.v + 0.00012 * dt * b.r);   // крупная капля сползает быстрее
+        b.y += b.v * dt; b.x -= b.v * 0.15 * dt;          // чуть назад по ходу полёта
+        const life = Math.min(1, b.age / 25) * (wet < 0.02 ? 0 : 1);
+        if (!inBody(b.x, b.y + b.r) || b.age > 700 || life <= 0) { BB.splice(k, 1); continue; }
+        const r = b.r * (0.5 + 0.5 * Math.min(1, b.age / 30)), st = 1 + Math.min(0.5, b.v * 8);   // в движении чуть вытягивается
+        g.save(); g.translate(b.x, b.y);
+        g.globalAlpha = 0.55 * Math.min(1, wet * 2) * life; g.fillStyle = 'rgb(150, 196, 240)';
+        g.beginPath(); g.ellipse(0, 0, r, r * st, 0, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 0.5 * Math.min(1, wet * 2) * life; g.strokeStyle = 'rgba(90, 140, 200, 0.9)'; g.lineWidth = Math.max(0.12, r * 0.18);
+        g.beginPath(); g.ellipse(0, 0, r, r * st, 0, 0.2, Math.PI - 0.2); g.stroke();   // тень снизу
+        g.globalAlpha = 0.95 * Math.min(1, wet * 2) * life; g.fillStyle = '#F4FBFF';
+        g.beginPath(); g.arc(-r * 0.35, -r * 0.35 * st, Math.max(0.15, r * 0.28), 0, Math.PI * 2); g.fill();   // блик
+        g.restore();
     }
     g.save();
     for (let k = B.length - 1; k >= 0; k--) {

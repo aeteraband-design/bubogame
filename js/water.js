@@ -206,11 +206,13 @@ function waterWetOwl(hx, hy) {
     owl._wWet = Math.min(1, Math.max(owl._wWet || 0, 0.5) + 0.02);   // мокнет только сова, на трубы капли не ложатся
     if (freezeTime > 0 && typeof STORM !== 'undefined') STORM.ice = Math.min(1, (STORM.ice || 0) + 0.012);   // замёрзшая сова под струёй — сразу налипают льдинки
     const P = (typeof OWL_BODY_PTS !== 'undefined') ? OWL_BODY_PTS.p : null; if (!P) return;
-    const B = owl._wb || (owl._wb = []); if (B.length >= 16 || Math.random() > 0.35) return;
     const lx = (hx - owl.x) / 1.29, ly = (hy - owl.y) / 1.29;
+    const BB = owl._wbb || (owl._wbb = []);   // иногда капля остаётся прямо на теле, в месте удара
+    if (BB.length < 12 && Math.random() < 0.25 && Math.hypot(lx - 5.2, ly + 4) > 6.5) BB.push({ x: lx * 0.85, y: ly * 0.85, r: 0.35 + Math.random() * 1.0, age: 0, v: 0.004 + Math.random() * 0.012 });
+    const B = owl._wb || (owl._wb = []); if (B.length >= 16 || Math.random() > 0.35) return;
     let bi = 0, bd = 1e9;
     for (let i = 0; i < P.length; i++) { const d = (P[i][0] - lx) ** 2 + (P[i][1] - ly) ** 2; if (d < bd) { bd = d; bi = i; } }
-    B.push({ t: bi + Math.random() * 0.8, r: 0.95 + Math.random() * 0.6, age: 0, v: 0 });
+    B.push({ t: bi + Math.random() * 0.8, r: 0.4 + Math.random() * 1.15, age: 0, v: 0 });
 }
 function waterUpdate(speed, squeeze) {
     const dt = dtMult, shz = typeof shazamBusy === 'function' && shazamBusy();
