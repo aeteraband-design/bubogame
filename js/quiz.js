@@ -144,12 +144,12 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzBody{display:flex;flex-direction:column;gap:16px}
 #qzWin .qz-x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#C4A1FF;background:rgba(120,44,233,.18);border:1px solid rgba(120,44,233,.4);font-size:13px;cursor:pointer;z-index:2}
 #qzWin .qz-top{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:-4px}
-#qzWin .qz-emb2{position:relative;width:76px;height:76px;display:flex;align-items:center;justify-content:center}
-#qzWin .qz-glow{position:absolute;inset:10px;border-radius:50%;background:radial-gradient(circle,rgba(56,189,248,.28),rgba(168,85,247,.12) 55%,transparent 72%);animation:qzPulse 3.2s ease-in-out infinite}
+#qzWin .qz-emb2{position:relative;width:106px;height:106px;display:flex;align-items:center;justify-content:center}
+#qzWin .qz-glow{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(circle,rgba(56,189,248,.28),rgba(168,85,247,.12) 55%,transparent 72%);animation:qzPulse 3.2s ease-in-out infinite}
 @property --qzA{syntax:'<angle>';inherits:false;initial-value:0deg}
-#qzWin .qz-ring{position:absolute;inset:4px;border-radius:50%;padding:1.5px;background:conic-gradient(from var(--qzA),rgba(56,189,248,0) 0deg,#7DD3FC 70deg,#C4A1FF 140deg,rgba(168,85,247,0) 200deg,rgba(56,189,248,0) 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:qzRing 3.6s linear infinite}
+#qzWin .qz-ring{position:absolute;inset:6px;border-radius:50%;padding:1.5px;background:conic-gradient(from var(--qzA),rgba(56,189,248,0) 0deg,#7DD3FC 70deg,#C4A1FF 140deg,rgba(168,85,247,0) 200deg,rgba(56,189,248,0) 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:qzRing 3.6s linear infinite}
 #qzWin .qz-core{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
-#qzWin .qz-core i{font-size:32px;background:linear-gradient(110deg,#7DD3FC 0%,#E0F2FE 22%,#7DD3FC 40%,#C4A1FF 60%,#7DD3FC 80%,#E0F2FE 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 6px rgba(56,189,248,.45));animation:qzFlow 4.5s linear infinite}
+#qzWin .qz-core i{font-size:44px;background:linear-gradient(110deg,#7DD3FC 0%,#E0F2FE 22%,#7DD3FC 40%,#C4A1FF 60%,#7DD3FC 80%,#E0F2FE 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 6px rgba(56,189,248,.45));animation:qzFlow 4.5s linear infinite}
 #qzWin .qz-tw{position:absolute;font-style:normal;font-size:var(--s);color:#E0F2FE;text-shadow:0 0 8px #38BDF8;animation:qzTw 2.4s ease-in-out infinite;animation-delay:var(--d)}
 @keyframes qzRing{to{--qzA:360deg}}
 @keyframes qzFlow{to{background-position:-250% 0}}
@@ -198,6 +198,20 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-ball{flex:0 0 auto;width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;color:#fff;cursor:pointer;border:2px solid rgba(255,255,255,.55);
  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 42%),var(--c);box-shadow:0 0 14px var(--c),inset 0 -5px 0 rgba(0,0,0,.22);text-shadow:0 2px 3px rgba(0,0,0,.3);transition:transform .15s,opacity .25s,filter .25s}
 #qzWin .qz-ball:active{transform:scale(.92)}
+#qzWin .qz-ball.press{animation:qzPress .26s ease-out forwards}
+@keyframes qzPress{0%{transform:scale(1) translateY(0)}45%{transform:scale(.84) translateY(3px);box-shadow:0 0 6px var(--c),inset 0 4px 8px rgba(0,0,0,.4)}100%{transform:scale(1.04) translateY(0);box-shadow:0 0 22px var(--c),inset 0 -5px 0 rgba(0,0,0,.22)}}
+#qzWin .qz-abcd.lock .qz-ball.ok{animation:qzBallOk 1.4s ease-in-out infinite}
+@keyframes qzBallOk{0%,100%{box-shadow:0 0 12px #22C55E,inset 0 -5px 0 rgba(0,0,0,.22)}50%{box-shadow:0 0 26px #4ADE80,0 0 0 4px rgba(74,222,128,.25),inset 0 -5px 0 rgba(0,0,0,.22)}}
+#qzWin .qz-abcd.lock .qz-ball.picked{animation:qzBack .35s cubic-bezier(.2,1.6,.4,1)}
+#qzWin .qz-abcd.lock .qz-ball.ok.picked{animation:qzBack .35s cubic-bezier(.2,1.6,.4,1),qzBallOk 1.4s ease-in-out .35s infinite}
+@keyframes qzBack{0%{transform:scale(.86)}100%{transform:scale(1.08)}}
+#qzWin .qz-o.ok{animation:qzOkGlow 1.4s ease-in-out infinite;border-width:2px;padding:5px 6px 5px 5px}
+#qzWin .qz-o.ok b{background:#22C55E!important}
+@keyframes qzOkGlow{0%,100%{box-shadow:0 0 6px rgba(34,197,94,.4)}50%{box-shadow:0 0 16px rgba(74,222,128,.75),inset 0 0 8px rgba(74,222,128,.25)}}
+.qz-star{position:absolute;font-style:normal;font-size:var(--s);line-height:1;margin:calc(var(--s) / -2) 0 0 calc(var(--s) / -2);color:var(--c);text-shadow:0 0 8px var(--c),0 0 2px #fff;pointer-events:none;z-index:3;animation:qzStar .6s ease-out forwards}
+@keyframes qzStar{0%{opacity:1;transform:translate(0,0) scale(.4) rotate(0)}60%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1) rotate(160deg)}}
+.qz-ripple{position:absolute;border-radius:50%;border:2px solid var(--c);pointer-events:none;z-index:3;transform:translate(-50%,-50%);animation:qzRip .45s ease-out forwards}
+@keyframes qzRip{0%{width:40px;height:40px;opacity:.9}100%{width:96px;height:96px;opacity:0}}
 #qzWin .qz-abcd.wait .qz-ball{pointer-events:none;opacity:.4;filter:saturate(.5)}
 #qzWin .qz-abcd.lock .qz-ball{pointer-events:none;opacity:.35;filter:saturate(.4)}
 #qzWin .qz-abcd.lock .qz-ball.ok{opacity:1;filter:none;--c:#22C55E!important;transform:scale(1.08)}
@@ -271,7 +285,7 @@ function qzBuild() {
 }
 function qzHead() {
     return '<div class="qz-top"><div class="qz-emb2"><div class="qz-glow"></div><div class="qz-ring"></div><div class="qz-core"><i class="fa-solid fa-comments"></i></div>'
-        + '<i class="qz-tw" style="left:-6px;top:10px;--s:8px;--d:0s">✦</i><i class="qz-tw" style="right:-8px;top:22px;--s:7px;--d:.9s">✦</i><i class="qz-tw" style="right:4px;top:-6px;--s:6px;--d:1.7s">✦</i></div>'
+        + [[-50, -18, 8, 0], [52, 10, 7, .9], [36, -40, 6, 1.7]].map(([x, y, s, d]) => `<i class="qz-tw" style="left:calc(50% + ${x}px - ${s / 2}px);top:calc(50% + ${y}px - ${s / 2}px);--s:${s}px;--d:${d}s">✦</i>`).join('') + '</div>'
         + '<div class="qz-title2"><b>ВОПРОСЫ ДНЯ</b><span>Отвечайте и зарабатывайте монеты для лавки</span></div></div>';
 }
 function qzProg(d, curIdx) {
@@ -326,7 +340,7 @@ function qzRenderQ(reveal) {
         const cls = reveal ? (L === corL ? ' ok' : L === pickL ? ' bad' : ' dim') : '';
         return `<div class="qz-o${cls}"><b style="background:${QZ_BALL_COL[L]}">${L}</b><span>${q.options[ord[i]]}</span></div>`;
     }).join('');
-    const balls = QZ_LETTERS.map(L => `<button type="button" class="qz-ball${reveal ? (L === corL ? ' ok' : L === pickL ? ' bad' : '') : ''}" data-qa="${L}" style="--c:${QZ_BALL_COL[L]}">${L}</button>`).join('');
+    const balls = QZ_LETTERS.map(L => `<button type="button" class="qz-ball${reveal ? (L === corL ? ' ok' : L === pickL ? ' bad' : '') + (L === pickL ? ' picked' : '') : ''}" data-qa="${L}" style="--c:${QZ_BALL_COL[L]}">${L}</button>`).join('');
     const C = 2 * Math.PI * 15;
     const ring = `<div class="qz-tm" id="qzTm"><svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="15"/><circle class="fg" id="qzTmFg" cx="18" cy="18" r="15" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${C.toFixed(2)}"/></svg><i class="fa-solid fa-eye" id="qzTmI"></i><b id="qzTmN"></b></div>`;
     let note = '', btns = '';
@@ -357,7 +371,7 @@ function qzTick() {
         const k = Math.min(1, t / QZ_READ);
         if (fg) fg.setAttribute('stroke-dashoffset', (C * (1 - k)).toFixed(2));
         if (t >= QZ_READ) {
-            QS.phase = 'answer'; QS.t0 = performance.now();
+            QS.phase = 'answer'; QS.t0 += QZ_READ * 1000;   // время идёт от начала вопроса, даже если игру сворачивали
             const ab = document.getElementById('qzAbcd'); if (ab) ab.classList.remove('wait');
             const nt = document.getElementById('qzNote'); if (nt) { nt.textContent = 'Выбирайте ответ!'; nt.className = 'qz-note'; }
             if (tm) tm.classList.add('ans'); if (ic) ic.style.display = 'none';
@@ -372,13 +386,19 @@ function qzTick() {
     }
     QS.raf = requestAnimationFrame(qzTick);
 }
+// в свёрнутой игре кадры не рисуются — таймер всё равно идёт: проверяем по часам и сразу при возвращении
+setInterval(() => { if (document.hidden && (QS.phase === 'read' || QS.phase === 'answer')) qzTick(); }, 500);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && (QS.phase === 'read' || QS.phase === 'answer')) qzTick(); });
+// во время вопроса кнопка/жест «назад» не уводит из игры
+function qzTrapBack() { try { history.pushState({ qz: 1 }, ''); } catch (e) {} }
+window.addEventListener('popstate', () => { if (QS.phase === 'read' || QS.phase === 'answer' || QS.phase === 'pick') qzTrapBack(); });
 function qzStartQuestion() {
     const d = quizDay();
     if (QS.phase === 'reveal' || QS.phase === 'ready' || QS.phase === 'idle') {
         if (d.ids.length >= QUIZ_PER_DAY) { qzRenderDone(); return; }
         if (!d.cur) { d.cur = quizNextId(d); d.ord = qzShuffleOrd(); }
         d.shown = true; quizSaveDay(d);
-        QS.phase = 'read'; QS.pick = null; QS.t0 = performance.now();
+        QS.phase = 'read'; QS.pick = null; QS.t0 = performance.now(); qzTrapBack();
         clearTimeout(QS.autoT);
         qzRenderQ(false); qzTick();
     }
@@ -426,8 +446,28 @@ function qzGainFx(n) {
     }
 }
 function qzPick(L) {
-    if (QS.phase === 'reveal') return;
-    qzAnswer(L);
+    if (QS.phase !== 'answer') return;
+    // кнопка проминается, от неё разлетаются звёздочки, и только потом показываем ответ
+    QS.phase = 'pick'; cancelAnimationFrame(QS.raf);
+    const w = document.getElementById('qzWin'), ab = document.getElementById('qzAbcd'), b = ab && ab.querySelector(`[data-qa="${L}"]`);
+    if (ab) ab.style.pointerEvents = 'none';
+    try { AudioFX.playRouletteTick(); Haptics.vibrate(18); } catch (e) {}
+    if (w && b) {
+        b.classList.add('press');
+        const wr = w.getBoundingClientRect(), r = b.getBoundingClientRect(), c = getComputedStyle(b).getPropertyValue('--c') || '#fff';
+        const x = r.left - wr.left + r.width / 2, y = r.top - wr.top + w.scrollTop + r.height / 2;
+        const rp = document.createElement('i'); rp.className = 'qz-ripple'; rp.style.left = x + 'px'; rp.style.top = y + 'px'; rp.style.setProperty('--c', c);
+        w.appendChild(rp); setTimeout(() => rp.remove(), 500);
+        for (let i = 0; i < 10; i++) {
+            const s = document.createElement('i'); s.className = 'qz-star'; s.textContent = i % 2 ? '✦' : '★';
+            const a = Math.PI * 2 * i / 10 + Math.random() * 0.5, d = 38 + Math.random() * 22;
+            s.style.left = x + 'px'; s.style.top = y + 'px';
+            s.style.setProperty('--s', (8 + Math.random() * 6).toFixed(0) + 'px'); s.style.setProperty('--c', i % 3 ? c : '#FFE08A');
+            s.style.setProperty('--dx', (Math.cos(a) * d).toFixed(1) + 'px'); s.style.setProperty('--dy', (Math.sin(a) * d).toFixed(1) + 'px');
+            w.appendChild(s); setTimeout(() => s.remove(), 650);
+        }
+    }
+    setTimeout(() => { if (QS.phase === 'pick') { QS.phase = 'answer'; qzAnswer(L); } }, 260);
 }
 function openQuiz(e) {
     if (e) e.stopPropagation();

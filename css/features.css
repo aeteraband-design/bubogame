@@ -390,3 +390,6 @@ html.hud-ll #buffBar .buff-tag { align-self: flex-start !important; }
 #settingsModal > .glass-panel, #adminModal .adm-panel { position: relative; }
 #rulesModal > #rlWin > .rl-scroll { flex: 1 1 auto !important; min-height: 0 !important; }
 #startScreen #openQuizBtn.rw-menu-btn i.fa-comments { font-size: 16px !important; transform: translateY(.5px); }
+
+/* рулетка: чуть больше воздуха над крутящимся колесом сверху */
+#rouletteModal #rwWindow .rwp-head { padding-top: 12px !important; }
