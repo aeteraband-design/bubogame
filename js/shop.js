@@ -57,7 +57,7 @@ const SHOP_ITEMS = [
 #shopModal.hidden{display:none}
 #shWin{position:relative;width:100%;max-width:380px;max-height:100%;overflow:hidden;border-radius:28px;padding:16px 16px 18px;display:flex;flex-direction:column;gap:16px;font-family:Onest,sans-serif;color:#fff;
  background:radial-gradient(110% 45% at 50% -8%,rgba(255,197,61,.2),transparent 62%),radial-gradient(80% 40% at 0% 105%,rgba(45,212,191,.13),transparent 60%),rgba(29,9,54,.97);border:1.5px solid rgba(255,197,61,.35);box-shadow:0 10px 40px rgba(0,0,0,.5)}
-#shWin .sh-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:6px}
+#shWin .sh-top{display:grid;grid-template-columns:1fr;justify-items:center;align-items:start;gap:6px}
 #shWin .sh-coins{justify-self:start;position:relative;overflow:hidden;height:40px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 13px 0 11px;border-radius:13px;line-height:1;background:rgba(29,9,54,.78);border:1px solid rgba(255,197,61,.6);box-shadow:0 0 12px rgba(255,197,61,.25),0 6px 14px rgba(0,0,0,.3);font:900 16px/1 Onest,sans-serif;color:#FFD66B}
 #shWin .sh-coins .sh-cg{font-size:18px;filter:drop-shadow(0 0 5px rgba(255,197,61,.6))}
 #shWin .sh-coins #shCoinsN{display:block;line-height:1;transform:translateY(.5px);text-shadow:0 0 8px rgba(255,197,61,.35)}

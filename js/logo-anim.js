@@ -81,7 +81,8 @@
     }
 
     // рисуем сову игры прямо в холст логотипа в нужном состоянии; все значения игры сразу возвращаем на место
-    function drawOwlRaw(gc, px, x, y, size, state, rot, wing, now) {
+    const LS = { stars: [], acc: 0 };   // звёздочки ускорения — те же, что в игре
+    function drawOwlRaw(gc, px, x, y, size, state, rot, wing, now, fx) {
         if (typeof owl === 'undefined' || !owl.draw || typeof ctx === 'undefined') return;
         const keys = ['x', 'y', 'rotation', 'visible', 'wing', 'lean', 'boostK', 'spinAngle'];
         const save = {}; keys.forEach(k => save[k] = owl[k]);
@@ -98,6 +99,14 @@
             if (hasShz) SHZ.k = state.id === 'shazam' ? 1 : 0;
             owl.x = 0; owl.y = 0; owl.rotation = rot; owl.visible = true; owl.wing = state.id === 'freeze' ? 0 : wing; owl.lean = state.id === 'speed' ? 0.3 : 0; owl.boostK = state.id === 'speed' ? 1 : 0; owl.spinAngle = 0;
             ctx = gc;
+            // ускорение и ШАЗАМ: из-за совы вылетают звёздочки, как в игре (те же функции игры)
+            if (fx && (state.id === 'speed' || state.id === 'shazam') && typeof updateSpeedStars === 'function') {
+                const ss_ = speedStars, sr_ = speedRamp, sa_ = speedStarAcc, sbt_ = speedBoostTime, sga = gameActive, shA = window.shazamActive;
+                speedStars = LS.stars; speedRamp = 1; speedStarAcc = LS.acc; speedBoostTime = 9999; gameActive = true;
+                if (state.id === 'shazam') window.shazamActive = () => true;
+                try { updateSpeedStars(); drawSpeedStars(); }
+                finally { LS.stars = speedStars; LS.acc = speedStarAcc; speedStars = ss_; speedRamp = sr_; speedStarAcc = sa_; speedBoostTime = sbt_; gameActive = sga; if (state.id === 'shazam') window.shazamActive = shA; }
+            }
             if (state.id === 'freeze' && typeof drawFrozenOwl === 'function') { viewScale = k; renderScale = 1; drawFrozenOwl(); }
             else owl.draw();
         } catch (e) {}
@@ -125,7 +134,7 @@
     }
     function drawOwlState(x, y, size, state, rot, wing, now) {
         const c = owlCenter(state);
-        drawOwlRaw(g, dpr, x - c.dx * size, y - c.dy * size, size, state, rot, wing, now);
+        drawOwlRaw(g, dpr, x - c.dx * size, y - c.dy * size, size, state, rot, wing, now, true);
     }
 
     const ease = (t) => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
@@ -227,7 +236,6 @@
             glow(tx, ty, ts * 0.9, 0.5, '255,220,170');
             const wing = (state.id === 'shazam' || state.id === 'speed') ? Math.max(0, Math.sin(now / 90)) : (k < 0.4 ? 1 : Math.max(0, Math.sin(k * 9)) * (k < 1.6 ? 1 : 0.4));
             const rot = state.id === 'drunk' ? Math.sin(k * 3.2) * 0.18 : Math.sin(k * 3) * 0.05;
-            if (state.id === 'speed') speedLines(tx, ty, ts, k);
             drawOwlState(tx, ty + (state.id === 'freeze' ? 0 : bob), OS * s, state, rot, wing, now);
         } else {   // 3) сова сжимается — джойстик возвращается
             const k = (t - (DUR - 0.65)) / 0.65;
@@ -245,7 +253,7 @@
         raf = requestAnimationFrame(tick);
     }
     function stop() {
-        state = null; resetIcon(); sparks = []; lgOn(false); txtK(0);
+        state = null; resetIcon(); sparks = []; LS.stars = []; LS.acc = 0; lgOn(false); txtK(0);
         g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height);
         nextAt = performance.now() + 9000 + Math.random() * 4000;
     }

@@ -238,9 +238,23 @@
         try { if (typeof quizResetDay === 'function') quizResetDay(); } catch (er) {}
         try { localStorage.removeItem('bubo_shop_earn_hidden'); } catch (er) {}   // подсказка в лавке снова покажется, как новичку
         try { StorageManager.save(); updateHUDAll(); updateMenuVisibility(); } catch (er) {}
-        lbl.textContent = 'ГОТОВО: НОВЫЙ ДЕНЬ';
-        t = setTimeout(() => { lbl.textContent = 'СБРОСИТЬ ИГРУ'; }, 1800);
+        lbl.textContent = 'ИГРА СБРОШЕНА';
+        admResetSync();
       }); }
+    // кнопка неактивна, пока сбрасывать нечего: игра как новая (попытки полные, прогресса и вопросов дня нет)
+    function admResetSync() {
+        const ab = $('admAttBtn'); if (!ab) return;
+        let fresh = false;
+        try {
+            const d = typeof quizDay === 'function' ? quizDay() : { ids: [] };
+            fresh = attempts >= MAX_ATTEMPTS && !score && !hasStartedCampaign && getTotalCollectedThemes() === 0 && !d.ids.length && !d.cur;
+        } catch (er) {}
+        ab.disabled = fresh;
+        ab.style.opacity = fresh ? '.4' : ''; ab.style.pointerEvents = fresh ? 'none' : ''; ab.style.filter = fresh ? 'saturate(.4)' : '';
+        const lbl = ab.querySelector('span'); if (lbl && !fresh && lbl.textContent === 'ИГРА СБРОШЕНА') lbl.textContent = 'СБРОСИТЬ ИГРУ';
+        if (lbl && fresh && lbl.textContent === 'СБРОСИТЬ ИГРУ') lbl.textContent = 'ИГРА СБРОШЕНА';
+    }
+    setInterval(() => { if (!modal.classList.contains('hidden')) admResetSync(); }, 1000);
     // вкладка «Игра»: вернуть дневные попытки, тестовые монеты, выход
     body.addEventListener('click', (e) => {
         const b = e.target.closest('[data-g]'); if (!b || tab !== 'game') return;
@@ -307,7 +321,7 @@
         window.applyAdminConfig(ADMIN_DEFAULTS); renderBody();
     });
 
-    const openReal = () => { try { AudioFX.resume(); } catch (er) {} renderTabs(); renderBody(); modal.classList.remove('hidden'); };
+    const openReal = () => { try { AudioFX.resume(); } catch (er) {} renderTabs(); renderBody(); modal.classList.remove('hidden'); try { admResetSync(); } catch (er) {} };
     // вход по логину и паролю (запоминается на этом устройстве)
     const AUTH = 'bubo_adm_ok';
     let login = null;
