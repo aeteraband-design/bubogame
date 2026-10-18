@@ -125,7 +125,8 @@ function showGoldBanner(text, icon, color) {
     el.style.setProperty('--c', c);
     el.style.setProperty('--bx', (right ? 18 : -18) + 'px');
     el.innerHTML = `<i class="fa-solid ${icon} bt-ic"></i><span class="bt-tx">${sentenceCase(text)}</span>`
-        + (kind === 'bt-coin' ? '<b class="bt-sp" style="left:18%;top:8%;--d:.35s">✦</b><b class="bt-sp" style="left:62%;top:62%;--d:.7s">✦</b><b class="bt-sp" style="left:86%;top:12%;--d:1s">✦</b>' : '');
+        + '<b class="bt-sp" style="left:5px;top:2px;--d:.3s">✦</b><b class="bt-sp" style="left:22px;top:20px;--d:.8s">✦</b>'
+        + (kind === 'bt-coin' ? '<b class="bt-sp" style="left:70%;top:8%;--d:1.1s">✦</b>' : '');   // звёздочки поблёскивают у иконки, как у монет в меню
     try {
         const fr = fxLayer.getBoundingClientRect(), uz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom')) || 1;
         const th = document.getElementById('topHud'), bb = document.getElementById('buffBar');

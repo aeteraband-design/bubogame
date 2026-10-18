@@ -246,10 +246,13 @@ function shopSyncBtn() {
         + 'background:rgba(29,9,54,.78);border:1px solid rgba(255,197,61,.6);box-shadow:0 0 12px rgba(255,197,61,.25),0 6px 14px rgba(0,0,0,.3);font:900 16px/1 Onest,sans-serif;pointer-events:none;cursor:default}'
         // монетки — золотые с переливом, число — золотым градиентом; по плашке время от времени пробегает блик
         + '#menuCoins .mc-coin{font-size:18px;line-height:1;background:linear-gradient(160deg,#FFF3B0 0%,#FFC53D 45%,#E08A00 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 5px rgba(255,197,61,.6))}'
-        + '#menuCoins #menuCoinsN{display:block;line-height:1;transform:translateY(.5px);background:linear-gradient(100deg,#FFD66B 0 38%,#FFFFFF 48%,#FFE9A8 54%,#FFD66B 64% 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:mcFlow 6s ease-in-out infinite}'
-        + '@keyframes mcFlow{0%,70%{background-position:100% 0}90%,100%{background-position:0% 0}}'
-        + '#menuCoins::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.28) 50%,transparent 62%) no-repeat;background-size:260% 100%;animation:mcSheen 6s ease-in-out infinite}'
-        + '@keyframes mcSheen{0%,68%{background-position:130% 0}90%,100%{background-position:-30% 0}}';
+        + '#menuCoins #menuCoinsN{display:block;line-height:1;transform:translateY(.5px);color:#FFD66B;text-shadow:0 0 8px rgba(255,197,61,.35)}'
+        // время от времени по рамке пробегает золотой блик (как у таймера ШАЗАМа), у монеток поблёскивают звёздочки
+        + '@property --mcA{syntax:"<angle>";inherits:false;initial-value:0deg}'
+        + '#menuCoins::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;background:conic-gradient(from var(--mcA),transparent 0deg 200deg,#FFF3B0 250deg,#FFC53D 290deg,transparent 330deg 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:mcRun 5s linear infinite}'
+        + '@keyframes mcRun{0%{--mcA:0deg;opacity:1}28%{--mcA:360deg;opacity:1}31%{--mcA:360deg;opacity:0}100%{--mcA:360deg;opacity:0}}'
+        + '#menuCoins .mc-tw{position:absolute;font-style:normal;color:#FFF3B0;text-shadow:0 0 6px #FFC53D;font-size:var(--s);opacity:0;animation:mcTw 2.6s ease-in-out infinite;animation-delay:var(--d)}'
+        + '@keyframes mcTw{0%,100%{opacity:0;transform:scale(.4)}45%{opacity:1;transform:scale(1.1)}60%{opacity:.8;transform:scale(.9)}}';
     document.head.appendChild(st);
     const mc = document.getElementById('menuCoins');
     shopSyncBtn();

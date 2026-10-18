@@ -158,7 +158,7 @@
             function dismiss() {
                 if (dismissed || !ready) return; dismissed = true;
                 exitT0 = performance.now();   // сова улетает вправо, как в ШАЗАМе; экран гаснет следом
-                try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); setTimeout(function () { try { AudioFX.playShazamArm(); } catch (e2) {} }, 150); } } catch (e) {}   // зарядка — мягкий звук ШАЗАМа
+                try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); AudioFX.playShazamCharge(); } } catch (e) {}   // зарядка — тот же звук, что у ШАЗАМа в игре
                 try { Haptics.powerup(); } catch (e) {}   // зарядка ШАЗАМа — вибрация, как в игре (тап — жест, поэтому сработает и на iPhone)
                 setTimeout(finishDismiss, 1100);
             }
@@ -193,7 +193,7 @@
                     MV.shz = Math.min(1, ct * 1.4);
                     if (ct < 1) { MV.exit = 0; MV.x = -4 * Math.sin(ct * Math.PI); MV.y = 0; MV.rot = 0; MV.wing = -1; MV.charge = ct; }
                     else {
-                        if (!MV.flapped) { MV.flapped = true; try { AudioFX.playMaxStaminaChime(); } catch (e) {} try { Haptics.powerup(); } catch (e) {} }   // рывок — звонкий перелив и вибрация, как у ШАЗАМа
+                        if (!MV.flapped) { MV.flapped = true; try { AudioFX.playShazamLaunch(); } catch (e) {} try { Haptics.powerup(); } catch (e) {} }   // рывок — звук и вибрация запуска ШАЗАМа, как в игре
                         var q = Math.min(1, (now - exitT0 - 600) / 450); MV.exit = q; MV.charge = 0;
                         MV.x = (MV.half + 90) * q * q; MV.y = -6 * q; MV.rot = -0.05; MV.wing = 0;
                     }

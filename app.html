@@ -13,22 +13,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BUBOGAME v0.10</title>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.13.12">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.13.13">
     <!-- Onest: локальные файлы -->
-    <link rel="stylesheet" href="css/fonts.css?v=0.13.12">
+    <link rel="stylesheet" href="css/fonts.css?v=0.13.13">
 
-    <script src="js/music-hold.js?v=0.13.12"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.13.12">
+    <script src="js/music-hold.js?v=0.13.13"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.13.13">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.13.12" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.13.13" id="adminStyle">
     <!-- Tailwind: готовый файл стилей вместо онлайн-компилятора (тот следил за каждым изменением страницы и пересобирал стили прямо во время игры) -->
-    <link rel="stylesheet" href="css/tailwind.css?v=0.13.12">
+    <link rel="stylesheet" href="css/tailwind.css?v=0.13.13">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.13.12">
-    <link rel="stylesheet" href="css/features.css?v=0.13.12">
+    <link rel="stylesheet" href="css/boot.css?v=0.13.13">
+    <link rel="stylesheet" href="css/features.css?v=0.13.13">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -44,19 +44,19 @@
             </div>
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
-        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.13.12</div>
+        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.13.13</div>
     </div>
-    <script src="js/boot.js?v=0.13.12"></script>
+    <script src="js/boot.js?v=0.13.13"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 backdrop-blur-[7px] overflow-y-auto custom-scroll">
-            <div id="menuCoins" title="Монеты"><i class="fa-solid fa-coins mc-coin"></i><span id="menuCoinsN">0</span></div>
+            <div id="menuCoins" title="Монеты"><i class="fa-solid fa-coins mc-coin"></i><i class="mc-tw" style="left:7px;top:4px;--s:7px;--d:0s">✦</i><i class="mc-tw" style="left:27px;top:24px;--s:6px;--d:1.3s">✦</i><span id="menuCoinsN">0</span></div>
             <button id="openRouletteBtn" class="rw-menu-btn h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 shrink-0" title="Рулетка призов">
                 <i class="fa-solid fa-dice text-xs"></i>
                 <span id="rwMenuBadge" class="rw-badge hidden">0</span>
             </button>
             <button id="openQuizBtn" class="rw-menu-btn h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 shrink-0" title="Вопросы">
-                <i class="fa-solid fa-circle-question text-xs"></i>
+                <i class="fa-solid fa-comments text-xs"></i>
             </button>
             <button id="openShopBtn" class="rw-menu-btn h-9 w-9 rounded-xl bg-[#1d0936]/90 border border-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center shadow-lg transition-all active:scale-95 shrink-0" title="Лавка">
                 <i class="fa-solid fa-store text-xs"></i>
@@ -302,168 +302,19 @@
             </div>
         </div>
 
-    <div id="rulesModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-[#140326]/20 backdrop-blur-[7px]">
-        <div class="glass-panel w-full max-w-sm rounded-3xl p-4 sm:p-5 flex flex-col max-h-[90vh] border-[#FE7600]/40 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b border-[#782CE9]/30 pb-3 shrink-0">
-                <div class="flex items-center space-x-3">
-                    <span class="text-sm sm:text-base text-white uppercase tracking-wider font-black">Правила и бонусы</span>
-                </div>
-                <button id="closeRulesBtn" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#782CE9]/30 hover:bg-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center transition-all">
-                    <i class="fa-solid fa-xmark text-lg sm:text-xl font-black"></i>
-                </button>
+    <div id="rulesModal" class="hidden">
+        <div id="rlWin">
+            <button id="closeRulesBtn" type="button" class="win-x" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+            <div class="rl-top"><div class="rl-emb"><div class="rl-glow"></div><div class="rl-ring"></div><div class="rl-core"><i class="fa-solid fa-book-open"></i></div>
+                <i class="rl-tw" style="left:-4px;top:12px;--s:8px;--d:0s">✦</i><i class="rl-tw" style="right:-6px;top:26px;--s:7px;--d:.9s">✦</i><i class="rl-tw" style="right:6px;top:-4px;--s:6px;--d:1.7s">✦</i></div>
+                <div class="rl-title"><b>ПРАВИЛА</b><span>Коротко обо всём, что есть в игре</span></div></div>
+            <div class="rl-scroll">
+<section class="rl-sec" style="--c:#FE7600"><h3><i class="fa-solid fa-flag-checkered"></i>Цель</h3><p class="rl-p"><span id="rulesGoalText">Лети между труб и собирай значки тем.</span></p></section><section class="rl-sec" style="--c:#FE7600"><h3><i class="fa-solid fa-hand-pointer"></i>Как летать</h3><div class="rl-row"><div class="rl-ic" style="--c:#FE7600"><i class="fa-solid fa-hand-pointer"></i></div><div class="rl-tx"><b style="color:#FE7600">Нажимай на экран</b> — сова взмахивает и летит вверх. Не нажимаешь — падает.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#F43F5E"><i class="fa-solid fa-heart-crack"></i></div><div class="rl-tx"><b style="color:#F43F5E">Трубы, земля и потолок</b> — удар отнимает сердце.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#67E8F9"><i class="fa-solid fa-feather-pointed"></i></div><div class="rl-tx"><b style="color:#67E8F9">Силы</b> тратятся на взмахи. Кончились — минус сердце.</div></div></section><section class="rl-sec" style="--c:#FFC53D"><h3><i class="fa-solid fa-rotate-right"></i>Попытки</h3><div class="rl-row"><div class="rl-ic" style="--c:#FE7600"><i class="fa-solid fa-rotate-right"></i></div><div class="rl-tx"><b style="color:#FE7600">На день — <span data-num="attempts">2</span> попытки.</b> Кончились сердца — сгорает попытка, но собранное за день остаётся.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#FFC53D"><i class="fa-solid fa-store"></i></div><div class="rl-tx"><b style="color:#FFC53D">Попытки кончились —</b> купи ещё в лавке за монеты.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#FACC15"><i class="fa-solid fa-sun"></i></div><div class="rl-tx"><b style="color:#FACC15">Новый день —</b> снова 2 попытки, и всё начинается сначала.</div></div></section><section class="rl-sec" style="--c:#A855F7"><h3><i class="fa-solid fa-gem"></i>Что собирать</h3><div class="rl-row"><div class="rl-ic" style="--c:#A855F7"><i class="fa-solid fa-layer-group"></i></div><div class="rl-tx"><b style="color:#A855F7">Темы</b> — главная цель. Собранная до конца тема больше не попадается.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#FE7600"><i class="fa-solid fa-circle-question"></i></div><div class="rl-tx"><b style="color:#FE7600">Вопросы</b> — очки полёта. За каждые 50 — монеты (50, 100, 150), за каждые <span data-num="questionsPerAttempt">200</span> — попытка.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#FFC53D"><i class="fa-solid fa-coins"></i></div><div class="rl-tx"><b style="color:#FFC53D">Монеты</b> — редко попадаются прямо на пути: от 50 до 300, чем сложнее уровень, тем больше.</div></div></section><section class="rl-sec" style="--c:#EF4444"><h3><i class="fa-solid fa-heart"></i>Сердца и силы</h3><div class="rl-row"><div class="rl-ic" style="--c:#EF4444"><i class="fa-solid fa-heart"></i></div><div class="rl-tx"><b style="color:#EF4444">Сердце</b> — +1 сердце (максимум 5).</div></div><div class="rl-row"><div class="rl-ic" style="--c:#FB923C"><i class="fa-solid fa-pizza-slice"></i></div><div class="rl-tx"><b style="color:#FB923C">Пицца, бургер, хот-дог</b> — по половинке сердца.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#67E8F9"><i class="fa-solid fa-feather-pointed"></i></div><div class="rl-tx"><b style="color:#67E8F9">Перо</b> — +50% сил.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#B5E4FF"><i class="fa-solid fa-ice-cream"></i></div><div class="rl-tx"><b style="color:#B5E4FF">Мороженое</b> — +20% сил.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#2DD4BF"><i class="fa-solid fa-martini-glass-citrus"></i></div><div class="rl-tx"><b style="color:#2DD4BF">Коктейль и пиво</b> — +15% и +10% сил.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#00F0FF"><i class="fa-solid fa-feather-pointed"></i><span class="rl-inf">∞</span></div><div class="rl-tx"><b style="color:#00F0FF">Волшебное перо</b> — <span data-pl="infiniteSec" data-forms="секунда|секунды|секунд">10 секунд</span> силы не тратятся. Каждые <span data-pl="feathersForMax" data-forms="волшебное перо|волшебных пера|волшебных перьев">6 волшебных перьев</span> — запас сил больше на 20%.</div></div></section><section class="rl-sec" style="--c:#FACC15"><h3><i class="fa-solid fa-bolt"></i>Бонусы</h3><div class="rl-row"><div class="rl-ic" style="--c:#22C55E"><i class="fa-solid fa-shield-halved"></i></div><div class="rl-tx"><b style="color:#22C55E">Щит</b> (<span data-pl="shieldSec" data-forms="секунда|секунды|секунд">10 секунд</span>) — сердца не теряются, от труб сова отскакивает.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#38BDF8"><i class="fa-solid fa-hourglass-half"></i></div><div class="rl-tx"><b style="color:#38BDF8">Замедление</b> (<span data-pl="slowSec" data-forms="секунда|секунды|секунд">10 секунд</span>) — всё медленнее, лететь легче.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#FACC15"><i class="fa-solid fa-bolt"></i></div><div class="rl-tx"><b style="color:#FACC15">Ускорение</b> (<span data-pl="speedSec" data-forms="секунда|секунды|секунд">10 секунд</span>) — всё быстрее.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#FF7A00"><i class="fa-solid fa-bolt-lightning"></i></div><div class="rl-tx"><b style="color:#FF7A00">ШАЗАМ</b> (20 секунд) — каждое <span data-num="shazamEvery">4</span>-е ускорение. Сова неуязвима, пролетает трубы и притягивает значки. За 5 секунд до конца звучит отсчёт — успей вылететь из труб.</div></div></section><section class="rl-sec" style="--c:#F43F5E"><h3><i class="fa-solid fa-triangle-exclamation"></i>Ловушки</h3><div class="rl-row"><div class="rl-ic" style="--c:#D946EF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5"/></svg></div><div class="rl-tx"><b style="color:#D946EF">Сжатие</b> (<span data-pl="compressSec" data-forms="секунда|секунды|секунд">10 секунд</span>) — проходы между трубами уже.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#FB923C"><i class="fa-solid fa-burger"></i></div><div class="rl-tx"><b style="color:#FB923C">Переедание</b> — после <span data-pl="overeatEvery" data-forms="порции|порций|порций">4 порций</span> еды сова толстеет и тяжелеет.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#2DD4BF"><i class="fa-solid fa-martini-glass-citrus"></i></div><div class="rl-tx"><b style="color:#2DD4BF">Опьянение</b> — после <span data-pl="drunkEvery" data-forms="напитка|напитков|напитков">7 напитков</span> сову шатает.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#B5E4FF"><i class="fa-solid fa-snowflake"></i></div><div class="rl-tx"><b style="color:#B5E4FF">Замерзание</b> — после <span data-pl="freezeEvery" data-forms="мороженого|мороженых|мороженых">3 мороженых</span> сова леденеет и слушается хуже.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#FF4A3D"><i class="fa-solid fa-fire"></i></div><div class="rl-tx"><b style="color:#FF4A3D">Опасные трубы</b> (10 секунд) — из труб летят огоньки, каждый отнимает пол-сердца.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#38BDF8"><i class="fa-solid fa-droplet"></i></div><div class="rl-tx"><b style="color:#38BDF8">Водонапор</b> (10 секунд) — из труб льётся вода и прижимает сову вниз.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#FFD700"><i class="fa-solid fa-star"></i></div><div class="rl-tx"><b style="color:#FFD700">Секретная звезда</b> — сюрприз: бонус или штраф. Чем сложнее уровень, тем чаще штраф.</div></div></section><section class="rl-sec" style="--c:#A855F7"><h3><i class="fa-solid fa-gauge-high"></i>Уровни сложности</h3><p class="rl-p">Чем больше тем собрано, тем выше уровень: сова летит быстрее, силы тратятся быстрее, проходы уже.</p><div class="rl-chips"><span style="--c:#22C55E">СУПЕРЛАЙТ</span><span style="--c:#84CC16">ЛАЙТ</span><span style="--c:#FACC15">МЕДИУМ</span><span style="--c:#FB923C">МЕДИУМ+</span><span style="--c:#EF4444">ХАРД</span><span style="--c:#E11D48">ХАРД+</span></div></section><section class="rl-sec" style="--c:#38BDF8"><h3><i class="fa-solid fa-house"></i>В главном меню</h3><div class="rl-row"><div class="rl-ic" style="--c:#38BDF8"><i class="fa-solid fa-circle-question"></i></div><div class="rl-tx"><b style="color:#38BDF8">Вопросы дня</b> — 10 вопросов в день. Верный ответ: 30, 60 или 100 монет.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#FFC53D"><i class="fa-solid fa-store"></i></div><div class="rl-tx"><b style="color:#FFC53D">Лавка</b> — покупай за монеты попытки, сердца и бонусы.</div></div><div class="rl-row"><div class="rl-ic" style="--c:#F472B6"><i class="fa-solid fa-dice"></i></div><div class="rl-tx"><b style="color:#F472B6">Рулетка</b> — вращение даётся за победу или покупается в лавке.</div></div></section>
             </div>
-
-            <div class="space-y-4 overflow-y-auto custom-scroll pr-2 text-left font-medium">
-                <div class="p-3.5 sm:p-4 rounded-2xl bg-[#1c0802] border-2 border-[#FE7600]/30 space-y-2 shadow-md">
-                    <div class="flex items-center space-x-3 text-sm sm:text-base text-[#FE7600] uppercase font-black">
-                        <i class="fa-solid fa-trophy text-sm sm:text-base font-black w-6 text-center"></i>
-                        <span class="font-black">Главная цель</span>
-                    </div>
-                    <p class="text-xs sm:text-sm text-purple-100 leading-snug font-medium pl-9">
-                        <span id="rulesGoalText">Лети между труб и собирай значки тем.</span>
-                    </p>
-                </div>
-                <div class="space-y-2.5">
-                    <div class="text-xs sm:text-sm uppercase tracking-wider font-black flex items-center space-x-3" style="color:#FE7600">
-                        <i class="fa-solid fa-hand-pointer text-base sm:text-lg font-black w-6 text-center"></i>
-                        <span class="font-black text-xs sm:text-sm">Как играть</span>
-                    </div>
-                    <div class="space-y-2 bg-[#140326]/70 p-3 sm:p-3.5 rounded-2xl border border-white/5">
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FE760026;border-color:#FE76004D;color:#FE7600"><i class="fa-solid fa-hand-pointer text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Нажимай на экран:</strong> сова взмахнёт крыльями и полетит вверх. Если не нажимать, она падает.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#F43F5E26;border-color:#F43F5E4D;color:#F43F5E"><i class="fa-solid fa-triangle-exclamation text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Не врезайся:</strong> трубы, земля и верхний край экрана отнимают одно сердце.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FE760026;border-color:#FE76004D;color:#FE7600"><i class="fa-solid fa-rotate-right text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Попытки:</strong> в начале их <span data-num="attempts">2</span>. Даются на сутки. Закончились сердца — сгорает попытка, но темы остаются. Закончились попытки — можно купить ещё в лавке за монеты (их дают вопросы дня), а завтра — новый день: снова 2 попытки и всё с начала.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FE760026;border-color:#FE76004D;color:#FE7600"><i class="fa-solid fa-circle-question text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Вопросы:</strong> собирай их, они идут в счёт. За 50, 100 и 150 вопросов дают 50, 100 и 150 монет, а каждые <span data-num="questionsPerAttempt">200</span> — +1 попытку. Вопросы копятся весь день и сгорают с началом нового дня.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#A855F726;border-color:#A855F74D;color:#A855F7"><i class="fa-solid fa-layer-group text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Темы:</strong> собирай значки тем. Полностью собранная тема больше не встречается.</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="space-y-2.5">
-                    <div class="text-xs sm:text-sm uppercase tracking-wider font-black flex items-center space-x-3" style="color:#FB7185">
-                        <i class="fa-solid fa-heart text-base sm:text-lg font-black w-6 text-center"></i>
-                        <span class="font-black text-xs sm:text-sm">Сердца</span>
-                    </div>
-                    <div class="space-y-2 bg-[#140326]/70 p-3 sm:p-3.5 rounded-2xl border border-white/5">
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#EF444426;border-color:#EF44444D;color:#EF4444"><i class="fa-solid fa-heart text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Сердце:</strong> даёт +1 сердце.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FB923C26;border-color:#FB923C4D;color:#FB923C"><i class="fa-solid fa-pizza-slice text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#ffffff">Пицца, бургер, хот-дог:</strong> каждая порция даёт половинку сердца.</span>
-                        </div>
-                        <p class="text-[11px] sm:text-xs text-purple-400 leading-snug font-medium">Максимум 5 сердец. Половинку сердца использовать нельзя: засчитываются только целые сердца. Если осталась только половинка, следующий удар закончит полёт.</p>
-                    </div>
-                </div>
-                <div class="space-y-2.5">
-                    <div class="text-xs sm:text-sm uppercase tracking-wider font-black flex items-center space-x-3" style="color:#67E8F9">
-                        <i class="fa-solid fa-feather-pointed text-base sm:text-lg font-black w-6 text-center"></i>
-                        <span class="font-black text-xs sm:text-sm">Силы совы</span>
-                    </div>
-                    <div class="space-y-2 bg-[#140326]/70 p-3 sm:p-3.5 rounded-2xl border border-white/5">
-                        <p class="text-[11px] sm:text-xs text-purple-300 leading-snug font-medium">Сова устаёт от взмахов и со временем: чем чаще машешь крыльями, тем быстрее уходят силы, а объевшейся или замёрзшей сове взмахи даются тяжелее. Когда силы закончатся, она потеряет сердце.</p>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#67E8F926;border-color:#67E8F94D;color:#67E8F9"><i class="fa-solid fa-feather-pointed text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#67E8F9">Перо силы:</strong> возвращает 50% сил.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#00F0FF26;border-color:#00F0FF4D;color:#00F0FF"><div class="relative flex items-center justify-center w-5 h-5"><i class="fa-solid fa-feather-pointed text-base font-black"></i><span class="absolute -bottom-1 -right-1 text-[9px] font-black">∞</span></div></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#00F0FF">Макс. силы (<span data-pl="infiniteSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> силы не тратятся и всё время полные. Каждый раз, когда соберёшь ещё <span data-pl="feathersForMax" data-forms="волшебное перо|волшебных пера|волшебных перьев">6 волшебных перьев</span>, максимальный запас сил растёт на 20%.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#B5E4FF26;border-color:#B5E4FF4D;color:#B5E4FF"><i class="fa-solid fa-ice-cream text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#E3F5FF">Мороженое:</strong> возвращает 20% сил.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#2DD4BF26;border-color:#2DD4BF4D;color:#2DD4BF"><i class="fa-solid fa-martini-glass-citrus text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#5EEAD4">Коктейль и пиво:</strong> коктейль возвращает 15% сил, пиво — 10%.</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="space-y-2.5">
-                    <div class="text-xs sm:text-sm uppercase tracking-wider font-black flex items-center space-x-3" style="color:#FACC15">
-                        <i class="fa-solid fa-stopwatch text-base sm:text-lg font-black w-6 text-center"></i>
-                        <span class="font-black text-xs sm:text-sm">Бонусы и штрафы</span>
-                    </div>
-                    <div class="space-y-2 bg-[#140326]/70 p-3 sm:p-3.5 rounded-2xl border border-white/5">
-                        <p class="text-[11px] sm:text-xs text-purple-300 leading-snug font-medium">Особые предметы дают бонус, штраф или эффект на ограниченное время.</p>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#22C55E26;border-color:#22C55E4D;color:#22C55E"><i class="fa-solid fa-shield-halved text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#4ADE80">Щит (<span data-pl="shieldSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> сердца не теряются, но сквозь трубы не пролететь: сова от них отскакивает.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#38BDF826;border-color:#38BDF84D;color:#38BDF8"><i class="fa-solid fa-hourglass-half text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#7DD3FC">Замедление (<span data-pl="slowSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> игра идёт медленнее, лететь легче.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FACC1526;border-color:#FACC154D;color:#FACC15"><i class="fa-solid fa-bolt text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#FCD34D">Ускорение (<span data-pl="speedSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> игра идёт быстрее.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FF7A0026;border-color:#FF7A004D;color:#FF7A00"><i class="fa-solid fa-bolt-lightning text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#FFA24D">ШАЗАМ (20 секунд):</strong> каждое <span data-num="shazamEvery">4</span>-е взятое ускорение включает суперскорость — сова неуязвима, сама облетает трубы и притягивает все значки. Значок, который включит ШАЗАМ, искрит молниями.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#D946EF26;border-color:#D946EF4D;color:#D946EF"><svg class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5"/></svg></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#E879F9">Сжатие (<span data-pl="compressSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> проходы между трубами становятся уже.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FB923C26;border-color:#FB923C4D;color:#FB923C"><i class="fa-solid fa-burger text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#FDBA74">Переедание (<span data-pl="overeatSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> если съесть <span data-pl="overeatEvery" data-forms="порцию|порции|порций">4 порции</span> еды (пицца, бургер, хот-дог), сова становится больше и тяжелее.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#2DD4BF26;border-color:#2DD4BF4D;color:#2DD4BF"><i class="fa-solid fa-martini-glass-citrus text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#5EEAD4">Опьянение (<span data-pl="drunkSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> если выпить <span data-pl="drunkEvery" data-forms="коктейль или кружку пива|коктейля или кружки пива|коктейлей или кружек пива">7 коктейлей или кружек пива</span>, сову начнёт шатать, а картинка закачается.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#B5E4FF26;border-color:#B5E4FF4D;color:#B5E4FF"><i class="fa-solid fa-snowflake text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#E3F5FF">Замерзание (<span data-pl="freezeSec" data-forms="секунда|секунды|секунд">10 секунд</span>):</strong> если съесть <span data-pl="freezeEvery" data-forms="порцию|порции|порций">3 порции</span> мороженого, сова замерзает: синеет, кувыркается, как ледышка, и слушается с трудом.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#8FE9FF26;border-color:#8FE9FF4D;color:#8FE9FF"><i class="fa-solid fa-gem text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#BFF3FF">Кристаллы (10 секунд):</strong> очень редкий значок. Из труб начинают падать светящиеся кристаллы: свет ранит сову и отнимает пол-жизни. Щит их отбивает, а в ШАЗАМе они не страшны.</span>
-                        </div>
-                        <div class="flex items-center space-x-3.5">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center shrink-0" style="background:#FFD70026;border-color:#FFD7004D;color:#FFD700"><i class="fa-solid fa-star text-base sm:text-lg font-black "></i></div>
-                            <span class="text-[11px] sm:text-xs text-purple-200 leading-tight font-medium"><strong class="font-black text-[11px] sm:text-xs" style="color:#FDE047">Секретная звезда:</strong> внутри случайный сюрприз. Штраф может отнять сердце, силы или собранную тему. Чем выше сложность, тем чаще штраф: в начале — 3 раза из 10, на Хард+ — всегда.</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="space-y-2.5">
-                    <div class="text-xs sm:text-sm uppercase tracking-wider font-black flex items-center space-x-3" style="color:#A855F7">
-                        <i class="fa-solid fa-gauge-high text-base sm:text-lg font-black w-6 text-center"></i>
-                        <span class="font-black text-xs sm:text-sm">Уровни сложности</span>
-                    </div>
-                    <div class="space-y-2 bg-[#140326]/70 p-3 sm:p-3.5 rounded-2xl border border-white/5">
-                        <p class="text-[11px] sm:text-xs text-purple-300 leading-snug font-medium">Чем больше тем собрано, тем выше уровень сложности. Текущий уровень видно на шкале внизу экрана.</p>
-                        <div class="flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded-lg text-[10px] font-black border" style="color:#22C55E;border-color:#22C55E80;background:#22C55E1A">СУПЕРЛАЙТ</span><span class="px-2 py-0.5 rounded-lg text-[10px] font-black border" style="color:#84CC16;border-color:#84CC1680;background:#84CC161A">ЛАЙТ</span><span class="px-2 py-0.5 rounded-lg text-[10px] font-black border" style="color:#FACC15;border-color:#FACC1580;background:#FACC151A">МЕДИУМ</span><span class="px-2 py-0.5 rounded-lg text-[10px] font-black border" style="color:#FB923C;border-color:#FB923C80;background:#FB923C1A">МЕДИУМ+</span><span class="px-2 py-0.5 rounded-lg text-[10px] font-black border" style="color:#EF4444;border-color:#EF444480;background:#EF44441A">ХАРД</span><span class="px-2 py-0.5 rounded-lg text-[10px] font-black border" style="color:#E11D48;border-color:#E11D4880;background:#E11D481A">ХАРД+</span></div>
-                        <div class="rounded-xl bg-purple-500/10 border border-purple-500/30 p-2.5 space-y-1"><div class="text-[11px] sm:text-xs text-purple-100 font-black">С каждым новым уровнем:</div><div class="text-[11px] sm:text-xs text-purple-200 leading-snug font-medium">• сова летит быстрее;<br>• силы тратятся быстрее;<br>• проходы между трубами уже;<br>• в секретной звезде чаще штрафы.</div></div>
-                        <p class="text-[11px] sm:text-xs text-purple-400 leading-snug font-medium">Если потерять тему, уровень может снизиться.</p>
-                    </div>
-                </div>
-
+            <div class="rl-btns">
+                <button id="understoodRulesBtn" type="button" class="btn-bubo rl-btn"><i class="fa-solid fa-play"></i>ПОНЯТНО, В ПОЛЁТ!</button>
+                <button id="rulesBackBtn" type="button" class="rl-btn sec" onclick="event.stopPropagation(); document.getElementById('closeRulesBtn').click();"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button>
             </div>
-
-            <button id="understoodRulesBtn" class="btn-bubo w-full py-3.5 rounded-2xl text-xs sm:text-sm uppercase tracking-wider shrink-0 font-black shadow-lg">
-                <span class="font-black">ПОНЯТНО, В ПОЛЕТ!</span>
-            </button>
-            <button id="rulesBackBtn" onclick="event.stopPropagation(); document.getElementById('closeRulesBtn').click();" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider shrink-0 font-black flex items-center justify-center space-x-2" style="margin-top:8px">
-                <i class="fa-solid fa-arrow-left text-xs font-black"></i>
-                <span class="font-black">ВЕРНУТЬСЯ В МЕНЮ</span>
-            </button>
         </div>
     </div>
 
@@ -746,24 +597,24 @@
         </div>
     </div>
 
-    <script src="js/audio.js?v=0.13.12"></script>
-    <script src="js/game-core.js?v=0.13.12"></script>
-    <script src="js/owl.js?v=0.13.12"></script>
-    <script src="js/hud.js?v=0.13.12"></script>
-    <script src="js/scenery.js?v=0.13.12"></script>
-    <script src="js/items.js?v=0.13.12"></script>
-    <script src="js/shazam.js?v=0.13.12"></script>
-    <script src="js/crystals.js?v=0.13.12"></script>
-    <script src="js/water.js?v=0.13.12"></script>
-    <script src="js/quiz.js?v=0.13.12"></script>
-    <script src="js/shop.js?v=0.13.12"></script>
-    <script src="js/weather.js?v=0.13.12"></script>
-    <script src="js/update.js?v=0.13.12"></script>
-    <script src="js/render.js?v=0.13.12"></script>
-    <script src="js/wheel.js?v=0.13.12"></script>
-    <script src="js/ui.js?v=0.13.12"></script>
-<script src="js/admin.js?v=0.13.12"></script>
-<script src="js/text-measure.js?v=0.13.12"></script>
-<script src="js/fullscreen.js?v=0.13.12"></script>
+    <script src="js/audio.js?v=0.13.13"></script>
+    <script src="js/game-core.js?v=0.13.13"></script>
+    <script src="js/owl.js?v=0.13.13"></script>
+    <script src="js/hud.js?v=0.13.13"></script>
+    <script src="js/scenery.js?v=0.13.13"></script>
+    <script src="js/items.js?v=0.13.13"></script>
+    <script src="js/shazam.js?v=0.13.13"></script>
+    <script src="js/crystals.js?v=0.13.13"></script>
+    <script src="js/water.js?v=0.13.13"></script>
+    <script src="js/quiz.js?v=0.13.13"></script>
+    <script src="js/shop.js?v=0.13.13"></script>
+    <script src="js/weather.js?v=0.13.13"></script>
+    <script src="js/update.js?v=0.13.13"></script>
+    <script src="js/render.js?v=0.13.13"></script>
+    <script src="js/wheel.js?v=0.13.13"></script>
+    <script src="js/ui.js?v=0.13.13"></script>
+<script src="js/admin.js?v=0.13.13"></script>
+<script src="js/text-measure.js?v=0.13.13"></script>
+<script src="js/fullscreen.js?v=0.13.13"></script>
 </body>
 </html>
