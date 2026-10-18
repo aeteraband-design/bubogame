@@ -227,7 +227,7 @@
     };
 
     // большая кнопка внизу окна: сбросить игру, как будто начался новый день — попытки снова полные, прогресс с нуля,
-    // вопросы дня можно пройти заново (монеты остаются). Нажать дважды: первое нажатие — «Точно?»
+    // вопросы дня можно пройти заново, монеты и вращения обнуляются — как у нового игрока. Нажать дважды: первое нажатие — «Точно?»
     { const ab = $('admAttBtn'); let sure = false, t = 0;
       if (ab) ab.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -238,6 +238,11 @@
         try { if (typeof quizResetDay === 'function') quizResetDay(); } catch (er) {}
         try { localStorage.removeItem('bubo_shop_earn_hidden'); } catch (er) {}   // подсказка в лавке снова покажется, как новичку
         try { localStorage.removeItem('bubo_goal_hidden'); } catch (er) {}   // «Цель полёта» тоже снова покажется
+        // полный сброс, как у нового игрока: монеты, покупки «на старт», вращения рулетки, пройденные вопросы и выбор темы
+        try { if (typeof coinsSet === 'function') coinsSet(0); } catch (er) {}
+        try { ['bubo_shop_pending', 'bubo_quiz_theme', 'bubo_quiz_lvl', 'bubo_last_prize'].forEach(k => localStorage.removeItem(k)); } catch (er) {}
+        try { if (typeof quizResetSeen === 'function') quizResetSeen(); } catch (er) {}
+        try { rouletteSpins = 0; if (typeof rwUpdateUI === 'function') rwUpdateUI(); } catch (er) {}
         try { updateMenuVisibility(); } catch (er) {}
         try { StorageManager.save(); updateHUDAll(); updateMenuVisibility(); } catch (er) {}
         lbl.textContent = 'ИГРА СБРОШЕНА';
@@ -249,7 +254,7 @@
         let fresh = false;
         try {
             const d = typeof quizDay === 'function' ? quizDay() : { ids: [] };
-            fresh = attempts >= MAX_ATTEMPTS && !score && !hasStartedCampaign && getTotalCollectedThemes() === 0 && !d.ids.length && !d.cur;
+            fresh = attempts >= MAX_ATTEMPTS && !score && !hasStartedCampaign && getTotalCollectedThemes() === 0 && !d.ids.length && !d.cur && !(typeof coinsGet === 'function' && coinsGet()) && !rouletteSpins;
         } catch (er) {}
         ab.disabled = fresh;
         ab.style.opacity = fresh ? '.4' : ''; ab.style.pointerEvents = fresh ? 'none' : ''; ab.style.filter = fresh ? 'saturate(.4)' : '';
