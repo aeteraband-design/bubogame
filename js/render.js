@@ -163,7 +163,8 @@ function drawScene() {
     }
     ctx.save();
     if (Math.abs(camZoom - 1) > 0.0005) { ctx.translate(width / 2, height / 2); ctx.scale(camZoom, camZoom); ctx.translate(-width / 2, -height / 2); }
-    const owlBehind = shazamOwlBehind();   // ШАЗАМ: сова пролетает за трубой — рисуем её до труб
+    const owlInPlay = (gameActive || waitingFirstTap) && !isStartMenuOpen;   // в меню, его окнах и на экране поражения сову не рисуем
+    const owlBehind = shazamOwlBehind() && owlInPlay;   // ШАЗАМ: сова пролетает за трубой — рисуем её до труб
     if (owlBehind) { drawSpeedStars(); owl.draw(); }
     window.__sceneDrawn = true;
     const booting = !!window.__booting;   // на экране загрузки — только фон: небо, город, облака (без труб, значков и совы)
@@ -210,7 +211,7 @@ function drawScene() {
 
     drawParticleList(particles);
 
-    if (!owlBehind && !booting) {
+    if (!owlBehind && !booting && owlInPlay) {   // сова видна только в игре — на фоне меню и окон её нет
         drawSpeedStars();
         if (currentFreezeFactor > 0.01 && owl.visible) drawFrozenOwl(); else owl.draw();
     }
