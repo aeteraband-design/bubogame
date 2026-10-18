@@ -489,11 +489,11 @@ function drawCity() {
 let moonSprite = null;
 let moonPhase = -1, moonRendered = -1;   // фаза луны: доля освещённой части (0.06 — тонкий серп … 1 — полнолуние)
 // Фаза луны растёт вместе с прогрессом сложности: от тонкого серпа в начале до полной луны к концу
-// в главном меню луна при каждом запуске своя: тонкий серп, серп, половинка, «пузатая» или полная
+// на экране загрузки луна при каждом запуске своя: тонкий серп, серп, половинка, «пузатая» или полная
 const MOON_MENU_PHASE = [0.12, 0.25, 0.5, 0.72, 1][Math.floor(Math.random() * 5)];
 function moonPhaseTarget() {
     const ss = moonPhaseTarget.__s || (moonPhaseTarget.__s = document.getElementById('startScreen'));
-    if (ss && !ss.classList.contains('hidden')) return MOON_MENU_PHASE;
+    if (window.__booting) return MOON_MENU_PHASE;   // случайная луна — только на экране загрузки; в меню — та же, что сейчас в игре
     let p = 0;
     try { p = Math.min(1, getTotalCollectedThemes() / TOTAL_THEMES); } catch (e) {}
     // полная луна наступает, когда начинается последний уровень сложности (Хард+), а не в самом конце
