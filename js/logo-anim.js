@@ -79,7 +79,7 @@
     function nextState() {
         // все состояния по разу в случайном порядке, потом новая перетасовка (одно и то же два раза подряд не бывает)
         if (!order.length) {
-            const a = STATES.filter(x => x.id !== 'normal');   // обычная сова — это сам логотип
+            const a = STATES.slice();
             for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
             if (lastId && a[0].id === lastId) a.push(a.shift());
             order = a;
@@ -253,7 +253,7 @@
         setHome(1); setIcon(0, 0, 0);
     }
     function setHome(sc) { if (home) { home.style.transform = 'scale(' + sc.toFixed(3) + ')'; home.style.opacity = sc > 0.01 ? '1' : '0'; } }
-    const T_A = 0.65, T_B = 1.2, T_C = 0.65, T_D = 3.0, T_E = 0.65;   // сова→джойстик, джойстик держится, джойстик→состояние, состояние, состояние→сова
+    const T_A = 0, T_B = 0, T_C = 0.65, T_D = 5.0, T_E = 0.65;   // логотип — джойстик: джойстик→сова в состоянии (≈6 с) → снова джойстик   // сова→джойстик, джойстик держится, джойстик→состояние, состояние, состояние→сова
     const DUR2 = T_A + T_B + T_C + T_D + T_E;
     function tick(now) {
         raf = 0;
@@ -299,13 +299,13 @@
             const rot = state.id === 'drunk' ? Math.sin(k * 3.2) * 0.18 : 0;
             drawOwlState(tx, ty, OS, state, rot, wing, now, state.id === 'freeze' ? (t - b2) * 4.2 : 0);   // замёрзшая кувыркается, как в игре
         } else {   // 5) сова-состояние сжимается — вспышка — возвращается главная сова
-            setIcon(0, 0, 0);
+            if (home) setIcon(0, 0, 0);
             const k = Math.min(1, (t - b4) / T_E);
             const os = 1 - ease(Math.min(1, k / 0.45));
             glow(tx, ty, ts * 1.5, 0.9 * (1 - k), col);
             if (os > 0.01) drawOwlState(tx, ty, OS * os, state, 0, 0.5, now, state.id === 'freeze' ? (t - b2) * 4.2 : 0);
             if (k > 0.2) lgOn(false);
-            if (k > 0.35) { if (!flags.back) { flags.back = 1; burst(tx, ty, 8, '#C4A1FF'); } setHome(back((k - 0.35) / 0.65)); }
+            if (k > 0.35) { if (!flags.back) { flags.back = 1; burst(tx, ty, 8, '#FFE08A'); } const s = back((k - 0.35) / 0.65); if (home) setHome(s); else setIcon(s, s, 1); }
             else setHome(0);
         }
         // плавное появление и угасание эффекта на надписи
@@ -318,11 +318,11 @@
         state = null; sparks = []; LS.stars = []; LS.acc = 0; lgOn(false); txtK(0);
         if (home) { setHome(1); setIcon(0, 0, 0); } else resetIcon();
         g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height);
-        nextAt = performance.now() + 7000 + Math.random() * 4000;
+        nextAt = performance.now() + 4500 + Math.random() * 1000;   // джойстик ≈5 с, потом снова сова
     }
     function schedule() { if (!raf) raf = requestAnimationFrame(tick); }
     setInterval(() => { if (!state && !raf) schedule(); }, 1000);
-    makeHomeOwl();
+    // makeHomeOwl();   // сова как постоянный логотип — отключено, логотип снова джойстик
     schedule();
     window.logoAnimPlay = (id) => { const s = STATES.find(x => x.id === id); if (s) order.unshift(s); nextAt = 0; schedule(); };
 })();

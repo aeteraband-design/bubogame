@@ -520,16 +520,7 @@ html.menu-pc #startScreen > .menu-logo-wrap { padding-top: 0 !important; padding
 #rulesModal > #rlWin > .rl-scroll { flex: 0 0 auto !important; min-height: auto !important; overflow: visible !important; }
 #rlWin .rl-btns { position: sticky; bottom: -16px; z-index: 4; margin: -4px -14px -16px; padding: 18px 14px 16px;
   background: linear-gradient(180deg, rgba(29, 9, 54, 0), rgba(29, 9, 54, .96) 28px); }
-/* полоса прокрутки во всех окнах — тонкая линия цвета окна, не заходит на скруглённые углы */
-#qzWin { --sbc: #38BDF8; } #shWin { --sbc: #FFC53D; } #rlWin { --sbc: #FE7600; } #rwWindow { --sbc: #F472B6; }
-#settingsModal .custom-scroll { --sbc: #A855F7; } #adminModal #admBody { --sbc: #FE7600; } #startScreen { --sbc: #A855F7; } #rouletteModal > .glass-panel { --sbc: #F472B6; }
-:is(#qzWin, #shWin, #rlWin, #rwWindow, #settingsModal .custom-scroll, #adminModal #admBody, #startScreen, #rouletteModal > .glass-panel) { scrollbar-width: auto !important; scrollbar-color: auto !important; }
-:is(#qzWin, #shWin, #rlWin, #rwWindow, #settingsModal .custom-scroll, #adminModal #admBody, #startScreen, #rouletteModal > .glass-panel)::-webkit-scrollbar { display: block !important; width: 3px !important; height: 0 !important; background: transparent !important; }
-:is(#qzWin, #shWin, #rlWin, #rwWindow, #settingsModal .custom-scroll, #adminModal #admBody, #startScreen, #rouletteModal > .glass-panel)::-webkit-scrollbar-track { background: transparent !important; margin: 22px 0; }
-:is(#qzWin, #shWin, #rlWin, #rwWindow, #settingsModal .custom-scroll, #adminModal #admBody, #startScreen, #rouletteModal > .glass-panel)::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--sbc) 60%, transparent) !important; border-radius: 3px !important; border: 0 !important; }
-@supports (-moz-appearance: none) {
-  :is(#qzWin, #shWin, #rlWin, #rwWindow, #settingsModal .custom-scroll, #adminModal #admBody, #startScreen, #rouletteModal > .glass-panel) { scrollbar-width: thin !important; scrollbar-color: color-mix(in srgb, var(--sbc) 60%, transparent) transparent !important; }
-}
+
 /* бегущий блик по рамке монет и плашек бонусов — появляется и гаснет плавно */
 @keyframes mcRun2 { 0% { --mcA: 0deg; opacity: 0; } 5% { opacity: 1; } 22% { opacity: 1; } 30% { --mcA: 360deg; opacity: 0; } 100% { --mcA: 360deg; opacity: 0; } }
 @keyframes btRun2 { 0% { --btA: 0deg; opacity: 0; } 15% { opacity: 1; } 75% { opacity: 1; } 100% { --btA: 360deg; opacity: 0; } }
@@ -539,3 +530,9 @@ html.menu-pc #startScreen > .menu-logo-wrap { padding-top: 0 !important; padding
 .lg-home { position: relative; }
 .lg-home > .lg-owl { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; transform-origin: 50% 50%; user-select: none; -webkit-user-drag: none; }
 .lg-home > .fa-gamepad { opacity: 0; }
+/* правила: иконка ростом в две строки текста, текст в одну строку — по центру иконки, длинный — идёт вниз от верхнего края */
+#rlWin .rl-row { align-items: flex-start !important; }
+#rlWin .rl-ic { flex: 0 0 35px !important; height: 35px !important; border-radius: 11px !important; font-size: 15px !important; }
+#rlWin .rl-ic svg { width: 16px !important; height: 16px !important; }
+#rlWin .rl-tx { padding-top: 0 !important; min-height: 35px; display: flex; align-items: center; }
+#rlWin .rl-tx > span { display: block; }
