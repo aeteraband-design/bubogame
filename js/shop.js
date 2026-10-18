@@ -136,8 +136,9 @@ function shopBuild() {
         <button type="button" class="sh-x" data-sh="close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
         <div class="sh-title"><b>ЛАВКА</b><span>Обменивай монеты на попытки и бонусы</span></div>
         <div class="sh-grid" id="shGrid"></div>
+        <div class="sh-foot">
         <div class="sh-earn" id="shEarn"><i class="fa-solid fa-circle-question"></i><span>Получить монеты можно, отвечая на <b>вопросы</b></span><button type="button" class="sh-go" data-sh="quiz">ЗАРАБОТАТЬ<i class="fa-solid fa-arrow-right"></i></button><button type="button" class="sh-ex" data-sh="hideearn" aria-label="Скрыть"><i class="fa-solid fa-xmark"></i></button></div>
-        <button type="button" class="sh-back" data-sh="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button>
+        <button type="button" class="sh-back" data-sh="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button></div>
     </div>`;
     host.appendChild(shRoot);
     ['click', 'pointerdown', 'touchstart'].forEach((ev) => shRoot.addEventListener(ev, (e) => e.stopPropagation()));

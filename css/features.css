@@ -486,3 +486,26 @@ html.menu-pc #startScreen > .menu-logo-wrap { padding-top: 0 !important; padding
 #qzWin .qz-core i { background-image: linear-gradient(110deg,#7DD3FC 0%,#E0F2FE 20%,#7DD3FC 40%,#C4A1FF 60%,#7DD3FC 80%,#E0F2FE 90%,#7DD3FC 100%) !important; }
 #shWin .sh-core i { background-image: linear-gradient(110deg,#FFC53D 0%,#FFF3B0 20%,#FFC53D 40%,#5EEAD4 60%,#FFC53D 80%,#FFF3B0 90%,#FFC53D 100%) !important; }
 #rlWin .rl-core i { background-image: linear-gradient(110deg,#FE7600 0%,#FFE0B2 20%,#FE7600 40%,#C4A1FF 60%,#FE7600 80%,#FFE0B2 90%,#FE7600 100%) !important; }
+/* v0.13.38: бегущий блик монет — ровно по рамке, а не внутри неё */
+#menuCoins, #shWin .sh-coins { overflow: visible !important; }
+#menuCoins::before, #shWin .sh-coins::before { inset: -1px !important; padding: 1.5px !important; }
+/* v0.13.38: плашки бонусов — в стиле таймеров (шрифт, рамка), чуть крупнее; надпись и иконка переливаются своим цветом, как у ШАЗАМа */
+.bonus-tag { height: auto !important; padding: 5px 9px !important; gap: 5px !important; border-radius: 11px !important; border: 1.5px solid var(--c) !important;
+  background: rgba(20, 3, 38, 0.95) !important; box-shadow: 0 0 12px color-mix(in srgb, var(--c) 53%, transparent) !important;
+  font: 900 13px/1 Onest, sans-serif !important; overflow: visible !important; scale: var(--fx, 1) !important; }
+.bonus-tag .bt-ic { font-size: 13px !important; padding: .18em .14em; margin: -.18em -.14em; }
+.bonus-tag .bt-ic, .bonus-tag .bt-tx { color: var(--c) !important; text-shadow: none !important;
+  background: linear-gradient(100deg, var(--c) 0 38%, color-mix(in srgb, var(--c) 15%, #fff) 48%, color-mix(in srgb, var(--c) 55%, #fff) 54%, var(--c) 64% 100%); background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--c) 85%, transparent)); }
+.bonus-tag .bt-tx { top: .5px; animation: shzShine 1.8s linear infinite; }
+.bonus-tag.bt-gen .bt-ic { animation: btPop 0.7s 0.2s cubic-bezier(.3, 1.6, .5, 1), shzShine 1.8s -0.12s linear infinite; }
+.bonus-tag.bt-stam .bt-ic { animation: btFloat 1s 0.2s ease-in-out 2, shzShine 1.8s -0.12s linear infinite; }
+.bonus-tag.bt-att .bt-ic { animation: btSpin 0.9s 0.2s cubic-bezier(.3, 1.4, .5, 1), shzShine 1.8s -0.12s linear infinite; }
+.bonus-tag.bt-coin .bt-ic { animation: btCoinFlip 0.9s 0.2s ease-out, shzShine 1.8s -0.12s linear infinite; }
+.bonus-tag::before { inset: -1.5px !important; padding: 2px !important; }
+.bonus-tag .bt-tx { font-weight: 900 !important; font-size: 12.5px !important; }
+/* лавка: подсказка «заработать» и кнопка в меню всегда внизу, товары уходят под них с плавным затуханием (как темы в вопросах) */
+#shWin .sh-foot { position: sticky; bottom: -18px; z-index: 4; display: flex; flex-direction: column; gap: 12px; margin: -4px -16px -18px; padding: 14px 16px 18px;
+  background: linear-gradient(180deg, rgba(29, 9, 54, 0), rgba(29, 9, 54, .96) 26px); }
+#shWin .sh-foot .sh-earn { background: rgba(20, 3, 38, .94) !important; }

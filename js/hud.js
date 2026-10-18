@@ -124,17 +124,17 @@ function showGoldBanner(text, icon, color) {
     el.className = 'bonus-tag ' + kind + ' ' + (right ? 'on-right' : 'on-left');
     el.style.setProperty('--c', c);
     el.style.setProperty('--bx', (right ? 18 : -18) + 'px');
-    el.innerHTML = `<i class="fa-solid ${icon} bt-ic"></i><span class="bt-tx">${sentenceCase(text)}</span>`
+    el.innerHTML = `<i class="fa-solid ${icon} bt-ic"></i><span class="bt-tx">${/^[+\d]/.test(text) ? text.toLowerCase() : sentenceCase(text)}</span>`
         + '<b class="bt-sp" style="left:5px;top:2px;--d:.3s">✦</b><b class="bt-sp" style="left:22px;top:20px;--d:.8s">✦</b>'
         + (kind === 'bt-coin' ? '<b class="bt-sp" style="left:70%;top:8%;--d:1.1s">✦</b>' : '');   // звёздочки поблёскивают у иконки, как у монет в меню
     try {
-        const fr = fxLayer.getBoundingClientRect(), uz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom')) || 1;
+        const fr = fxLayer.getBoundingClientRect(), uz = uiFx();   // масштаб — как у таймеров
         const th = document.getElementById('topHud'), bb = document.getElementById('buffBar');
         let top = 56 * uz;
         if (bb && bb.offsetParent) top = bb.getBoundingClientRect().top - fr.top;
         else if (th && th.offsetParent) top = th.getBoundingClientRect().bottom - fr.top + 8 * uz;
         const prev = [...fxLayer.querySelectorAll('.bonus-tag.' + (right ? 'on-right' : 'on-left'))].length;   // несколько подряд — столбиком
-        el.style.top = (top + prev * 38 * uz) + 'px';
+        el.style.top = (top + prev * 34 * uz) + 'px';
         el.style[right ? 'right' : 'left'] = (14 * uz) + 'px';
     } catch (e) {}
     fxLayer.appendChild(el);

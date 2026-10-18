@@ -237,6 +237,8 @@
         try { resetEntireGame({ attempts: MAX_ATTEMPTS }); playDay = todayKey(); zeroDay = ''; } catch (er) {}
         try { if (typeof quizResetDay === 'function') quizResetDay(); } catch (er) {}
         try { localStorage.removeItem('bubo_shop_earn_hidden'); } catch (er) {}   // подсказка в лавке снова покажется, как новичку
+        try { localStorage.removeItem('bubo_goal_hidden'); } catch (er) {}   // «Цель полёта» тоже снова покажется
+        try { updateMenuVisibility(); } catch (er) {}
         try { StorageManager.save(); updateHUDAll(); updateMenuVisibility(); } catch (er) {}
         lbl.textContent = 'ИГРА СБРОШЕНА';
         admResetSync();
