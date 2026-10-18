@@ -365,15 +365,26 @@ function qzRenderReady() {
     { const w = document.getElementById('qzWin'); if (w) w.classList.remove('busy'); }
     QS.phase = 'ready';
     if (d.ids.length >= QUIZ_PER_DAY) { qzRenderDone(); return; }
-    if (!d.theme || !d.lvl) { qzRenderPick(); return; }
+    if (!d.theme || !d.lvl) { if (d.ids.length) { qzRenderPick(); return; } qzRenderIntro(d, body); return; }
     const n = d.ids.length + 1, th = qzTheme(d.theme), lv = qzLevel(d.lvl);
-    const rules = d.ids.length ? '' : `<div class="qz-rules">`
-        + `<div class="qz-rule"><i class="fa-solid fa-list-ol"></i><span>В день — ${QUIZ_PER_DAY} вопросов. ${QZ_READ} с на чтение, потом ${QZ_ANSWER} с на ответ</span></div>`
-        + `<div class="qz-rule"><i class="fa-solid fa-coins"></i><span>За верный ответ: <b style="color:#4ADE80">суперлайт</b> — 50, <b style="color:#A3E635">лайт</b> — 75, <b style="color:#FACC15">средне</b> — 100, <b style="color:#F87171">хард</b> — 150 монет</span></div>`
-        + `<div class="qz-rule"><i class="fa-solid fa-store"></i><span>Монеты тратятся в лавке на попытки, жизни и бонусы</span></div></div>`;
+    const rules = d.ids.length ? '' : qzRulesHtml();
     body.innerHTML = qzHead() + qzCurPlate(d, true) + qzProg(d, d.ids.length) + rules
         + `<div class="qz-ready"><div class="n">Вопрос ${n} из ${QUIZ_PER_DAY}</div><div class="t">Как будете готовы — нажмите кнопку.<br>Можно выйти и вернуться позже: продолжите с этого места.</div></div>`
         + `<div class="qz-btns"><button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid fa-play"></i>${n === 1 ? 'НАЧАТЬ' : 'К ВОПРОСУ'}</button>`
+        + `<div class="qz-rd" style="text-align:center">Монет сейчас: <b style="color:#FFD66B">${qzCoinsTotal()}</b></div></div>`;
+}
+// первый экран: описание и правила, кнопка ИГРАТЬ ведёт к выбору темы
+function qzRulesHtml() {
+    return `<div class="qz-rules">`
+        + `<div class="qz-rule"><i class="fa-solid fa-list-ol"></i><span>В день — ${QUIZ_PER_DAY} вопросов. ${QZ_READ} с на чтение, потом ${QZ_ANSWER} с на ответ</span></div>`
+        + `<div class="qz-rule"><i class="fa-solid fa-layer-group"></i><span>Выберите тему и сложность — вопросы не повторяются</span></div>`
+        + `<div class="qz-rule"><i class="fa-solid fa-coins"></i><span>За верный ответ: <b style="color:#4ADE80">суперлайт</b> — 50, <b style="color:#A3E635">лайт</b> — 75, <b style="color:#FACC15">средне</b> — 100, <b style="color:#F87171">хард</b> — 150 монет</span></div>`
+        + `<div class="qz-rule"><i class="fa-solid fa-store"></i><span>Монеты тратятся в лавке на попытки, жизни и бонусы</span></div></div>`;
+}
+function qzRenderIntro(d, body) {
+    QS.phase = 'intro';
+    body.innerHTML = qzHead() + qzProg(d, 0) + qzRulesHtml()
+        + `<div class="qz-btns"><button type="button" class="btn-bubo qz-btn" data-qa="pick"><i class="fa-solid fa-play"></i>ИГРАТЬ</button>`
         + `<div class="qz-rd" style="text-align:center">Монет сейчас: <b style="color:#FFD66B">${qzCoinsTotal()}</b></div></div>`;
 }
 // выбор темы и сложности: карточки тем своего цвета, ниже — уровни и сколько монет за вопрос
