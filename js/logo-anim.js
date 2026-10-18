@@ -13,20 +13,11 @@
     const st = document.createElement('style');
     st.textContent = '#startScreen > .menu-logo-wrap .logo-fx{position:absolute;left:-40px;right:-40px;top:-70px;bottom:-50px;width:calc(100% + 80px);height:calc(100% + 120px);pointer-events:none;z-index:3}'
         + '#startScreen > .menu-logo-wrap .fa-gamepad{display:inline-block;will-change:transform}'
-        // обводка плитки логотипа потолще; пока идёт превращение — светится цветом состояния совы, по ней бежит блик
-        + '@property --lgA{syntax:"<angle>";inherits:false;initial-value:0deg}'
-        + '#startScreen > .menu-logo-wrap .lg-tile{position:relative;transition:border-color .4s,box-shadow .4s}'
-        + '#startScreen > .menu-logo-wrap .lg-tile::before{content:"";position:absolute;inset:-2px;border-radius:inherit;padding:2.5px;pointer-events:none;opacity:0;transition:opacity .4s;'
-        + 'background:conic-gradient(from var(--lgA),transparent 0deg 120deg,var(--lc,#C4A1FF) 200deg,#fff 240deg,var(--lc,#C4A1FF) 280deg,transparent 340deg 360deg);'
-        + '-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:lgRun 1.3s linear infinite}'
-        + '#startScreen > .menu-logo-wrap .lg-tile.lg-on{border-color:var(--lc)!important;box-shadow:0 0 16px var(--lc),inset 0 0 10px color-mix(in srgb,var(--lc) 45%,transparent)!important}'
-        + '#startScreen > .menu-logo-wrap .lg-tile.lg-on::before{opacity:1}'
-        + '@keyframes lgRun{to{--lgA:360deg}}'
-        // надпись: по буквам волной пробегает свет цвета состояния — буква чуть приподнимается и вспыхивает, цвета BUBO/GAME остаются
-        + '#startScreen > .menu-logo-wrap .lg-ch{display:inline-block;font-weight:inherit!important;font-size:inherit!important;letter-spacing:inherit;transition:transform .3s}'
-        + '#startScreen > .menu-logo-wrap .lg-txt.lg-on .lg-ch{animation:lgWave 1.5s ease-in-out infinite;animation-delay:calc(var(--i) * 75ms)}'
-        + '@keyframes lgWave{0%,55%,100%{transform:translateY(0) scale(1);filter:brightness(1);text-shadow:0 2px 4px rgba(20,3,38,.45)}'
-        + '22%{transform:translateY(-3px) scale(1.06);filter:brightness(1.45) saturate(1.2);text-shadow:0 0 8px var(--lc),0 0 18px var(--lc),0 2px 4px rgba(20,3,38,.6)}}';
+        // пока идёт превращение — обводка мягко окрашивается в цвет состояния совы; надпись едва заметно отсвечивает
+        + '#startScreen > .menu-logo-wrap .lg-tile{position:relative;transition:border-color .5s,box-shadow .5s}'
+        + '#startScreen > .menu-logo-wrap .lg-tile.lg-on.lg-on.lg-on{border-color:var(--lc)!important;box-shadow:0 0 12px var(--lc),0 6px 14px rgba(0,0,0,.3)!important}'
+        + '#startScreen > .menu-logo-wrap .lg-txt.lg-on .lg-ch{animation:lgWave 2.4s ease-in-out infinite;animation-delay:calc(var(--i) * 90ms)}'
+        + '@keyframes lgWave{0%,40%,100%{filter:brightness(1)}20%{filter:brightness(1.2)}}';
     tile.classList.add('lg-tile');
     // разбиваем надпись на буквы для волны
     const txt = wrap.querySelector('.tracking-tight');

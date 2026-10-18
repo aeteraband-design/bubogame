@@ -394,14 +394,14 @@ html.hud-ll #buffBar .buff-tag { align-self: flex-start !important; }
 /* рулетка: чуть больше воздуха над крутящимся колесом сверху */
 #rouletteModal #rwWindow .rwp-head { padding-top: 12px !important; }
 
-/* плитка логотипа (джойстик) — везде одинаковая обводка, чуть толще: меню, экран загрузки, поражение */
+/* плитка логотипа (джойстик) — везде одна аккуратная светлая обводка: меню, экран загрузки, поражение */
 #startScreen > .menu-logo-wrap .shrink-0:has(> .fa-gamepad), #bootLoader .shrink-0:has(> .fa-gamepad), #bootLoader .bl-ico, #gameOverModal .shrink-0:has(> .fa-gamepad) {
-    box-sizing: border-box; border: 2px solid rgba(255, 255, 255, 0.42) !important;
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 -2px 6px rgba(60, 10, 120, 0.25) !important;
+    box-sizing: border-box; border: 1.5px solid rgba(255, 255, 255, 0.62) !important;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* чуть больше воздуха между знаком и надписью — во всех логотипах (+8px) */
-#startScreen > .menu-logo-wrap .shrink-0:has(> .fa-gamepad) + div, #bootLoader .shrink-0:has(> .fa-gamepad) + div { margin-left: calc(0.625rem + 8px) !important; }
-#gameOverModal .shrink-0:has(> .fa-gamepad) + div { margin-left: calc(0.5rem + 8px) !important; }
-#bootLoader .bl-logo { gap: 18px !important; }
+/* чуть больше воздуха между знаком и надписью — во всех логотипах (+4px) */
+#startScreen > .menu-logo-wrap .shrink-0:has(> .fa-gamepad) + div, #bootLoader .shrink-0:has(> .fa-gamepad) + div { margin-left: calc(0.625rem + 4px) !important; }
+#gameOverModal .shrink-0:has(> .fa-gamepad) + div { margin-left: calc(0.5rem + 4px) !important; }
+#bootLoader .bl-logo { gap: 14px !important; }
 .lg-ch { display: inline-block; font-weight: inherit !important; font-size: inherit !important; }
