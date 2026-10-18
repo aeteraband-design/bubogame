@@ -145,6 +145,7 @@
                     var cr = clone.getBoundingClientRect(); natW = cr.width; natH = cr.height;
                 }
                 natW = clone.offsetWidth || natW; natH = clone.offsetHeight || natH;   // шрифт мог догрузиться — ширину копии меряем каждый кадр
+                if (clone && window.__logoOwlPut) { var ct = clone.querySelector('.shrink-0'); if (ct && !ct.querySelector('.lg-owl')) window.__logoOwlPut(ct); }   // в копии — тоже сова
                 if (!natW) return;
                 // размер — как у логотипа в меню, место — вверху экрана по центру (над совой)
                 var sc = r.width / natW, z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;

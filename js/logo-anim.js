@@ -79,7 +79,7 @@
     function nextState() {
         // все состояния по разу в случайном порядке, потом новая перетасовка (одно и то же два раза подряд не бывает)
         if (!order.length) {
-            const a = STATES.slice();
+            const a = STATES.filter(x => x.id !== 'normal');   // обычная сова — это сам логотип
             for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
             if (lastId && a[0].id === lastId) a.push(a.shift());
             order = a;
@@ -89,7 +89,7 @@
 
     // рисуем сову игры прямо в холст логотипа в нужном состоянии; все значения игры сразу возвращаем на место
     const LS = { stars: [], acc: 0 };   // звёздочки ускорения — те же, что в игре
-    function drawOwlRaw(gc, px, x, y, size, state, rot, wing, now, fx) {
+    function drawOwlRaw(gc, px, x, y, size, state, rot, wing, now, fx, spin) {
         if (typeof owl === 'undefined' || !owl.draw || typeof ctx === 'undefined') return;
         const keys = ['x', 'y', 'rotation', 'visible', 'wing', 'lean', 'boostK', 'spinAngle'];
         const save = {}; keys.forEach(k => save[k] = owl[k]);
@@ -98,7 +98,8 @@
         const hasShz = typeof SHZ !== 'undefined', shk = hasShz ? SHZ.k : 0;
         try {
             const k = size / 96 * px;
-            gc.setTransform(k, 0, 0, k, x * px, y * px);
+            const sc = Math.cos(spin || 0), sn = Math.sin(spin || 0);
+            gc.setTransform(k * sc, k * sn, -k * sn, k * sc, x * px, y * px);   // spin — вращение всей совы (замёрзшая кувыркается, как в игре)
             gameActive = false; waitingFirstTap = false; dtMult = 1; frame = now / 16.67;
             currentDrunkFactor = state.id === 'drunk' ? 1 : 0;
             currentFreezeFactor = state.id === 'freeze' ? 1 : 0;
@@ -145,13 +146,19 @@
         return (CENTER[state.id] = r);
     }
     window.__owlCenter = (id) => owlCenter(STATES.find(x => x.id === id));
-    function drawOwlState(x, y, size, state, rot, wing, now) {
+    function owlSize(state, size) {
+        const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : state);
+        return state.id === 'fat' ? size : size * 0.56 / Math.max(0.3, c.w, c.h);   // одинаково крупно во всех состояниях; «полная» — по своему размеру
+    }
+    function drawOwlState(x, y, size, state, rot, wing, now, spin, gc, px, fx) {
         // ШАЗАМ: молнии вокруг совы не считаем — центр и размер как у наклонённой совы (ускорение)
         const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : state);
-        // одинаково крупно во всех состояниях; «полная» — по своему размеру (она и так крупнее)
-        if (state.id !== 'fat') size *= 0.56 / Math.max(0.3, c.w, c.h);
-        drawOwlRaw(g, dpr, x - c.dx * size, y - c.dy * size, size, state, rot, wing, now, true);
+        size = owlSize(state, size);
+        const a = spin || 0, cs = Math.cos(a), sn = Math.sin(a), dx = c.dx * size, dy = c.dy * size;
+        // крутим вокруг видимого центра совы: она остаётся ровно посередине плитки
+        drawOwlRaw(gc || g, px || dpr, x - (dx * cs - dy * sn), y - (dx * sn + dy * cs), size, state, rot, wing, now, fx !== false, a);
     }
+
 
 
     const ease = (t) => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
@@ -226,6 +233,28 @@
     function resetIcon() { icon.style.transform = ''; icon.style.opacity = ''; }
     const sparkCol = (s) => s.id === 'speed' ? '#FDE047' : s.id === 'freeze' ? '#BAE6FD' : s.id === 'drunk' ? '#5EEAD4' : s.id === 'fat' ? '#F9A8D4' : s.id === 'shazam' ? '#FFB45C' : '#C4A1FF';
 
+    // главный логотип — крупная сова в плитке (картинка, нарисованная той же функцией, что и в игре); джойстик появляется только в анимации
+    const NORMAL = STATES.find(t => t.id === 'normal');
+    let home = null;
+    function makeHomeOwl() {
+        try {
+            const S = 256, c = document.createElement('canvas'); c.width = c.height = S;
+            drawOwlState(S / 2, S / 2, S * 1.3, NORMAL, 0, 0.5, 0, 0, c.getContext('2d'), 1, false);
+            window.__logoOwlSrc = c.toDataURL('image/png');
+        } catch (e) { return; }
+        const put = (t) => {
+            if (!t || t.querySelector('.lg-owl')) return t && t.querySelector('.lg-owl');
+            const im = document.createElement('img'); im.className = 'lg-owl'; im.alt = ''; im.src = window.__logoOwlSrc; im.draggable = false;
+            t.classList.add('lg-home'); t.appendChild(im); return im;
+        };
+        home = put(tile);
+        document.querySelectorAll('#gameOverModal .shrink-0 > .fa-gamepad, #bootLoader .fa-gamepad').forEach(ic => put(ic.parentElement));
+        window.__logoOwlPut = put;
+        setHome(1); setIcon(0, 0, 0);
+    }
+    function setHome(sc) { if (home) { home.style.transform = 'scale(' + sc.toFixed(3) + ')'; home.style.opacity = sc > 0.01 ? '1' : '0'; } }
+    const T_A = 0.65, T_B = 1.2, T_C = 0.65, T_D = 3.0, T_E = 0.65;   // сова→джойстик, джойстик держится, джойстик→состояние, состояние, состояние→сова
+    const DUR2 = T_A + T_B + T_C + T_D + T_E;
     function tick(now) {
         raf = 0;
         const dt = Math.min(0.05, (now - (lastT || now)) / 1000); lastT = now;
@@ -233,54 +262,67 @@
             if (now < nextAt) return;
             if (!canRun()) { nextAt = now + 2000; return; }
             state = nextState(); t0 = now; flags = {}; sparks = [];
-            tile.style.setProperty('--lc', state.line); lgOn(true);
+            tile.style.setProperty('--lc', state.line);
         }
         if (!canRun()) { stop(); return; }
         const L = sizeCanvas(), t = (now - t0) / 1000, { tx, ty, ts } = L;
         g.clearRect(0, 0, L.w, L.h);
         const OS = ts * 1.3, col = state.glow;
-        const T1 = 0.65;
-        if (t < T1) {   // 1) как возврат, только наоборот: джойстик плавно сжимается, вспышка искр — и выпрыгивает сова
-            const k = t / T1;
+        const b1 = T_A, b2 = b1 + T_B, b3 = b2 + T_C, b4 = b3 + T_D;
+        if (t < b1) {   // 1) сова сжимается — вспышка — выпрыгивает джойстик
+            const k = t / T_A;
+            setHome(1 - ease(Math.min(1, k / 0.45)));
+            glow(tx, ty, ts * 1.3, 0.6 * Math.sin(Math.PI * k), '255,200,120');
+            if (k > 0.35) { if (!flags.j1) { flags.j1 = 1; burst(tx, ty, 8, '#FFE08A'); } const s = back((k - 0.35) / 0.65); setIcon(s, s, 1); }
+            else setIcon(0, 0, 0);
+        } else if (t < b2) {   // 2) джойстик
+            setHome(0); setIcon(1, 1, 1);
+            if (t > b2 - 0.3) lgOn(true);
+        } else if (t < b3) {   // 3) джойстик сжимается — выпрыгивает сова в своём состоянии
+            setHome(0); lgOn(true);
+            const k = (t - b2) / T_C;
             const js = 1 - ease(Math.min(1, k / 0.45));
             setIcon(js, js, 1);
             glow(tx, ty, ts * 1.5, 0.9 * ease(k), col);
             if (k > 0.35) {
                 if (!flags.pop) { flags.pop = 1; burst(tx, ty, 10, sparkCol(state)); }
                 const s = back((k - 0.35) / 0.65);
-                drawOwlState(tx, ty, OS * s, state, 0, 0.5, now);
+                drawOwlState(tx, ty, OS * s, state, 0, 0.5, now, state.id === 'freeze' ? (t - b2) * 4.2 : 0);
             }
-        } else if (t < DUR - 0.65) {   // 2) сова в своём состоянии, в мягкой подсветке — ровно по центру плитки (без покачивания вверх-вниз)
-            setIcon(0, 0, 0);
-            const k = t - T1;
+        } else if (t < b4) {   // 4) сова в своём состоянии, ровно по центру плитки
+            setHome(0); setIcon(0, 0, 0);
+            const k = t - b3;
             const pulse = 0.85 + 0.15 * Math.sin(k * 5);
             glow(tx, ty, ts * 1.5 * pulse, 0.9, col);
             glow(tx, ty, ts * 0.9, 0.5, '255,220,170');
             const wing = (state.id === 'shazam' || state.id === 'speed') ? Math.max(0, Math.sin(now / 90)) : 0.5 + 0.5 * Math.sin(k * 9) * (k < 1.6 ? 1 : 0.5);
             const rot = state.id === 'drunk' ? Math.sin(k * 3.2) * 0.18 : 0;
-            drawOwlState(tx, ty, OS, state, rot, wing, now);
-        } else {   // 3) сова сжимается — джойстик возвращается
-            const k = (t - (DUR - 0.65)) / 0.65;
+            drawOwlState(tx, ty, OS, state, rot, wing, now, state.id === 'freeze' ? (t - b2) * 4.2 : 0);   // замёрзшая кувыркается, как в игре
+        } else {   // 5) сова-состояние сжимается — вспышка — возвращается главная сова
+            setIcon(0, 0, 0);
+            const k = Math.min(1, (t - b4) / T_E);
             const os = 1 - ease(Math.min(1, k / 0.45));
             glow(tx, ty, ts * 1.5, 0.9 * (1 - k), col);
-            if (os > 0.01) drawOwlState(tx, ty, OS * os, state, 0, 0.5, now);
+            if (os > 0.01) drawOwlState(tx, ty, OS * os, state, 0, 0.5, now, state.id === 'freeze' ? (t - b2) * 4.2 : 0);
             if (k > 0.2) lgOn(false);
-            if (k > 0.35) { if (!flags.back) { flags.back = 1; burst(tx, ty, 8, '#FFE08A'); } const s = back((k - 0.35) / 0.65); setIcon(s, s, 1); }
-            else setIcon(0, 0, 0);
+            if (k > 0.35) { if (!flags.back) { flags.back = 1; burst(tx, ty, 8, '#C4A1FF'); } setHome(back((k - 0.35) / 0.65)); }
+            else setHome(0);
         }
         // плавное появление и угасание эффекта на надписи
-        txtK(t < 0.6 ? ease(t / 0.6) : t > DUR - 1 ? ease((DUR - t) / 1) : 1);
+        txtK(t < b2 ? 0 : t < b2 + 0.6 ? ease((t - b2) / 0.6) : t > DUR2 - 1 ? ease((DUR2 - t) / 1) : 1);
         drawSparks(dt);
-        if (t >= DUR) { stop(); return; }
+        if (t >= DUR2) { stop(); return; }
         raf = requestAnimationFrame(tick);
     }
     function stop() {
-        state = null; resetIcon(); sparks = []; LS.stars = []; LS.acc = 0; lgOn(false); txtK(0);
+        state = null; sparks = []; LS.stars = []; LS.acc = 0; lgOn(false); txtK(0);
+        if (home) { setHome(1); setIcon(0, 0, 0); } else resetIcon();
         g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height);
-        nextAt = performance.now() + 9000 + Math.random() * 4000;
+        nextAt = performance.now() + 7000 + Math.random() * 4000;
     }
     function schedule() { if (!raf) raf = requestAnimationFrame(tick); }
     setInterval(() => { if (!state && !raf) schedule(); }, 1000);
+    makeHomeOwl();
     schedule();
     window.logoAnimPlay = (id) => { const s = STATES.find(x => x.id === id); if (s) order.unshift(s); nextAt = 0; schedule(); };
 })();
