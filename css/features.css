@@ -541,3 +541,8 @@ html.menu-pc #startScreen > .menu-logo-wrap { padding-top: 0 !important; padding
 #menuGoalX { top: 13px !important; right: 13px !important; }
 #menuGoalCard { padding-top: 15px !important; }
 #menuGoalX { top: 12px !important; right: 12px !important; }
+/* правила: больше воздуха между пунктами, разделители чуть заметнее и в цвет раздела */
+#rlWin .rl-row { padding: 10px 0 !important; }
+#rlWin .rl-row:first-of-type { padding-top: 4px !important; }
+#rlWin .rl-row:last-child { padding-bottom: 4px !important; }
+#rlWin .rl-row + .rl-row { border-top: 1px solid color-mix(in srgb, var(--c) 20%, rgba(255, 255, 255, 0.04)) !important; }

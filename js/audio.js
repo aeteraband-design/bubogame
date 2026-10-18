@@ -80,6 +80,9 @@ const AudioFX = {
 
     victoryMelody: [523.25, 659.25, 783.99, 1046.50, 783.99, 880.00, 1046.50, 1318.51, 1174.66, 1046.50, 880.00, 783.99, 880.00, 1046.50, 1174.66, 1046.50],
     victoryBass: [130.81, 130.81, 174.61, 174.61, 196.00, 196.00, 130.81, 196.00],
+    // правила — «библиотека»: тихая арфа-шкатулка по аккордам Dmaj7 – Bm7 – Gmaj7 – A, тёплый бас и редкий колокольчик
+    libChords: [[293.66, 369.99, 440.00, 554.37], [246.94, 293.66, 369.99, 440.00], [196.00, 246.94, 293.66, 369.99], [220.00, 277.18, 329.63, 493.88]],
+    libArp: [0, 1, 2, 3, 2, 3, 1, 2],
     shopMelody:  [523.25, 659.25, 783.99, 659.25, 880.00, 783.99, 659.25, 0, 698.46, 880.00, 1046.50, 880.00, 783.99, 659.25, 587.33, 0],
     shopMelody2: [659.25, 783.99, 880.00, 783.99, 659.25, 587.33, 523.25, 0, 587.33, 698.46, 880.00, 783.99, 698.46, 659.25, 587.33, 523.25],
     shopBass:    [130.81, 196.00, 110.00, 164.81, 174.61, 130.81, 196.00, 146.83],
@@ -261,7 +264,7 @@ const AudioFX = {
     },
     // длина шага и высота музыки режима (в игре — с учётом сложности, ускорения и замедления)
     _modeStep(m) {
-        let d = m === 'game' ? 0.185 : (m === 'death' ? 0.56 : (m === 'victory' ? 0.2 : (m === 'quiz' ? 0.3 : (m === 'shop' ? 0.19 : 0.29)))), p = 1;
+        let d = m === 'game' ? 0.185 : (m === 'death' ? 0.56 : (m === 'victory' ? 0.2 : (m === 'quiz' ? 0.3 : (m === 'shop' ? 0.19 : (m === 'library' ? 0.34 : 0.29))))), p = 1;
         if (m === 'game') {
             try { const diff = getDifficultyMultipliers(); if (diff.musicTempoMult) { d /= diff.musicTempoMult; p *= diff.musicTempoMult; } } catch (e) {}
             const sf = this.speedFactor || 1; d /= sf; p *= sf;
@@ -275,6 +278,7 @@ const AudioFX = {
         if (m === 'menu') f = this.menuMelody[s % this.menuMelody.length];
         else if (m === 'shop') f = (ph ? this.shopMelody2 : this.shopMelody)[s16];
         else if (m === 'quiz') f = (ph ? this.quizMelody2 : this.quizMelody)[s16];
+        else if (m === 'library') f = this.libChords[Math.floor(s / 8) % 4][this.libArp[s % 8]];
         else if (m === 'victory') f = this.victoryMelody[s % this.victoryMelody.length];
         else if (m === 'death') f = this.deathMelody[s % this.deathMelody.length];
         else if (m === 'game') f = this.gameArp[s % this.gameArp.length];
@@ -284,8 +288,8 @@ const AudioFX = {
         for (let s = 0; s < 4; s++) { const f = this._melodyAt(m, s, p); if (f) return f; }
         return 440;
     },
-    _rootOf(m) { return { menu: 146.83, game: 146.83, shop: 130.81, victory: 130.81, quiz: 110.00, death: 110.00 }[m] || 130.81; },
-    _modeTone(m) { return { shop: 'pluck', game: 'pluck', victory: 'brass', quiz: 'soft', death: 'soft' }[m] || 'tri'; },
+    _rootOf(m) { return { library: 146.83, menu: 146.83, game: 146.83, shop: 130.81, victory: 130.81, quiz: 110.00, death: 110.00 }[m] || 130.81; },
+    _modeTone(m) { return { library: 'soft', shop: 'pluck', game: 'pluck', victory: 'brass', quiz: 'soft', death: 'soft' }[m] || 'tri'; },
     _transNote(t, f, dur, tone, last) {
         const ctx = this.ctx;
         if (!this._stingGain) { this._stingGain = ctx.createGain(); this._stingGain.connect(this.master || ctx.destination); }
@@ -501,8 +505,8 @@ const AudioFX = {
                     // ноты ставятся заранее (на 0.35 с вперёд) точно по времени аудио — подвисания игры музыку не рвут
                     while (this.nextNoteTime < t + 0.35) {
                         this.playMusicStep(this.nextNoteTime);
-                        let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : (this.mode === 'quiz' ? 0.3 : (this.mode === 'shop' ? 0.19 : 0.29))));
-                        if (this.mode !== 'death' && this.mode !== 'victory' && this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop') {   // в меню темп всегда стандартный — не зависит ни от сложности, ни от ускорения
+                        let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : (this.mode === 'quiz' ? 0.3 : (this.mode === 'shop' ? 0.19 : (this.mode === 'library' ? 0.34 : 0.29)))));
+                        if (this.mode !== 'death' && this.mode !== 'victory' && this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop' && this.mode !== 'library') {   // в меню темп всегда стандартный — не зависит ни от сложности, ни от ускорения
                             const diff = getDifficultyMultipliers();
                             if (diff.musicTempoMult) d /= diff.musicTempoMult;
                             d /= this.updateSpeedFactor();
@@ -544,7 +548,7 @@ const AudioFX = {
         const now = when || this.ctx.currentTime;
         let pitchMultiplier = 1.0;
 
-        if (this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop') {   // музыка меню всегда в стандартном темпе и высоте — сложность и ускорение на неё не влияют
+        if (this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop' && this.mode !== 'library') {   // музыка меню всегда в стандартном темпе и высоте — сложность и ускорение на неё не влияют
             const diff = getDifficultyMultipliers();
             if (diff.musicTempoMult) {
                 pitchMultiplier *= diff.musicTempoMult;
@@ -621,6 +625,19 @@ const AudioFX = {
                 g.gain.setValueAtTime(s % 2 ? 0.05 : 0.025, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
                 ns.connect(fl); fl.connect(g); g.connect(this.musicGain); ns.start(now); ns.stop(now + 0.06);
             }
+        } else if (this.mode === 'library') {
+            // правила — тихая «библиотечная» музыка: арфа-шкатулка перебором, тёплый бас на каждый аккорд, редкий колокольчик сверху
+            const s = this.step, ch = this.libChords[Math.floor(s / 8) % 4], f = ch[this.libArp[s % 8]];
+            const tone = (type, fr, vol, dur, att, cut) => {
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain(), lp = this.ctx.createBiquadFilter();
+                o.type = type; o.frequency.setValueAtTime(fr, now); lp.type = 'lowpass'; lp.frequency.setValueAtTime(cut || 2200, now);
+                g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + (att || 0.01)); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                o.connect(lp); lp.connect(g); g.connect(this.musicGain); o.start(now); o.stop(now + dur + 0.02);
+            };
+            tone('triangle', f * 2, 0.17, 1.1, 0.006, 2600);   // арфа
+            tone('sine', f * 4, 0.035, 0.6, 0.004, 5000);       // лёгкий звон шкатулки
+            if (s % 8 === 0) { tone('sine', ch[0] / 2, 0.3, 2.6, 0.08, 900); tone('sine', ch[2] / 2, 0.08, 2.4, 0.3, 900); }   // тёплый бас аккорда
+            if (s % 16 === 4 || s % 16 === 14) tone('sine', ch[3] * 4, 0.05, 1.6, 0.005, 6000);   // редкий колокольчик
         } else if (this.mode === 'quiz') {
             // вопросы: спокойный «лоу-фай» — мягкая мелодия, тёплый бас, приглушённая бочка и тихие хэты (Am – F – C – G)
             const s = this.step, s16 = s % 16, ph = Math.floor(s / 16) % 2;
