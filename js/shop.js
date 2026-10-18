@@ -58,7 +58,12 @@ const SHOP_ITEMS = [
 #shWin{position:relative;width:100%;max-width:380px;max-height:100%;overflow:hidden;border-radius:28px;padding:16px 16px 18px;display:flex;flex-direction:column;gap:16px;font-family:Onest,sans-serif;color:#fff;
  background:radial-gradient(110% 45% at 50% -8%,rgba(255,197,61,.2),transparent 62%),radial-gradient(80% 40% at 0% 105%,rgba(45,212,191,.13),transparent 60%),rgba(29,9,54,.97);border:1.5px solid rgba(255,197,61,.35);box-shadow:0 10px 40px rgba(0,0,0,.5)}
 #shWin .sh-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:6px}
-#shWin .sh-coins{justify-self:start;display:flex;align-items:center;gap:7px;padding:6px 11px 6px 6px;border-radius:999px;background:rgba(20,3,38,.75);border:1px solid rgba(255,197,61,.5);box-shadow:0 0 12px rgba(255,197,61,.18);font-weight:900;font-size:15px;color:#FFD66B;margin-top:4px}
+#shWin .sh-coins{justify-self:start;position:relative;overflow:hidden;height:40px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 13px 0 11px;border-radius:13px;line-height:1;background:rgba(29,9,54,.78);border:1px solid rgba(255,197,61,.6);box-shadow:0 0 12px rgba(255,197,61,.25),0 6px 14px rgba(0,0,0,.3);font:900 16px/1 Onest,sans-serif;color:#FFD66B}
+#shWin .sh-coins .sh-cg{font-size:18px;filter:drop-shadow(0 0 5px rgba(255,197,61,.6))}
+#shWin .sh-coins #shCoinsN{display:block;line-height:1;transform:translateY(.5px);text-shadow:0 0 8px rgba(255,197,61,.35)}
+/* плашка монет в лавке — точно как в главном меню: бегущий блик по рамке и звёздочки */
+#shWin .sh-coins::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;background:conic-gradient(from var(--mcA),transparent 0deg 200deg,#FFF3B0 250deg,#FFC53D 290deg,transparent 330deg 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:mcRun 5s linear infinite}
+#shWin .sh-coins .mc-tw{position:absolute;font-style:normal;color:#FFF3B0;text-shadow:0 0 6px #FFC53D;font-size:var(--s);opacity:0;animation:mcTw 2.6s ease-in-out infinite;animation-delay:var(--d)}
 #shWin .sh-cg{font-size:17px;line-height:1;background:linear-gradient(160deg,#FFF3B0 0%,#FFC53D 45%,#E08A00 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 4px rgba(255,197,61,.55))}
 #shWin .sh-buy .sh-cg{font-size:13px;background:linear-gradient(160deg,#7C4A00,#4A2600);-webkit-background-clip:text;background-clip:text;filter:none}
 #shWin .sh-buy.no .sh-cg{background:none;color:rgba(255,255,255,.5)}
@@ -125,7 +130,7 @@ function shopBuild() {
     shRoot = document.createElement('div'); shRoot.id = 'shopModal'; shRoot.className = 'hidden';
     const tw = [[-50, -18, 8, 0], [52, 10, 7, .9], [36, -40, 6, 1.7]].map(([x, y, s, d]) => `<i class="sh-tw" style="left:calc(50% + ${x}px - ${s / 2}px);top:calc(50% + ${y}px - ${s / 2}px);--s:${s}px;--d:${d}s">✦</i>`).join('');
     shRoot.innerHTML = `<div id="shWin">
-        <div class="sh-top"><div class="sh-coins" id="shCoins"><i class="fa-solid fa-coins sh-cg"></i><span id="shCoinsN">0</span></div>
+        <div class="sh-top"><div class="sh-coins" id="shCoins"><i class="fa-solid fa-coins sh-cg"></i><i class="mc-tw" style="left:7px;top:4px;--s:7px;--d:0s">✦</i><i class="mc-tw" style="left:27px;top:24px;--s:6px;--d:1.3s">✦</i><span id="shCoinsN">0</span></div>
             <div class="sh-emb"><div class="sh-glow"></div><div class="sh-ring"></div><div class="sh-core"><i class="fa-solid fa-store"></i></div>${tw}</div>
             <div></div></div>
         <button type="button" class="sh-x" data-sh="close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
