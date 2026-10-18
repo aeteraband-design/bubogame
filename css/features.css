@@ -426,3 +426,25 @@ div:has(> .shrink-0 > .fa-gamepad) .tracking-tight > span:nth-child(2) { filter:
 
 /* число монет в меню и в лавке — Black (900) */
 #menuCoins, #menuCoins #menuCoinsN, #shWin .sh-coins, #shWin .sh-coins #shCoinsN { font-weight: 900 !important; }
+
+/* верхние кнопки меню и плашка монет — как кнопки паузы и музыки в игре: 36×36, скругление 12, иконки 15px */
+#startScreen #openRouletteBtn.rw-menu-btn, #startScreen #openQuizBtn.rw-menu-btn, #startScreen #openShopBtn.rw-menu-btn { width: 36px !important; height: 36px !important; border-radius: 12px !important; }
+#startScreen #openRouletteBtn.rw-menu-btn { right: 14px !important; }
+#startScreen #openQuizBtn.rw-menu-btn { right: 58px !important; }
+#startScreen #openShopBtn.rw-menu-btn { right: 102px !important; }
+#startScreen #openRouletteBtn.rw-menu-btn i, #startScreen #openShopBtn.rw-menu-btn i { font-size: 15px !important; }
+#startScreen #openQuizBtn.rw-menu-btn i.fa-comments { font-size: 14px !important; }
+#menuCoins { height: 36px !important; border-radius: 12px !important; gap: 6px !important; padding: 0 11px 0 9px !important; font-size: 14px !important; }
+#menuCoins .mc-coin { font-size: 15px !important; }
+#menuCoins .mc-tw:nth-of-type(2) { left: 6px !important; top: 3px !important; }
+#menuCoins .mc-tw:nth-of-type(3) { left: 23px !important; top: 21px !important; }
+
+/* знак логотипа чуть крупнее относительно надписи (+10%) */
+#startScreen > .menu-logo-wrap .shrink-0:has(> .fa-gamepad) { width: 62px !important; height: 62px !important; border-radius: 20px !important; }
+#startScreen > .menu-logo-wrap .fa-gamepad { font-size: 26px !important; }
+#gameOverModal .shrink-0:has(> .fa-gamepad) { width: 40px !important; height: 40px !important; border-radius: 13px !important; }
+#gameOverModal .shrink-0 > .fa-gamepad { font-size: 15px !important; }
+
+/* вопросы дня и лавка на ПК — крупнее, как остальные окна (масштаб меню), высота в пределах экрана */
+#qzWin, #shWin { zoom: var(--menu-zoom, 1); max-height: calc((100dvh - 24px) / var(--menu-zoom, 1)) !important; }
+#shWin.full { height: calc((100dvh - 24px) / var(--menu-zoom, 1)) !important; }

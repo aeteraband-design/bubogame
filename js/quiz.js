@@ -298,6 +298,11 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-curt b{font-weight:900;font-size:13px}
 #qzWin .qz-curt span{display:flex;align-items:center;gap:4px;font-weight:800;font-size:11px}
 #qzWin .qz-curt .qz-coin{font-size:12px}
+#qzWin .qz-chg[disabled]{opacity:.35;pointer-events:none}
+#qzWin .qz-nav{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#qzWin .qz-nav .qz-btn{width:auto}
+#qzWin .qz-nav .qz-btn[disabled]{opacity:.35;pointer-events:none;filter:saturate(.5)}
+#qzWin .qz-nav .qz-btn i{color:#FE7600}
 #qzWin .qz-chg{flex:0 0 auto;padding:7px 10px;border-radius:10px;font:800 11px Onest,sans-serif;color:#fff;background:rgba(120,44,233,.3);border:1px solid rgba(168,120,245,.6);cursor:pointer}
 `;
         document.head.appendChild(st);
@@ -363,8 +368,7 @@ function qzRenderReady() {
         + `<div class="qz-rule"><i class="fa-solid fa-list-ol"></i><span>В день — ${QUIZ_PER_DAY} вопросов. ${QZ_READ} с на чтение, потом ${QZ_ANSWER} с на ответ</span></div>`
         + `<div class="qz-rule"><i class="fa-solid fa-coins"></i><span>За верный ответ: <b style="color:#4ADE80">суперлайт</b> — 50, <b style="color:#A3E635">лайт</b> — 75, <b style="color:#FACC15">средне</b> — 100, <b style="color:#F87171">хард</b> — 150 монет</span></div>`
         + `<div class="qz-rule"><i class="fa-solid fa-store"></i><span>Монеты тратятся в лавке на попытки, жизни и бонусы</span></div></div>`;
-    body.innerHTML = qzHead() + qzProg(d, d.ids.length) + rules
-        + `<div class="qz-cur" style="--tc:${th.col}"><span class="qz-thi"><i class="fa-solid ${th.icon}"></i></span><span class="qz-curt"><b>${th.name}</b><span style="color:${lv.col}">${lv.name} · ${QZ_COIN} ${lv.coins} за вопрос</span></span><button type="button" class="qz-chg" data-qa="pick">Сменить</button></div>`
+    body.innerHTML = qzHead() + qzCurPlate(d, true) + qzProg(d, d.ids.length) + rules
         + `<div class="qz-ready"><div class="n">Вопрос ${n} из ${QUIZ_PER_DAY}</div><div class="t">Как будете готовы — нажмите кнопку.<br>Можно выйти и вернуться позже: продолжите с этого места.</div></div>`
         + `<div class="qz-btns"><button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid fa-play"></i>${n === 1 ? 'НАЧАТЬ' : 'К ВОПРОСУ'}</button>`
         + `<div class="qz-rd" style="text-align:center">Монет сейчас: <b style="color:#FFD66B">${qzCoinsTotal()}</b></div></div>`;
@@ -422,6 +426,17 @@ function qzRenderDone() {
         + `<button type="button" class="qz-btn sec" data-qa="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button></div>`;
 }
 // вопрос: pickL — что выбрали (после ответа), reveal — показать правильный
+// плашка выбранной темы и сложности (над кружками вопросов); во время вопроса сменить нельзя
+function qzCurPlate(d, canChange) {
+    const th = qzTheme(d.theme), lv = qzLevel(d.lvl);
+    return `<div class="qz-cur" style="--tc:${th.col}"><span class="qz-thi"><i class="fa-solid ${th.icon}"></i></span><span class="qz-curt"><b>${th.name}</b><span style="color:${lv.col}">${lv.name} · ${QZ_COIN} ${lv.coins} за вопрос</span></span><button type="button" class="qz-chg" data-qa="pick"${canChange ? '' : ' disabled'}>Сменить</button></div>`;
+}
+// две кнопки в ряд: назад к выбору темы и в главное меню
+function qzNavRow(on) {
+    const dis = on ? '' : ' disabled';
+    return `<div class="qz-nav"><button type="button" class="qz-btn sec" data-qa="pick"${dis}><i class="fa-solid fa-arrow-left"></i>НАЗАД</button>`
+        + `<button type="button" class="qz-btn sec" data-qa="close"${dis}><i class="fa-solid fa-house"></i>В МЕНЮ</button></div>`;
+}
 function qzRenderQ(reveal) {
     const d = quizDay(), body = qzBody(); if (!body) return;
     const q = QUIZ_QUESTIONS.find(x => x.id === d.cur) || QUIZ_QUESTIONS[0];
@@ -441,14 +456,14 @@ function qzRenderQ(reveal) {
         note = okA ? `<div class="qz-note ok">Верно! +${di.coins} монет</div>` : (pickL ? '<div class="qz-note bad">Неверно</div>' : '<div class="qz-note bad">Время вышло</div>');
         const last = d.ids.length >= QUIZ_PER_DAY;
         btns = `<div class="qz-btns">${pickL ? `<button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid ${last ? 'fa-flag-checkered' : 'fa-forward'}"></i>${last ? 'ИТОГИ ДНЯ' : 'СЛЕДУЮЩИЙ ВОПРОС'}</button>` : ''}`
-            + `<button type="button" class="qz-btn sec" data-qa="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button></div>`;
+            + qzNavRow(true) + `</div>`;
     } else {
         note = `<div class="qz-note read" id="qzNote">${QS.phase === 'read' ? 'Читайте вопрос…' : 'Выбирайте ответ!'}</div>`;
         // пока идёт вопрос — выйти в меню нельзя: кнопка неактивна, включится, когда покажется ответ
-        btns = `<div class="qz-btns"><button type="button" class="qz-btn sec" data-qa="close" disabled><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button></div>`;
+        btns = `<div class="qz-btns">${qzNavRow(false)}</div>`;
     }
     { const w = document.getElementById('qzWin'); if (w) w.classList.toggle('busy', !reveal); }
-    body.innerHTML = qzHead() + qzProg(d, idx)
+    body.innerHTML = qzHead() + (d.theme ? qzCurPlate(d, reveal) : '') + qzProg(d, idx)
         + `<div class="qz-card"><div class="qz-meta"><span class="qz-chip" style="color:${th.col};border-color:${th.col}88;background:${th.col}22">${th.name}</span><span class="qz-sep"></span><span class="qz-diff" style="color:${di.col}">${di.name}</span>${reveal ? '' : ring}</div>`
         + `<div class="qz-q">${q.question}</div><div class="qz-rew">${QZ_COIN}<span>За верный ответ: <b>+${di.coins}</b></span></div><div class="qz-opts">${opts}</div></div>`
         + `<div class="qz-abcd${reveal ? ' lock' : (QS.phase === 'read' ? ' wait' : '')}" id="qzAbcd">${balls}</div>` + note + btns;

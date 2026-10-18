@@ -65,16 +65,23 @@
         { id: 'freeze', glow: '125,211,252', line: '#7DD3FC' },
         { id: 'drunk', glow: '45,212,191', line: '#5EEAD4' },
         { id: 'fat', glow: '244,114,182', line: '#F9A8D4' },
-        { id: 'shazam', glow: '254,118,0', line: '#FFA733' }
+        { id: 'shazam', glow: '254,118,0', line: '#FFA733' },
+        { id: 'speed', glow: '250,204,21', line: '#FDE047' }
     ];
-    let order = [], dpr = 1;
+    let order = [], dpr = 1, lastId = '';
     function nextState() {
-        if (!order.length) { order = STATES.slice().sort(() => Math.random() - 0.5); }
-        return order.shift();
+        // все состояния по разу в случайном порядке, потом новая перетасовка (одно и то же два раза подряд не бывает)
+        if (!order.length) {
+            const a = STATES.slice();
+            for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+            if (lastId && a[0].id === lastId) a.push(a.shift());
+            order = a;
+        }
+        const st = order.shift(); lastId = st.id; return st;
     }
 
     // рисуем сову игры прямо в холст логотипа в нужном состоянии; все значения игры сразу возвращаем на место
-    function drawOwlState(x, y, size, state, rot, wing, now) {
+    function drawOwlRaw(gc, px, x, y, size, state, rot, wing, now) {
         if (typeof owl === 'undefined' || !owl.draw || typeof ctx === 'undefined') return;
         const keys = ['x', 'y', 'rotation', 'visible', 'wing', 'lean', 'boostK', 'spinAngle'];
         const save = {}; keys.forEach(k => save[k] = owl[k]);
@@ -82,15 +89,15 @@
             d = currentDrunkFactor, fz = currentFreezeFactor, ov = currentOvereatFactor, vs = viewScale, rs = renderScale;
         const hasShz = typeof SHZ !== 'undefined', shk = hasShz ? SHZ.k : 0;
         try {
-            const k = size / 96 * dpr;
-            g.setTransform(k, 0, 0, k, x * dpr, y * dpr);
+            const k = size / 96 * px;
+            gc.setTransform(k, 0, 0, k, x * px, y * px);
             gameActive = false; waitingFirstTap = false; dtMult = 1; frame = now / 16.67;
             currentDrunkFactor = state.id === 'drunk' ? 1 : 0;
             currentFreezeFactor = state.id === 'freeze' ? 1 : 0;
             currentOvereatFactor = state.id === 'fat' ? 1 : 0;
             if (hasShz) SHZ.k = state.id === 'shazam' ? 1 : 0;
-            owl.x = 0; owl.y = 0; owl.rotation = rot; owl.visible = true; owl.wing = state.id === 'freeze' ? 0 : wing; owl.lean = 0; owl.boostK = 0; owl.spinAngle = 0;
-            ctx = g;
+            owl.x = 0; owl.y = 0; owl.rotation = rot; owl.visible = true; owl.wing = state.id === 'freeze' ? 0 : wing; owl.lean = state.id === 'speed' ? 0.3 : 0; owl.boostK = state.id === 'speed' ? 1 : 0; owl.spinAngle = 0;
+            ctx = gc;
             if (state.id === 'freeze' && typeof drawFrozenOwl === 'function') { viewScale = k; renderScale = 1; drawFrozenOwl(); }
             else owl.draw();
         } catch (e) {}
@@ -99,8 +106,26 @@
             currentDrunkFactor = d; currentFreezeFactor = fz; currentOvereatFactor = ov; viewScale = vs; renderScale = rs;
             if (hasShz) SHZ.k = shk;
             keys.forEach(k => owl[k] = save[k]);
-            g.setTransform(dpr, 0, 0, dpr, 0, 0);
+            gc.setTransform(px, 0, 0, px, 0, 0);
         }
+    }
+    // визуальный центр совы в каждом состоянии (по видимым пикселям) — чтобы сова стояла ровно по центру плитки
+    const CENTER = {};
+    function owlCenter(state) {
+        if (CENTER[state.id]) return CENTER[state.id];
+        let r = { dx: 0, dy: 0 };
+        try {
+            const N = 240, c = document.createElement('canvas'); c.width = c.height = N; const cc = c.getContext('2d');
+            drawOwlRaw(cc, 1, N / 2, N / 2, 120, state, 0, 0.5, 0);
+            const px = cc.getImageData(0, 0, N, N).data; let x0 = N, y0 = N, x1 = 0, y1 = 0;
+            for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (px[(y * N + x) * 4 + 3] > 40) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+            if (x1 > x0) r = { dx: ((x0 + x1) / 2 - N / 2) / 120, dy: ((y0 + y1) / 2 - N / 2) / 120 };
+        } catch (e) {}
+        return (CENTER[state.id] = r);
+    }
+    function drawOwlState(x, y, size, state, rot, wing, now) {
+        const c = owlCenter(state);
+        drawOwlRaw(g, dpr, x - c.dx * size, y - c.dy * size, size, state, rot, wing, now);
     }
 
     const ease = (t) => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
@@ -138,6 +163,17 @@
         const tr = tile.getBoundingClientRect();
         return { w: cv.offsetWidth, h: cv.offsetHeight, tx: (tr.left - r.left + tr.width / 2) / k, ty: (tr.top - r.top + tr.height / 2) / k, ts: tr.width / k };
     }
+    // ускорение: позади совы проносятся светлые полоски и звёздочки
+    function speedLines(tx, ty, ts, k) {
+        g.save(); g.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 6; i++) {
+            const u = (k * 1.6 + i / 6) % 1, y = ty - ts * 0.35 + (i % 3) * ts * 0.3 + (i > 2 ? ts * 0.08 : 0), x = tx - ts * 0.25 - u * ts * 1.1, len = ts * (0.35 + (i % 2) * 0.2);
+            const gr = g.createLinearGradient(x - len, 0, x, 0);
+            gr.addColorStop(0, 'rgba(253,224,71,0)'); gr.addColorStop(1, `rgba(255,236,150,${(0.75 * (1 - u)).toFixed(2)})`);
+            g.fillStyle = gr; g.fillRect(x - len, y, len, 2);
+        }
+        g.restore();
+    }
     function glow(x, y, r, a, col) {
         if (a <= 0.01) return;
         const gr = g.createRadialGradient(x, y, 0, x, y, r);
@@ -162,7 +198,7 @@
         icon.style.opacity = op == null ? '' : String(op);
     }
     function resetIcon() { icon.style.transform = ''; icon.style.opacity = ''; }
-    const sparkCol = (s) => s.id === 'freeze' ? '#BAE6FD' : s.id === 'drunk' ? '#5EEAD4' : s.id === 'fat' ? '#F9A8D4' : s.id === 'shazam' ? '#FFB45C' : '#C4A1FF';
+    const sparkCol = (s) => s.id === 'speed' ? '#FDE047' : s.id === 'freeze' ? '#BAE6FD' : s.id === 'drunk' ? '#5EEAD4' : s.id === 'fat' ? '#F9A8D4' : s.id === 'shazam' ? '#FFB45C' : '#C4A1FF';
 
     function tick(now) {
         raf = 0;
@@ -189,14 +225,15 @@
             const s = back(Math.min(1, k / 0.4)), bob = Math.sin(k * 4.2) * 2.5, pulse = 0.85 + 0.15 * Math.sin(k * 5);
             glow(tx, ty, ts * 1.5 * pulse, 0.9, col);
             glow(tx, ty, ts * 0.9, 0.5, '255,220,170');
-            const wing = state.id === 'shazam' ? Math.max(0, Math.sin(now / 90)) : (k < 0.4 ? 1 : Math.max(0, Math.sin(k * 9)) * (k < 1.6 ? 1 : 0.4));
+            const wing = (state.id === 'shazam' || state.id === 'speed') ? Math.max(0, Math.sin(now / 90)) : (k < 0.4 ? 1 : Math.max(0, Math.sin(k * 9)) * (k < 1.6 ? 1 : 0.4));
             const rot = state.id === 'drunk' ? Math.sin(k * 3.2) * 0.18 : Math.sin(k * 3) * 0.05;
-            drawOwlState(tx, ty + (state.id === 'freeze' ? 0 : bob) - 2, OS * s, state, rot, wing, now);
+            if (state.id === 'speed') speedLines(tx, ty, ts, k);
+            drawOwlState(tx, ty + (state.id === 'freeze' ? 0 : bob), OS * s, state, rot, wing, now);
         } else {   // 3) сова сжимается — джойстик возвращается
             const k = (t - (DUR - 0.65)) / 0.65;
             const os = 1 - ease(Math.min(1, k / 0.45));
             glow(tx, ty, ts * 1.5, 0.9 * (1 - k), col);
-            if (os > 0.01) drawOwlState(tx, ty - 2, OS * os, state, 0, 0.5, now);
+            if (os > 0.01) drawOwlState(tx, ty, OS * os, state, 0, 0.5, now);
             if (k > 0.2) lgOn(false);
             if (k > 0.35) { if (!flags.back) { flags.back = 1; burst(tx, ty, 8, '#FFE08A'); } const s = back((k - 0.35) / 0.65); setIcon(s, s, 1); }
             else setIcon(0, 0, 0);
