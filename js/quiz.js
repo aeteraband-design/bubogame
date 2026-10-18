@@ -97,7 +97,7 @@ QUIZ_QUESTIONS.forEach(q => { if (!q.diff) q.diff = QZ_DIFF.e.includes(q.id) ? '
 const QUIZ_PER_DAY = 10, QZ_READ = 5, QZ_ANSWER = 10;   // вопросов в день; секунд на чтение и на ответ
 const QUIZ_SEEN_KEY = 'bubo_quiz_seen', QUIZ_DAY_KEY = 'bubo_quiz_day10';
 const QZ_LETTERS = ['A', 'B', 'C', 'D'];
-const QZ_BALL_COL = { A: '#FE7600', B: '#A855F7', C: '#38BDF8', D: '#F43F5E' };
+const QZ_BALL_COL = { A: '#FE7600', B: '#A855F7', C: '#38BDF8', D: '#E879F9' };   // D — светло-фиолетовый, чтобы не путался с красным «неверно»
 
 // старый «квиз-мир» убран: заглушки для мест, которые его вызывали
 const QZ = { on: false, phase: '' };
@@ -178,12 +178,12 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-cnt{display:flex;align-items:center;gap:5px;font-weight:900;font-size:12px;color:#FFD66B;white-space:nowrap}
 #qzWin .qz-cnl{font-weight:700;font-size:9.5px;color:rgba(237,229,248,.55);text-transform:uppercase;letter-spacing:.04em}
 .qz-coin{display:inline-block;flex:0 0 auto;font-size:14px;line-height:1;background:linear-gradient(160deg,#FFF3B0 0%,#FFC53D 45%,#E08A00 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 4px rgba(255,197,61,.55))}
-#qzWin .qz-card{padding:14px 12px 14px;border-radius:20px;background:linear-gradient(180deg,rgba(120,44,233,.22),rgba(120,44,233,.08));border:1px solid rgba(168,120,245,.45);display:flex;flex-direction:column;gap:12px}
-#qzWin .qz-meta{display:flex;align-items:center;gap:7px;min-height:36px}
+#qzWin .qz-card{position:relative;padding:12px;border-radius:20px;background:linear-gradient(180deg,rgba(120,44,233,.22),rgba(120,44,233,.08));border:1px solid rgba(168,120,245,.45);display:flex;flex-direction:column;gap:12px}
+#qzWin .qz-meta{display:flex;align-items:center;gap:7px;min-height:0;padding-right:40px}
 #qzWin .qz-chip{font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:8px;background:rgba(56,189,248,.16);color:#7DD3FC;border:1px solid rgba(56,189,248,.35)}
 #qzWin .qz-sep{width:4px;height:4px;border-radius:50%;background:rgba(196,161,255,.55)}
 #qzWin .qz-diff{font-weight:900;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em}
-#qzWin .qz-tm{margin-left:auto;position:relative;width:36px;height:36px;flex:0 0 36px}
+#qzWin .qz-tm{position:absolute;top:8px;right:8px;width:36px;height:36px;flex:0 0 36px}
 #qzWin .qz-tm svg{position:absolute;inset:0;transform:rotate(-90deg)}
 #qzWin .qz-tm circle{fill:none;stroke-width:3.2;stroke-linecap:round}
 #qzWin .qz-tm .bg{stroke:rgba(196,161,255,.18)}
@@ -196,7 +196,7 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-rew{display:flex;align-items:center;gap:6px;font-weight:800;font-size:11px;color:#C4B5FD}
 #qzWin .qz-rew b{color:#FFD66B;font-weight:900}
 #qzWin .qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-#qzWin .qz-o{display:flex;align-items:center;gap:7px;min-height:40px;box-sizing:border-box;padding:6px 7px 6px 6px;border-radius:12px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:11.5px;line-height:1.22;transition:all .25s;min-width:0}
+#qzWin .qz-o{display:flex;align-items:center;gap:7px;min-height:0;box-sizing:border-box;padding:7px;border-radius:12px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:11.5px;line-height:1.22;transition:all .25s;min-width:0}
 #qzWin .qz-o span{display:block;min-width:0;overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
 #qzWin .qz-o b{flex:0 0 auto;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10.5px;color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
 #qzWin .qz-o.ok{background:rgba(34,197,94,.2);border-color:#22C55E}
@@ -213,7 +213,9 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-abcd.lock .qz-ball.picked{animation:qzBack .35s cubic-bezier(.2,1.6,.4,1)}
 #qzWin .qz-abcd.lock .qz-ball.ok.picked{animation:qzBack .35s cubic-bezier(.2,1.6,.4,1),qzBallOk 1.4s ease-in-out .35s infinite}
 @keyframes qzBack{0%{transform:scale(.86)}100%{transform:scale(1.08)}}
-#qzWin .qz-o.ok{animation:qzOkGlow 1.4s ease-in-out infinite;border-width:2px;padding:5px 6px 5px 5px}
+#qzWin .qz-o.ok{animation:qzOkGlow 1.4s ease-in-out infinite;border-width:2px;padding:6px}
+#qzWin .qz-o.bad{border-width:2px;padding:6px;box-shadow:0 0 12px rgba(239,68,68,.55)}
+#qzWin .qz-o.bad b{background:#EF4444!important}
 #qzWin .qz-o.ok b{background:#22C55E!important}
 @keyframes qzOkGlow{0%,100%{box-shadow:0 0 6px rgba(34,197,94,.4)}50%{box-shadow:0 0 16px rgba(74,222,128,.75),inset 0 0 8px rgba(74,222,128,.25)}}
 .qz-star{position:absolute;font-style:normal;font-size:var(--s);line-height:1;margin:calc(var(--s) / -2) 0 0 calc(var(--s) / -2);color:var(--c);text-shadow:0 0 8px var(--c),0 0 2px #fff;pointer-events:none;z-index:3;animation:qzStar .6s ease-out forwards}
@@ -294,9 +296,10 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-lv:active{transform:scale(.95)}
 #qzWin .qz-btn[disabled]{opacity:.45;pointer-events:none;filter:saturate(.5)}
 #qzWin .qz-cur{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:14px;background:linear-gradient(135deg,color-mix(in srgb,var(--tc) 18%,transparent),rgba(20,3,38,.7) 70%);border:1.5px solid var(--tc)}
-#qzWin .qz-curt{flex:1 1 auto;display:flex;flex-direction:column;gap:3px;min-width:0}
-#qzWin .qz-curt b{font-weight:900;font-size:13px}
-#qzWin .qz-curt span{display:flex;align-items:center;gap:4px;font-weight:800;font-size:11px}
+#qzWin .qz-curt{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0}
+#qzWin .qz-curt b{font-weight:900;font-size:13px;line-height:1.15;display:block}
+#qzWin .qz-curt span{display:flex;align-items:center;gap:4px;font-weight:800;font-size:11px;line-height:1.15;color:#fff}
+#qzWin .qz-curt em{font-style:normal}
 #qzWin .qz-curt .qz-coin{font-size:12px}
 #qzWin .qz-chg[disabled]{opacity:.35;pointer-events:none}
 #qzWin .qz-nav{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -429,7 +432,7 @@ function qzRenderDone() {
 // плашка выбранной темы и сложности (над кружками вопросов); во время вопроса сменить нельзя
 function qzCurPlate(d, canChange) {
     const th = qzTheme(d.theme), lv = qzLevel(d.lvl);
-    return `<div class="qz-cur" style="--tc:${th.col}"><span class="qz-thi"><i class="fa-solid ${th.icon}"></i></span><span class="qz-curt"><b>${th.name}</b><span style="color:${lv.col}">${lv.name} · ${QZ_COIN} ${lv.coins} за вопрос</span></span><button type="button" class="qz-chg" data-qa="pick"${canChange ? '' : ' disabled'}>Сменить</button></div>`;
+    return `<div class="qz-cur" style="--tc:${th.col}"><span class="qz-thi"><i class="fa-solid ${th.icon}"></i></span><span class="qz-curt"><b>${th.name}</b><span><em style="color:${lv.col}">${lv.name}</em> · ${QZ_COIN} ${lv.coins} за вопрос</span></span><button type="button" class="qz-chg" data-qa="pick"${canChange ? '' : ' disabled'}>Сменить</button></div>`;
 }
 // две кнопки в ряд: назад к выбору темы и в главное меню
 function qzNavRow(on) {
