@@ -11,7 +11,7 @@
     wrap.appendChild(cv);
     const g = cv.getContext('2d');
     const st = document.createElement('style');
-    st.textContent = '#startScreen > .menu-logo-wrap .logo-fx{position:absolute;left:0;right:0;top:-70px;bottom:-50px;width:100%;height:calc(100% + 120px);pointer-events:none;z-index:3}'
+    st.textContent = '#startScreen > .menu-logo-wrap .logo-fx{position:absolute;left:0;right:0;top:-120px;bottom:-100px;width:100%;height:calc(100% + 220px);pointer-events:none;z-index:3}'
         + '#startScreen > .menu-logo-wrap .fa-gamepad{display:inline-block;will-change:transform}'
         // пока идёт превращение — по обводке плитки бежит блик цвета состояния совы (как рамка таймера ШАЗАМа), линия одна
         + '@property --lgA{syntax:"<angle>";inherits:false;initial-value:0deg}'
@@ -51,6 +51,7 @@
     try { new ResizeObserver(fitLogo).observe(wrap); } catch (e) {}
     window.addEventListener('resize', fitLogo);
     setTimeout(fitLogo, 0); setTimeout(fitLogo, 600);
+    try { new ResizeObserver(() => spanCanvas()).observe(wrap); } catch (e) {}
     // надпись: блик пробегает по словам целиком
     const txt = wrap.querySelector('.tracking-tight');
     if (txt) txt.classList.add('lg-txt');
@@ -117,7 +118,18 @@
         // открыто окно поверх меню — не отвлекаем
         return !['#quizModal', '#shopModal', '#rouletteModal', '#settingsModal', '#rulesModal', '#adminModal'].some(s => { const m = document.querySelector(s); return m && !m.classList.contains('hidden') && m.offsetParent !== null; });
     }
+    // холст свечения — ровно во всю ширину экрана меню: свечение не обрезается у логотипа и не создаёт прокрутку вбок
+    function spanCanvas() {
+        const ss = document.getElementById('startScreen'); if (!ss) return;
+        const wr = wrap.getBoundingClientRect(), sr = ss.getBoundingClientRect(), k = wrap.offsetWidth ? wr.width / wrap.offsetWidth : 1;
+        if (!sr.width || !k) return;
+        cv.style.left = ((sr.left - wr.left) / k).toFixed(1) + 'px';
+        cv.style.right = 'auto';
+        cv.style.width = (ss.clientWidth * (sr.width / ss.offsetWidth || 1) / k).toFixed(1) + 'px';
+    }
+    window.addEventListener('resize', spanCanvas);
     function sizeCanvas() {
+        spanCanvas();
         const r = cv.getBoundingClientRect(), k = cv.offsetWidth ? r.width / cv.offsetWidth : 1;
         dpr = Math.min(2.5, window.devicePixelRatio || 1) * k;
         const W = Math.round(cv.offsetWidth * dpr), H = Math.round(cv.offsetHeight * dpr);

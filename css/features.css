@@ -418,3 +418,8 @@ div:has(> .shrink-0 > .fa-gamepad) .tracking-tight > span:nth-child(2) { filter:
 
 /* рулетка — как вопросы и лавка: меню прячется, город остаётся на фоне в лёгком размытии */
 #rouletteModal { background: rgba(20, 3, 38, 0.25) !important; backdrop-filter: blur(7px) !important; -webkit-backdrop-filter: blur(7px) !important; }
+
+/* админка: содержимое не уезжает вбок, полоса прокрутки скрыта — как в остальных окнах */
+#admBody { overflow-x: hidden !important; scrollbar-width: none; }
+#admBody::-webkit-scrollbar { display: none; width: 0; }
+#admBody > * { min-width: 0; max-width: 100%; }
