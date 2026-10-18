@@ -448,3 +448,6 @@ div:has(> .shrink-0 > .fa-gamepad) .tracking-tight > span:nth-child(2) { filter:
 /* вопросы дня и лавка на ПК — крупнее, как остальные окна (масштаб меню), высота в пределах экрана */
 #qzWin, #shWin { zoom: var(--menu-zoom, 1); max-height: calc((100dvh - 24px) / var(--menu-zoom, 1)) !important; }
 #shWin.full { height: calc((100dvh - 24px) / var(--menu-zoom, 1)) !important; }
+
+/* скругление всех всплывающих окон — как у окна настроек (24px), чтобы крестик повторял угол окна */
+#rlWin, #qzWin, #shWin, #rwWindow, #winModal > #winWindow, #resetConfirmModal > div, #gameOverModal > .glass-panel, #adminModal .adm-panel { border-radius: 24px !important; }
