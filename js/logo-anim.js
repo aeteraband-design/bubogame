@@ -13,14 +13,21 @@
     const st = document.createElement('style');
     st.textContent = '#startScreen > .menu-logo-wrap .logo-fx{position:absolute;left:0;right:0;top:-70px;bottom:-50px;width:100%;height:calc(100% + 120px);pointer-events:none;z-index:3}'
         + '#startScreen > .menu-logo-wrap .fa-gamepad{display:inline-block;will-change:transform}'
-        // пока идёт превращение — обводка мягко окрашивается в цвет состояния совы; надпись едва заметно отсвечивает
+        // пока идёт превращение — по обводке плитки бежит блик цвета состояния совы (как рамка таймера ШАЗАМа), линия одна
+        + '@property --lgA{syntax:"<angle>";inherits:false;initial-value:0deg}'
         + '#startScreen > .menu-logo-wrap .lg-tile{position:relative;transition:border-color .5s,box-shadow .5s}'
-        + '#startScreen > .menu-logo-wrap .lg-tile.lg-on.lg-on.lg-on{border-color:var(--lc)!important;box-shadow:0 0 12px var(--lc),0 6px 14px rgba(0,0,0,.3)!important}'
-        // надпись: по буквам мягко пробегает отсвет и тонкое свечение по контуру цвета состояния; сила (--lgk) плавно нарастает и угасает
-        + '@property --lgw{syntax:"<number>";inherits:false;initial-value:0}'
-        + '#startScreen > .menu-logo-wrap .lg-txt.lg-on .lg-ch{animation:lgWave 2.2s ease-in-out infinite;animation-delay:calc(var(--i) * 85ms);'
-        + 'filter:brightness(calc(1 + .2 * var(--lgk,0) * var(--lgw))) drop-shadow(0 0 calc(4px * var(--lgk,0) * (.35 + var(--lgw))) var(--lc))}'
-        + '@keyframes lgWave{0%,50%,100%{--lgw:0}22%{--lgw:1}}';
+        + '#startScreen > .menu-logo-wrap .lg-tile::before{content:"";position:absolute;inset:-1.5px;border-radius:inherit;padding:1.5px;pointer-events:none;opacity:0;transition:opacity .5s;'
+        + 'background:conic-gradient(from var(--lgA),color-mix(in srgb,var(--lc) 55%,transparent) 0deg 190deg,var(--lc) 240deg,#fff 265deg,var(--lc) 290deg,color-mix(in srgb,var(--lc) 55%,transparent) 340deg 360deg);'
+        + '-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:lgRun 1.6s linear infinite}'
+        + '#startScreen > .menu-logo-wrap .lg-tile.lg-on.lg-on.lg-on{border-color:transparent!important;box-shadow:0 0 14px color-mix(in srgb,var(--lc) 55%,transparent),0 6px 14px rgba(0,0,0,.3)!important}'
+        + '#startScreen > .menu-logo-wrap .lg-tile.lg-on::before{opacity:1}'
+        + '@keyframes lgRun{to{--lgA:360deg}}'
+        // надпись: по словам пробегает белый блик (цвета BUBO/GAME и их свечение остаются своими); сила блика (--lgk) плавно нарастает и угасает
+        + '#startScreen > .menu-logo-wrap .lg-txt.lg-on > span{color:transparent!important;-webkit-background-clip:text;background-clip:text;background-size:280% 100%;animation:lgShine 2.1s linear infinite;'
+        + 'background-image:linear-gradient(105deg,var(--wc) 0%,var(--wc) 36%,color-mix(in srgb,#fff calc(var(--lgk,0) * 92%),var(--wc)) 47%,color-mix(in srgb,#fff calc(var(--lgk,0) * 55%),var(--wc)) 52%,var(--wc) 63%,var(--wc) 100%)}'
+        + '#startScreen > .menu-logo-wrap .lg-txt > span:nth-child(1){--wc:#FE7600}#startScreen > .menu-logo-wrap .lg-txt > span:nth-child(2){--wc:#A855F7}'
+        + '#startScreen > .menu-logo-wrap .lg-txt.lg-on > span:nth-child(2){animation-delay:.35s}'
+        + '@keyframes lgShine{from{background-position:100% 0}to{background-position:0 0}}';
     tile.classList.add('lg-tile');
     // размер логотипа под экран: на высоких экранах крупнее (до 1,4×), на низких — уменьшается; всегда по центру между верхом и блоками меню
     const logo = wrap.firstElementChild;
@@ -44,12 +51,9 @@
     try { new ResizeObserver(fitLogo).observe(wrap); } catch (e) {}
     window.addEventListener('resize', fitLogo);
     setTimeout(fitLogo, 0); setTimeout(fitLogo, 600);
-    // разбиваем надпись на буквы для волны
+    // надпись: блик пробегает по словам целиком
     const txt = wrap.querySelector('.tracking-tight');
-    if (txt) {
-        txt.classList.add('lg-txt'); let n = 0;
-        txt.querySelectorAll('span').forEach(sp => { const t = sp.textContent; sp.textContent = ''; for (const ch of t) { const c = document.createElement('span'); c.className = 'lg-ch'; c.style.setProperty('--i', n++); c.textContent = ch; sp.appendChild(c); } });
-    }
+    if (txt) txt.classList.add('lg-txt');
     const lgOn = (on) => { tile.classList.toggle('lg-on', on); };
     const txtK = (k) => { if (!txt) return; txt.style.setProperty('--lgk', k.toFixed(3)); txt.classList.toggle('lg-on', k > 0.001); };
     document.head.appendChild(st);
@@ -155,7 +159,7 @@
             if (now < nextAt) return;
             if (!canRun()) { nextAt = now + 2000; return; }
             state = nextState(); t0 = now; flags = {}; sparks = [];
-            tile.style.setProperty('--lc', state.line); if (txt) txt.style.setProperty('--lc', state.line); lgOn(true);
+            tile.style.setProperty('--lc', state.line); lgOn(true);
         }
         if (!canRun()) { stop(); return; }
         const L = sizeCanvas(), t = (now - t0) / 1000, { tx, ty, ts } = L;

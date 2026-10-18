@@ -409,3 +409,9 @@ html.hud-ll #buffBar .buff-tag { align-self: flex-start !important; }
 /* меню никогда не прокручивается вбок (свечение логотипа и т. п. не должны давать горизонтальную полосу прокрутки) */
 #startScreen { overflow-x: hidden !important; }
 html, body { overflow-x: hidden; }
+
+/* надпись логотипа светится своими цветами: BUBO — оранжевым, GAME — фиолетовым (меню, загрузка, поражение) */
+div:has(> .shrink-0 > .fa-gamepad) { filter: none !important; }
+div:has(> .shrink-0 > .fa-gamepad) > .shrink-0 { box-shadow: 0 0 18px rgba(254, 118, 0, 0.45), 0 6px 14px rgba(0, 0, 0, 0.3) !important; }
+div:has(> .shrink-0 > .fa-gamepad) .tracking-tight > span:nth-child(1) { filter: drop-shadow(0 0 10px rgba(254, 118, 0, 0.55)) drop-shadow(0 2px 3px rgba(20, 3, 38, 0.5)); }
+div:has(> .shrink-0 > .fa-gamepad) .tracking-tight > span:nth-child(2) { filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.6)) drop-shadow(0 2px 3px rgba(20, 3, 38, 0.5)); }
