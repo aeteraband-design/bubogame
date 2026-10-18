@@ -41,13 +41,20 @@
         const availH = (wrap.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)) * k;
         if (!baseW || !baseH || availH <= 0) return;
         const wantW = window.innerWidth > 700 ? Math.min(window.innerWidth * 0.36, wr.width * 0.9) : wr.width * 0.86;   // телефон — почти во всю ширину блоков, ПК — около трети экрана
-        let sc = Math.min(wantW / baseW, (availH * 0.62) / baseH, 2.6);
+        const pc = document.documentElement.classList.contains('menu-pc');
+        let sc = Math.min(wantW / baseW, (availH * (pc ? 0.96 : 0.62)) / baseH, 2.6);
         sc = Math.max(0.6, sc);
         if (Math.abs(sc - cur) < 0.005) return;
         logo.style.transform = 'scale(' + sc.toFixed(3) + ')';
         window.__logoScale = sc;
     }
-    logo && (logo.style.transformOrigin = '50% 50%');
+    // ПК: логотип прижат к верху, на одной линии с кнопками по бокам, и крупный
+    function pcMode() {
+        const pc = window.innerWidth > 700 && window.innerWidth > window.innerHeight;
+        document.documentElement.classList.toggle('menu-pc', pc);
+        if (logo) logo.style.transformOrigin = pc ? '50% 0' : '50% 50%';
+    }
+    pcMode(); window.addEventListener('resize', () => { pcMode(); fitLogo(); });
     try { new ResizeObserver(fitLogo).observe(wrap); } catch (e) {}
     window.addEventListener('resize', fitLogo);
     setTimeout(fitLogo, 0); setTimeout(fitLogo, 600);

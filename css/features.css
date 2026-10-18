@@ -458,3 +458,6 @@ div:has(> .shrink-0 > .fa-gamepad) .tracking-tight > span:nth-child(2) { filter:
 #shWin .sh-coins .sh-cg { font-size: 15px !important; }
 #shWin .sh-coins .mc-tw:nth-of-type(2) { left: 6px !important; top: 3px !important; }
 #shWin .sh-coins .mc-tw:nth-of-type(3) { left: 23px !important; top: 21px !important; }
+
+/* ПК: логотип вверху, на уровне кнопок по бокам */
+html.menu-pc #startScreen > .menu-logo-wrap { padding-top: 6px !important; align-items: flex-start !important; }
