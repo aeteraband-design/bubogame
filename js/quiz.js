@@ -300,7 +300,7 @@ function qzRenderReady() {
         + `<div class="qz-rule"><i class="fa-solid fa-coins"></i><span>За верный ответ: <b style="color:#4ADE80">лёгкий</b> — 30, <b style="color:#FACC15">средний</b> — 60, <b style="color:#F87171">сложный</b> — 100 монет</span></div>`
         + `<div class="qz-rule"><i class="fa-solid fa-store"></i><span>Монеты тратятся в лавке на попытки, жизни и бонусы</span></div></div>`;
     body.innerHTML = qzHead() + qzProg(d, d.ids.length) + rules
-        + `<div class="qz-ready"><div class="n">Вопрос ${n} из ${QUIZ_PER_DAY}</div><div class="t">Как будете готовы — нажмите кнопку. Можно выйти и вернуться позже: продолжите с этого места.</div></div>`
+        + `<div class="qz-ready"><div class="n">Вопрос ${n} из ${QUIZ_PER_DAY}</div><div class="t">Как будете готовы — нажмите кнопку.<br>Можно выйти и вернуться позже: продолжите с этого места.</div></div>`
         + `<div class="qz-btns"><button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid fa-play"></i>${n === 1 ? 'НАЧАТЬ' : 'К ВОПРОСУ'}</button>`
         + `<div class="qz-rd" style="text-align:center">Монет сейчас: <b style="color:#FFD66B">${qzCoinsTotal()}</b></div></div>`;
 }
