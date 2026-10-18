@@ -423,3 +423,6 @@ div:has(> .shrink-0 > .fa-gamepad) .tracking-tight > span:nth-child(2) { filter:
 #adminModal #admBody { overflow-x: hidden !important; scrollbar-width: none !important; scrollbar-color: transparent transparent !important; }
 #adminModal #admBody::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
 #admBody > * { min-width: 0; max-width: 100%; }
+
+/* число монет в меню и в лавке — Black (900) */
+#menuCoins, #menuCoins #menuCoinsN, #shWin .sh-coins, #shWin .sh-coins #shCoinsN { font-weight: 900 !important; }
