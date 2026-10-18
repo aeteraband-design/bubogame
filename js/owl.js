@@ -499,36 +499,45 @@ const owl = {
             ctx.beginPath();
             ctx.moveTo(13.2, 0.6); ctx.lineTo(15.4, 0.4); ctx.lineTo(14.5, 0.5 + 6.0 * fz);
             ctx.closePath(); ctx.fill();
-            // в дождь капли на сове замерзают: со временем по контуру налипают маленькие ледяные кристаллики, снизу растут сосульки
+            // в дождь или под струёй «Водонапора» замёрзшая сова обрастает льдом
             const ice = (typeof STORM !== 'undefined' && STORM.ice) || 0;
             const P = (typeof OWL_BODY_PTS !== 'undefined') ? OWL_BODY_PTS.p : null;
             if (ice > 0.02 && P) {
-                const n = P.length;
-                if (!this._iceSlots2) {   // места на контуре и их порядок появления — один раз: по всему кругу, под разными углами
-                    const s = []; let seed = 23; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-                    for (let k = 0; k < 30; k++) s.push({ t: (k + rnd() * 0.7) / 30 * n, tilt: (rnd() - 0.5) * 1.6, L: 1.3 + rnd() * 1.6, side: rnd() < 0.55 ? (rnd() < 0.5 ? -1 : 1) : 0, sl: 0.45 + rnd() * 0.3 });
-                    for (let k = s.length - 1; k > 0; k--) { const q = Math.floor(rnd() * (k + 1)); [s[k], s[q]] = [s[q], s[k]]; }
-                    this._iceSlots2 = s;
-                }
-                const S = this._iceSlots2, cnt = S.length * ice;
-                // кристаллик: вытянутый ромб с двумя гранями, наполовину «вмёрз» в контур; иногда рядом второй, поменьше, под другим углом
-                const shard = (L, W) => {
-                    ctx.fillStyle = 'rgba(232, 247, 255, 0.95)'; ctx.beginPath(); ctx.moveTo(-L * 0.4, 0); ctx.lineTo(0, -W); ctx.lineTo(L, 0); ctx.closePath(); ctx.fill();
-                    ctx.fillStyle = 'rgba(150, 205, 245, 0.92)'; ctx.beginPath(); ctx.moveTo(-L * 0.4, 0); ctx.lineTo(L, 0); ctx.lineTo(0, W); ctx.closePath(); ctx.fill();
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)'; ctx.lineWidth = 0.3; ctx.beginPath(); ctx.moveTo(-L * 0.4, 0); ctx.lineTo(0, -W); ctx.lineTo(L, 0); ctx.lineTo(0, W); ctx.closePath(); ctx.stroke();
-                };
-                for (let k = 0; k < S.length && k < cnt; k++) {
-                    const sl = S[k], gr = Math.min(1, cnt - k), i0 = Math.floor(sl.t) % n, i1 = (i0 + 1) % n, f = sl.t - Math.floor(sl.t);
-                    const x = P[i0][0] + (P[i1][0] - P[i0][0]) * f, y = P[i0][1] + (P[i1][1] - P[i0][1]) * f;
-                    let nx = -(P[i1][1] - P[i0][1]), ny = P[i1][0] - P[i0][0]; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
-                    if (nx * (x + 1) + ny * (y - 3) < 0) { nx = -nx; ny = -ny; }   // наружу
-                    const a = Math.atan2(ny, nx) + sl.tilt, L = sl.L * gr, W = L * 0.42;
-                    ctx.save(); ctx.translate(x - nx * L * 0.35, y - ny * L * 0.35); ctx.rotate(a); shard(L, W); ctx.restore();
-                    if (sl.side && gr > 0.5) {
-                        const a2 = Math.atan2(ny, nx) - sl.tilt * 0.6 + sl.side * 0.7, L2 = L * sl.sl;
-                        ctx.save(); ctx.translate(x - nx * L2 * 0.3 + ny * sl.side * 0.8, y - ny * L2 * 0.3 - nx * sl.side * 0.8); ctx.rotate(a2); shard(L2, L2 * 0.42); ctx.restore();
+                // Лёд облепляет сову целиком: льдинки-треугольники разных ледяных оттенков, под разными углами,
+                // по всему телу и по краю; чем дольше сова мокрая на морозе, тем их больше (до ~80 штук)
+                if (!this._iceSlots3) {
+                    const s = []; let seed = 41; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+                    const n = P.length, inside = (x, y) => { let c = false; for (let i = 0, j = n - 1; i < n; j = i++) { const [xi, yi] = P[i], [xj, yj] = P[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+                    const COL = [['#F4FBFF', '#C9E9FF'], ['#BFE3FF', '#8CC8F2'], ['#D9F2FF', '#9FD7F0'], ['#E2E4FF', '#AEB7F2'], ['#C8F4F0', '#86D3D8'], ['#A9D4F7', '#6FAEE3']];
+                    let guard = 0;
+                    while (s.length < 46 && guard++ < 4000) {   // внутри тела (глаз не закрываем)
+                        const x = -15 + rnd() * 28, y = -15.5 + rnd() * 33;
+                        if (!inside(x, y) || Math.hypot(x - 5.2, y + 4) < 6.8) continue;
+                        s.push({ x, y, a: rnd() * 6.283, L: 1.0 + rnd() * 1.5, k1: 0.6 + rnd() * 0.5, k2: 0.5 + rnd() * 0.6, d: 1.8 + rnd() * 1.6, c: COL[Math.floor(rnd() * COL.length)] });
                     }
+                    for (let k = 0; k < 34; k++) {   // по краю — торчат наружу
+                        const t = (k + rnd() * 0.8) / 34 * n, i0 = Math.floor(t) % n, i1 = (i0 + 1) % n, f = t - Math.floor(t);
+                        const x = P[i0][0] + (P[i1][0] - P[i0][0]) * f, y = P[i0][1] + (P[i1][1] - P[i0][1]) * f;
+                        let nx = -(P[i1][1] - P[i0][1]), ny = P[i1][0] - P[i0][0]; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+                        if (nx * (x + 1) + ny * (y - 3) < 0) { nx = -nx; ny = -ny; }
+                        s.push({ x: x + nx * 0.6, y: y + ny * 0.6, a: Math.atan2(ny, nx) + (rnd() - 0.5) * 1.4, L: 1.4 + rnd() * 1.4, k1: 0.45 + rnd() * 0.3, k2: 0.45 + rnd() * 0.3, d: 2.4 + rnd() * 1.2, c: COL[Math.floor(rnd() * COL.length)], edge: 1 });
+                    }
+                    for (let k = s.length - 1; k > 0; k--) { const q = Math.floor(rnd() * (k + 1)); [s[k], s[q]] = [s[q], s[k]]; }
+                    this._iceSlots3 = s;
                 }
+                const S = this._iceSlots3, cnt = S.length * ice;
+                for (let k = 0; k < S.length && k < cnt; k++) {
+                    const sl = S[k], gr = Math.min(1, (cnt - k) * 1.5), L = sl.L * (0.35 + 0.65 * gr);
+                    ctx.save(); ctx.translate(sl.x, sl.y); ctx.rotate(sl.a);
+                    // треугольник: острая вершина вперёд, две задние — под разными углами
+                    const ax = L, ay = 0, bx = -L * 0.5, by = -L * sl.k1, cx = -L * 0.35, cy = L * sl.k2;
+                    ctx.globalAlpha = fz * (sl.edge ? 0.95 : 0.8);
+                    ctx.fillStyle = sl.c[1]; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo(cx, cy); ctx.closePath(); ctx.fill();
+                    ctx.fillStyle = sl.c[0]; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo((ax + bx + cx) / 3, (ay + by + cy) / 3); ctx.closePath(); ctx.fill();   // светлая грань
+                    ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 0.25; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo(cx, cy); ctx.closePath(); ctx.stroke();
+                    ctx.restore();
+                }
+                ctx.globalAlpha = fz;
             }
             ctx.restore();
         }

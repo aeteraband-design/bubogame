@@ -460,10 +460,10 @@ function stormDrawOwlWet(g, o) {
     const n = P.length, dt = (typeof dtMult === 'number' ? dtMult : 1);
     const at = (t) => { const i = ((Math.floor(t) % n) + n) % n, j = (i + 1) % n, f = t - Math.floor(t); return [P[i][0] + (P[j][0] - P[i][0]) * f, P[i][1] + (P[j][1] - P[i][1]) * f, i, j]; };
     // новые капли — на верхней половине контура (голова, спина, грудка)
-    if (wet > 0.1 && B.length < 4 + Math.round(wet * 6) && Math.random() < 0.05 * wet * dt) {
+    if (wet > 0.1 && B.length < 6 + Math.round(wet * 8) && Math.random() < 0.05 * wet * dt) {
         let t = 0, tries = 0;
         do { t = Math.random() * n; tries++; } while (at(t)[1] > 3 && tries < 8);
-        if (at(t)[1] <= 3) B.push({ t, r: 0.32 + Math.random() * 0.32, age: 0, v: 0 });
+        if (at(t)[1] <= 3) B.push({ t, r: 0.95 + Math.random() * 0.6, age: 0, v: 0 });
     }
     g.save();
     for (let k = B.length - 1; k >= 0; k--) {
