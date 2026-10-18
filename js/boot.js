@@ -63,7 +63,7 @@
                     var W = Math.round(cssW * dpr), H = Math.round(cssH * dpr);
                     if (oc.width !== W || oc.height !== H) { oc.width = W; oc.height = H; }
                     octx.setTransform(1, 0, 0, 1, 0, 0); octx.clearRect(0, 0, W, H);
-                    var k = (170 * dpr) / 68; MV.half = (W / 2) / k; octx.setTransform(k, 0, 0, k, W / 2 + 0.7 * k, H / 2 - 3.4 * k);   // сама сова — прежнего размера   // по визуальному центру совы (центр «массы» рисунка), а не по габаритам с длинным крылом   // сова ровно по центру (центр её силуэта), запас по краям — при объедании лапки не обрезаются
+                    var k = (170 * dpr) / 68; MV.half = (W / 2) / k; octx.setTransform(k, 0, 0, k, W / 2 + 1.8 * k, H / 2 - 5.6 * k);   // сама сова — прежнего размера   // по визуальному центру совы (центр «массы» рисунка), а не по габаритам с длинным крылом   // сова ровно по центру (центр её силуэта), запас по краям — при объедании лапки не обрезаются
                     var main = ctx, sx = owl.x, sy = owl.y, sr = owl.rotation, sv = owl.visible, sl = owl.lean, sb = owl.boostK, sp = owl.spinAngle, sw = owl.wing,
                         sd = currentDrunkFactor, sf = currentFreezeFactor, so = currentOvereatFactor, sfr = frame;
                     fin = fin || 0;
@@ -122,27 +122,36 @@
                     finally { if (typeof SHZ !== 'undefined') SHZ.k = shzK_; waitingFirstTap = wft_; dtMult = dtm_; viewScale = svs; renderScale = srs; ctx = main; owl.x = sx; owl.y = sy; owl.rotation = sr; owl.visible = sv; owl.lean = sl; owl.boostK = sb; owl.spinAngle = sp; owl.wing = sw; currentDrunkFactor = sd; currentFreezeFactor = sf; currentOvereatFactor = so; frame = sfr; }
                 } catch (e) {}
             }
-            var clone = null, cloneWrap = null;
-            function syncLogo() {   // показываем точную копию логотипа главного меню ровно на его месте — та же жирность, шрифт и размер
+            var clone = null, cloneWrap = null, natW = 0, natH = 0, lastKey = '', stable = 0, shownLogo = false;
+            logo.style.visibility = 'hidden';   // свой логотип загрузки не показываем — сразу точная копия логотипа меню, без прыжков
+            function syncLogo() {   // копия логотипа главного меню того же размера, вверху экрана; появляется плавно, когда место уже не меняется
                 var ic = document.querySelector('#startScreen .fa-gamepad');
                 var m = ic && ic.parentElement && ic.parentElement.parentElement;
                 if (!m) return;
                 var r = m.getBoundingClientRect();
                 if (!r.width || !r.height) return;
                 if (!clone) {
-                    cloneWrap = document.createElement('div'); cloneWrap.style.cssText = 'position:absolute;left:0;right:0;top:0;display:flex;justify-content:center;pointer-events:none;';   // по центру экрана, как логотип меню: не зависит от того, как браузер (iPhone) считает размеры при zoom
+                    cloneWrap = document.createElement('div');
+                    cloneWrap.style.cssText = 'position:fixed;left:0;top:0;pointer-events:none;transform-origin:0 0;opacity:0;transition:opacity .35s ease;z-index:2;';
                     clone = m.cloneNode(true); clone.removeAttribute('id');
+                    clone.style.transform = 'none'; clone.style.margin = '0';
+                    // размеры частей — как у логотипа в меню (правила меню на копию вне меню не действуют)
+                    var oBox = ic.parentElement, oTx = m.querySelector('.tracking-tight'), cBox = clone.querySelector('.shrink-0'), cIc = clone.querySelector('.fa-gamepad'), cTx = clone.querySelector('.tracking-tight');
+                    var csB = getComputedStyle(oBox), csI = getComputedStyle(ic), csT = oTx && getComputedStyle(oTx);
+                    if (cBox) { cBox.style.width = csB.width; cBox.style.height = csB.height; cBox.style.borderRadius = csB.borderRadius; cBox.style.border = csB.border; }
+                    if (cIc) { cIc.style.fontSize = csI.fontSize; cIc.style.lineHeight = '1'; cIc.style.transform = 'none'; }
+                    if (cTx && csT) { cTx.style.fontSize = csT.fontSize; cTx.style.marginLeft = csT.marginLeft; }
                     cloneWrap.appendChild(clone); el.appendChild(cloneWrap);
-                    logo.style.display = 'none';
+                    var cr = clone.getBoundingClientRect(); natW = cr.width; natH = cr.height;
                 }
-                var z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;
-                // размер — как у логотипа в главном меню (копия вне меню, поэтому размеры задаём ей явно), место — вверху экрана, как раньше
-                clone.style.zoom = z * (window.__logoScale || 1);   // логотип в меню подстраивается под высоту экрана — копия такого же размера
-                var box = clone.querySelector('.shrink-0'), gi = clone.querySelector('.fa-gamepad'), tx = clone.querySelector('.tracking-tight');
-                if (box) { box.style.width = '62px'; box.style.height = '62px'; box.style.borderRadius = '20px'; }
-                if (gi) { gi.style.fontSize = '26px'; gi.style.lineHeight = '1'; }
-                if (tx) tx.style.fontSize = (window.innerWidth >= 640 ? 38 : 32) + 'px';
-                cloneWrap.style.transform = 'none'; cloneWrap.style.top = Math.round(46 * z) + 'px';
+                if (!natW) return;
+                // размер — как у логотипа в меню, место — вверху экрана по центру (над совой)
+                var sc = r.width / natW, z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;
+                var x = (window.innerWidth - r.width) / 2, y = Math.round(46 * z);
+                cloneWrap.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y + 'px) scale(' + sc.toFixed(4) + ')';
+                var key = Math.round(x) + ',' + y + ',' + Math.round(r.width);
+                stable = key === lastKey ? stable + 1 : 0; lastKey = key;
+                if (!shownLogo && stable > 12) { shownLogo = true; cloneWrap.style.opacity = '1'; }
             }
             var dismissed = false, exitT0 = 0, entryT0 = 0, revealed = false;
             var ENTRY = 1.1;   // секунд на прилёт совы

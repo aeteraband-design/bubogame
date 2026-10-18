@@ -17,7 +17,7 @@
 #bootLoader .bl-ico i { color: #fff; font-size: 18px; }
 #bootLoader .bl-txt { display: flex; align-items: center; gap: 6px; font-weight: 900; font-size: 30px; letter-spacing: -0.025em; line-height: 1; }
 /* сова — в центре экрана */
-#bootLoader .bl-owlbox { position: absolute; left: 50%; top: 47%; width: 360px; height: 360px; margin: -180px 0 0 -180px; zoom: var(--menu-zoom, 1); transform: scale(0.88); transform-origin: 50% 50%; }   /* уменьшение одним масштабом: рисунок не искажается */
+#bootLoader .bl-owlbox { position: absolute; left: 50%; top: 50%; width: 360px; height: 360px; margin: -180px 0 0 -180px; zoom: var(--menu-zoom, 1); transform: scale(0.88); transform-origin: 50% 50%; }   /* уменьшение одним масштабом: рисунок не искажается */
 #bootLoader .bl-owlbox::before { content: ''; position: absolute; left: 50%; top: 50%; width: 534px; height: 534px; margin: -267px 0 0 -267px; border-radius: 50%; background: radial-gradient(circle, rgba(146, 72, 251, 0.40) 0%, rgba(106, 32, 212, 0.20) 45%, transparent 70%); animation: blHalo 3s ease-in-out infinite; }   /* свечение в цвет совы */
 #bootLoader .bl-owlcv { position: relative; width: 360px; height: 360px; display: block; }
 /* внизу: слева подпись, справа крупные проценты, под ними тонкая полоска на всю ширину */
