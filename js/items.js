@@ -257,6 +257,23 @@ function drawToken(item) {
             }
             ctx.globalAlpha = 1; ctx.fillStyle = col; ctx.shadowBlur = 10;
         }
+        if (item.type === 'coin') {
+            // монетки блестят: по ним пробегает белый блик, вокруг вспыхивают золотые звёздочки
+            const ph = item.floatOffset || 0, n = gfxQuality === 'low' ? 3 : 5;
+            ctx.shadowBlur = 0;
+            const tw = Math.pow((Math.sin(frame * 0.09 + ph * 3) + 1) / 2, 3);
+            ctx.globalAlpha = 0.08 + 0.45 * tw; ctx.fillStyle = '#FFF6C8';
+            drawGlyph(ctx, cat.iconCode, 0, 0.5);
+            const cols = ['#FFF3B0', '#FFD66B', '#FFFFFF'];
+            for (let i = 0; i < n; i++) {
+                const u = (frame * 0.016 + i / n + ph * 0.27) % 1, a = i * 2.4 + ph;
+                const al = Math.sin(u * Math.PI);
+                const sx = Math.cos(a) * (11 + (i % 2) * 5), sy = Math.sin(a) * (10 + (i % 3) * 3);
+                const o = 1.4 + 2.2 * al;
+                drawSparkleStar(sx, sy, 4, o, o * 0.28, cols[i % 3], al * 0.95);
+            }
+            ctx.globalAlpha = 1; ctx.fillStyle = col; ctx.shadowBlur = 10;
+        }
         if (item.type === 'water') {
             // капля переливается: пробегает блик, вокруг поднимаются пузырьки
             const ph = item.floatOffset || 0, n = gfxQuality === 'low' ? 4 : 7;

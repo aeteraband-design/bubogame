@@ -87,13 +87,13 @@
 
 /* ===== Рулетка: крупнее, колесо синхронно с лентой, оранжевая стрелка ===== */
 #rwWindow .rwp-rotor { animation: none !important; transition: none; }
-#rwWindow .rwp-emblem { width: clamp(76px, 22vw, 96px); height: clamp(76px, 22vw, 96px); margin-bottom: 8px; }
+#rwWindow .rwp-emblem { width: clamp(86px, 25vw, 106px); height: clamp(86px, 25vw, 106px); margin-bottom: 8px; }
 #rwWindow .rwp-emblem-glow { inset: -14px !important; }
 #rwWindow .rwp-ring { display: none !important; }   /* у всего окна — обычная светлая обводка; бегущий градиент только вокруг ленты с карточками */
 #rwWindow { border: 1.5px solid rgba(168, 120, 245, 0.38) !important; }
-#rwWindow .rwp-core-ico { font-size: clamp(18px, 5.3vw, 22px); }
+#rwWindow .rwp-core-ico { font-size: clamp(20px, 5.9vw, 24px); }
 #rwWindow .rwp-pin { top: -4px; border-left-width: 9px; border-right-width: 9px; border-top: 15px solid #FE7600; filter: drop-shadow(0 0 6px rgba(254, 118, 0, 0.85)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); }
-#rwWindow .rwp-title { font-size: clamp(22px, 7vw, 27px); }
+#rwWindow .rwp-title { font-size: clamp(24px, 7.6vw, 29px); }
 #rwWindow .rwp-sub { font-size: 12px !important; margin-top: 6px !important; }
 
 /* выигрыш: лаконичное затемнение, поп-ап в стиле игры; карточка из ленты улетает в поп-ап, светится и блестит, текст и кнопка — под ней */
@@ -283,9 +283,9 @@
 #resetNoBtn:hover { background: rgba(239, 68, 68, 0.12) !important; }
 
 /* Окно рулетки — как окно победы: содержимое (колесо … счётчик попыток) ровно по центру между верхом окна и кнопкой «Крутить» */
-#rouletteModal #rwWindow .rwp-head { margin-top: auto !important; }
+#rouletteModal #rwWindow .rwp-head { margin-top: 0 !important; }
 #rouletteModal #rwWindow .rw-spins-pill { margin-bottom: 0 !important; }
-#rouletteModal #rwWindow .rw-btns { margin-top: auto !important; padding-top: 14px; }
+#rouletteModal #rwWindow .rw-btns { margin-top: 0 !important; padding-top: 14px; }
 
 /* верхняя панель зеркально: жизни/перья/вопросы слева (жизни у самого края), пауза и музыка справа (пауза у края) */
 #topHud.hud-swap { flex-direction: row-reverse; }
@@ -296,13 +296,37 @@
 /* жизни слева — таймеры эффектов тоже слева, под ними */
 html.hud-ll #buffBar { left: calc(0.875rem * var(--fx, 1)) !important; right: auto !important; transform-origin: left top !important; align-items: flex-start !important; }
 html.hud-ll #buffBar .buff-tag { align-self: flex-start !important; }
-/* уведомления о бонусах (+1 попытка, монеты, макс. сила…) — в углу напротив таймеров: плашка в стиле таймеров, чуть крупнее, с переливом */
-.bonus-tag { position: absolute; z-index: 72; pointer-events: none; display: inline-flex; align-items: center; gap: 6px; height: 28px; box-sizing: border-box; padding: 0 11px;
-    border-radius: 10px; border: 1.5px solid; background: rgba(20, 3, 38, 0.95); font: 900 12px/1 Onest, sans-serif; white-space: nowrap; overflow: hidden;
-    scale: var(--ui-zoom, 1); animation: bonusIn 2.6s ease forwards; }
+/* уведомления о бонусах (+1 попытка, монеты, макс. сила…) — в углу напротив таймеров, в стиле плашки монет главного меню:
+   тёмная плашка с цветной рамкой, иконка и надпись своего цвета с переливом; у каждого вида — свой лёгкий эффект */
+.bonus-tag { position: absolute; z-index: 72; pointer-events: none; display: inline-flex; align-items: center; gap: 7px; height: 32px; box-sizing: border-box; padding: 0 12px 0 10px;
+    border-radius: 12px; border: 1px solid var(--c); background: rgba(29, 9, 54, 0.92); box-shadow: 0 0 12px color-mix(in srgb, var(--c) 45%, transparent), 0 6px 14px rgba(0, 0, 0, 0.3);
+    font: 900 13px/1 Onest, sans-serif; white-space: nowrap; overflow: hidden; scale: var(--ui-zoom, 1); animation: bonusIn 2.7s ease forwards; }
 .bonus-tag.on-right { transform-origin: right top; } .bonus-tag.on-left { transform-origin: left top; }
-.bonus-tag i { font-size: 12.5px; }
-.bonus-tag span { position: relative; top: .5px; }
-.bonus-tag::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.5) 50%, transparent 65%) no-repeat; background-size: 260% 100%; background-position: 130% 0; animation: bonusSheen 1.1s 0.3s ease-out forwards; }
+.bonus-tag .bt-ic { font-size: 15px; color: var(--c); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--c) 70%, transparent)); }
+.bonus-tag .bt-tx { position: relative; top: .5px; background: linear-gradient(100deg, var(--c) 0 38%, #FFFFFF 48%, color-mix(in srgb, var(--c) 40%, #fff) 54%, var(--c) 64% 100%);
+    background-size: 300% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text; color: transparent; animation: btFlow 1.4s 0.25s ease-out forwards; }
+@keyframes btFlow { to { background-position: 0% 0; } }
+.bonus-tag::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 38%, rgba(255, 255, 255, 0.35) 50%, transparent 62%) no-repeat; background-size: 260% 100%; background-position: 130% 0; animation: bonusSheen 1.2s 0.3s ease-out forwards; }
 @keyframes bonusSheen { to { background-position: -30% 0; } }
 @keyframes bonusIn { 0% { opacity: 0; translate: var(--bx, 0) 0; transform: scale(0.85); } 9% { opacity: 1; translate: 0 0; transform: scale(1.08); } 16% { transform: scale(1); } 84% { opacity: 1; translate: 0 0; } 100% { opacity: 0; translate: 0 -6px; } }
+/* монеты: монетки переворачиваются, вокруг вспыхивают искорки */
+.bonus-tag.bt-coin .bt-ic { animation: btCoinFlip 0.9s 0.2s ease-out; }
+@keyframes btCoinFlip { 0% { transform: rotateY(0) scale(1); } 45% { transform: rotateY(180deg) scale(1.25); } 100% { transform: rotateY(360deg) scale(1); } }
+.bonus-tag .bt-sp { position: absolute; font-size: 8px; color: #FFF3B0; text-shadow: 0 0 6px #FFC53D; opacity: 0; animation: btSp 1.1s var(--d, 0s) ease-in-out 2; }
+@keyframes btSp { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1.1); } }
+/* попытка: стрелка делает оборот, рамка вспыхивает */
+.bonus-tag.bt-att .bt-ic { animation: btSpin 0.9s 0.2s cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes btSpin { to { transform: rotate(360deg); } }
+.bonus-tag.bt-att { animation: bonusIn 2.7s ease forwards, btGlow 1.2s 0.2s ease-in-out 2; }
+@keyframes btGlow { 50% { box-shadow: 0 0 22px var(--c), 0 6px 14px rgba(0, 0, 0, 0.3); } }
+/* сила: перо мягко покачивается и светится */
+.bonus-tag.bt-stam .bt-ic { animation: btFloat 1s 0.2s ease-in-out 2; }
+@keyframes btFloat { 50% { transform: translateY(-3px) rotate(-12deg); filter: drop-shadow(0 0 9px var(--c)); } }
+.bonus-tag.bt-gen .bt-ic { animation: btPop 0.7s 0.2s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes btPop { 40% { transform: scale(1.35); } }
+/* кнопки главного меню — крупнее, как пауза и музыка в игре */
+#startScreen #openRouletteBtn.rw-menu-btn, #startScreen #openQuizBtn.rw-menu-btn, #startScreen #openShopBtn.rw-menu-btn { width: 40px !important; height: 40px !important; border-radius: 13px !important; }
+#startScreen #openRouletteBtn.rw-menu-btn { right: 14px !important; }
+#startScreen #openQuizBtn.rw-menu-btn { right: 62px !important; }
+#startScreen #openShopBtn.rw-menu-btn { right: 110px !important; }
+#startScreen #openRouletteBtn.rw-menu-btn i, #startScreen #openQuizBtn.rw-menu-btn i, #startScreen #openShopBtn.rw-menu-btn i { font-size: 17px !important; }

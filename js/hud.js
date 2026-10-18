@@ -119,10 +119,13 @@ function showGoldBanner(text, icon, color) {
     // уведомление о бонусе — в верхнем углу напротив таймеров (там, где пауза): жизни слева — справа, и наоборот
     const right = document.documentElement.classList.contains('hud-ll');
     const el = document.createElement('div');
-    el.className = 'bonus-tag ' + (right ? 'on-right' : 'on-left');
-    el.style.color = c; el.style.borderColor = c; el.style.boxShadow = `0 0 14px ${c}88`;
+    // у каждого вида бонуса свой лёгкий эффект: монеты — блеск и искорки, попытка — оборот стрелки, сила — мягкая пульсация
+    const kind = icon === 'fa-coins' ? 'bt-coin' : icon === 'fa-rotate-right' ? 'bt-att' : (icon === 'fa-feather-pointed' ? 'bt-stam' : 'bt-gen');
+    el.className = 'bonus-tag ' + kind + ' ' + (right ? 'on-right' : 'on-left');
+    el.style.setProperty('--c', c);
     el.style.setProperty('--bx', (right ? 18 : -18) + 'px');
-    el.innerHTML = `<i class="fa-solid ${icon}"></i><span>${sentenceCase(text)}</span>`;
+    el.innerHTML = `<i class="fa-solid ${icon} bt-ic"></i><span class="bt-tx">${sentenceCase(text)}</span>`
+        + (kind === 'bt-coin' ? '<b class="bt-sp" style="left:18%;top:8%;--d:.35s">✦</b><b class="bt-sp" style="left:62%;top:62%;--d:.7s">✦</b><b class="bt-sp" style="left:86%;top:12%;--d:1s">✦</b>' : '');
     try {
         const fr = fxLayer.getBoundingClientRect(), uz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom')) || 1;
         const th = document.getElementById('topHud'), bb = document.getElementById('buffBar');
@@ -130,7 +133,7 @@ function showGoldBanner(text, icon, color) {
         if (bb && bb.offsetParent) top = bb.getBoundingClientRect().top - fr.top;
         else if (th && th.offsetParent) top = th.getBoundingClientRect().bottom - fr.top + 8 * uz;
         const prev = [...fxLayer.querySelectorAll('.bonus-tag.' + (right ? 'on-right' : 'on-left'))].length;   // несколько подряд — столбиком
-        el.style.top = (top + prev * 34 * uz) + 'px';
+        el.style.top = (top + prev * 38 * uz) + 'px';
         el.style[right ? 'right' : 'left'] = (14 * uz) + 'px';
     } catch (e) {}
     fxLayer.appendChild(el);
@@ -994,11 +997,22 @@ function spawnPipe(startX) {
         }
         if (itemType === 'icecream') pipesSinceIceCream = 0;
     }
+    // монеты на пути: редко и случайно — за пару уровней сложности (Суперлайт+Лайт, Медиум+Медиум+, Хард+Хард+) от 0 до 2 раз.
+    // Номинал растёт с уровнем: 50, 100, 150, 200, 250, 300
+    {
+        const isThemeItem = !!(CATEGORIES[itemType] && CATEGORIES[itemType].count);
+        let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {}
+        const tier = Math.min(2, Math.floor(lv / 2));
+        if (!coinSpawns.st || (typeof getTotalCollectedThemes === 'function' && getTotalCollectedThemes() === 0 && coinSpawns.lastThemes > 0)) coinSpawns.st = [0, 0, 0];
+        try { coinSpawns.lastThemes = getTotalCollectedThemes(); } catch (e) {}
+        if (!isThemeItem && itemType !== 'secret' && coinSpawns.st[tier] < 2 && Math.random() < 0.014) { itemType = 'coin'; coinSpawns.st[tier]++; }
+    }
     // редкий значок — «Опасные трубы» или «Водонапор» (что именно, решает случай): выпадает на месте обычного значка (не темы и не секретной звезды), когда набралось достаточно тем
     if (crystalPending && crystalTime <= 0 && itemType !== 'secret' && !(CATEGORIES[itemType] && CATEGORIES[itemType].count)) { itemType = (typeof registerWater === 'function' && Math.random() < 0.5) ? 'water' : 'crystal'; crystalPending = false; }   // случайно: «Опасные трубы» или «Водонапор»
     if (typeof shazamBlockedType === 'function' && shazamBlockedType(itemType)) itemType = 'question';   // в ШАЗАМе щит, заморозка и т.п. на пути не появляются
     lastSpawnedItemType = itemType;
     const tokenRadius = 26;
+    let coinVal = 0; if (itemType === 'coin') { let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {} coinVal = 50 * (Math.min(5, lv) + 1); }
 
     if (itemType === 'stamina' || itemType === 'infinite') {
         items.push({
@@ -1009,12 +1023,13 @@ function spawnPipe(startX) {
     } else {
         items.push({
             x: px + pipeWidth / 2, y: topHeight + baseGap / 2, baseY: topHeight + baseGap / 2,
-            radius: tokenRadius, type: itemType, isMoving: false, collected: false, floatOffset: Math.random() * Math.PI * 2
+            radius: tokenRadius, type: itemType, isMoving: false, collected: false, floatOffset: Math.random() * Math.PI * 2, coins: coinVal
         });
     }
 }
 
 // Стартовые трубы: на том же расстоянии от совы, что и на телефоне, с обычным шагом
+const coinSpawns = { st: null, lastThemes: 0 };   // сколько раз монеты уже выпадали на каждой паре уровней
 function spawnInitialPipes() {
     const spawnLine = width + 25 + Math.ceil(width * 0.03);
     const firstX = Math.min(spawnLine, owl.x + 383);

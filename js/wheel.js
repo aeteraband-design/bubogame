@@ -79,7 +79,7 @@ function rwLayout() {
     const freeH = Math.max(150, total - others - 8);
     // ширина карточки — чтобы в ленте было видно ~2 карточки; высота — сколько позволяет экран (карточка может быть чуть вытянутой)
     // лента компактная: карточки не вытягиваются на всю высоту, а свободное место делится поровну сверху и снизу (как в окне победы)
-    let cw = Math.max(76, Math.min(W / 2.1, (freeH - pad * 2) / 1.3));
+    let cw = Math.max(76, Math.min(W / 2.1, (freeH - pad * 2) / 1.3, 132));   // карточки не раздуваются: окно по высоте содержимого
     let ch = cw * 1.3;
     const reelH = ch + pad * 2;
     reel.style.height = reelH.toFixed(1) + 'px';
@@ -89,7 +89,8 @@ function rwLayout() {
     const old = rw.pitch; rw.cw = cwd; rw.pitch = cwd + RW_GAP;
     if (!rw.spinning && old > 0) rw.pos *= rw.pitch / old;
     // окно на всю высоту экрана; блок «заголовок … счётчик попыток» стоит по центру между верхом окна и кнопкой «Крутить» (auto-отступы в стилях)
-    win.style.height = total.toFixed(1) + 'px';
+    // окно — по высоте содержимого (как вопросы); если не помещается — ограничено экраном и листается
+    win.style.height = 'auto';
     win.style.justifyContent = 'flex-start';
     const headPad = parseFloat(getComputedStyle(win.querySelector('.rwp-head') || win).paddingTop) || 0;
     win.style.setProperty('--rw-btn-gap', (parseFloat(getComputedStyle(win).paddingTop) + headPad).toFixed(1) + 'px');

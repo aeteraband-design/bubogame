@@ -59,18 +59,21 @@ const SHOP_ITEMS = [
  background:radial-gradient(110% 45% at 50% -8%,rgba(255,197,61,.2),transparent 62%),radial-gradient(80% 40% at 0% 105%,rgba(45,212,191,.13),transparent 60%),rgba(29,9,54,.97);border:1.5px solid rgba(255,197,61,.35);box-shadow:0 10px 40px rgba(0,0,0,.5)}
 #shWin .sh-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:6px}
 #shWin .sh-coins{justify-self:start;display:flex;align-items:center;gap:7px;padding:6px 11px 6px 6px;border-radius:999px;background:rgba(20,3,38,.75);border:1px solid rgba(255,197,61,.5);box-shadow:0 0 12px rgba(255,197,61,.18);font-weight:900;font-size:15px;color:#FFD66B;margin-top:4px}
+#shWin .sh-cg{font-size:17px;line-height:1;background:linear-gradient(160deg,#FFF3B0 0%,#FFC53D 45%,#E08A00 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 4px rgba(255,197,61,.55))}
+#shWin .sh-buy .sh-cg{font-size:13px;background:linear-gradient(160deg,#7C4A00,#4A2600);-webkit-background-clip:text;background-clip:text;filter:none}
+#shWin .sh-buy.no .sh-cg{background:none;color:rgba(255,255,255,.5)}
 #shWin .sh-coins.bump{animation:shBump .5s ease}
 @keyframes shBump{40%{transform:scale(1.12)}}
 .sh-coin{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:8.5px;color:#7C4A00;background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);box-shadow:0 0 8px rgba(255,197,61,.6),inset 0 -1.5px 0 rgba(0,0,0,.2);flex:0 0 auto}
 #shWin .sh-x{position:absolute;top:10px;right:10px;z-index:2;width:32px;height:32px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:rgba(233,213,255,.8);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:14px;cursor:pointer}
 #shWin .sh-x:active{transform:scale(.92)}
 #shWin.full{height:100%}
-#shWin .sh-emb{position:relative;width:92px;height:92px;display:flex;align-items:center;justify-content:center}
+#shWin .sh-emb{position:relative;width:106px;height:106px;display:flex;align-items:center;justify-content:center}
 #shWin .sh-glow{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(circle,rgba(255,197,61,.22),transparent 70%);animation:shPulse 3.2s ease-in-out infinite}
 #shWin .sh-ring{position:absolute;inset:6px;border-radius:50%;padding:1.5px;background:conic-gradient(from var(--shA),rgba(255,197,61,0) 0deg,#FFE08A 70deg,#5EEAD4 140deg,rgba(94,234,212,0) 200deg,rgba(255,197,61,0) 360deg);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:shRing 3.6s linear infinite;opacity:.9}
 @property --shA{syntax:'<angle>';inherits:false;initial-value:0deg}
 #shWin .sh-core{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
-#shWin .sh-core i{font-size:38px;background:linear-gradient(110deg,#FFC53D 0%,#FFF3B0 22%,#FFC53D 40%,#5EEAD4 60%,#FFC53D 80%,#FFF3B0 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 6px rgba(255,197,61,.45));animation:shFlow 4.5s linear infinite}
+#shWin .sh-core i{font-size:44px;background:linear-gradient(110deg,#FFC53D 0%,#FFF3B0 22%,#FFC53D 40%,#5EEAD4 60%,#FFC53D 80%,#FFF3B0 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 6px rgba(255,197,61,.45));animation:shFlow 4.5s linear infinite}
 @keyframes shFlow{to{background-position:-250% 0}}
 #shWin .sh-tw{position:absolute;color:#FFF3B0;font-style:normal;font-size:var(--s);text-shadow:0 0 8px #FFC53D;animation:shTw 2.2s ease-in-out infinite;animation-delay:var(--d)}
 @keyframes shSpin{to{transform:rotate(360deg)}}
@@ -78,7 +81,7 @@ const SHOP_ITEMS = [
 @keyframes shPulse{0%,100%{opacity:.6;transform:scale(.95)}50%{opacity:1;transform:scale(1.05)}}
 @keyframes shTw{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:1;transform:scale(1.1)}}
 #shWin .sh-title{text-align:center;margin-top:-4px}
-#shWin .sh-title b{display:block;font-weight:900;font-size:26px;letter-spacing:.02em;line-height:1;background:linear-gradient(90deg,#FFD66B,#FFF3B0 45%,#5EEAD4);-webkit-background-clip:text;background-clip:text;color:transparent}
+#shWin .sh-title b{display:block;font-weight:900;font-size:29px;letter-spacing:.02em;line-height:1;background:linear-gradient(90deg,#FFD66B,#FFF3B0 45%,#5EEAD4);-webkit-background-clip:text;background-clip:text;color:transparent}
 #shWin .sh-title span{display:block;margin-top:6px;font-weight:600;font-size:12px;color:#C4B5FD}
 #shWin .sh-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;flex:1 1 auto;min-height:0;overflow-y:auto;padding:4px 3px;margin:-4px -3px;align-content:start;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 #shWin .sh-grid::-webkit-scrollbar{display:none}
@@ -122,7 +125,7 @@ function shopBuild() {
     shRoot = document.createElement('div'); shRoot.id = 'shopModal'; shRoot.className = 'hidden';
     const tw = [[-50, -18, 8, 0], [52, 10, 7, .9], [36, -40, 6, 1.7]].map(([x, y, s, d]) => `<i class="sh-tw" style="left:calc(50% + ${x}px - ${s / 2}px);top:calc(50% + ${y}px - ${s / 2}px);--s:${s}px;--d:${d}s">✦</i>`).join('');
     shRoot.innerHTML = `<div id="shWin">
-        <div class="sh-top"><div class="sh-coins" id="shCoins"><span class="sh-coin"><i class="fa-solid fa-star"></i></span><span id="shCoinsN">0</span></div>
+        <div class="sh-top"><div class="sh-coins" id="shCoins"><i class="fa-solid fa-coins sh-cg"></i><span id="shCoinsN">0</span></div>
             <div class="sh-emb"><div class="sh-glow"></div><div class="sh-ring"></div><div class="sh-core"><i class="fa-solid fa-store"></i></div>${tw}</div>
             <div></div></div>
         <button type="button" class="sh-x" data-sh="close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
@@ -161,9 +164,9 @@ function shopRender() {
         let btn;
         if (why === 'own') btn = `<div class="sh-buy own"><i class="fa-solid fa-check"></i>Ждёт полёта</div>`;
         else if (why) btn = `<div class="sh-buy no">${why}</div>`;
-        else if (c < it.price) btn = `<div class="sh-buy no"><span class="sh-coin"><i class="fa-solid fa-star"></i></span>${it.price}</div>`;
+        else if (c < it.price) btn = `<div class="sh-buy no"><i class="fa-solid fa-coins sh-cg"></i>${it.price}</div>`;
         else if (shSure === it.key) btn = `<button type="button" class="sh-buy sure" data-sh="${it.key}">КУПИТЬ?</button>`;
-        else btn = `<button type="button" class="sh-buy" data-sh="${it.key}"><span class="sh-coin"><i class="fa-solid fa-star"></i></span>${it.price}</button>`;
+        else btn = `<button type="button" class="sh-buy" data-sh="${it.key}"><i class="fa-solid fa-coins sh-cg"></i>${it.price}</button>`;
         return `<div class="sh-it" data-it="${it.key}" style="--c:${it.col}"><div class="sh-ic"><i class="fa-solid ${it.icon}"></i></div><div class="sh-nm">${it.name}</div><div class="sh-ds">${it.desc}</div>${btn}</div>`;
     }).join('');
 }
@@ -239,11 +242,14 @@ function shopSyncBtn() {
 (function () {
     const st = document.createElement('style');
     st.textContent = '#openAdminBtn{display:none!important}'
-        + '#menuCoins{position:absolute;z-index:6;zoom:var(--ui-zoom,1);top:12px;left:14px;height:36px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:7px;padding:0 12px 0 7px;border-radius:12px;line-height:1;'
-        + 'background:rgba(29,9,54,.72);border:1px solid rgba(255,197,61,.55);box-shadow:0 0 10px rgba(255,197,61,.22);font:900 15px/1 Onest,sans-serif;color:#FFD66B;cursor:pointer}'
-        + '#menuCoins #menuCoinsN{display:block;line-height:1;transform:translateY(.5px)}'
-        + '#menuCoins{pointer-events:none;cursor:default}'
-        + '#menuCoins .mc-coin{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:10px;flex:0 0 auto;color:#7C4A00;background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);box-shadow:0 0 8px rgba(255,197,61,.6),inset 0 -1.5px 0 rgba(0,0,0,.2)}';
+        + '#menuCoins{position:absolute;z-index:6;zoom:var(--ui-zoom,1);top:12px;left:14px;height:40px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 13px 0 11px;border-radius:13px;line-height:1;overflow:hidden;'
+        + 'background:rgba(29,9,54,.78);border:1px solid rgba(255,197,61,.6);box-shadow:0 0 12px rgba(255,197,61,.25),0 6px 14px rgba(0,0,0,.3);font:900 16px/1 Onest,sans-serif;pointer-events:none;cursor:default}'
+        // монетки — золотые с переливом, число — золотым градиентом; по плашке время от времени пробегает блик
+        + '#menuCoins .mc-coin{font-size:18px;line-height:1;background:linear-gradient(160deg,#FFF3B0 0%,#FFC53D 45%,#E08A00 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 5px rgba(255,197,61,.6))}'
+        + '#menuCoins #menuCoinsN{display:block;line-height:1;transform:translateY(.5px);background:linear-gradient(100deg,#FFD66B 0 38%,#FFFFFF 48%,#FFE9A8 54%,#FFD66B 64% 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:mcFlow 6s ease-in-out infinite}'
+        + '@keyframes mcFlow{0%,70%{background-position:100% 0}90%,100%{background-position:0% 0}}'
+        + '#menuCoins::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.28) 50%,transparent 62%) no-repeat;background-size:260% 100%;animation:mcSheen 6s ease-in-out infinite}'
+        + '@keyframes mcSheen{0%,68%{background-position:130% 0}90%,100%{background-position:-30% 0}}';
     document.head.appendChild(st);
     const mc = document.getElementById('menuCoins');
     shopSyncBtn();

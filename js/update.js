@@ -370,6 +370,11 @@ function update() {
                 updateStaminaHUD(); StorageManager.save();
                 it.pendingFX = { target: 'stamina', text: '+10% Сил', color: '#F4B942', icon: 'fa-beer-mug-empty' };
                 it.extraFX = registerDrink();
+            } else if (it.type === 'coin') {
+                const n = it.coins || 50;
+                if (typeof coinsAdd === 'function') coinsAdd(n);
+                try { AudioFX.playStarCollect(); AudioFX.playCollect(true); Haptics.collectTheme(); } catch (e) {}
+                showGoldBanner(`+${n} монет`, 'fa-coins', '#FFC53D');   // в углу напротив таймеров
             } else if (it.type === 'water') {
                 it.pendingFX = registerWater();   // 10 с: из труб льётся вода
             } else if (it.type === 'crystal') {
