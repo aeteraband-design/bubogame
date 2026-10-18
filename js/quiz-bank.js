@@ -18,17 +18,17 @@ const QZ_THEMES = [
     { id: 'chem', name: 'Химия', icon: 'fa-flask', col: '#2DD4BF' },
     { id: 'phys', name: 'Физика', icon: 'fa-atom', col: '#60A5FA' },
     { id: 'space', name: 'Космос', icon: 'fa-rocket', col: '#818CF8' },
-    { id: 'nature', name: 'Природа', icon: 'fa-hippo', col: '#86EFAC' },
+    { id: 'nature', name: 'Природа', icon: 'fa-hippo', col: '#16A34A' },
     { id: 'sport', name: 'Спорт', icon: 'fa-futbol', col: '#F87171' },
     { id: 'food', name: 'Еда', icon: 'fa-burger', col: '#FDBA74' },
     { id: 'art', name: 'Искусство', icon: 'fa-palette', col: '#F0ABFC' }
 ];
 // уровни сложности и монеты за верный ответ
 const QZ_LEVELS = [
-    { id: 's', name: 'Суперлайт', coins: 50, col: '#4ADE80' },
-    { id: 'l', name: 'Лайт', coins: 75, col: '#A3E635' },
-    { id: 'm', name: 'Средне', coins: 100, col: '#FACC15' },
-    { id: 'h', name: 'Хард', coins: 150, col: '#F87171' }
+    { id: 's', name: 'Суперлайт', coins: 10, col: '#4ADE80' },
+    { id: 'l', name: 'Лайт', coins: 20, col: '#A3E635' },
+    { id: 'm', name: 'Средне', coins: 30, col: '#FACC15' },
+    { id: 'h', name: 'Хард', coins: 50, col: '#F87171' }
 ];
 
 const QZ_BANK = {

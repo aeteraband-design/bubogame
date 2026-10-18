@@ -42,7 +42,7 @@
         if (!baseW || !baseH || availH <= 0) return;
         const wantW = window.innerWidth > 700 ? Math.min(window.innerWidth * 0.36, wr.width * 0.9) : wr.width * 0.86;   // телефон — почти во всю ширину блоков, ПК — около трети экрана
         const pc = document.documentElement.classList.contains('menu-pc');
-        let sc = Math.min(wantW / baseW, (availH * (pc ? 0.96 : 0.62)) / baseH, 2.6);
+        let sc = Math.min(wantW / baseW, (availH * (pc ? 0.7 : 0.62)) / baseH, 2.6);
         sc = Math.max(0.6, sc);
         if (Math.abs(sc - cur) < 0.005) return;
         logo.style.transform = 'scale(' + sc.toFixed(3) + ')';
@@ -52,7 +52,7 @@
     function pcMode() {
         const pc = window.innerWidth > 700 && window.innerWidth > window.innerHeight;
         document.documentElement.classList.toggle('menu-pc', pc);
-        if (logo) logo.style.transformOrigin = pc ? '50% 0' : '50% 50%';
+        if (logo) logo.style.transformOrigin = '50% 50%';
     }
     pcMode(); window.addEventListener('resize', () => { pcMode(); fitLogo(); });
     try { new ResizeObserver(fitLogo).observe(wrap); } catch (e) {}
@@ -229,21 +229,26 @@
         const L = sizeCanvas(), t = (now - t0) / 1000, { tx, ty, ts } = L;
         g.clearRect(0, 0, L.w, L.h);
         const OS = ts * 1.3, col = state.glow;
-        if (t < 0.45) {   // 1) джойстик сжимается и исчезает со вспышкой
-            const k = t / 0.45;
-            const sx = k < 0.5 ? 1 + 0.25 * ease(k * 2) : lerp(1.25, 0, ease((k - 0.5) * 2)), sy = k < 0.5 ? 1 - 0.35 * ease(k * 2) : lerp(0.65, 0, ease((k - 0.5) * 2));
-            setIcon(sx, sy);
-            glow(tx, ty, ts * 1.4, ease(k) * 0.8, col);
-        } else if (t < DUR - 0.65) {   // 2) появляется сова в своём состоянии, в мягкой размытой подсветке
+        const T1 = 0.65;
+        if (t < T1) {   // 1) как возврат, только наоборот: джойстик плавно сжимается, вспышка искр — и выпрыгивает сова
+            const k = t / T1;
+            const js = 1 - ease(Math.min(1, k / 0.45));
+            setIcon(js, js, 1);
+            glow(tx, ty, ts * 1.5, 0.9 * ease(k), col);
+            if (k > 0.35) {
+                if (!flags.pop) { flags.pop = 1; burst(tx, ty, 10, sparkCol(state)); }
+                const s = back((k - 0.35) / 0.65);
+                drawOwlState(tx, ty, OS * s, state, 0, 0.5, now);
+            }
+        } else if (t < DUR - 0.65) {   // 2) сова в своём состоянии, в мягкой подсветке — ровно по центру плитки (без покачивания вверх-вниз)
             setIcon(0, 0, 0);
-            if (!flags.pop) { flags.pop = 1; burst(tx, ty, 10, sparkCol(state)); }
-            const k = t - 0.45;
-            const s = back(Math.min(1, k / 0.4)), bob = Math.sin(k * 4.2) * 2.5, pulse = 0.85 + 0.15 * Math.sin(k * 5);
+            const k = t - T1;
+            const pulse = 0.85 + 0.15 * Math.sin(k * 5);
             glow(tx, ty, ts * 1.5 * pulse, 0.9, col);
             glow(tx, ty, ts * 0.9, 0.5, '255,220,170');
-            const wing = (state.id === 'shazam' || state.id === 'speed') ? Math.max(0, Math.sin(now / 90)) : (k < 0.4 ? 1 : Math.max(0, Math.sin(k * 9)) * (k < 1.6 ? 1 : 0.4));
-            const rot = state.id === 'drunk' ? Math.sin(k * 3.2) * 0.18 : Math.sin(k * 3) * 0.05;
-            drawOwlState(tx, ty + (state.id === 'freeze' ? 0 : bob), OS * s, state, rot, wing, now);
+            const wing = (state.id === 'shazam' || state.id === 'speed') ? Math.max(0, Math.sin(now / 90)) : 0.5 + 0.5 * Math.sin(k * 9) * (k < 1.6 ? 1 : 0.5);
+            const rot = state.id === 'drunk' ? Math.sin(k * 3.2) * 0.18 : 0;
+            drawOwlState(tx, ty, OS, state, rot, wing, now);
         } else {   // 3) сова сжимается — джойстик возвращается
             const k = (t - (DUR - 0.65)) / 0.65;
             const os = 1 - ease(Math.min(1, k / 0.45));

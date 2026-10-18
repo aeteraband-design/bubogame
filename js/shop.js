@@ -155,10 +155,7 @@ function shopBuild() {
 // окно на всю высоту, если товары не помещаются: тогда список листается, а скрыли подсказку — список дотягивается до низа
 function shopFit() {
     const w = document.getElementById('shWin'); if (!w || !shRoot) return;
-    w.classList.remove('full');
-    const avail = shRoot.clientHeight - 24, g = document.getElementById('shGrid');
-    const over = g ? g.scrollHeight - g.clientHeight : 0;
-    if (w.offsetHeight >= avail - 1 || over > 1) w.classList.add('full');
+    w.classList.remove('full');   // листается всё окно целиком (как в вопросах): эмблема, монеты и крестик уезжают вверх
 }
 function shopRender() {
     const g = document.getElementById('shGrid'); if (!g) return;
@@ -199,7 +196,7 @@ function openShop(e) {
     try { AudioFX.resume(); } catch (er) {}
     shopBuild(); shSure = null; shopRender();
     try { const el = document.getElementById('shEarn'); if (el) el.classList.toggle('gone', localStorage.getItem('bubo_shop_earn_hidden') === '1'); } catch (er) {}
-    try { const g = document.getElementById('shGrid'); if (g) g.scrollTop = 0; } catch (er) {}
+    try { const w = document.getElementById('shWin'); if (w) w.scrollTop = 0; } catch (er) {}
     shRoot.classList.remove('hidden');
     shopFit();
     try { AudioFX.setMode('shop', { fade: true }); } catch (er) {}

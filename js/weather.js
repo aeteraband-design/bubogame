@@ -405,6 +405,19 @@ function stormDrawCityLight() {
 }
 
 // ---------- дождь (поверх всего: труб, значков и совы) ----------
+// в дождь краски приглушаются: сова и трубы становятся серее и чуть темнее (фон и так серый — его почти не трогает)
+function stormGrade() {
+    const k = Math.min(1, Math.max(0, STORM.wet || 0) * 1.2) * Math.min(1, stormCover || 0);
+    if (k < 0.02) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'saturation';
+    ctx.fillStyle = `rgba(128,128,128,${(0.42 * k).toFixed(3)})`;
+    ctx.fillRect(0, 0, width, height);
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = `rgba(178,184,200,${(0.5 * k).toFixed(3)})`;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+}
 function stormDrawRain() {
     const si = Math.max(0, stormIntensity), rk = stormRainK(si);
     const lowQ = gfxQuality === 'low', N = lowQ ? 110 : 220;

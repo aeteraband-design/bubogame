@@ -140,7 +140,7 @@ function checkAttemptMilestone() {
     if (coinMilestone < 0 || !active) coinMilestone = Math.max(coinMilestone, c);
     else if (c > coinMilestone) {
         let add = 0;
-        for (let k = coinMilestone + 1; k <= c; k++) if ((k * 50) % QUESTIONS_PER_ATTEMPT !== 0) add += (k * 50) % QUESTIONS_PER_ATTEMPT;   // 50, 100, 150… монет на рубеже (кроме рубежа попытки)
+        for (let k = coinMilestone + 1; k <= c; k++) add += (k % 4) * 50;   // по кругу: 50 → 50, 100 → 100, 150 → 150, 200 → попытка (0 монет), 250 → 50…   // 50, 100, 150… монет на рубеже (кроме рубежа попытки)
         coinMilestone = c;
         if (add > 0 && typeof coinsAdd === 'function') {
             coinsAdd(add);
@@ -314,8 +314,20 @@ let prevDistMult = 1;
 // Прогиб щита при ударе о трубу
 let shieldDent = 0, shieldDentAng = 0, shieldBumpSoundT = 0, shieldHitPower = 0;
 // ang — откуда удар (0 — спереди, -π/2 — сверху, π/2 — снизу), power 0..1 — насколько сильный
+// касания сферы щита: место касания подсвечивается и плавно гаснет (вода, огоньки, трубы)
+const shieldTouches = [];
+let shieldWob = 0;   // упругая «рябь» по сфере после удара
+function shieldTouch(ang, p) {
+    for (const t of shieldTouches) {   // рядом уже светится — просто подпитываем это место
+        let d = Math.abs(ang - t.a) % (Math.PI * 2); if (d > Math.PI) d = Math.PI * 2 - d;
+        if (d < 0.35) { t.p = Math.min(1, Math.max(t.p, p) + p * 0.15); t.a += (ang - t.a) * 0.3; return; }
+    }
+    if (shieldTouches.length >= 8) shieldTouches.shift();
+    shieldTouches.push({ a: ang, p: Math.min(1, p) });
+}
 function shieldBump(ang, power) {
     const pw = Math.max(0.3, Math.min(1, power == null ? 0.7 : power));
+    shieldTouch(ang, Math.min(1, pw + 0.2)); shieldWob = Math.max(shieldWob, pw);
     shieldDent = Math.max(shieldDent, pw);
     shieldHitPower = Math.max(shieldHitPower * 0.6, pw);
     shieldDentAng = ang;

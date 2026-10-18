@@ -250,6 +250,8 @@ function update() {
         if (owl.x < sx) owl.x = Math.min(sx, owl.x + 0.9 * dtMult);
         shieldDent *= Math.pow(0.925, dtMult);   // распрямляется медленнее — прогиб дольше виден
         shieldHitPower *= Math.pow(0.9, dtMult);
+        shieldWob *= Math.pow(0.94, dtMult);
+        for (let i = shieldTouches.length - 1; i >= 0; i--) { shieldTouches[i].p *= Math.pow(0.9, dtMult); if (shieldTouches[i].p < 0.02) shieldTouches.splice(i, 1); }
     }
 
     crystalUpdate(currentSpeed, activeSqueeze);   // эффект «Опасные трубы»

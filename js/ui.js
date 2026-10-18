@@ -544,3 +544,9 @@ fitThemeLabels();
         history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
     } catch (e) {}
 })();
+
+// крестик на «Цели полёта»: скрыть навсегда
+(function () {
+    const x = document.getElementById('menuGoalX'); if (!x) return;
+    x.addEventListener('click', (e) => { e.stopPropagation(); try { localStorage.setItem('bubo_goal_hidden', '1'); } catch (er) {} const c = document.getElementById('menuGoalCard'); if (c) c.classList.add('hidden'); try { window.dispatchEvent(new Event('resize')); } catch (er) {} });
+})();

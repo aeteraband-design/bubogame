@@ -460,4 +460,29 @@ div:has(> .shrink-0 > .fa-gamepad) .tracking-tight > span:nth-child(2) { filter:
 #shWin .sh-coins .mc-tw:nth-of-type(3) { left: 23px !important; top: 21px !important; }
 
 /* ПК: логотип вверху, на уровне кнопок по бокам */
-html.menu-pc #startScreen > .menu-logo-wrap { padding-top: 6px !important; align-items: flex-start !important; }
+html.menu-pc #startScreen > .menu-logo-wrap { padding-top: 0 !important; padding-bottom: 0 !important; align-items: center !important; }   /* ПК: по центру между верхом экрана и блоками меню */
+
+/* v0.13.37: лавка листается целиком, как вопросы */
+#shWin { overflow-y: auto !important; overflow-x: hidden !important; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+#shWin::-webkit-scrollbar { display: none; }
+#shWin .sh-grid { overflow: visible !important; flex: 0 0 auto !important; min-height: auto !important; }
+
+/* v0.13.37: меню — без «Заново», крупная «Цель полёта» с крестиком */
+#resetProgressBtn, #restartFromGameOverBtn { display: none !important; }
+#menuGoalCard { padding: 16px !important; }
+#menuGoalCard > div:first-of-type { font-size: 15px !important; }
+#menuGoalCard > div:first-of-type i { font-size: 16px !important; }
+#menuGoalCard > p:first-of-type { font-size: 14px !important; line-height: 1.4 !important; }
+#menuGoalCard > p:last-of-type { font-size: 13px !important; line-height: 1.4 !important; }
+#menuGoalCard > p:last-of-type i { font-size: 12px !important; }
+#menuGoalX { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: rgba(233,213,255,.8); background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); font-size: 13px; cursor: pointer; }
+#menuGoalX:active { transform: scale(.92); }
+/* v0.13.37: плитки тем в меню — те же размеры, что в игре */
+#statsCard .collection-badge-slot [class*="text-[8px]"] { font-size: calc(8px * var(--tb, 1)) !important; }
+#statsCard .collection-badge-slot [class*="text-[12px]"] { font-size: calc(12px * var(--tb, 1)) !important; }
+/* v0.13.37: градиентные иконки не обрезаются — запас поля вокруг глифа, градиенты без шва */
+.qz-coin, #qzWin .qz-core i, #shWin .sh-cg, #shWin .sh-core i, #menuCoins .mc-coin, #rlWin .rl-core i, .buff-shazam i {
+  padding: .18em .14em !important; margin: -.18em -.14em !important; box-sizing: content-box; line-height: 1 !important; }
+#qzWin .qz-core i { background-image: linear-gradient(110deg,#7DD3FC 0%,#E0F2FE 20%,#7DD3FC 40%,#C4A1FF 60%,#7DD3FC 80%,#E0F2FE 90%,#7DD3FC 100%) !important; }
+#shWin .sh-core i { background-image: linear-gradient(110deg,#FFC53D 0%,#FFF3B0 20%,#FFC53D 40%,#5EEAD4 60%,#FFC53D 80%,#FFF3B0 90%,#FFC53D 100%) !important; }
+#rlWin .rl-core i { background-image: linear-gradient(110deg,#FE7600 0%,#FFE0B2 20%,#FE7600 40%,#C4A1FF 60%,#FE7600 80%,#FFE0B2 90%,#FE7600 100%) !important; }

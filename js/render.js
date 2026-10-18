@@ -218,6 +218,7 @@ function drawScene() {
     shazamDrawFx();
     drawIceShards();
     ctx.restore();   // конец слоя камеры
+    if (typeof stormGrade === 'function') stormGrade();   // в дождь — серее и мрачнее
     stormDrawRain();        // дождь — поверх труб, значков и совы
 }
 

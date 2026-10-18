@@ -182,49 +182,9 @@ const owl = {
             const rotAngle = frame * 0.028 * (1 + (shz ? 2.2 * shz.shieldK : 0));
             const notchRadius = shieldRadius + 2.5;
 
-            const shCol = (shz && shz.shieldK > 0.01) ? shazamShieldColor() : '#22C55E';   // в ШАЗАМе щит рыжеет
-            ctx.strokeStyle = shCol;
-            ctx.lineWidth = 1.6;
-            ctx.lineCap = 'round';   // концы штрихов щита закруглены
-            ctx.shadowColor = shCol;
-            ctx.shadowBlur = 19;
-
-            // при ударе щит вминается в сторону трубы и упруго выправляется
-            const dentLocal = shieldDentAng - this.rotation;
-            ctx.lineWidth = 1.6 + 1.4 * shieldDent;
-            // место удара светится: чем сильнее удар, тем ярче
-            if (shieldHitPower > 0.03) {
-                const gR = notchRadius * (1 - 0.58 * shieldDent); const gx = Math.cos(dentLocal) * gR, gy = Math.sin(dentLocal) * gR;
-                const gr = notchRadius * (0.55 + 0.35 * shieldHitPower);
-                const hg = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
-                hg.addColorStop(0, `rgba(220, 255, 230, ${0.85 * shieldHitPower})`);
-                hg.addColorStop(0.4, `rgba(74, 222, 128, ${0.45 * shieldHitPower})`);
-                hg.addColorStop(1, 'rgba(34, 197, 94, 0)');
-                const prevStroke = ctx.strokeStyle;
-                ctx.fillStyle = hg;
-                ctx.beginPath(); ctx.arc(gx, gy, gr, 0, Math.PI * 2); ctx.fill();
-                ctx.strokeStyle = prevStroke;
-            }
-            for (let s = 0; s < numNotches; s++) {
-                const startAng = rotAngle + s * notchAngle + (arcMax - notchArc) / 2;   // середина штриха остаётся на месте
-                ctx.lineWidth = 1.6 + 1.4 * shieldDent;
-                ctx.beginPath();
-                for (let k = 0; k <= 6; k++) {
-                    const a = startAng + notchArc * k / 6;
-                    let d = (a - dentLocal) % (Math.PI * 2);
-                    if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2;
-                    let rr = notchRadius * (1 - 0.58 * shieldDent * Math.exp(-(d * d) / 0.6));
-                    if (shz && shz.shieldK > 0.01) rr = shazamShieldR(rr, a + this.rotation + (this.lean || 0));   // спереди шире, сзади уже (по направлению полёта)   // прогиб глубже и шире — щит «мягче»
-                    if (k === 3 && shieldHitPower > 0.05) {
-                        // дуги рядом с ударом светлеют и становятся толще
-                        const near = Math.exp(-(d * d) / 0.5) * shieldHitPower;
-                        ctx.lineWidth = 1.6 + 1.4 * shieldDent + 2.2 * near;
-                    }
-                    if (k === 0) ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); else ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
-                }
-                ctx.stroke();
-            }
-
+            const shK = (shz && shz.shieldK > 0.01) ? shz.shieldK : 0;
+            const shCol = shK ? shazamShieldColor() : '#22C55E';   // в ШАЗАМе щит рыжеет
+            drawShieldSphere(notchRadius, shieldDentAng - this.rotation, -this.rotation, shK, shCol, this.rotation + (this.lean || 0));
 
             ctx.restore();
         } else if (invulnerableTime > 0 && Math.floor(frame / 5) % 2 === 0) {
@@ -615,3 +575,84 @@ const owl = {
         }
     }
 };
+
+// ===== Щит — зелёная переливающаяся сфера вокруг совы =====
+// R — радиус (как у прежнего пунктира), dentLocal — куда вмят щит (в повёрнутых координатах совы),
+// rot0 — поворот «мира» относительно совы (блик и касания держатся на месте при наклоне совы), shK — доля ШАЗАМа (щит рыжеет и вытягивается)
+const SHS = { pts: new Float32Array(2 * 64) };
+function shAngD(a, b) { let d = (a - b) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; }
+function drawShieldSphere(R, dentLocal, rot0, shK, shCol, shzRot) {
+    const N = 64, P = SHS.pts, t = frame / 60;
+    const dent = typeof shieldDent === 'number' ? shieldDent : 0, wob = typeof shieldWob === 'number' ? shieldWob : 0;
+    // форма: вмятина от удара, упругая рябь после удара, еле заметное «дыхание»
+    for (let i = 0; i < N; i++) {
+        const a = i / N * Math.PI * 2, d = shAngD(a, dentLocal);
+        let rr = R * (1 - 0.5 * dent * Math.exp(-(d * d) / 0.55));
+        rr *= 1 + 0.035 * wob * Math.sin(4 * a + t * 22) + 0.012 * Math.sin(3 * a + t * 1.7);
+        if (shK) rr = shazamShieldR(rr, a + shzRot);
+        P[i * 2] = Math.cos(a) * rr; P[i * 2 + 1] = Math.sin(a) * rr;
+    }
+    const path = () => {
+        ctx.beginPath();
+        let mx = (P[(N - 1) * 2] + P[0]) / 2, my = (P[(N - 1) * 2 + 1] + P[1]) / 2;
+        ctx.moveTo(mx, my);
+        for (let i = 0; i < N; i++) {
+            const j = (i + 1) % N, x = P[i * 2], y = P[i * 2 + 1];
+            ctx.quadraticCurveTo(x, y, (x + P[j * 2]) / 2, (y + P[j * 2 + 1]) / 2);
+        }
+        ctx.closePath();
+    };
+    const hue = shK ? 28 : 140 + 18 * Math.sin(t * 0.9);   // зелёный плавно уходит то в бирюзу, то в салатовый
+    const hsl = (h, s, l, a) => `hsla(${h.toFixed(1)},${s}%,${l}%,${a.toFixed(3)})`;
+    ctx.save();
+    // тело сферы: почти прозрачная середина, к краю — плотнее
+    const body = ctx.createRadialGradient(-R * 0.25, -R * 0.3, R * 0.1, 0, 0, R * 1.02);
+    body.addColorStop(0, hsl(hue, 90, 75, 0.05));
+    body.addColorStop(0.62, hsl(hue, 85, 55, 0.10));
+    body.addColorStop(0.9, hsl(hue, 85, 50, 0.26));
+    body.addColorStop(1, hsl(hue, 90, 60, 0.42));
+    path(); ctx.fillStyle = body; ctx.fill();
+    // перелив по краю: бегущий по кругу градиент зелёного, бирюзового и салатового
+    let rim;
+    const ra = rot0 + t * 0.9;
+    if (ctx.createConicGradient) {
+        rim = ctx.createConicGradient(ra, 0, 0);
+        const C = shK ? ['#FFB45C', '#FFE2B8', '#FF7A00', '#FFD27A', '#FFB45C'] : ['#4ADE80', '#5EEAD4', '#BEF264', '#22D3EE', '#86EFAC', '#4ADE80'];
+        C.forEach((c, i) => rim.addColorStop(i / (C.length - 1), c));
+    } else rim = shCol;
+    ctx.shadowColor = shCol; ctx.shadowBlur = 14;
+    ctx.lineWidth = 1.8 + 1.2 * dent;
+    ctx.strokeStyle = rim; path(); ctx.stroke();
+    ctx.shadowBlur = 0;
+    // тонкий светлый внутренний ободок — объём
+    ctx.save(); ctx.scale(0.86, 0.86); ctx.globalAlpha *= 0.35; ctx.lineWidth = 1; ctx.strokeStyle = hsl(hue, 90, 85, 0.6); path(); ctx.stroke(); ctx.restore();
+    // блики: большой мягкий сверху-слева и маленький снизу-справа (держатся на месте при наклоне совы)
+    ctx.save(); ctx.rotate(rot0);
+    const hx = -R * 0.42, hy = -R * 0.5;
+    const sp = ctx.createRadialGradient(hx, hy, 0, hx, hy, R * 0.42);
+    sp.addColorStop(0, 'rgba(255,255,255,0.55)'); sp.addColorStop(0.5, 'rgba(230,255,240,0.18)'); sp.addColorStop(1, 'rgba(230,255,240,0)');
+    ctx.fillStyle = sp; ctx.beginPath(); ctx.ellipse(hx, hy, R * 0.42, R * 0.28, -0.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.ellipse(R * 0.48, R * 0.5, R * 0.12, R * 0.06, -0.6, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    // места касаний: ярче светится и сам край, и пятно возле него
+    const T = (typeof shieldTouches !== 'undefined') ? shieldTouches : [];
+    for (const tc of T) {
+        if (tc.p < 0.03) continue;
+        const la = tc.a + rot0;   // угол касания в координатах совы
+        const i = ((Math.round(la / (Math.PI * 2) * N) % N) + N) % N;
+        const gx = P[i * 2], gy = P[i * 2 + 1];
+        const gr = R * (0.45 + 0.35 * tc.p);
+        const hg = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
+        hg.addColorStop(0, hsl(hue, 100, 92, 0.85 * tc.p)); hg.addColorStop(0.45, hsl(hue, 90, 60, 0.4 * tc.p)); hg.addColorStop(1, hsl(hue, 90, 50, 0));
+        ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(gx, gy, gr, 0, Math.PI * 2); ctx.fill();
+        // яркий отрезок края возле касания
+        ctx.save();
+        ctx.lineWidth = 2 + 2.6 * tc.p; ctx.lineCap = 'round';
+        ctx.strokeStyle = hsl(hue, 100, 88, Math.min(1, 0.95 * tc.p)); ctx.shadowColor = hsl(hue, 100, 70, 1); ctx.shadowBlur = 10 * tc.p;
+        ctx.beginPath();
+        const span = Math.round(N * (0.05 + 0.05 * tc.p));
+        for (let k = -span; k <= span; k++) { const j = ((i + k) % N + N) % N; if (k === -span) ctx.moveTo(P[j * 2], P[j * 2 + 1]); else ctx.lineTo(P[j * 2], P[j * 2 + 1]); }
+        ctx.stroke(); ctx.restore();
+    }
+    ctx.restore();
+}

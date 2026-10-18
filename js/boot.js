@@ -144,12 +144,13 @@
                     cloneWrap.appendChild(clone); el.appendChild(cloneWrap);
                     var cr = clone.getBoundingClientRect(); natW = cr.width; natH = cr.height;
                 }
+                natW = clone.offsetWidth || natW; natH = clone.offsetHeight || natH;   // шрифт мог догрузиться — ширину копии меряем каждый кадр
                 if (!natW) return;
                 // размер — как у логотипа в меню, место — вверху экрана по центру (над совой)
                 var sc = r.width / natW, z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;
                 var x = (window.innerWidth - r.width) / 2, y = Math.round(46 * z);
                 cloneWrap.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y + 'px) scale(' + sc.toFixed(4) + ')';
-                var key = Math.round(x) + ',' + y + ',' + Math.round(r.width);
+                var key = Math.round(x) + ',' + y + ',' + Math.round(r.width) + ',' + Math.round(natW);
                 stable = key === lastKey ? stable + 1 : 0; lastKey = key;
                 if (!shownLogo && stable > 12) { shownLogo = true; cloneWrap.style.opacity = '1'; }
             }

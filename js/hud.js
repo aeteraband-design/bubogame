@@ -829,8 +829,10 @@ function updateMenuVisibility() {
         }
     }
 
+    // «Цель полёта» — только до первой игры (и пока не закрыли крестиком)
+    try { const gc = document.getElementById('menuGoalCard'); if (gc) gc.classList.toggle('hidden', hasProgress || localStorage.getItem('bubo_goal_hidden') === '1'); } catch (e) {}
     if (resetProgressBtn) {
-        if (hasProgress && attempts > 0) {
+        if (false) {
             resetProgressBtn.classList.remove('hidden');
         } else {
             resetProgressBtn.classList.add('hidden');
