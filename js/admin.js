@@ -153,13 +153,14 @@
     function renderBody() {
         const rb = $('admReset'); if (rb) rb.style.display = (tab === 'test' || tab === 'quiz') ? 'none' : '';
         if (tab === 'test') { renderTest(); return; }
-        if (tab === 'quiz') { prevStop(); body.innerHTML = ROWS.quiz.map(rowHtml).join('') + (typeof quizAdminHtml === 'function' ? quizAdminHtml() : ''); body.scrollTop = 0; return; }
+        if (tab === 'quiz') { prevStop(); body.innerHTML = ROWS.quiz.map(rowHtml).join('') + (typeof quizAdminHtml === 'function' ? quizAdminHtml() : ''); body.scrollTop = 0; if (typeof quizAdminMount === 'function') quizAdminMount(body); return; }
         prevStop();
         const rows = tab === 'themes' ? themeRows() : ROWS[tab];
         let h = '';
         if (tab === 'themes') h += `<div class="adm-sum"><span>Всего тем для победы</span><b id="admTotal">${themesTotal()}</b></div>`;
         h += rows.map(rowHtml).join('');
         if (tab === 'game') h += `<div class="adq-acts"><button type="button" class="adq-btn" data-g="coins"><i class="fa-solid fa-coins"></i>+1000 монет</button></div>`
+            + `<div class="adq-acts"><button type="button" class="adq-btn" data-g="spin1"><i class="fa-solid fa-dice"></i>+1 вращение рулетки</button><button type="button" class="adq-btn" data-g="spin5"><i class="fa-solid fa-dice"></i>+5 вращений</button></div>`
             + `<div class="adq-acts"><button type="button" class="adq-btn" data-g="out"><i class="fa-solid fa-right-from-bracket"></i>Выйти из админки</button></div>`;
         body.innerHTML = h;
         body.scrollTop = 0;
@@ -245,6 +246,11 @@
         const b = e.target.closest('[data-g]'); if (!b || tab !== 'game') return;
         if (b.dataset.g === 'att') { attempts = Math.max(attempts, MAX_ATTEMPTS); zeroDay = ''; try { StorageManager.save(); updateHUDAll(); } catch (er) {} b.innerHTML = '<i class="fa-solid fa-check"></i>Попытки: ' + attempts; }
         else if (b.dataset.g === 'coins') { if (typeof coinsAdd === 'function') coinsAdd(1000); b.innerHTML = '<i class="fa-solid fa-check"></i>Монет: ' + (typeof coinsGet === 'function' ? coinsGet() : ''); }
+        else if (b.dataset.g === 'spin1' || b.dataset.g === 'spin5') {   // попытки вращения рулетки себе
+            rouletteSpins = Math.min(99, rouletteSpins + (b.dataset.g === 'spin5' ? 5 : 1));
+            try { rwUpdateUI(); StorageManager.save(); } catch (er) {}
+            b.innerHTML = '<i class="fa-solid fa-check"></i>Вращений: ' + rouletteSpins;
+        }
         else if (b.dataset.g === 'out') { try { localStorage.removeItem(AUTH); } catch (er) {} close(); }
     });
     // вкладка «Вопросы»: сброс показанных и портал прямо сейчас (для проверки)

@@ -247,7 +247,7 @@ function shopSyncBtn() {
 (function () {
     const st = document.createElement('style');
     st.textContent = '#openAdminBtn{display:none!important}'
-        + '#menuCoins{position:absolute;z-index:6;zoom:var(--ui-zoom,1);top:12px;left:14px;height:40px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 13px 0 11px;border-radius:13px;line-height:1;overflow:hidden;'
+        + '#menuCoins{position:absolute;z-index:6;zoom:var(--ui-zoom,1);top:12px;left:14px;width:max-content;height:40px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 13px 0 11px;border-radius:13px;line-height:1;overflow:hidden;'
         + 'background:rgba(29,9,54,.78);border:1px solid rgba(255,197,61,.6);box-shadow:0 0 12px rgba(255,197,61,.25),0 6px 14px rgba(0,0,0,.3);font:900 16px/1 Onest,sans-serif;pointer-events:none;cursor:default}'
         // монетки — золотые с переливом, число — золотым градиентом; по плашке время от времени пробегает блик
         + '#menuCoins .mc-coin{font-size:18px;line-height:1;background:linear-gradient(160deg,#FFF3B0 0%,#FFC53D 45%,#E08A00 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 5px rgba(255,197,61,.6))}'

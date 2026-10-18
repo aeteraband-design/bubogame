@@ -11,21 +11,47 @@
     wrap.appendChild(cv);
     const g = cv.getContext('2d');
     const st = document.createElement('style');
-    st.textContent = '#startScreen > .menu-logo-wrap .logo-fx{position:absolute;left:-40px;right:-40px;top:-70px;bottom:-50px;width:calc(100% + 80px);height:calc(100% + 120px);pointer-events:none;z-index:3}'
+    st.textContent = '#startScreen > .menu-logo-wrap .logo-fx{position:absolute;left:0;right:0;top:-70px;bottom:-50px;width:100%;height:calc(100% + 120px);pointer-events:none;z-index:3}'
         + '#startScreen > .menu-logo-wrap .fa-gamepad{display:inline-block;will-change:transform}'
         // пока идёт превращение — обводка мягко окрашивается в цвет состояния совы; надпись едва заметно отсвечивает
         + '#startScreen > .menu-logo-wrap .lg-tile{position:relative;transition:border-color .5s,box-shadow .5s}'
         + '#startScreen > .menu-logo-wrap .lg-tile.lg-on.lg-on.lg-on{border-color:var(--lc)!important;box-shadow:0 0 12px var(--lc),0 6px 14px rgba(0,0,0,.3)!important}'
-        + '#startScreen > .menu-logo-wrap .lg-txt.lg-on .lg-ch{animation:lgWave 2.4s ease-in-out infinite;animation-delay:calc(var(--i) * 90ms)}'
-        + '@keyframes lgWave{0%,40%,100%{filter:brightness(1)}20%{filter:brightness(1.2)}}';
+        // надпись: по буквам мягко пробегает отсвет и тонкое свечение по контуру цвета состояния; сила (--lgk) плавно нарастает и угасает
+        + '@property --lgw{syntax:"<number>";inherits:false;initial-value:0}'
+        + '#startScreen > .menu-logo-wrap .lg-txt.lg-on .lg-ch{animation:lgWave 2.2s ease-in-out infinite;animation-delay:calc(var(--i) * 85ms);'
+        + 'filter:brightness(calc(1 + .2 * var(--lgk,0) * var(--lgw))) drop-shadow(0 0 calc(4px * var(--lgk,0) * (.35 + var(--lgw))) var(--lc))}'
+        + '@keyframes lgWave{0%,50%,100%{--lgw:0}22%{--lgw:1}}';
     tile.classList.add('lg-tile');
+    // размер логотипа под экран: на высоких экранах крупнее (до 1,4×), на низких — уменьшается; всегда по центру между верхом и блоками меню
+    const logo = wrap.firstElementChild;
+    function fitLogo() {
+        if (!logo) return;
+        // считаем в экранных пикселях: ширина логотипа — до трети с небольшим ширины экрана (на ПК крупно), но не шире блоков меню;
+        // по высоте — не больше чем ~55% свободного места между верхней панелью и блоками, чтобы сверху и снизу оставался воздух
+        const cur = window.__logoScale || 1, lr = logo.getBoundingClientRect(), wr = wrap.getBoundingClientRect(), cs = getComputedStyle(wrap);
+        const k = wrap.offsetHeight ? wr.height / wrap.offsetHeight : 1;
+        const baseW = lr.width / cur, baseH = lr.height / cur;
+        const availH = (wrap.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)) * k;
+        if (!baseW || !baseH || availH <= 0) return;
+        const wantW = window.innerWidth > 700 ? Math.min(window.innerWidth * 0.36, wr.width * 0.9) : wr.width * 0.86;   // телефон — почти во всю ширину блоков, ПК — около трети экрана
+        let sc = Math.min(wantW / baseW, (availH * 0.62) / baseH, 2.6);
+        sc = Math.max(0.6, sc);
+        if (Math.abs(sc - cur) < 0.005) return;
+        logo.style.transform = 'scale(' + sc.toFixed(3) + ')';
+        window.__logoScale = sc;
+    }
+    logo && (logo.style.transformOrigin = '50% 50%');
+    try { new ResizeObserver(fitLogo).observe(wrap); } catch (e) {}
+    window.addEventListener('resize', fitLogo);
+    setTimeout(fitLogo, 0); setTimeout(fitLogo, 600);
     // разбиваем надпись на буквы для волны
     const txt = wrap.querySelector('.tracking-tight');
     if (txt) {
         txt.classList.add('lg-txt'); let n = 0;
         txt.querySelectorAll('span').forEach(sp => { const t = sp.textContent; sp.textContent = ''; for (const ch of t) { const c = document.createElement('span'); c.className = 'lg-ch'; c.style.setProperty('--i', n++); c.textContent = ch; sp.appendChild(c); } });
     }
-    const lgOn = (on) => { tile.classList.toggle('lg-on', on); if (txt) { txt.classList.toggle('lg-on', on); if (state) txt.style.setProperty('--lc', state.line); } };
+    const lgOn = (on) => { tile.classList.toggle('lg-on', on); };
+    const txtK = (k) => { if (!txt) return; txt.style.setProperty('--lgk', k.toFixed(3)); txt.classList.toggle('lg-on', k > 0.001); };
     document.head.appendChild(st);
 
     // состояния совы и цвет подсветки за ней
@@ -129,7 +155,7 @@
             if (now < nextAt) return;
             if (!canRun()) { nextAt = now + 2000; return; }
             state = nextState(); t0 = now; flags = {}; sparks = [];
-            tile.style.setProperty('--lc', state.line); lgOn(true);
+            tile.style.setProperty('--lc', state.line); if (txt) txt.style.setProperty('--lc', state.line); lgOn(true);
         }
         if (!canRun()) { stop(); return; }
         const L = sizeCanvas(), t = (now - t0) / 1000, { tx, ty, ts } = L;
@@ -159,12 +185,14 @@
             if (k > 0.35) { if (!flags.back) { flags.back = 1; burst(tx, ty, 8, '#FFE08A'); } const s = back((k - 0.35) / 0.65); setIcon(s, s, 1); }
             else setIcon(0, 0, 0);
         }
+        // плавное появление и угасание эффекта на надписи
+        txtK(t < 0.6 ? ease(t / 0.6) : t > DUR - 1 ? ease((DUR - t) / 1) : 1);
         drawSparks(dt);
         if (t >= DUR) { stop(); return; }
         raf = requestAnimationFrame(tick);
     }
     function stop() {
-        state = null; resetIcon(); sparks = []; lgOn(false);
+        state = null; resetIcon(); sparks = []; lgOn(false); txtK(0);
         g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height);
         nextAt = performance.now() + 9000 + Math.random() * 4000;
     }

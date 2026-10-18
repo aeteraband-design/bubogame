@@ -405,3 +405,7 @@ html.hud-ll #buffBar .buff-tag { align-self: flex-start !important; }
 #gameOverModal .shrink-0:has(> .fa-gamepad) + div { margin-left: calc(0.5rem + 4px) !important; }
 #bootLoader .bl-logo { gap: 14px !important; }
 .lg-ch { display: inline-block; font-weight: inherit !important; font-size: inherit !important; }
+
+/* меню никогда не прокручивается вбок (свечение логотипа и т. п. не должны давать горизонтальную полосу прокрутки) */
+#startScreen { overflow-x: hidden !important; }
+html, body { overflow-x: hidden; }

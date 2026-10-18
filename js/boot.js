@@ -137,7 +137,7 @@
                 }
                 var z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;
                 // размер — как у логотипа в главном меню (копия вне меню, поэтому размеры задаём ей явно), место — вверху экрана, как раньше
-                clone.style.zoom = z;
+                clone.style.zoom = z * (window.__logoScale || 1);   // логотип в меню подстраивается под высоту экрана — копия такого же размера
                 var box = clone.querySelector('.shrink-0'), gi = clone.querySelector('.fa-gamepad'), tx = clone.querySelector('.tracking-tight');
                 if (box) { box.style.width = '56px'; box.style.height = '56px'; box.style.borderRadius = '18px'; }
                 if (gi) { gi.style.fontSize = '24px'; gi.style.lineHeight = '1'; }
