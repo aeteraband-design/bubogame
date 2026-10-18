@@ -192,7 +192,7 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-tm.low .fg{stroke:#EF4444}
 #qzWin .qz-tm b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px}
 #qzWin .qz-tm i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#7DD3FC}
-#qzWin .qz-q{font-weight:900;font-size:16px;line-height:1.33;padding:2px 2px 0}
+#qzWin .qz-q{font-weight:900;font-size:16px;line-height:1.33;padding:2px 44px 0 2px}
 #qzWin .qz-rew{display:flex;align-items:center;gap:6px;font-weight:800;font-size:11px;color:#C4B5FD}
 #qzWin .qz-rew b{color:#FFD66B;font-weight:900}
 #qzWin .qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
@@ -446,7 +446,7 @@ function qzRenderDone() {
 // плашка выбранной темы и сложности (над кружками вопросов); во время вопроса сменить нельзя
 function qzCurPlate(d, canChange) {
     const th = qzTheme(d.theme), lv = qzLevel(d.lvl);
-    return `<div class="qz-cur" style="--tc:${th.col}"><span class="qz-thi"><i class="fa-solid ${th.icon}"></i></span><span class="qz-curt"><b>${th.name}</b><span><em style="color:${lv.col}">${lv.name}</em> · ${QZ_COIN} ${lv.coins} за вопрос</span></span><button type="button" class="qz-chg" data-qa="pick"${canChange ? '' : ' disabled'}>Сменить</button></div>`;
+    return `<div class="qz-cur" style="--tc:${th.col}"><span class="qz-thi"><i class="fa-solid ${th.icon}"></i></span><span class="qz-curt"><b>${th.name}</b><span><em style="color:${lv.col}">${lv.name}</em> · ${QZ_COIN} +${lv.coins}</span></span><button type="button" class="qz-chg" data-qa="pick"${canChange ? '' : ' disabled'}>Сменить</button></div>`;
 }
 // две кнопки в ряд: назад к выбору темы и в главное меню
 function qzNavRow(on) {
@@ -482,7 +482,7 @@ function qzRenderQ(reveal) {
     { const w = document.getElementById('qzWin'); if (w) w.classList.toggle('busy', !reveal); }
     const tcc = qzTheme(d.theme || q.theme).col;
     body.innerHTML = qzHead() + (d.theme ? qzCurPlate(d, reveal) : '') + qzProg(d, idx)
-        + `<div class="qz-card" style="--tc:${tcc}"><div class="qz-meta"><span class="qz-chip" style="color:${th.col};border-color:${th.col}88;background:${th.col}22">${th.name}</span><span class="qz-sep"></span><span class="qz-diff" style="color:${di.col}">${di.name}</span>${reveal ? '' : ring}</div>`
+        + `<div class="qz-card" style="--tc:${tcc}">${reveal ? '' : ring}`
         + `<div class="qz-q">${q.question}</div><div class="qz-rew">${QZ_COIN}<span>За верный ответ: <b>+${di.coins}</b></span></div><div class="qz-opts">${opts}</div></div>`
         + `<div class="qz-abcd${reveal ? ' lock' : (QS.phase === 'read' ? ' wait' : '')}" id="qzAbcd">${balls}</div>` + note + btns;
 }

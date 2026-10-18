@@ -546,3 +546,75 @@ html.menu-pc #startScreen > .menu-logo-wrap { padding-top: 0 !important; padding
 #rlWin .rl-row:first-of-type { padding-top: 4px !important; }
 #rlWin .rl-row:last-child { padding-bottom: 4px !important; }
 #rlWin .rl-row + .rl-row { border-top: 1px solid color-mix(in srgb, var(--c) 20%, rgba(255, 255, 255, 0.04)) !important; }
+/* вопросы: в плашке темы сложность и монеты — крупно, жирно, заглавными (как подписи тем); строка темы в карточке вопроса убрана */
+#qzWin .qz-curt span { font-size: 11.5px !important; font-weight: 900 !important; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+#qzWin .qz-curt span em { font-weight: 900; }
+#qzWin .qz-curt span .qz-coin { font-size: 13px !important; }
+#menuGoalX { top: 8px !important; right: 8px !important; }
+
+/* ===== Экран смерти v2 — в стиле окна вопросов ===== */
+@property --goA { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+#gameOverModal { --gc: #F43F5E; --gc2: #FE7600; --gl: #FDA4AF; }
+#gameOverModal.go-none { --gc: #FE7600; --gc2: #FACC15; --gl: #FED7AA; }
+#goWin { position: relative; width: 100%; max-width: 340px; border-radius: 24px; padding: 20px 16px 16px; display: flex; flex-direction: column; gap: 12px; font-family: Onest, sans-serif; color: #fff; text-align: left;
+    background: radial-gradient(120% 55% at 50% -10%, color-mix(in srgb, var(--gc) 22%, transparent), transparent 62%), radial-gradient(90% 45% at 100% 110%, rgba(168, 85, 247, 0.14), transparent 60%), rgba(29, 9, 54, 0.97);
+    border: 1.5px solid color-mix(in srgb, var(--gc) 50%, transparent); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 30px color-mix(in srgb, var(--gc) 16%, transparent); }
+#goWin .go-top { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+#goWin .go-emb { position: relative; width: 92px; height: 92px; display: flex; align-items: center; justify-content: center; }
+#goWin .go-glow { position: absolute; inset: 12px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--gc) 36%, transparent), color-mix(in srgb, var(--gc2) 12%, transparent) 55%, transparent 72%); animation: qzPulse 3.2s ease-in-out infinite; }
+#goWin .go-ring { position: absolute; inset: 5px; border-radius: 50%; padding: 1.5px; background: conic-gradient(from var(--goA), transparent 0deg, var(--gl) 70deg, var(--gc2) 140deg, transparent 200deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; animation: goRing 3.6s linear infinite; }
+@keyframes goRing { to { --goA: 360deg; } }
+#goWin .go-core { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+#goWin .go-core i { font-size: 38px; background: linear-gradient(110deg, var(--gc) 0%, var(--gl) 25%, var(--gc) 45%, var(--gc2) 65%, var(--gc) 85%, var(--gl) 100%); background-size: 250% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 7px color-mix(in srgb, var(--gc) 60%, transparent)); animation: qzFlow 4.5s linear infinite, goBeat 2.4s ease-in-out infinite; }
+@keyframes goBeat { 0%, 100% { transform: scale(1); } 12% { transform: scale(1.1); } 24% { transform: scale(.97); } 36% { transform: scale(1.05); } 50% { transform: scale(1); } }
+#goWin .go-tw { position: absolute; font-style: normal; font-size: var(--s); color: #fff; text-shadow: 0 0 8px var(--gc); animation: qzTw 2.4s ease-in-out infinite; animation-delay: var(--d); }
+#goWin .go-title { text-align: center; }
+#goWin .go-title b { display: block; font-weight: 900; font-size: 21px; letter-spacing: .02em; line-height: 1.05;
+    background: linear-gradient(90deg, var(--gl), #fff 45%, var(--gl)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#goWin .go-title span { display: block; margin-top: 5px; font-weight: 600; font-size: 11.5px; color: #C4B5FD; }
+#goWin .go-reason { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 14px; background: color-mix(in srgb, var(--gc) 10%, rgba(20, 3, 38, .6)); border: 1px solid color-mix(in srgb, var(--gc) 40%, transparent); }
+#goWin .go-ri, #goWin .go-ii { flex: 0 0 32px; width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #fff;
+    background: linear-gradient(135deg, var(--gc), color-mix(in srgb, var(--gc) 45%, #1d0936)); box-shadow: 0 0 12px color-mix(in srgb, var(--gc) 45%, transparent), inset 0 1px 0 rgba(255, 255, 255, .25); }
+#goWin .go-reason > div:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+#goWin .go-reason-k { font-size: 9px; font-weight: 900; letter-spacing: .16em; color: var(--gl); }
+#goWin #gameOverReason { font-size: 12.5px; line-height: 1.3; font-weight: 800; color: #fff; }
+#goWin .go-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+#goWin .go-st { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 3px; padding: 10px 4px 9px; border-radius: 14px; text-align: center;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--c) 16%, transparent), color-mix(in srgb, var(--c) 5%, transparent)); border: 1px solid color-mix(in srgb, var(--c) 38%, transparent); }
+#goWin .go-st > i { font-size: 15px; color: var(--c); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c) 60%, transparent)); }
+#goWin .go-st > b { font-size: 17px; font-weight: 900; line-height: 1.1; color: #fff; white-space: nowrap; }
+#goWin .go-st > span { font-size: 9px; font-weight: 700; line-height: 1.2; color: #C4B5FD; text-transform: uppercase; letter-spacing: .03em; }
+#goWin .go-info { --gi: #22C55E; display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 14px; font-size: 11px; line-height: 1.38; font-weight: 600; color: #DCCBFA;
+    background: color-mix(in srgb, var(--gi) 8%, rgba(20, 3, 38, .6)); border: 1px solid color-mix(in srgb, var(--gi) 38%, transparent); }
+#goWin .go-info .go-ii { --gc: var(--gi); }
+#goWin .go-info b { display: block; color: #fff; font-weight: 900; font-size: 12px; margin-bottom: 1px; }
+#goWin .go-info .go-lvl { color: #FE7600; font-weight: 900; }
+#goWin .go-info.go-warn { --gi: #FE7600; }
+#goWin .go-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
+#goWin .go-shop { color: #fff; background: rgba(14, 60, 110, .55); border: 1px solid rgba(56, 189, 248, .7); box-shadow: 0 0 12px rgba(56, 189, 248, .3); }
+#goWin .go-shop i { color: #FFC53D; }
+#gameOverModal:not(.hidden) #goWin { animation: goIn .4s cubic-bezier(.34, 1.3, .64, 1) both; }
+@keyframes goIn { from { opacity: 0; transform: translateY(14px) scale(.94); } to { opacity: 1; transform: none; } }
+#qzWin { border: 1.5px solid rgba(56, 189, 248, 0.42) !important; }
+
+/* ===== Окно выигрыша v2: окно в цвете приза, как окна вопросов/лавки ===== */
+.rw-result2 .rw-res-pop { background: radial-gradient(120% 55% at 50% 0%, color-mix(in srgb, var(--c, #FE7600) 26%, transparent), transparent 62%), radial-gradient(90% 40% at 50% 110%, rgba(168, 85, 247, 0.16), transparent 60%), rgba(29, 9, 54, 0.98) !important;
+    border: 1.5px solid color-mix(in srgb, var(--c, #FE7600) 55%, transparent) !important; box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 36px color-mix(in srgb, var(--c, #FE7600) 28%, transparent) !important; padding: 22px 18px 18px !important; }
+.rw-result2 .rw-res-pop::before { background: repeating-conic-gradient(from var(--rwp-ang) at 50% 30%, color-mix(in srgb, var(--c, #FFC53D) 14%, transparent) 0deg 9deg, transparent 9deg 24deg) !important; }
+.rw-result2 .rw-res-text { display: flex; flex-direction: column; align-items: center; gap: 0; margin-top: 14px; }
+.rw-res-kicker2 { display: inline-flex; align-items: center; gap: 7px; font-size: 11px !important; letter-spacing: 0.14em !important; line-height: 1 !important; padding: 6px 12px; border-radius: 999px;
+    background: linear-gradient(90deg, #FFD700, #FE7600, #FFF1A8, #FFD700) border-box; background-size: 200% 100%; -webkit-background-clip: text; background-clip: text;
+    box-shadow: inset 0 0 0 1px rgba(255, 197, 61, 0.55), 0 0 14px rgba(255, 197, 61, 0.18); }
+.rw-res-kicker2::before, .rw-res-kicker2::after { content: '✦'; color: #FFC53D; -webkit-text-fill-color: #FFC53D; font-size: 9px; text-shadow: 0 0 6px rgba(255, 197, 61, 0.9); }
+.rw-result2 .rw-res-title { margin-top: 10px !important; font-size: 23px !important; letter-spacing: 0.01em; text-transform: uppercase; line-height: 1.08 !important;
+    background: linear-gradient(90deg, var(--c), #fff 50%, var(--c)); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent !important;
+    text-shadow: none !important; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--c) 45%, transparent)); animation: vicText 3.5s linear infinite; }
+.rw-result2 .rw-res-desc { width: 100%; box-sizing: border-box; margin: 12px 0 14px !important; padding: 10px 12px; border-radius: 14px; font-size: 12px !important; font-weight: 600 !important; line-height: 1.42 !important; color: #E4D7FB !important;
+    background: color-mix(in srgb, var(--c) 9%, rgba(20, 3, 38, 0.6)); border: 1px solid color-mix(in srgb, var(--c) 32%, transparent); }
+#goWin #continueAttemptBtn { padding-top: 10px; padding-bottom: 10px; }
+#goWin #continueAttemptTitle { font-size: 13px; letter-spacing: .08em; }
+#goWin #continueAttemptSub { font-size: 9.5px; letter-spacing: .06em; margin-top: 2px; }
+#goWin #gameOverOkBtn { padding-top: 12px; padding-bottom: 12px; font-size: 12.5px; }
+#qzWin .qz-x { color: #7DD3FC !important; background: rgba(56, 189, 248, 0.14) !important; border-color: rgba(56, 189, 248, 0.42) !important; }

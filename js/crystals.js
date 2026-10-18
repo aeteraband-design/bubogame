@@ -3,7 +3,7 @@
 // из верхней трубы вниз или из нижней вверх, пролетают проём и уходят в противоположную трубу. Вылетают случайно, раз за разом —
 // в них можно врезаться. Сколько одновременно летит в одной трубе — по сложности: Суперлайт/Лайт — 1, Медиум/Медиум+ — 2, Хард/Хард+ — 3
 // (дорожки на равном расстоянии по ширине трубы). Попадание снимает пол-жизни. Щит отбивает, ШАЗАМ сдувает.
-// Выпадение (админка «Опасные трубы»): по умолчанию один раз на каждые два уровня сложности; чаще — раз за уровень; максимум — дважды за уровень.
+// Выпадение (админка «Опасные трубы»): по умолчанию Суперлайт+Лайт — 1 раз, Медиум+Медиум+ — 2, Хард+Хард+ — 3 (огонь или вода вперемешку); чаще — раз за уровень; максимум — дважды за уровень.
 const CRYSTAL = { SEC: 10, GAP: [[80, 140], [65, 120], [55, 100], [45, 85], [36, 70], [28, 58]],   // пауза между шарами из одной трубы, кадры — по уровню сложности (сначала реже)
     COLOR: '#FF4A3D', HIT_DMG: 0.5, PER_PIPE: [1, 1, 2, 2, 3, 3], id: 0, plan: null, planKey: '' };
 let crystalTime = 0;          // сколько кадров ещё идёт эффект
@@ -18,16 +18,27 @@ function crystalPlanBuild() {
     if (CRYSTAL.plan && CRYSTAL.planKey === key) return CRYSTAL.plan;
     const lvStart = (i) => Math.ceil(i * T / 6);   // с какого числа тем начинается уровень i
     const segs = [];
-    if (f <= 0) for (let i = 0; i < 6; i += 2) segs.push([lvStart(i), lvStart(i + 2)]);
+    // по умолчанию: Суперлайт+Лайт — 1 раз, Медиум+Медиум+ — 2 раза, Хард+Хард+ — 3 раза; точки разнесены по отрезку
+    if (f <= 0) [1, 2, 3].forEach((k, j) => {
+        const a = lvStart(j * 2), b = lvStart(j * 2 + 2);
+        for (let q = 0; q < k; q++) segs.push([Math.round(a + (b - a) * q / k), Math.round(a + (b - a) * (q + 1) / k)]);
+    });
     else for (let i = 0; i < 6; i++) {
         const a = lvStart(i), b = lvStart(i + 1);
         if (f >= 2) { const m = Math.round((a + b) / 2); segs.push([a, m], [m, b]); } else segs.push([a, b]);
     }
+    // огонь / вода — поровну и вперемешку, одно и то же не больше двух раз подряд
+    const kinds = segs.map((_, i) => i % 2 ? 'water' : 'crystal');
+    if (Math.random() < 0.5) kinds.reverse();
+    for (let t = 0; t < 50; t++) {
+        for (let i = kinds.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [kinds[i], kinds[j]] = [kinds[j], kinds[i]]; }
+        if (!kinds.some((k, i) => i >= 2 && k === kinds[i - 1] && k === kinds[i - 2])) break;
+    }
     const now = getTotalCollectedThemes();
-    CRYSTAL.plan = segs.map(([a, b]) => {
+    CRYSTAL.plan = segs.map(([a, b], i) => {
         const lo = Math.max(1, a + 1), hi = Math.max(lo, b - 1);
         const at = lo + Math.floor(Math.random() * (hi - lo + 1));
-        return { at, done: at <= now };
+        return { at, done: at <= now, kind: kinds[i] };
     });
     CRYSTAL.planKey = key;
     return CRYSTAL.plan;
@@ -35,7 +46,7 @@ function crystalPlanBuild() {
 // после каждой собранной темы: дошли до точки из плана — следующий подходящий значок будет кристаллом
 function crystalOnTheme() {
     const plan = crystalPlanBuild(), n = getTotalCollectedThemes();
-    for (const p of plan) if (!p.done && n >= p.at) { p.done = true; crystalPending = true; }
+    for (const p of plan) if (!p.done && n >= p.at) { p.done = true; crystalPending = p.kind || true; }
 }
 function crystalReset() { crystalTime = 0; crystals.length = 0; crystalRedK = 0; }
 

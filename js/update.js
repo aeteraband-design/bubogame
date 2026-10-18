@@ -1048,12 +1048,15 @@ function showGameOverScreen(reason) {
     const has = attempts > 0;
     if ($('gameOverTitle')) $('gameOverTitle').innerText = has ? 'ПОПЫТКА ПОТЕРЯНА' : 'ПОПЫТКИ ЗАКОНЧИЛИСЬ';
     if ($('gameOverSubtext')) $('gameOverSubtext').innerText = has ? 'Списана 1 попытка' : 'Списана последняя попытка';
+    const modalEl = $('gameOverModal');
+    if (modalEl) modalEl.classList.toggle('go-none', !has);
+    if ($('goIcon')) $('goIcon').className = 'fa-solid ' + (has ? 'fa-heart-crack' : 'fa-hourglass-end');
     const info = $('gameOverInfo');
     if (info) {
         info.classList.toggle('go-warn', !has);
         info.innerHTML = has
-            ? `<i class="fa-solid fa-floppy-disk"></i><div><b>Прогресс сохранён.</b> Можно продолжить с текущего этапа${lvlName ? ` (сложность <span class="go-lvl">${lvlName}</span>)` : ''}: вопросы, темы, перья и силы остаются.</div>`
-            : `<i class="fa-solid fa-triangle-exclamation"></i><div><b>Попытки на сегодня закончились.</b> Прогресс сохранён до конца дня: купите попытку в лавке (монеты — за вопросы дня) и продолжайте. Завтра — ${MAX_ATTEMPTS} новые попытки и всё с начала.</div>`;
+            ? `<div class="go-ii"><i class="fa-solid fa-floppy-disk"></i></div><div><b>Прогресс сохранён</b>Продолжите с того же места${lvlName ? ` — сложность <span class="go-lvl">${lvlName}</span>` : ''}. Темы, вопросы, перья и силы остаются.</div>`
+            : `<div class="go-ii"><i class="fa-solid fa-triangle-exclamation"></i></div><div><b>Попытки на сегодня закончились</b>Прогресс сохранён до конца дня — купите попытку в лавке за монеты. Завтра — ${MAX_ATTEMPTS} новые попытки и игра с начала.</div>`;
     }
     const contBtn = $('continueAttemptBtn'), restartBtn = $('restartFromGameOverBtn'), homeBtn = $('gameOverHomeBtn'), okBtn = $('gameOverOkBtn');
     if (contBtn) contBtn.classList.toggle('hidden', !has);

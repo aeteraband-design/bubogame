@@ -33,7 +33,7 @@ const ADMIN_DEFAULTS = {
     drunkEvery: 6, drunkSec: 10,         // напитков до опьянения / его длительность
     freezeEvery: 3, freezeSec: 10,       // порций мороженого до заморозки / её длительность
     shieldSec: 10, slowSec: 10, speedSec: 10, compressSec: 10, infiniteSec: 10,   // длительности бонусов
-    crystalFreq: 0,                      // опасные трубы / водонапор: 0 — раз на два уровня сложности, 1 — раз за уровень, 2 — дважды за уровень
+    crystalFreq: 0,                      // опасные трубы / водонапор: 0 — Суперлайт+Лайт 1 раз, Медиум+Медиум+ 2, Хард+Хард+ 3, 1 — раз за уровень, 2 — дважды за уровень
     stormFreq: 1,                        // частота гроз: 0 — редко, 1 — обычно, 2 — часто, 3 — очень часто
     stormTest: 0,                        // проверка погоды: 0 — случайные грозы, 10–100 — сила грозы вручную
     shazamEvery: 4,                      // какое по счёту взятое ускорение включает ШАЗАМ
@@ -430,10 +430,10 @@ for (const k in ADMIN_CFG.themes) if (CATEGORIES[k]) CATEGORIES[k].count = ADMIN
 let TOTAL_THEMES = Object.keys(CATEGORIES).reduce((a, k) => a + (CATEGORIES[k].count || 0), 0);
 const THEME_KEYS_ALL = Object.keys(CATEGORIES).filter(k => CATEGORIES[k].count);
 function renderRulesGoal() {
-    const el = document.getElementById('rulesGoalText');
-    if (!el) return;
-    const parts = THEME_KEYS_ALL.map(k => `<span style="color:${CATEGORIES[k].color}" class="font-black">${CATEGORIES[k].name}: ${CATEGORIES[k].count}</span>`).join(', ');
-    el.innerHTML = `Лети между труб и собирай значки тем. Нужно собрать все <span class="text-white font-black">${TOTAL_THEMES} тем</span> (${parts}) — тогда ты сможешь крутить рулетку призов!`;
+    // один и тот же текст цели — в правилах и в «Цели полёта» в меню (числа берутся из настроек тем)
+    const parts = THEME_KEYS_ALL.map(k => `<span style="color:${CATEGORIES[k].color}" class="font-black">${CATEGORIES[k].name} ${CATEGORIES[k].count}</span>`).join(', ');
+    const html = `Лети между труб и собирай значки тем. Нужно собрать все <span class="text-white font-black">${TOTAL_THEMES} тем</span>: ${parts} — тогда ты сможешь крутить рулетку призов!`;
+    ['rulesGoalText', 'menuGoalText'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = html; });
 }
 renderRulesGoal();
 

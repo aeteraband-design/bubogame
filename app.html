@@ -13,22 +13,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BUBOGAME v0.10</title>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.13.45">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.13.47">
     <!-- Onest: локальные файлы -->
-    <link rel="stylesheet" href="css/fonts.css?v=0.13.45">
+    <link rel="stylesheet" href="css/fonts.css?v=0.13.47">
 
-    <script src="js/music-hold.js?v=0.13.45"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.13.45">
+    <script src="js/music-hold.js?v=0.13.47"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.13.47">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.13.45" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.13.47" id="adminStyle">
     <!-- Tailwind: готовый файл стилей вместо онлайн-компилятора (тот следил за каждым изменением страницы и пересобирал стили прямо во время игры) -->
-    <link rel="stylesheet" href="css/tailwind.css?v=0.13.45">
+    <link rel="stylesheet" href="css/tailwind.css?v=0.13.47">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.13.45">
-    <link rel="stylesheet" href="css/features.css?v=0.13.45">
+    <link rel="stylesheet" href="css/boot.css?v=0.13.47">
+    <link rel="stylesheet" href="css/features.css?v=0.13.47">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -44,9 +44,9 @@
             </div>
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
-        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.13.45</div>
+        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.13.47</div>
     </div>
-    <script src="js/boot.js?v=0.13.45"></script>
+    <script src="js/boot.js?v=0.13.47"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 backdrop-blur-[7px] overflow-y-auto custom-scroll">
@@ -145,7 +145,7 @@
                         <span class="font-black">Цель полёта</span>
                     </div>
                     <p class="text-[11px] text-purple-100 leading-snug font-medium">
-                        Лети между труб и собирай значки тем. Нужно собрать все <span class="text-white font-black">70 тем</span> ( <span style="color:#E056FD" class="font-black">Музыка (20)</span>, <span style="color:#4ADE80" class="font-black">Обо всём (15)</span>, <span style="color:#00D2FF" class="font-black">Кино (10)</span>, <span style="color:#F43F5E" class="font-black">Сериалы (10)</span>, <span style="color:#38BDF8" class="font-black">Мультики (10)</span>, <span style="color:#2DD4BF" class="font-black">Фан-дом (5)</span>) — тогда ты сможешь крутить рулетку призов!
+                        <span id="menuGoalText"></span>
                     </p>
                     <p class="text-[10px] text-purple-300 leading-snug font-medium">
                         <i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1.5 text-[9px]"></i>Остерегайтесь труб и следите за силами совы — подбирайте перья и напитки, чтобы не выбиться из сил!
@@ -442,61 +442,43 @@
 
     <!-- ЭКРАН ПОРАЖЕНИЯ -->
     <div id="gameOverModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-4 bg-[#140326]/20 backdrop-blur-[7px] text-center">
-        <div class="glass-panel w-full max-w-xs rounded-3xl p-4 border-red-500/50 shadow-2xl space-y-3">
-            <div class="flex items-center justify-center space-x-2 filter drop-shadow-[0_2px_15px_rgba(254,118,0,0.5)] pt-1 pb-0.5">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FE7600] to-[#782CE9] flex items-center justify-center shadow-lg border border-white/30 shrink-0">
-                    <i class="fa-solid fa-gamepad text-white text-sm"></i>
-                </div>
-                <div class="text-xl tracking-tight font-black leading-none flex items-center space-x-1.5">
-                    <span class="text-[#FE7600] font-black">BUBO</span>
-                    <span class="text-[#A855F7] font-black">GAME</span>
-                </div>
+        <div id="goWin">
+            <div class="go-top">
+                <div class="go-emb"><div class="go-glow"></div><div class="go-ring"></div><div class="go-core"><i id="goIcon" class="fa-solid fa-heart-crack"></i></div><i class="go-tw" style="left:4px;top:18px;--s:9px;--d:0s">✦</i><i class="go-tw" style="right:2px;top:30px;--s:7px;--d:.8s">✦</i><i class="go-tw" style="left:16px;bottom:6px;--s:6px;--d:1.5s">✦</i></div>
+                <div class="go-title"><b id="gameOverTitle">ПОПЫТКА ПОТЕРЯНА</b><span id="gameOverSubtext">Списана 1 попытка</span></div>
             </div>
 
-            <div class="space-y-0.5">
-                <h2 id="gameOverTitle" class="text-base text-white font-black">ЗАБЕГ ОКОНЧЕН</h2>
-                <p id="gameOverSubtext" class="text-[10px] text-purple-200 font-medium">Списана 1 попытка</p>
+            <div class="go-reason"><div class="go-ri"><i class="fa-solid fa-skull-crossbones"></i></div><div><span class="go-reason-k">ПРИЧИНА</span><span id="gameOverReason">Сова врезалась в трубу.</span></div></div>
+
+            <div class="go-stats">
+                <div class="go-st" style="--c:#FE7600"><i class="fa-solid fa-rotate-right"></i><b id="finalAttempts">1</b><span>осталось попыток</span></div>
+                <div class="go-st" style="--c:#A855F7"><i class="fa-solid fa-layer-group"></i><b id="finalTokens">0 / 120</b><span>собрано тем</span></div>
+                <div class="go-st" style="--c:#38BDF8"><i class="fa-solid fa-circle-question"></i><b id="finalScore">0</b><span>вопросов в забеге</span></div>
             </div>
 
-            <div class="go-reason"><i class="fa-solid fa-skull-crossbones"></i><div><span class="go-reason-k">ПРИЧИНА</span><span id="gameOverReason">Сова врезалась в трубу.</span></div></div>
             <div id="gameOverInfo" class="go-info"></div>
 
-            <div class="bg-[#140326]/80 p-2.5 rounded-2xl border border-[#782CE9]/30 space-y-1.5 text-[11px] font-medium">
-                <div class="flex justify-between text-purple-300">
-                    <span>Осталось попыток:</span>
-                    <span id="finalAttempts" class="text-white font-black">1</span>
-                </div>
-                <div class="flex justify-between text-purple-300">
-                    <span>Темы:</span>
-                    <span id="finalTokens" class="text-[#FE7600] font-black">0 / 70</span>
-                </div>
-                <div class="flex justify-between text-purple-300">
-                    <span>Вопросов в забеге:</span>
-                    <span id="finalScore" class="text-white font-black">0</span>
-                </div>
-            </div>
-
-            <div class="space-y-2 pt-0.5">
-                <button id="continueAttemptBtn" class="btn-bubo w-full py-2 px-3 rounded-2xl flex flex-col items-center justify-center shadow-xl active:scale-95 transition-all">
+            <div class="go-btns">
+                <button id="continueAttemptBtn" class="btn-bubo w-full py-3 px-3 rounded-2xl flex flex-col items-center justify-center shadow-xl active:scale-95 transition-all">
                     <div class="flex items-center space-x-2">
                         <i id="continueAttemptIcon" class="fa-solid fa-play text-sm text-white font-black"></i>
-                        <span id="continueAttemptTitle" class="text-xs font-black tracking-wider uppercase text-white">ПРОДОЛЖИТЬ</span>
+                        <span id="continueAttemptTitle" class="text-[13px] font-black tracking-wider uppercase text-white">ПРОДОЛЖИТЬ</span>
                     </div>
-                    <span id="continueAttemptSub" class="text-[9px] font-bold text-white/85 mt-0.5 tracking-tight uppercase">ОСТАЛОСЬ ПОПЫТОК: 1</span>
+                    <span id="continueAttemptSub" class="text-[9.5px] font-bold text-white/85 mt-0.5 tracking-wide uppercase">ОСТАЛОСЬ ПОПЫТОК: 1</span>
                 </button>
-                <button id="restartFromGameOverBtn" class="btn-secondary w-full py-2 rounded-xl text-[10px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black">
+                <button id="restartFromGameOverBtn" class="hidden btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black">
                     <i class="fa-solid fa-rotate-left text-xs font-black"></i>
                     <span class="font-black">ЗАНОВО</span>
                 </button>
-                <button id="gameOverOkBtn" class="hidden btn-green w-full py-3 rounded-2xl text-[12px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black shadow-xl active:scale-95 transition-all">
-                    <i class="fa-solid fa-check text-sm font-black"></i>
-                    <span class="font-black">ПОНЯТНО</span>
+                <button id="gameOverOkBtn" class="hidden btn-bubo w-full py-3 rounded-2xl text-[13px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black shadow-xl active:scale-95 transition-all">
+                    <i class="fa-solid fa-house text-sm font-black"></i>
+                    <span class="font-black">В ГЛАВНОЕ МЕНЮ</span>
                 </button>
-                <button id="earnAttemptBtn" class="hidden w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black border border-[#38BDF8]/70 text-white shadow-md active:scale-95 transition-all" style="background:rgba(14,60,110,.55);box-shadow:0 0 12px rgba(56,189,248,.35)">
-                    <i class="fa-solid fa-store text-sm font-black" style="color:#FFC53D"></i>
+                <button id="earnAttemptBtn" class="hidden go-shop w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black active:scale-95 transition-all">
+                    <i class="fa-solid fa-store text-sm font-black"></i>
                     <span class="font-black text-white">КУПИТЬ ПОПЫТКУ В ЛАВКЕ</span>
                 </button>
-                <button id="gameOverHomeBtn" class="w-full py-2 rounded-xl text-[10px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black bg-[#2d0e52]/90 hover:bg-[#381267] border border-[#a855f7]/50 text-purple-300 shadow-md active:scale-95 transition-all">
+                <button id="gameOverHomeBtn" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black">
                     <i class="fa-solid fa-house text-xs font-black text-[#FE7600]"></i>
                     <span class="font-black text-white">В ГЛАВНОЕ МЕНЮ</span>
                 </button>
@@ -598,36 +580,36 @@
         </div>
     </div>
 
-    <script src="js/audio.js?v=0.13.45"></script>
-    <script src="js/game-core.js?v=0.13.45"></script>
-    <script src="js/owl.js?v=0.13.45"></script>
-    <script src="js/hud.js?v=0.13.45"></script>
-    <script src="js/scenery.js?v=0.13.45"></script>
-    <script src="js/items.js?v=0.13.45"></script>
-    <script src="js/shazam.js?v=0.13.45"></script>
-    <script src="js/crystals.js?v=0.13.45"></script>
-    <script src="js/water.js?v=0.13.45"></script>
-    <script src="js/quiz.js?v=0.13.45"></script>
-    <script src="js/quiz-bank.js?v=0.13.45"></script>
-    <script src="js/quiz-bank-2.js?v=0.13.45"></script>
-    <script src="js/quiz-bank-3.js?v=0.13.45"></script>
-    <script src="js/quiz-bank-4.js?v=0.13.45"></script>
-    <script src="js/quiz-bank-5.js?v=0.13.45"></script>
-    <script src="js/quiz-bank-6.js?v=0.13.45"></script>
-    <script src="js/quiz-bank-7.js?v=0.13.45"></script>
-    <script src="js/quiz-bank-8.js?v=0.13.45"></script>
-    <script src="js/quiz-bank-9.js?v=0.13.45"></script>
-    <script src="js/quiz-bank-build.js?v=0.13.45"></script>
-    <script src="js/shop.js?v=0.13.45"></script>
-    <script src="js/weather.js?v=0.13.45"></script>
-    <script src="js/update.js?v=0.13.45"></script>
-    <script src="js/render.js?v=0.13.45"></script>
-    <script src="js/wheel.js?v=0.13.45"></script>
-    <script src="js/ui.js?v=0.13.45"></script>
-<script src="js/admin.js?v=0.13.45"></script>
-<script src="js/text-measure.js?v=0.13.45"></script>
-<script src="js/fullscreen.js?v=0.13.45"></script>
-<script src="js/logo-anim.js?v=0.13.45"></script>
-<script src="js/scrollbars.js?v=0.13.45"></script>
+    <script src="js/audio.js?v=0.13.47"></script>
+    <script src="js/game-core.js?v=0.13.47"></script>
+    <script src="js/owl.js?v=0.13.47"></script>
+    <script src="js/hud.js?v=0.13.47"></script>
+    <script src="js/scenery.js?v=0.13.47"></script>
+    <script src="js/items.js?v=0.13.47"></script>
+    <script src="js/shazam.js?v=0.13.47"></script>
+    <script src="js/crystals.js?v=0.13.47"></script>
+    <script src="js/water.js?v=0.13.47"></script>
+    <script src="js/quiz.js?v=0.13.47"></script>
+    <script src="js/quiz-bank.js?v=0.13.47"></script>
+    <script src="js/quiz-bank-2.js?v=0.13.47"></script>
+    <script src="js/quiz-bank-3.js?v=0.13.47"></script>
+    <script src="js/quiz-bank-4.js?v=0.13.47"></script>
+    <script src="js/quiz-bank-5.js?v=0.13.47"></script>
+    <script src="js/quiz-bank-6.js?v=0.13.47"></script>
+    <script src="js/quiz-bank-7.js?v=0.13.47"></script>
+    <script src="js/quiz-bank-8.js?v=0.13.47"></script>
+    <script src="js/quiz-bank-9.js?v=0.13.47"></script>
+    <script src="js/quiz-bank-build.js?v=0.13.47"></script>
+    <script src="js/shop.js?v=0.13.47"></script>
+    <script src="js/weather.js?v=0.13.47"></script>
+    <script src="js/update.js?v=0.13.47"></script>
+    <script src="js/render.js?v=0.13.47"></script>
+    <script src="js/wheel.js?v=0.13.47"></script>
+    <script src="js/ui.js?v=0.13.47"></script>
+<script src="js/admin.js?v=0.13.47"></script>
+<script src="js/text-measure.js?v=0.13.47"></script>
+<script src="js/fullscreen.js?v=0.13.47"></script>
+<script src="js/logo-anim.js?v=0.13.47"></script>
+<script src="js/scrollbars.js?v=0.13.47"></script>
 </body>
 </html>
