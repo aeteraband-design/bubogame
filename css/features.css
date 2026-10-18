@@ -451,3 +451,10 @@ div:has(> .shrink-0 > .fa-gamepad) .tracking-tight > span:nth-child(2) { filter:
 
 /* скругление всех всплывающих окон — как у окна настроек (24px), чтобы крестик повторял угол окна */
 #rlWin, #qzWin, #shWin, #rwWindow, #winModal > #winWindow, #resetConfirmModal > div, #gameOverModal > .glass-panel, #adminModal .adm-panel { border-radius: 24px !important; }
+
+/* плашка монет в лавке — как в главном меню (36px), в углу напротив крестика, по одной линии с ним */
+#shWin .sh-coins { position: absolute !important; top: 8px !important; left: 10px !important; margin: 0 !important; z-index: 3;
+    height: 36px !important; border-radius: 12px !important; gap: 6px !important; padding: 0 11px 0 9px !important; font-size: 14px !important; }
+#shWin .sh-coins .sh-cg { font-size: 15px !important; }
+#shWin .sh-coins .mc-tw:nth-of-type(2) { left: 6px !important; top: 3px !important; }
+#shWin .sh-coins .mc-tw:nth-of-type(3) { left: 23px !important; top: 21px !important; }
