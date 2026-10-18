@@ -612,6 +612,9 @@ function drawShieldSphere(R, dentLocal, rot0, shK, shCol, shzRot) {
     body.addColorStop(0.9, hsl(hue, 85, 50, 0.26));
     body.addColorStop(1, hsl(hue, 90, 60, 0.42));
     path(); ctx.fillStyle = body; ctx.fill();
+    // общая вспышка сферы при ударе
+    const fl = typeof shieldFlash === 'number' ? shieldFlash : 0;
+    if (fl > 0.02) { ctx.save(); ctx.globalAlpha *= Math.min(1, fl); const fg = ctx.createRadialGradient(0, 0, R * 0.3, 0, 0, R * 1.08); fg.addColorStop(0, hsl(hue, 90, 80, 0)); fg.addColorStop(0.75, hsl(hue, 95, 75, 0.28)); fg.addColorStop(1, hsl(hue, 100, 85, 0.6)); ctx.fillStyle = fg; path(); ctx.fill(); ctx.restore(); }
     // перелив по краю: бегущий по кругу градиент зелёного, бирюзового и салатового
     let rim;
     const ra = rot0 + t * 0.9;
@@ -641,16 +644,16 @@ function drawShieldSphere(R, dentLocal, rot0, shK, shCol, shzRot) {
         const la = tc.a + rot0;   // угол касания в координатах совы
         const i = ((Math.round(la / (Math.PI * 2) * N) % N) + N) % N;
         const gx = P[i * 2], gy = P[i * 2 + 1];
-        const gr = R * (0.45 + 0.35 * tc.p);
+        const gr = R * (0.55 + 0.6 * tc.p);   // пятно касания — крупная яркая вспышка
         const hg = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
-        hg.addColorStop(0, hsl(hue, 100, 92, 0.85 * tc.p)); hg.addColorStop(0.45, hsl(hue, 90, 60, 0.4 * tc.p)); hg.addColorStop(1, hsl(hue, 90, 50, 0));
+        hg.addColorStop(0, hsl(hue, 100, 95, Math.min(1, 1.1 * tc.p))); hg.addColorStop(0.4, hsl(hue, 95, 65, 0.55 * tc.p)); hg.addColorStop(1, hsl(hue, 90, 50, 0));
         ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(gx, gy, gr, 0, Math.PI * 2); ctx.fill();
         // яркий отрезок края возле касания
         ctx.save();
-        ctx.lineWidth = 2 + 2.6 * tc.p; ctx.lineCap = 'round';
-        ctx.strokeStyle = hsl(hue, 100, 88, Math.min(1, 0.95 * tc.p)); ctx.shadowColor = hsl(hue, 100, 70, 1); ctx.shadowBlur = 10 * tc.p;
+        ctx.lineWidth = 2.2 + 3.4 * tc.p; ctx.lineCap = 'round';
+        ctx.strokeStyle = hsl(hue, 100, 88, Math.min(1, 0.95 * tc.p)); ctx.shadowColor = hsl(hue, 100, 70, 1); ctx.shadowBlur = 16 * tc.p;
         ctx.beginPath();
-        const span = Math.round(N * (0.05 + 0.05 * tc.p));
+        const span = Math.round(N * (0.06 + 0.08 * tc.p));
         for (let k = -span; k <= span; k++) { const j = ((i + k) % N + N) % N; if (k === -span) ctx.moveTo(P[j * 2], P[j * 2 + 1]); else ctx.lineTo(P[j * 2], P[j * 2 + 1]); }
         ctx.stroke(); ctx.restore();
     }

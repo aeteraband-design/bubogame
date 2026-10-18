@@ -215,6 +215,7 @@ function drawScene() {
         drawSpeedStars();
         if (currentFreezeFactor > 0.01 && owl.visible) drawFrozenOwl(); else owl.draw();
     }
+    if (typeof drawShieldBubbles === 'function') drawShieldBubbles();   // пузырьки от щита
     shazamDrawFx();
     drawIceShards();
     ctx.restore();   // конец слоя камеры
@@ -255,6 +256,7 @@ function gameLoop(timestamp) {
     }
 
     update(); 
+    if (typeof updateShieldBubbles === 'function') updateShieldBubbles(dtMult);
     checkAttemptMilestone();
     flushHud();
     draw();

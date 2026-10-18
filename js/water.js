@@ -287,7 +287,7 @@ function waterUpdate(speed, squeeze) {
                         D.splice(k, 1); continue;
                     }
                     hits++; imp += IMP;
-                    if (shieldTime > 0 && typeof shieldTouch === 'function') shieldTouch(Math.atan2(ddy, ddx), 0.35);   // капля попала в сферу щита — место касания подсвечивается
+                    if (shieldTime > 0 && typeof shieldTouch === 'function') { shieldTouch(Math.atan2(ddy, ddx), 0.45); if (Math.random() < 0.08) shieldPop(Math.atan2(ddy, ddx), 0.3, 1); }   // капля попала в сферу щита — место касания подсвечивается
                     const out = Math.atan2(ddy, ddx);
                     waterSplash(wx, d.y, d.b ? 1 : 2, out < 0 ? out : -Math.PI / 2 + (ddx >= 0 ? 0.9 : -0.9), 1.6, 2.4 + d.vy * 0.25);
                     if (Math.random() < 0.03 && s.mist.length < 12) s.mist.push({ x: d.x, y: d.y, r: 7 + Math.random() * 6, a: 0.28, vy: -0.2 });

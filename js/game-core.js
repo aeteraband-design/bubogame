@@ -317,6 +317,43 @@ let shieldDent = 0, shieldDentAng = 0, shieldBumpSoundT = 0, shieldHitPower = 0;
 // касания сферы щита: место касания подсвечивается и плавно гаснет (вода, огоньки, трубы)
 const shieldTouches = [];
 let shieldWob = 0;   // упругая «рябь» по сфере после удара
+// пузырьки, отлетающие от сферы щита в месте удара (как от мыльного пузыря)
+const shieldBubbles = [];
+let shieldFlash = 0;   // общая вспышка всей сферы при ударе
+function shieldPop(ang, pw, n) {
+    if (typeof owl === 'undefined' || shieldBubbles.length > 70) return;
+    const R = owl.radius * 1.5;
+    for (let i = 0; i < n; i++) {
+        const a0 = ang + (Math.random() - 0.5) * 0.9;   // точка на поверхности рядом с ударом
+        const side = Math.random() < 0.5 ? -1 : 1;
+        const a = a0 + side * (1.3 + Math.random() * 1.1);   // разлетаются вдоль сферы и назад, от препятствия
+        const sp = 0.6 + Math.random() * (1.2 + 1.6 * pw);
+        shieldBubbles.push({ x: owl.x + Math.cos(a0) * R, y: owl.y + Math.sin(a0) * R, vx: Math.cos(a) * sp + (Math.random() - 0.5) * 0.3, vy: Math.sin(a) * sp - 0.15,
+            r: 1.4 + Math.random() * (2.2 + 2.2 * pw), life: 1, decay: 0.012 + Math.random() * 0.014, ph: Math.random() * 6.28 });
+    }
+}
+function updateShieldBubbles(dt) {
+    for (let i = shieldBubbles.length - 1; i >= 0; i--) {
+        const b = shieldBubbles[i];
+        b.x += b.vx * dt; b.y += b.vy * dt; b.vx *= Math.pow(0.965, dt); b.vy = b.vy * Math.pow(0.965, dt) - 0.012 * dt;   // тормозят и чуть всплывают
+        b.ph += 0.15 * dt; b.life -= b.decay * dt;
+        if (b.life <= 0) shieldBubbles.splice(i, 1);
+    }
+    shieldFlash *= Math.pow(0.88, dt);
+}
+function drawShieldBubbles() {
+    if (!shieldBubbles.length) return;
+    ctx.save();
+    for (const b of shieldBubbles) {
+        const a = Math.min(1, b.life * 1.6), r = b.r * (1 + 0.06 * Math.sin(b.ph)) * (b.life < 0.15 ? 1 + (0.15 - b.life) * 4 : 1);   // в конце чуть раздуваются и лопаются
+        const g = ctx.createRadialGradient(b.x - r * 0.3, b.y - r * 0.35, 0, b.x, b.y, r);
+        g.addColorStop(0, `rgba(230,255,240,${(0.10 * a).toFixed(3)})`); g.addColorStop(0.75, `rgba(134,239,172,${(0.16 * a).toFixed(3)})`); g.addColorStop(1, `rgba(94,234,212,${(0.5 * a).toFixed(3)})`);
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, Math.PI * 2); ctx.fill();
+        ctx.lineWidth = 0.9; ctx.strokeStyle = `rgba(187,247,208,${(0.75 * a).toFixed(3)})`; ctx.stroke();
+        ctx.fillStyle = `rgba(255,255,255,${(0.85 * a).toFixed(3)})`; ctx.beginPath(); ctx.arc(b.x - r * 0.38, b.y - r * 0.4, Math.max(0.5, r * 0.22), 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+}
 function shieldTouch(ang, p) {
     for (const t of shieldTouches) {   // рядом уже светится — просто подпитываем это место
         let d = Math.abs(ang - t.a) % (Math.PI * 2); if (d > Math.PI) d = Math.PI * 2 - d;
@@ -327,7 +364,8 @@ function shieldTouch(ang, p) {
 }
 function shieldBump(ang, power) {
     const pw = Math.max(0.3, Math.min(1, power == null ? 0.7 : power));
-    shieldTouch(ang, Math.min(1, pw + 0.2)); shieldWob = Math.max(shieldWob, pw);
+    shieldTouch(ang, Math.min(1, pw + 0.3)); shieldWob = Math.max(shieldWob, pw);
+    shieldFlash = Math.max(shieldFlash, 0.5 + 0.5 * pw);
     shieldDent = Math.max(shieldDent, pw);
     shieldHitPower = Math.max(shieldHitPower * 0.6, pw);
     shieldDentAng = ang;
@@ -336,6 +374,7 @@ function shieldBump(ang, power) {
         shieldBumpSoundT = t;
         AudioFX.playShieldBump();
         Haptics.hit();
+        shieldPop(ang, pw, 4 + Math.round(6 * pw));   // от удара отлетают пузырьки
         // маленькие, еле заметные искорки из точки удара
         const R = owl.radius * 1.5;
         const cx = owl.x + Math.cos(ang) * R, cy = owl.y + Math.sin(ang) * R;

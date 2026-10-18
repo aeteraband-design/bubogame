@@ -104,7 +104,7 @@
             currentFreezeFactor = state.id === 'freeze' ? 1 : 0;
             currentOvereatFactor = state.id === 'fat' ? 1 : 0;
             if (hasShz) SHZ.k = state.id === 'shazam' ? 1 : 0;
-            owl.x = 0; owl.y = 0; owl.rotation = rot; owl.visible = true; owl.wing = state.id === 'freeze' ? 0 : wing; owl.lean = state.id === 'speed' ? 0.3 : 0; owl.boostK = state.id === 'speed' ? 1 : 0; owl.spinAngle = 0;
+            owl.x = 0; owl.y = 0; owl.rotation = rot; owl.visible = true; owl.wing = state.id === 'freeze' ? 0 : wing; owl.lean = (state.id === 'speed' || state.id === 'shazam') ? 0.3 : 0;   // ускорение и ШАЗАМ — сова наклонена вперёд owl.boostK = state.id === 'speed' ? 1 : 0; owl.spinAngle = 0;
             ctx = gc;
             // ускорение и ШАЗАМ: из-за совы вылетают звёздочки, как в игре (те же функции игры)
             if (fx && (state.id === 'speed' || state.id === 'shazam') && typeof updateSpeedStars === 'function') {
@@ -129,20 +129,30 @@
     const CENTER = {};
     function owlCenter(state) {
         if (CENTER[state.id]) return CENTER[state.id];
-        let r = { dx: 0, dy: 0 };
+        let r = { dx: 0, dy: 0, w: 1, h: 1 };
         try {
-            const N = 240, c = document.createElement('canvas'); c.width = c.height = N; const cc = c.getContext('2d');
-            drawOwlRaw(cc, 1, N / 2, N / 2, 120, state, 0, 0.5, 0);
-            const px = cc.getImageData(0, 0, N, N).data; let x0 = N, y0 = N, x1 = 0, y1 = 0;
-            for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (px[(y * N + x) * 4 + 3] > 40) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
-            if (x1 > x0) r = { dx: ((x0 + x1) / 2 - N / 2) / 120, dy: ((y0 + y1) / 2 - N / 2) / 120 };
+            // большой холст (сова не обрезается), только плотные пиксели (без мягких свечений), крылья в разных положениях
+            const N = 480, S = 120, c = document.createElement('canvas'); c.width = c.height = N; const cc = c.getContext('2d');
+            let x0 = N, y0 = N, x1 = 0, y1 = 0;
+            [0, 0.5, 1].forEach((wg) => {
+                cc.setTransform(1, 0, 0, 1, 0, 0); cc.clearRect(0, 0, N, N);
+                drawOwlRaw(cc, 1, N / 2, N / 2, S, state, 0, wg, 0);
+                const px = cc.getImageData(0, 0, N, N).data;
+                for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (px[(y * N + x) * 4 + 3] > 150) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+            });
+            if (x1 > x0) r = { dx: ((x0 + x1) / 2 - N / 2) / S, dy: ((y0 + y1) / 2 - N / 2) / S, w: (x1 - x0) / S, h: (y1 - y0) / S };
         } catch (e) {}
         return (CENTER[state.id] = r);
     }
+    window.__owlCenter = (id) => owlCenter(STATES.find(x => x.id === id));
     function drawOwlState(x, y, size, state, rot, wing, now) {
-        const c = owlCenter(state);
+        // ШАЗАМ: молнии вокруг совы не считаем — центр и размер как у наклонённой совы (ускорение)
+        const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : state);
+        // одинаково крупно во всех состояниях; «полная» — по своему размеру (она и так крупнее)
+        if (state.id !== 'fat') size *= 0.56 / Math.max(0.3, c.w, c.h);
         drawOwlRaw(g, dpr, x - c.dx * size, y - c.dy * size, size, state, rot, wing, now, true);
     }
+
 
     const ease = (t) => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
     const back = (t) => { t = Math.max(0, Math.min(1, t)); const c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
