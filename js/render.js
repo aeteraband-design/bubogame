@@ -206,7 +206,8 @@ function drawScene() {
         }
     });
 
-    items.forEach(drawToken);
+    const litK = (typeof stormGradeK === 'function') ? stormGradeK() : 0;
+    if (litK < 0.02) items.forEach(drawToken);   // в дождь значки рисуются позже, поверх серой «пелены»
     }
 
     drawParticleList(particles);
@@ -220,6 +221,7 @@ function drawScene() {
     drawIceShards();
     ctx.restore();   // конец слоя камеры
     if (typeof stormGrade === 'function') stormGrade();   // в дождь — серее и мрачнее
+    if (!booting && typeof stormGradeK === 'function') { const lk = stormGradeK(); if (lk >= 0.02) stormDrawLitTokens(lk, camZoom); }   // значки — яркие и светятся
     stormDrawRain();        // дождь — поверх труб, значков и совы
 }
 

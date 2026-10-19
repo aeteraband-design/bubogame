@@ -413,8 +413,9 @@ function stormDrawCityLight() {
 
 // ---------- дождь (поверх всего: труб, значков и совы) ----------
 // в дождь краски приглушаются: сова и трубы становятся серее и чуть темнее (фон и так серый — его почти не трогает)
+function stormGradeK() { return Math.min(1, Math.max(0, STORM.wet || 0) * 1.2) * Math.min(1, stormCover || 0); }
 function stormGrade() {
-    const k = Math.min(1, Math.max(0, STORM.wet || 0) * 1.2) * Math.min(1, stormCover || 0);
+    const k = stormGradeK();
     if (k < 0.02) return;
     ctx.save();
     ctx.globalCompositeOperation = 'saturation';
@@ -423,6 +424,50 @@ function stormGrade() {
     ctx.globalCompositeOperation = 'multiply';
     ctx.fillStyle = `rgba(178,184,200,${(0.5 * k).toFixed(3)})`;
     ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+}
+// в дождь значки не тускнеют: рисуются поверх серой «пелены» в полную яркость и мягко светят вокруг, как огоньки в темноте.
+// Сова, подлетая к значку, плавно возвращает свои цвета и окрашивается его светом с той стороны, где значок.
+let __owlLitCv = null;
+function stormDrawLitTokens(k, cz) {
+    if (!items.length) return;
+    ctx.save();
+    if (Math.abs(cz - 1) > 0.0005) { ctx.translate(width / 2, height / 2); ctx.scale(cz, cz); ctx.translate(-width / 2, -height / 2); }
+    const lowQ = gfxQuality === 'low';
+    let best = null, bestA = 0;
+    ctx.globalCompositeOperation = 'lighter';
+    for (const it of items) {
+        if ((it.scale !== undefined && it.scale <= 0.01) || it.x < -80 || it.x > width + 80) continue;
+        const col = (CATEGORIES[it.type] || CATEGORIES.question).color, sc = (it.scale !== undefined ? it.scale : 1);
+        if (!lowQ) { const R = it.radius * 3.2 * sc; ctx.globalAlpha = 0.26 * k; ctx.drawImage(tokenHalo(col), it.x - R, it.y - R, R * 2, R * 2); }   // мягкий свет вокруг
+        if (owl && owl.visible && !it.collected) {
+            const dist = Math.hypot(it.x - owl.x, it.y - owl.y), D = 190;
+            if (dist < D) { const a = Math.pow(1 - dist / D, 1.4); if (a > bestA) { bestA = a; best = { col, dx: it.x - owl.x, dy: it.y - owl.y, dist }; } }
+        }
+    }
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    // сова у значка: поверх серой — та же сова в цвете (тем сильнее, чем ближе), с цветным бликом со стороны значка
+    if (best && bestA > 0.02 && (currentFreezeFactor || 0) < 0.05 && owl.visible) {
+        try {
+            const S = viewScale * renderScale, box = 150, px = Math.ceil(box * S);
+            if (!__owlLitCv || __owlLitCv.width !== px) { __owlLitCv = document.createElement('canvas'); __owlLitCv.width = __owlLitCv.height = px; }
+            const fc = __owlLitCv.getContext('2d'), main = ctx;
+            fc.setTransform(1, 0, 0, 1, 0, 0); fc.globalCompositeOperation = 'source-over'; fc.globalAlpha = 1; fc.clearRect(0, 0, px, px);
+            fc.setTransform(S, 0, 0, S, (box / 2 - owl.x) * S, (box / 2 - owl.y) * S);
+            ctx = fc; try { owl.draw(); } finally { ctx = main; }
+            fc.setTransform(1, 0, 0, 1, 0, 0); fc.globalCompositeOperation = 'source-atop';
+            const ux = best.dx / (best.dist || 1), uy = best.dy / (best.dist || 1);
+            const gx = px / 2 + ux * px * 0.16, gy = px / 2 + uy * px * 0.16;
+            const g = fc.createRadialGradient(gx, gy, 0, gx, gy, px * 0.3);
+            g.addColorStop(0, best.col + '73'); g.addColorStop(1, best.col + '00');   // цветной свет от значка
+            fc.fillStyle = g; fc.fillRect(0, 0, px, px);
+            fc.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = Math.min(0.85, bestA * k * 1.1);
+            ctx.drawImage(__owlLitCv, owl.x - box / 2, owl.y - box / 2, box, box);
+            ctx.globalAlpha = 1;
+        } catch (e) {}
+    }
+    items.forEach(drawToken);   // сами значки — в полную яркость
     ctx.restore();
 }
 function stormDrawRain() {
