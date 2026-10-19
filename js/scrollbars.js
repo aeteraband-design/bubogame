@@ -1,54 +1,61 @@
 // Тонкая полоска прокрутки во всех окнах: едет прямо по правой обводке окна, цвета окна,
 // и не заходит на скругление углов (останавливается чуть раньше). Встроенные полосы браузера скрыты.
+// Полоска рисуется верхним слоем фона самого окна (фон не листается вместе с содержимым и лежит под обводкой),
+// поэтому она всегда точно на линии обводки — на iPhone, Android и ПК, при любом масштабе окна.
 (function () {
     const L = [   // что листается, по чьей обводке едет полоска, цвет
         { s: '#qzWin', c: '#38BDF8' },
         { s: '#shWin', c: '#FFC53D' },
         { s: '#rlWin', c: '#FE7600' },
         { s: '#rwWindow', c: '#F472B6' },
-        { s: '#rouletteModal > .glass-panel', c: '#F472B6' },
         { s: '#settingsModal .custom-scroll', f: '#settingsModal .glass-panel', c: '#A855F7' },
         { s: '#adminModal #admBody', f: '#adminModal .adm-panel', c: '#FE7600' },
         { s: '#startScreen', c: '#A855F7', edge: true }
     ];
     const st = document.createElement('style');
     st.textContent = L.map(o => o.s).join(',') + '{scrollbar-width:none!important}'
-        + L.map(o => o.s + '::-webkit-scrollbar').join(',') + '{display:none!important;width:0!important;height:0!important}'
-        + '.sb-thumb{position:absolute;z-index:60;width:2px;border-radius:2px;pointer-events:none;opacity:0;transition:opacity .35s ease;will-change:transform,height}'
-        + '.sb-thumb.on{opacity:.55}.sb-thumb.on.act{opacity:1}';
+        + L.map(o => o.s + '::-webkit-scrollbar').join(',') + '{display:none!important;width:0!important;height:0!important}';
     document.head.appendChild(st);
-    const items = L.map(o => {
-        const d = document.createElement('div'); d.className = 'sb-thumb';
-        d.style.background = o.c; d.style.boxShadow = '0 0 6px ' + o.c;
-        return { o, d, t: 0 };
-    });
+    const rgb = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(','); };
+    const items = L.map(o => ({ o, t: 0, a: 0, fr: null, rgb: rgb(o.c) }));
     const vis = (el) => el && el.offsetParent !== null && el.getClientRects().length > 0 && !el.closest('.hidden');
-    // Полоска живёт внутри самого окна и считается в его собственных координатах — без getBoundingClientRect,
-    // поэтому масштаб окна (zoom) на iPhone/Safari её не сдвигает.
+    // добавляем окну два слоя фона: сама полоска (2px) и мягкое свечение внутрь (7px)
+    function attach(it, fr) {
+        if (it.fr === fr) return;
+        it.fr = fr;
+        const cs = getComputedStyle(fr), img = cs.backgroundImage, has = img && img !== 'none';
+        const add = (mine, orig) => mine + (has && orig ? ', ' + orig : '');
+        const set = (p, v) => fr.style.setProperty(p, v, 'important');
+        set('background-image', add('linear-gradient(var(--sbC,transparent),var(--sbC,transparent)), linear-gradient(to left,var(--sbG,transparent),transparent)', has ? img : ''));
+        set('background-position', add('right var(--sbX,0px) top var(--sbY,0px), right var(--sbX,0px) top var(--sbY,0px)', cs.backgroundPosition));
+        set('background-size', add('2px var(--sbH,0px), 7px var(--sbH,0px)', cs.backgroundSize));
+        set('background-repeat', add('no-repeat, no-repeat', cs.backgroundRepeat));
+        set('background-origin', add('border-box, border-box', cs.backgroundOrigin));
+        set('background-clip', add('border-box, border-box', cs.backgroundClip));
+        set('background-attachment', add('scroll, scroll', cs.backgroundAttachment));
+    }
     function place(it, now) {
         const sc = document.querySelector(it.o.s);
-        if (!vis(sc) || sc.scrollHeight - sc.clientHeight < 4) { it.d.classList.remove('on'); return false; }
-        const fr = (it.o.f && document.querySelector(it.o.f)) || sc;
-        const host = fr;   // в кого кладём полоску
-        if (it.d.parentNode !== host) {
-            if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
-            host.appendChild(it.d);
-        }
+        const fr = sc && ((it.o.f && document.querySelector(it.o.f)) || sc);
+        const show = vis(sc) && sc.scrollHeight - sc.clientHeight >= 4;
+        const target = show ? (now - it.t < 900 ? 1 : 0.55) : 0;   // во время прокрутки — ярче
+        it.a += (target - it.a) * 0.18; if (Math.abs(target - it.a) < 0.01) it.a = target;
+        if (!fr) return false;
+        if (!show && it.a <= 0) { if (it.fr) it.fr.style.setProperty('--sbC', 'transparent'); if (it.fr) it.fr.style.setProperty('--sbG', 'transparent'); return false; }
+        attach(it, fr);
         const cs = getComputedStyle(fr);
-        const bw = parseFloat(cs.borderRightWidth) || 0, bt = parseFloat(cs.borderTopWidth) || 0;
         const rad = it.o.edge ? 0 : Math.max(parseFloat(cs.borderTopRightRadius) || 0, parseFloat(cs.borderBottomRightRadius) || 0);
         const pad = it.o.edge ? 6 : rad + 5;   // не заходим на скругление: останавливаемся на 5 px раньше
         const len = fr.offsetHeight - pad * 2;
-        if (len < 20) { it.d.classList.remove('on'); return false; }
-        const ratio = sc.clientHeight / sc.scrollHeight, h = Math.max(22, len * ratio);
+        if (len < 20) return false;
+        const ratio = sc.clientHeight / Math.max(1, sc.scrollHeight), h = Math.max(22, len * ratio);
         const p = sc.scrollTop / Math.max(1, sc.scrollHeight - sc.clientHeight);
-        const base = (host === sc ? sc.scrollTop : 0) - bt;   // внутри листаемого окна — поправка на прокрутку
-        const x = fr.clientWidth - (it.o.edge ? 3 : 2);   // вплотную к обводке изнутри (за обводкой окно обрезает)
-        it.d.style.left = x.toFixed(1) + 'px'; it.d.style.top = '0px'; it.d.style.height = h.toFixed(1) + 'px';
-        it.d.style.transform = 'translateY(' + (base + pad + (len - h) * p).toFixed(1) + 'px)';
-        it.d.classList.add('on');
-        it.d.classList.toggle('act', now - it.t < 900);   // во время прокрутки — ярче
-        return true;
+        fr.style.setProperty('--sbX', it.o.edge ? '2px' : '0px');
+        fr.style.setProperty('--sbY', (pad + (len - h) * Math.min(1, Math.max(0, p))).toFixed(1) + 'px');
+        fr.style.setProperty('--sbH', h.toFixed(1) + 'px');
+        fr.style.setProperty('--sbC', 'rgba(' + it.rgb + ',' + it.a.toFixed(3) + ')');
+        fr.style.setProperty('--sbG', 'rgba(' + it.rgb + ',' + (it.a * 0.35).toFixed(3) + ')');
+        return show || it.a > 0;
     }
     let raf = 0;
     function loop() {
