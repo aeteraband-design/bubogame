@@ -356,3 +356,6 @@ const QZ_BANK = {
 
 // дополнительные файлы базы (quiz-bank-2.js …) добавляют вопросы так: QZ_ADD('music', [ ...строки... ])
 function QZ_ADD(theme, rows) { (QZ_BANK[theme] = QZ_BANK[theme] || []).push(...rows); }
+// новые темы (quiz-new/<тема>.js) задают тему целиком: QZ_SET('music', [ ...строки... ]) — старые вопросы темы убираются
+const QZ_NEWSET = {};
+function QZ_SET(theme, rows) { QZ_BANK[theme] = rows.slice(); QZ_NEWSET[theme] = 1; }

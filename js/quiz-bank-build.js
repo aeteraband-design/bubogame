@@ -26,4 +26,6 @@ function qzHash(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h <<
         q.theme = q.id === 170 || q.id === 115 ? 'space' : q.id === 113 ? 'chem' : q.id === 114 ? 'geo' : (MAP[q.cat] || 'misc');
         q.lvl = q.diff === 'e' ? 's' : q.diff === 'h' ? 'm' : 'l';   // старые diff: лёгкий → суперлайт, средний → лайт, сложный → средне
     });
+    // темы, переписанные заново (QZ_SET), старых вопросов из quiz.js не берут; «разное» тоже убираем
+    for (let i = QUIZ_QUESTIONS.length - 1; i >= 0; i--) { const q = QUIZ_QUESTIONS[i]; if (q.cat && (QZ_NEWSET[q.theme] || q.theme === 'misc')) QUIZ_QUESTIONS.splice(i, 1); }
 })();

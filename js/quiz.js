@@ -134,6 +134,7 @@ function qzToday() { const d = new Date(); return d.getFullYear() + '-' + (d.get
 function quizDay() {
     let d = null; try { d = JSON.parse(localStorage.getItem(QUIZ_DAY_KEY)); } catch (e) {}
     if (!d || d.d !== qzToday()) d = { d: qzToday(), ids: [], res: [], earned: 0, cur: 0, ord: '', shown: false, theme: '', lvl: '' };
+    if (d.cur && !QUIZ_QUESTIONS.some(q => q.id === d.cur)) { d.cur = 0; d.ord = ''; d.shown = false; }   // вопроса больше нет в базе (база обновилась)
     return d;
 }
 function quizSaveDay(d) { try { localStorage.setItem(QUIZ_DAY_KEY, JSON.stringify(d)); } catch (e) {} }
