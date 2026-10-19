@@ -1138,8 +1138,17 @@ function menuPipesBootStart() {   // тап на загрузке: пока со
 function drawMenuPipes() {
     if (++MENU_PIPE.t % 15 === 1 || !MENU_PIPE.lh) menuLogoBox();
     if (!MENU_PIPE.lh) return;
-    const tgt = window.__booting ? menuOwlCenter() : MENU_PIPE.lc;   // на загрузке — по сове, в меню — плавно переезжает к логотипу
-    if (MENU_PIPE.cy == null) MENU_PIPE.cy = tgt; else MENU_PIPE.cy += (tgt - MENU_PIPE.cy) * Math.min(1, 0.07 * dtMult);
+    const LD = window.__logoDrop;
+    if (LD && !window.__booting) {   // логотип опускается в конце перехода: проём труб едет от совы к логотипу синхронно с ним
+        menuLogoBox();
+        const cv = document.getElementById('gameCanvas'), ch = cv ? cv.getBoundingClientRect().height : 0;
+        const fin = MENU_PIPE.lc - (ch ? LD.off * (LD.zf || 1) / ch * height : 0);   // где логотип окажется в конце
+        if (LD.from == null) LD.from = MENU_PIPE.cy != null ? MENU_PIPE.cy : fin;
+        MENU_PIPE.cy = LD.from + (fin - LD.from) * (LD.kp || 0);
+    } else {
+        const tgt = window.__booting ? menuOwlCenter() : MENU_PIPE.lc;   // на загрузке — по сове, в меню — плавно переезжает к логотипу
+        if (MENU_PIPE.cy == null) MENU_PIPE.cy = tgt; else MENU_PIPE.cy += (tgt - MENU_PIPE.cy) * Math.min(1, 0.07 * dtMult);
+    }
     const ia = MENU_PIPE.t0 ? Math.min(1, (performance.now() - MENU_PIPE.t0) / 380) : 1, off = (1 - (1 - Math.pow(1 - ia, 3))) * height * 0.6;   // выезд труб
     const v = MENU_PIPE.speed * dtMult * (window.__bgSpeed || 1);
     menuPipes.forEach((p) => { p.x -= v; });

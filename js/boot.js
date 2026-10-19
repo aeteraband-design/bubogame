@@ -150,7 +150,6 @@
                 // размер — как у логотипа в меню, место — вверху экрана по центру (над совой)
                 var sc = r.width / natW, z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;
                 var x = (window.innerWidth - r.width) / 2, y = Math.round(46 * z);
-                if (exitT0) { var mp = Math.min(1, (performance.now() - exitT0) / 900); mp = mp * mp * (3 - 2 * mp); x += (r.left - x) * mp; y += (r.top - y) * mp; }   // тап: логотип плавно опускается на своё место в меню — между трубами
                 cloneWrap.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) scale(' + sc.toFixed(4) + ')';
                 var key = Math.round(x) + ',' + y + ',' + Math.round(r.width) + ',' + Math.round(natW);
                 stable = key === lastKey ? stable + 1 : 0; lastKey = key;
@@ -178,6 +177,27 @@
             function finishDismiss() {
                 document.documentElement.classList.remove('booting'); window.__booting = false;
                 el.classList.add('handoff');   // свечение совы и логотип дальше показывает само меню — точно там же, поэтому без вспышек и рывков
+                // логотип меню встаёт ровно туда, где был логотип загрузки (вверху), и в самом конце плавно опускается на своё место между трубами
+                try {
+                    var lw = document.querySelector('#startScreen > .menu-logo-wrap'), lm = lw && lw.querySelector(':scope > div');
+                    if (clone && lm) {
+                        var cr0 = clone.getBoundingClientRect(), lr0 = lm.getBoundingClientRect();
+                        var dv = (cr0.top + cr0.height / 2) - (lr0.top + lr0.height / 2);   // по центрам — высота копии и логотипа может немного отличаться
+                        lw.style.translate = '0 100px'; var zf = (lm.getBoundingClientRect().top - lr0.top) / 100; if (!(zf > 0.05)) zf = 1;   // меню может быть с зумом: сдвиг пересчитываем в его единицы
+                        var d0 = dv / zf;
+                        lw.style.translate = '';
+                        if (Math.abs(dv) > 1) {
+                            var D = window.__logoDrop = { d0: d0, off: d0, zf: zf, k: 0, t0: performance.now(), hold: 850, dur: 1000 };
+                            lw.style.translate = '0 ' + d0.toFixed(1) + 'px';
+                            (function drop() {
+                                var t = performance.now() - D.t0, u = Math.max(0, Math.min(1, (t - D.hold) / D.dur));
+                                D.k = u * u * (3 - 2 * u); D.off = d0 * (1 - D.k); var v = Math.min(1, t / 800); D.kp = v * v * (3 - 2 * v);   // трубы и свечение подъезжают к месту логотипа сразу, логотип опускается в конце
+                                if (u < 1 || D.kp < 1) { lw.style.translate = '0 ' + D.off.toFixed(1) + 'px'; requestAnimationFrame(drop); }
+                                else { lw.style.translate = ''; window.__logoDrop = null; }
+                            })();
+                        }
+                    }
+                } catch (e) {}
                 if (cloneWrap) { cloneWrap.style.transition = 'none'; cloneWrap.style.opacity = '0'; }
                 window.__musicHold = false;   // загрузка закончилась и игрок тапнул — теперь можно включать музыку меню
                 try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); setTimeout(function () { try { if (!AudioFX.musicTimer) AudioFX.startMusicLoop(); } catch (e2) {} }, 60); } } catch (e) {}   // нажатие разрешает звук: включаем музыку меню
