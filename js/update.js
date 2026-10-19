@@ -85,8 +85,8 @@ function update() {
     }
     // заморозка в дождь: капли на сове тоже замерзают — лёд налипает со временем (за 10 с — до максимума), сова тяжелеет
     if (typeof STORM !== 'undefined') {
-        const iceWet = Math.max(STORM.wet || 0, owl._wWet || 0);   // мокрая от дождя или от «Водонапора» — замёрзшая сова обрастает льдом
-        if (freezeTime > 0 && iceWet > 0.1) STORM.ice = Math.min(1, (STORM.ice || 0) + dtMult / (owl._wWet > 0.1 ? 300 : 600) * Math.min(1, iceWet * 1.3));
+        const iceWet = Math.max(STORM.wet || 0, owl._wWet || 0);   // мокрая от дождя или от «Водонапора» — замёрзшая сова обрастает льдом; щит прикрывает — новый лёд не налипает
+        if (freezeTime > 0 && iceWet > 0.1 && shieldTime <= 0) STORM.ice = Math.min(1, (STORM.ice || 0) + dtMult / (owl._wWet > 0.1 ? 300 : 600) * Math.min(1, iceWet * 1.3));
         else if (freezeTime <= 0) STORM.ice = Math.max(0, (STORM.ice || 0) - 0.05 * dtMult);
     }
     {

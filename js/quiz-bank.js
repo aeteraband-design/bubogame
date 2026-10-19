@@ -21,7 +21,8 @@ const QZ_THEMES = [
     { id: 'nature', name: 'Природа', icon: 'fa-hippo', col: '#16A34A' },
     { id: 'sport', name: 'Спорт', icon: 'fa-futbol', col: '#F87171' },
     { id: 'food', name: 'Еда', icon: 'fa-burger', col: '#FDBA74' },
-    { id: 'art', name: 'Искусство', icon: 'fa-palette', col: '#F0ABFC' }
+    { id: 'art', name: 'Искусство', icon: 'fa-palette', col: '#F0ABFC' },
+    { id: 'humor', name: 'Юмор', icon: 'fa-face-grin-squint-tears', col: '#FB7185' }
 ];
 // уровни сложности и монеты за верный ответ
 const QZ_LEVELS = [
