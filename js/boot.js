@@ -149,7 +149,7 @@
                 if (!natW) return;
                 // размер — как у логотипа в меню, место — вверху экрана по центру (над совой)
                 var sc = r.width / natW, z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;
-                var x = (window.innerWidth - r.width) / 2, y = Math.round(46 * z);
+                var x = (window.innerWidth - r.width) / 2, y = Math.round(Math.min(46 * z, x));   // отступ сверху — как слева и справа (на ПК не больше прежнего)
                 if (exitT0) {   // тап: логотип чуть приседает и улетает вверх за край экрана (~0,7 с)
                     var lp = Math.min(1, (performance.now() - exitT0) / 700), dip = 14 * z;
                     if (lp < 0.3) { var e1 = lp / 0.3; y += dip * e1 * (2 - e1); }
