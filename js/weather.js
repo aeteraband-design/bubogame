@@ -95,7 +95,7 @@ function stormClearNow() {
 function stormUpdate() {
     if (stormInMenu()) {
         if (stormIntensity !== 0 || stormCover !== 0 || WX.left >= 0) stormClearNow();
-        if (STORM.sndRain || STORM.sndWind) { STORM.sndRain = STORM.sndWind = 0; try { AudioFX.weatherSet(0, 0); } catch (e) {} }
+        if (STORM.sndRain || STORM.sndWind) { STORM.sndRain = STORM.sndWind = 0; try { AudioFX.weatherSet(0, 0, false, true); } catch (e) {} }   // в меню звук дождя стихает за ~1 с
         return;
     }
     if (stormIntensity < 0) stormIntensity = 0;

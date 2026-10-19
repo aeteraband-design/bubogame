@@ -52,6 +52,7 @@ html.booting #startScreen { visibility: hidden !important; }   /* меню по�
 /* v0.13.66: свечение совы с загрузки остаётся в главном меню — тот же размер, место и пульс, без рывка */
 #menuHalo { position: fixed; inset: 0; z-index: 1; pointer-events: none; transition: opacity 0.5s ease; }
 #menuHalo.off { opacity: 0; }
+#menuHalo:not(.off) { transition: none; }   /* в меню появляется сразу, гаснет при уходе в игру плавно */
 html.booting #menuHalo { visibility: hidden; }
 #menuHalo .mh { position: absolute; left: 50%; top: 50%; width: 360px; height: 360px; margin: -180px 0 0 -180px; zoom: var(--menu-zoom, 1); transform: scale(0.88); transform-origin: 50% 50%; }
 #menuHalo .mh::before { content: ''; position: absolute; left: 50%; top: 50%; width: 534px; height: 534px; margin: -267px 0 0 -267px; border-radius: 50%; background: radial-gradient(circle, rgba(146, 72, 251, 0.40) 0%, rgba(106, 32, 212, 0.20) 45%, transparent 70%); animation: blHalo 3s ease-in-out infinite; }

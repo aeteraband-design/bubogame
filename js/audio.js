@@ -1301,7 +1301,7 @@ const AudioFX = {
     },
     _rainDropsLoop() {
         const W = this._wx; if (!W || !this.ctx) return;
-        W.rain = W.rain == null ? 0 : W.rain + ((W.rainTarget || 0) - W.rain) * 0.06;   // частота капель меняется плавно (~2 с)
+        W.rain = W.rain == null ? 0 : W.rain + ((W.rainTarget || 0) - W.rain) * (W.quick ? 0.35 : 0.06);   // выход в меню — капли стихают за ~1 с   // частота капель меняется плавно (~2 с)
         const r = W.rain;
         if (r < 0.008 && (W.rainTarget || 0) < 0.01) { W.dropTimer = 0; W.rain = 0; return; }
         if (this.ctx.state === 'running') {
@@ -1312,18 +1312,18 @@ const AudioFX = {
         }
         W.dropTimer = setTimeout(() => this._rainDropsLoop(), 100);
     },
-    weatherSet(rain, wind, fast) {
+    weatherSet(rain, wind, fast, quick) {   // quick — выход в меню: дождь и ветер стихают за ~1 с
         if (!this.ctx) return;
         if (!this._wx) { if (rain <= 0 && wind <= 0) return; this._weatherInit(); }
         const t = this.ctx.currentTime;
         this._wx.rg.gain.cancelScheduledValues(t); this._wx.wg.gain.cancelScheduledValues(t);
         // дождь из отдельных капель: сначала редкие «кап… кап», потом всё чаще, и только в сильный дождь их перекрывает сплошной шум ливня
-        const W = this._wx; W.rainTarget = rain; if (fast) W.rain = rain;
+        const W = this._wx; W.rainTarget = rain; W.quick = !!quick; if (fast) W.rain = rain;
         if (!W.dropTimer && rain > 0.01) this._rainDropsLoop();
         const wash = rain < 0.2 ? 0 : Math.pow(Math.min(1, (rain - 0.2) / 0.8), 1.5);
-        this._wx.rg.gain.setTargetAtTime(0.1 * wash, t, fast ? 0.15 : 1.6);   // игра началась в дождь — шум сразу
+        this._wx.rg.gain.setTargetAtTime(0.1 * wash, t, quick ? 0.22 : fast ? 0.15 : 1.6);   // игра началась в дождь — шум сразу
         this._wx.lp.frequency.cancelScheduledValues(t); this._wx.lp.frequency.setTargetAtTime(2400 + 4400 * rain, t, 1.2);
-        this._wx.wg.gain.setTargetAtTime(wind < 0.015 ? 0 : wind * 0.11, t, fast ? 0.2 : 1.6);
+        this._wx.wg.gain.setTargetAtTime(wind < 0.015 ? 0 : wind * 0.11, t, quick ? 0.22 : fast ? 0.2 : 1.6);
     },
     // далёкий гром: глухой низкий раскат с запаздыванием после вспышки (чем дальше, тем позже и тише)
     playThunder(delay, power) {

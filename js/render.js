@@ -5,7 +5,8 @@ function draw() {
         else { quizDraw(); return; }
     }
     ctx.setTransform(viewScale * renderScale * WORLD_K, 0, 0, viewScale * renderScale * WORLD_K, 0, 0);
-    const df = currentDrunkFactor;
+    const ssEl = draw.__ss || (draw.__ss = document.getElementById('startScreen'));
+    const df = (ssEl && !ssEl.classList.contains('hidden')) ? 0 : currentDrunkFactor;   // в меню — без «пьяного» качания экрана: меню сразу ровное
     if (df > 0.001) {
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = '#090117';
@@ -140,6 +141,11 @@ function drawScene() {
     const dsEl = drawScene.__el || (drawScene.__el = { s: document.getElementById('startScreen'), g: document.getElementById('gameOverModal') });
     const isStartMenuOpen = !dsEl.s.classList.contains('hidden');
     const isGameOverOpen = !dsEl.g.classList.contains('hidden');
+    if (isStartMenuOpen && !drawScene.__wasMenu && !window.__booting) {   // вернулись из игры в меню — сразу готовый вид, как после загрузки: без доводки камеры, скорости фона и труб
+        camZoom = 1; window.__bgSpeed = 1;
+        if (typeof MENU_PIPE !== 'undefined') { MENU_PIPE.cy = null; MENU_PIPE.t = 0; MENU_PIPE.t0 = 0; }
+    }
+    drawScene.__wasMenu = isStartMenuOpen;
     { const mh = dsEl.h || (dsEl.h = document.getElementById('menuHalo')); if (mh && mh.__on !== isStartMenuOpen) { mh.__on = isStartMenuOpen; mh.classList.toggle('off', !isStartMenuOpen); } }   // свечение совы — только в меню
     drawMoon();
     stormDrawBack();      // гроза: тучи, зарницы и разряды — позади домов
