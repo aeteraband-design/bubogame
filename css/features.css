@@ -618,3 +618,19 @@ html.menu-pc #startScreen > .menu-logo-wrap { padding-top: 0 !important; padding
 #goWin #continueAttemptSub { font-size: 9.5px; letter-spacing: .06em; margin-top: 2px; }
 #goWin #gameOverOkBtn { padding-top: 12px; padding-bottom: 12px; font-size: 12.5px; }
 #qzWin .qz-x { color: #7DD3FC !important; background: rgba(56, 189, 248, 0.14) !important; border-color: rgba(56, 189, 248, 0.42) !important; }
+
+/* ===== Все окна одной ширины: 380px в масштабе меню (на телефоне — почти во всю ширину, на ПК — около трети экрана) ===== */
+html #qzWin, html #shWin, html #goWin, html #rulesModal > #rlWin, html #settingsModal > div, html #winModal > #winWindow { width: 100% !important; max-width: 380px !important; }
+html #rouletteModal > .glass-panel { max-width: calc(380px * var(--menu-zoom, 1) / min(var(--menu-zoom, 1), 1.1)) !important; }
+
+/* экран смерти: плитки с иконкой слева, как строки в окне вопросов */
+#goWin .go-stats { gap: 7px; }
+#goWin .go-st { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 8px; row-gap: 1px; align-items: center; text-align: left; padding: 10px 9px; }
+#goWin .go-st > i { grid-row: 1 / 3; width: 28px; height: 28px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; filter: none;
+    background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 45%, #1d0936)); box-shadow: 0 0 10px color-mix(in srgb, var(--c) 45%, transparent), inset 0 1px 0 rgba(255, 255, 255, .25); }
+#goWin .go-st > b { font-size: 16px; align-self: end; }
+#goWin .go-st > span { font-size: 8.5px; align-self: start; letter-spacing: .02em; }
+#goWin .go-reason, #goWin .go-info { padding: 10px 12px; }
+#goWin .go-info { background: rgba(20, 3, 38, .6); border-color: color-mix(in srgb, var(--gi) 32%, rgba(120, 44, 233, .3)); }
+#goWin .go-reason { background: rgba(20, 3, 38, .6); }
+#gameOverModal { padding: 12px !important; }

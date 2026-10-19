@@ -43,6 +43,13 @@ function wxTick() {
     const dt = STORM.rdt, F = wxFreq();
     // решаем сразу, как только открылся экран игры (ещё до первого тапа): если игра начинается в дождь —
     // тучи уже на месте, дождь идёт и шумит с первой секунды
+    if (WX.left < 0 && STORM.pausedWx) {   // вернулись из меню — погода ровно та же, что была в момент паузы
+        const sv = STORM.pausedWx; STORM.pausedWx = null;
+        WX.on = sv.on; WX.left = sv.left; WX.peak = sv.peak;
+        stormCover = sv.cover; stormIntensity = sv.si; STORM.fade = sv.fade; STORM.wet = sv.wet; STORM.ice = sv.ice;
+        STORM.cl = null; STORM.sndFast = stormIntensity > 0.2;
+        return;
+    }
     if (WX.left < 0) {
         // продолжение сохранённой игры: погода — та же, что была, когда вышли (дождём внезапно не начинается)
         let themes = 0; try { themes = getTotalCollectedThemes(); } catch (e) {}

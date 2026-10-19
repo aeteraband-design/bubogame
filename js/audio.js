@@ -90,6 +90,16 @@ const AudioFX = {
     quizMelody2: [329.63, 0, 392.00, 0, 523.25, 0, 440.00, 392.00, 329.63, 0, 293.66, 0, 261.63, 0, 246.94, 0],
     quizBass:    [110.00, 87.31, 130.81, 98.00],
     menuMelody: [293.66, 349.23, 440.00, 349.23, 523.25, 440.00, 392.00, 329.63, 440.00, 523.25, 587.33, 523.25, 440.00, 392.00, 349.23, 329.63],
+    // меню: весёлый трек 140 BPM, 4 такта по 16 шестнадцатых (Dm – B♭ – F – C). Мотивы собраны из игры:
+    // 1-й такт — арпеджио полёта, 2-й — его ответ, 3-й — прыгающая «магазинная» фраза, 4-й — спуск к началу с барабанной сбивкой
+    menuLead: [
+        [293.66, 0, 349.23, 0, 440.00, 0, 587.33, 0, 523.25, 0, 440.00, 0, 349.23, 392.00, 440.00, 0],
+        [466.16, 0, 587.33, 0, 698.46, 0, 587.33, 0, 523.25, 0, 466.16, 440.00, 466.16, 0, 523.25, 0],
+        [698.46, 0, 880.00, 698.46, 0, 523.25, 0, 587.33, 698.46, 0, 659.25, 0, 587.33, 523.25, 0, 440.00],
+        [523.25, 0, 659.25, 0, 783.99, 0, 659.25, 523.25, 587.33, 0, 523.25, 0, 440.00, 392.00, 349.23, 329.63]
+    ],
+    menuRoots: [146.83, 116.54, 174.61, 130.81],
+    menuChords: [[293.66, 349.23, 440.00], [293.66, 349.23, 466.16], [261.63, 349.23, 440.00], [261.63, 329.63, 392.00]],
     gameBass:   [146.83, 146.83, 174.61, 146.83, 196.00, 174.61, 130.81, 164.81],
     gameArp:    [293.66, 349.23, 440.00, 587.33, 523.25, 440.00, 349.23, 392.00],
     // Варианты мелодии для высоких уровней сложности: всё напряжённее и суровее
@@ -264,7 +274,7 @@ const AudioFX = {
     },
     // длина шага и высота музыки режима (в игре — с учётом сложности, ускорения и замедления)
     _modeStep(m) {
-        let d = m === 'game' ? 0.185 : (m === 'death' ? 0.56 : (m === 'victory' ? 0.2 : (m === 'quiz' ? 0.3 : (m === 'shop' ? 0.19 : (m === 'library' ? 0.34 : 0.29))))), p = 1;
+        let d = m === 'game' ? 0.185 : (m === 'death' ? 0.56 : (m === 'victory' ? 0.2 : (m === 'quiz' ? 0.3 : (m === 'shop' ? 0.19 : (m === 'library' ? 0.34 : (m === 'menu' ? 60 / 140 / 4 : 0.29)))))), p = 1;
         if (m === 'game') {
             try { const diff = getDifficultyMultipliers(); if (diff.musicTempoMult) { d /= diff.musicTempoMult; p *= diff.musicTempoMult; } } catch (e) {}
             const sf = this.speedFactor || 1; d /= sf; p *= sf;
@@ -275,7 +285,7 @@ const AudioFX = {
     _melodyAt(m, s, p) {
         const s16 = s % 16, ph = Math.floor(s / 16) % 2;
         let f = 0;
-        if (m === 'menu') f = this.menuMelody[s % this.menuMelody.length];
+        if (m === 'menu') f = this.menuLead[Math.floor(s / 16) % 4][s16];
         else if (m === 'shop') f = (ph ? this.shopMelody2 : this.shopMelody)[s16];
         else if (m === 'quiz') f = (ph ? this.quizMelody2 : this.quizMelody)[s16];
         else if (m === 'library') f = this.libChords[Math.floor(s / 8) % 4][this.libArp[s % 8]];
@@ -505,7 +515,7 @@ const AudioFX = {
                     // ноты ставятся заранее (на 0.35 с вперёд) точно по времени аудио — подвисания игры музыку не рвут
                     while (this.nextNoteTime < t + 0.35) {
                         this.playMusicStep(this.nextNoteTime);
-                        let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : (this.mode === 'quiz' ? 0.3 : (this.mode === 'shop' ? 0.19 : (this.mode === 'library' ? 0.34 : 0.29)))));
+                        let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : (this.mode === 'quiz' ? 0.3 : (this.mode === 'shop' ? 0.19 : (this.mode === 'library' ? 0.34 : (this.mode === 'menu' ? 60 / 140 / 4 : 0.29))))));
                         if (this.mode !== 'death' && this.mode !== 'victory' && this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop' && this.mode !== 'library') {   // в меню темп всегда стандартный — не зависит ни от сложности, ни от ускорения
                             const diff = getDifficultyMultipliers();
                             if (diff.musicTempoMult) d /= diff.musicTempoMult;
@@ -664,19 +674,43 @@ const AudioFX = {
                 ns.connect(fl); fl.connect(g); g.connect(this.musicGain); ns.start(now); ns.stop(now + 0.08);
             }
         } else if (this.mode === 'menu') {
-            const freq = this.menuMelody[this.step % this.menuMelody.length];
-            const osc = this.ctx.createOscillator();
-            const noteGain = this.ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, now);
-            noteGain.gain.setValueAtTime(0.001, now);
-            noteGain.gain.linearRampToValueAtTime(0.52, now + 0.04);
-            noteGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
-            noteGain.gain.linearRampToValueAtTime(0, now + 0.39);
-            osc.connect(noteGain);
-            noteGain.connect(this.musicGain);
-            osc.start(now);
-            osc.stop(now + 0.39);
+            // меню: 140 BPM, бочка, хлопок, хэты, прыгающий бас, аккорды на слабые доли и мелодия из мотивов игры;
+            // каждый второй проход 4 тактов мелодия звучит на октаву выше с колокольчиком — чтобы не надоедала
+            const s = this.step, st = s % 16, bar = Math.floor(s / 16) % 4, loop = Math.floor(s / 64) % 2;
+            const ac = this.ctx, out = this.musicGain;
+            const tone = (type, fr, vol, dur, att, cut, f2) => {
+                const o = ac.createOscillator(), g = ac.createGain(), lp = ac.createBiquadFilter();
+                o.type = type; o.frequency.setValueAtTime(fr, now); if (f2) o.frequency.exponentialRampToValueAtTime(f2, now + dur * 0.8);
+                lp.type = 'lowpass'; lp.frequency.setValueAtTime(cut || 3000, now);
+                g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + (att || 0.006)); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                o.connect(lp); lp.connect(g); g.connect(out); o.start(now); o.stop(now + dur + 0.02);
+            };
+            const noise = (type, freq, vol, dur, q) => {
+                const ns = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+                ns.buffer = this._iceNoise(); fl.type = type; fl.frequency.setValueAtTime(freq, now); if (q) fl.Q.setValueAtTime(q, now);
+                g.gain.setValueAtTime(vol, now); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                ns.connect(fl); fl.connect(g); g.connect(out); ns.start(now); ns.stop(now + dur + 0.02);
+            };
+            // барабаны
+            const fill = bar === 3 && st >= 12;
+            if (st === 0 || st === 8 || (st === 6 && bar % 2 === 1) || (st === 10 && bar === 2)) tone('sine', 120, 0.62, 0.22, 0.003, 800, 44);   // бочка
+            if (st === 4 || st === 12) { noise('bandpass', 1700, 0.3, 0.14, 0.8); tone('triangle', 210, 0.12, 0.08, 0.002, 1500, 160); }   // хлопок
+            if (fill && st !== 12) noise('bandpass', 1900, 0.12 + (st - 12) * 0.05, 0.08, 0.9);   // сбивка в конце фразы
+            if (!fill) noise('highpass', 7500, st % 2 ? 0.035 : (st % 4 === 2 ? 0.075 : 0.04), st === 14 ? 0.16 : 0.045);   // хэты, открытый — на 14
+            // бас: корень с прыжком на октаву
+            const r = this.menuRoots[bar];
+            const bp = [1, 0, 2, 0, 1, 1, 0, 2, 1, 0, 2, 0, 1, 0, 1.5, 2][st];
+            if (bp) tone('triangle', r * bp, 0.36, 0.17, 0.005, 900);
+            // аккорды-«чопы» на слабые доли
+            if (st % 4 === 2) this.menuChords[bar].forEach((f) => tone('square', f, 0.035, 0.09, 0.004, 2200));
+            // мелодия
+            const f = this.menuLead[bar][st];
+            if (f) {
+                const up = loop ? 2 : 1;
+                tone('triangle', f * up, loop ? 0.2 : 0.26, 0.2, 0.006, 3200);
+                tone('square', f * up, 0.025, 0.12, 0.004, 2600);
+                if (loop && st % 4 === 0) tone('sine', f * 4, 0.04, 0.4, 0.003, 7000);   // колокольчик
+            }
         } else {
             const len = 1 / Math.max(0.6, this.speedFactor || 1); // ноты растягиваются вместе с темпом
             // Мелодия на всех уровнях — исходная. С каждым уровнем добавляются барабаны и «нотки» сложности

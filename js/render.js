@@ -398,6 +398,7 @@ function resetEntireGame(opts) {
     resetSpecialTimers();
     if (typeof shazamReset === 'function') shazamReset(); shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal'; invulnerableTime = 0;
     if (typeof stormClearNow === 'function') stormClearNow();   // новая игра — с ясного неба
+    if (typeof STORM !== 'undefined') STORM.pausedWx = null;
     resetOvereatDrunk();
     pipes = []; items = []; particles = [];
     snapProgressVisuals();
@@ -421,6 +422,8 @@ setInterval(() => { try { if (!gameActive && playDay && playDay !== todayKey()) 
 // Пауза: запоминаем, где именно были сова, трубы и предметы (только до закрытия вкладки)
 let pausedSnapshot = null;
 function returnToHome() {
+    // погода замирает вместе с игрой: запоминаем грозу как есть и вернём её при продолжении
+    try { if (typeof WX !== 'undefined' && WX.left >= 0) STORM.pausedWx = { on: WX.on, left: WX.left, peak: WX.peak, cover: stormCover, si: Math.max(0, stormIntensity), fade: STORM.fade || 0, wet: STORM.wet || 0, ice: STORM.ice || 0 }; } catch (e) {}
     if (gameActive) {
         isFlightPaused = true;
         pausedSnapshot = {
