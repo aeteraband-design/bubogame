@@ -171,6 +171,7 @@
         const ss = document.getElementById('startScreen');
         if (!ss || ss.classList.contains('hidden') || document.hidden) return false;
         if (document.documentElement.classList.contains('booting') || window.__booting) return false;
+        if (performance.now() < (window.__logoAnimHold || 0)) return false;   // после загрузки логотип сначала появляется джойстиком
         const cs = getComputedStyle(ss);
         if (cs.visibility === 'hidden' || +cs.opacity < 0.5) return false;
         // открыто окно поверх меню — не отвлекаем

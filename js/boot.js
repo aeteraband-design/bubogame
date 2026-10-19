@@ -150,6 +150,11 @@
                 // размер — как у логотипа в меню, место — вверху экрана по центру (над совой)
                 var sc = r.width / natW, z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;
                 var x = (window.innerWidth - r.width) / 2, y = Math.round(46 * z);
+                if (exitT0) {   // тап: логотип чуть приседает и улетает вверх за край экрана (~0,7 с)
+                    var lp = Math.min(1, (performance.now() - exitT0) / 700), dip = 14 * z;
+                    if (lp < 0.3) { var e1 = lp / 0.3; y += dip * e1 * (2 - e1); }
+                    else { var e2 = (lp - 0.3) / 0.7; y += dip - (dip + y + natH * sc + 40) * e2 * e2; }
+                }
                 cloneWrap.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) scale(' + sc.toFixed(4) + ')';
                 var key = Math.round(x) + ',' + y + ',' + Math.round(r.width) + ',' + Math.round(natW);
                 stable = key === lastKey ? stable + 1 : 0; lastKey = key;
@@ -177,24 +182,19 @@
             function finishDismiss() {
                 document.documentElement.classList.remove('booting'); window.__booting = false;
                 el.classList.add('handoff');   // свечение совы и логотип дальше показывает само меню — точно там же, поэтому без вспышек и рывков
-                // логотип меню встаёт ровно туда, где был логотип загрузки (вверху), и в самом конце плавно опускается на своё место между трубами
+                // трубы и свечение плавно подъезжают от совы к месту логотипа; сам логотип появляется там красиво: значок, потом буквы
                 try {
-                    var lw = document.querySelector('#startScreen > .menu-logo-wrap'), lm = lw && lw.querySelector(':scope > div');
-                    if (clone && lm) {
-                        var cr0 = clone.getBoundingClientRect(), lr0 = lm.getBoundingClientRect();
-                        var dv = (cr0.top + cr0.height / 2) - (lr0.top + lr0.height / 2);   // по центрам — высота копии и логотипа может немного отличаться
-                        lw.style.translate = '0 100px'; var zf = (lm.getBoundingClientRect().top - lr0.top) / 100; if (!(zf > 0.05)) zf = 1;   // меню может быть с зумом: сдвиг пересчитываем в его единицы
-                        var d0 = dv / zf;
-                        lw.style.translate = '';
-                        if (Math.abs(dv) > 1) {
-                            var D = window.__logoDrop = { d0: d0, off: d0, zf: zf, k: 0, t0: performance.now(), hold: 850, dur: 1000 };
-                            lw.style.translate = '0 ' + d0.toFixed(1) + 'px';
-                            (function drop() {
-                                var t = performance.now() - D.t0, u = Math.max(0, Math.min(1, (t - D.hold) / D.dur));
-                                D.k = u * u * (3 - 2 * u); D.off = d0 * (1 - D.k); var v = Math.min(1, t / 800); D.kp = v * v * (3 - 2 * v);   // трубы и свечение подъезжают к месту логотипа сразу, логотип опускается в конце
-                                if (u < 1 || D.kp < 1) { lw.style.translate = '0 ' + D.off.toFixed(1) + 'px'; requestAnimationFrame(drop); }
-                                else { lw.style.translate = ''; window.__logoDrop = null; }
-                            })();
+                    var D = window.__logoDrop = { off: 0, zf: 1, k: 1, kp: 0, t0: performance.now() };
+                    (function glide() { var v = Math.min(1, (performance.now() - D.t0) / 800); D.kp = v * v * (3 - 2 * v); if (v < 1) requestAnimationFrame(glide); else window.__logoDrop = null; })();
+                    window.__logoAnimHold = performance.now() + 4000;   // сначала джойстик, сова в логотипе — потом
+                    var lw = document.querySelector('#startScreen > .menu-logo-wrap'), tl = lw && lw.querySelector('.fa-gamepad'), tile = tl && tl.parentElement;
+                    var words = lw ? lw.querySelectorAll('.tracking-tight > span') : [];
+                    if (tile && tile.animate) {
+                        tile.animate([{ transform: 'scale(0) rotate(-25deg)', opacity: 0 }, { transform: 'scale(1.18) rotate(6deg)', opacity: 1, offset: 0.6 }, { transform: 'scale(0.96) rotate(-2deg)', offset: 0.8 }, { transform: 'scale(1) rotate(0)', opacity: 1 }],
+                            { duration: 650, delay: 250, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'backwards' });
+                        for (var wi = 0; wi < words.length; wi++) {
+                            words[wi].animate([{ clipPath: 'inset(-30px 100% -30px -30px)', transform: 'translateX(-10px)', opacity: 0.2 }, { clipPath: 'inset(-30px -30px -30px -30px)', transform: 'translateX(0)', opacity: 1 }],
+                                { duration: 520, delay: 650 + wi * 260, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'backwards' });
                         }
                     }
                 } catch (e) {}
