@@ -250,27 +250,53 @@ const AudioFX = {
     setMode(newMode, opts) {
         const eff = this._pendMode || this.mode;
         if (eff === newMode) {
-            if (this._pendMode && this._pendMode === this.mode) { clearTimeout(this._fadeT); this._pendMode = null; this._fadeIn(); }
+            if (this._pendMode && this._pendMode === this.mode) { clearTimeout(this._fadeT); this._pendMode = null; this._stopAt = 0; this._fadeIn(); }
             return;
         }
         const smooth = this.ctx && this.musicGain && this.ctx.state === 'running' && !this.isMusicMuted;
         clearTimeout(this._fadeT);
         if (!smooth) {
-            const wasFading = !!this._pendMode; this._pendMode = null;
+            const wasFading = !!this._pendMode; this._pendMode = null; this._stopAt = 0;
             this.mode = newMode; this.step = 0; this.stopMusic(); this.startMusicLoop();
             if (wasFading) this._fadeIn();
             return;
         }
-        // просто плавная смена: старая музыка затихает ~0,45 с, новая начинается и мягко набирает громкость ~0,9 с
-        this._pendMode = newMode;
-        const now = this.ctx.currentTime, g = this.musicGain.gain;
-        g.cancelScheduledValues(now); g.setValueAtTime(Math.max(0.0001, g.value), now); g.linearRampToValueAtTime(0.0001, now + 0.45);
-        this._nextStartAt = 0;
+        // музыкальная смена «в долю»: старая музыка доигрывает до ближайшей сильной доли (не дольше ~0,6 с),
+        // в энергичных режимах — короткая барабанная сбивка, на долю — мягкая тарелка; новая музыка вступает
+        // ровно в эту долю, без паузы, и за ~0,6 с набирает полную громкость. Хвосты старых нот звучат естественно.
+        const ac = this.ctx, nowT = ac.currentTime, from = this.mode;
+        const d = this._modeStep(from).d, per = d > 0.25 ? 1 : (d > 0.15 ? 2 : 4);
+        let T = Math.max(this.nextNoteTime || nowT, nowT + 0.02), st = this.step;
+        while (st % per !== 0) { T += d; st++; }
+        if (T - nowT < 0.09) T += d * per;
+        if (T - nowT > 0.65) T = nowT + 0.65;
+        const energetic = (m) => m === 'menu' || m === 'game' || m === 'shop' || m === 'victory';
+        this._pendMode = newMode; this._stopAt = T;
+        const g = this.musicGain.gain, vol = this.musicVolume;
+        g.cancelScheduledValues(nowT); g.setValueAtTime(Math.max(0.0001, g.value), nowT);
+        g.linearRampToValueAtTime(vol * 0.8, T); g.linearRampToValueAtTime(vol * 0.55, T + 0.05); g.linearRampToValueAtTime(vol, T + 0.6);
+        try {
+            const out = this.musicGain;
+            const hit = (t, type, freq, v, dur, q) => {   // шумовой удар (малый барабан / тарелка)
+                const ns = ac.createBufferSource(), fl = ac.createBiquadFilter(), gg = ac.createGain();
+                ns.buffer = this._iceNoise(); fl.type = type; fl.frequency.setValueAtTime(freq, t); if (q) fl.Q.setValueAtTime(q, t);
+                gg.gain.setValueAtTime(0.0001, t); gg.gain.linearRampToValueAtTime(v, t + 0.004); gg.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                ns.connect(fl); fl.connect(gg); gg.connect(out); ns.start(t); ns.stop(t + dur + 0.02);
+            };
+            if (energetic(from) && energetic(newMode)) {
+                const sd = Math.min(d, 0.11);
+                for (let k = 3; k >= 1; k--) { const t = T - k * sd; if (t > nowT + 0.005) hit(t, 'bandpass', 1800, 0.08 + (3 - k) * 0.05, 0.09, 0.9); }   // сбивка
+                hit(T, 'highpass', 5200, 0.16, 0.9);   // тарелка в долю
+                const o = ac.createOscillator(), gk = ac.createGain();   // бочка в долю
+                o.type = 'sine'; o.frequency.setValueAtTime(120, T); o.frequency.exponentialRampToValueAtTime(45, T + 0.18);
+                gk.gain.setValueAtTime(0.0001, T); gk.gain.linearRampToValueAtTime(0.5, T + 0.004); gk.gain.exponentialRampToValueAtTime(0.001, T + 0.24);
+                o.connect(gk); gk.connect(out); o.start(T); o.stop(T + 0.26);
+            } else hit(T, 'highpass', 6500, 0.06, 1.3);   // в спокойных режимах — только тихий «шорох» тарелки
+        } catch (e) {}
         this._fadeT = setTimeout(() => {
-            const m = this._pendMode; this._pendMode = null; if (!m) return;
-            this.mode = m; this.step = 0; this.stopMusic(); this.startMusicLoop();
-            try { const c = this.ctx.currentTime, gg = this.musicGain.gain; gg.cancelScheduledValues(c); gg.setValueAtTime(0.0001, c); gg.linearRampToValueAtTime(this.isMusicMuted ? 0 : this.musicVolume, c + 0.9); } catch (e) {}
-        }, 470);
+            const m = this._pendMode; this._pendMode = null; this._stopAt = 0; if (!m) return;
+            this.mode = m; this.step = 0; this._nextStartAt = T; this.stopMusic(); this.startMusicLoop();
+        }, Math.max(0, (T - nowT) * 1000 - 70));
     },
     // длина шага и высота музыки режима (в игре — с учётом сложности, ускорения и замедления)
     _modeStep(m) {
@@ -513,7 +539,7 @@ const AudioFX = {
                     const t = this.ctx.currentTime;
                     if (!this.nextNoteTime || this.nextNoteTime < t - 0.05) this.nextNoteTime = t + 0.03;
                     // ноты ставятся заранее (на 0.35 с вперёд) точно по времени аудио — подвисания игры музыку не рвут
-                    while (this.nextNoteTime < t + 0.35) {
+                    while (this.nextNoteTime < t + 0.35 && !(this._stopAt && this.nextNoteTime >= this._stopAt - 0.001)) {
                         this.playMusicStep(this.nextNoteTime);
                         let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : (this.mode === 'quiz' ? 0.3 : (this.mode === 'shop' ? 0.19 : (this.mode === 'library' ? 0.34 : (this.mode === 'menu' ? 60 / 140 / 4 : 0.29))))));
                         if (this.mode !== 'death' && this.mode !== 'victory' && this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop' && this.mode !== 'library') {   // в меню темп всегда стандартный — не зависит ни от сложности, ни от ускорения
