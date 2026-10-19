@@ -493,7 +493,7 @@ let moonPhase = -1, moonRendered = -1;   // фаза луны: доля осве
 const MOON_MENU_PHASE = [0.12, 0.25, 0.5, 0.72, 1][Math.floor(Math.random() * 5)];
 function moonPhaseTarget() {
     const ss = moonPhaseTarget.__s || (moonPhaseTarget.__s = document.getElementById('startScreen'));
-    if (window.__booting || window.__bootMoon !== false) return MOON_MENU_PHASE;   // луна загрузки остаётся и в меню после загрузки — без смены   // случайная луна — только на экране загрузки; в меню — та же, что сейчас в игре
+    if (window.__booting || (ss && !ss.classList.contains('hidden'))) return 1;   // на загрузке и в меню — всегда полная луна вверху; в игре — по прогрессу
     let p = 0;
     try { p = Math.min(1, getTotalCollectedThemes() / TOTAL_THEMES); } catch (e) {}
     // полная луна наступает, когда начинается последний уровень сложности (Хард+), а не в самом конце
@@ -506,8 +506,7 @@ function drawMoon() {
     // высота луны зависит от её фазы: полумесяц — низко, под логотипом меню (выглядывает из-за домов), полная — высоко в небе.
     // В игре фаза растёт с прогрессом; в меню и на загрузке показывается любая фаза — и стоит на той же высоте, что была бы в игре
     const rr = Math.max(0, Math.min(1, ((moonPhase < 0 ? moonPhaseTarget() : moonPhase) - 0.06) / 0.94)), re = rr * rr * (3 - 2 * rr);
-    const mcv = drawMoon.__cv || (drawMoon.__cv = document.getElementById('gameCanvas'));
-    const moonY = Math.round(height * 0.455 + (130 - height * 0.455) * re + 10 * height / ((mcv && mcv.clientHeight) || height));   // +10 экранных пикселей ниже
+    const moonY = Math.round(height * 0.455 + (130 - height * 0.455) * re);
     const half = Math.ceil(moonRadius * 2.8) + 2;
     const S = Math.max(1, viewScale * renderScale);
     // плавно подтягиваем показанную фазу к целевой — смена почти незаметна
