@@ -506,7 +506,8 @@ function drawMoon() {
     // высота луны зависит от её фазы: полумесяц — низко, под логотипом меню (выглядывает из-за домов), полная — высоко в небе.
     // В игре фаза растёт с прогрессом; в меню и на загрузке показывается любая фаза — и стоит на той же высоте, что была бы в игре
     const rr = Math.max(0, Math.min(1, ((moonPhase < 0 ? moonPhaseTarget() : moonPhase) - 0.06) / 0.94)), re = rr * rr * (3 - 2 * rr);
-    const moonY = Math.round(height * 0.455 + (130 - height * 0.455) * re);
+    const mcv = drawMoon.__cv || (drawMoon.__cv = document.getElementById('gameCanvas'));
+    const moonY = Math.round(height * 0.455 + (130 - height * 0.455) * re + 10 * height / ((mcv && mcv.clientHeight) || height));   // +10 экранных пикселей ниже
     const half = Math.ceil(moonRadius * 2.8) + 2;
     const S = Math.max(1, viewScale * renderScale);
     // плавно подтягиваем показанную фазу к целевой — смена почти незаметна
