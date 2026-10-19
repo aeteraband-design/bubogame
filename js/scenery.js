@@ -493,7 +493,7 @@ let moonPhase = -1, moonRendered = -1;   // фаза луны: доля осве
 const MOON_MENU_PHASE = [0.12, 0.25, 0.5, 0.72, 1][Math.floor(Math.random() * 5)];
 function moonPhaseTarget() {
     const ss = moonPhaseTarget.__s || (moonPhaseTarget.__s = document.getElementById('startScreen'));
-    if (window.__booting) return MOON_MENU_PHASE;   // случайная луна — только на экране загрузки; в меню — та же, что сейчас в игре
+    if (window.__booting || window.__bootMoon !== false) return MOON_MENU_PHASE;   // луна загрузки остаётся и в меню после загрузки — без смены   // случайная луна — только на экране загрузки; в меню — та же, что сейчас в игре
     let p = 0;
     try { p = Math.min(1, getTotalCollectedThemes() / TOTAL_THEMES); } catch (e) {}
     // полная луна наступает, когда начинается последний уровень сложности (Хард+), а не в самом конце

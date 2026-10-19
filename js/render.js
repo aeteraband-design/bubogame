@@ -146,7 +146,12 @@ function drawScene() {
         if (typeof MENU_PIPE !== 'undefined') { MENU_PIPE.cy = null; MENU_PIPE.t = 0; MENU_PIPE.t0 = 0; }
     }
     drawScene.__wasMenu = isStartMenuOpen;
-    { const mh = dsEl.h || (dsEl.h = document.getElementById('menuHalo')); if (mh && mh.__on !== isStartMenuOpen) { mh.__on = isStartMenuOpen; mh.classList.toggle('off', !isStartMenuOpen); } }   // свечение совы — только в меню
+    { const mh = dsEl.h || (dsEl.h = document.getElementById('menuHalo')); if (mh && mh.__on !== isStartMenuOpen) { mh.__on = isStartMenuOpen; mh.classList.toggle('off', !isStartMenuOpen); } }
+    if (isStartMenuOpen && dsEl.h && typeof MENU_PIPE !== 'undefined' && MENU_PIPE.cy != null) {   // свечение всегда за логотипом (на загрузке — за совой) и едет вместе с проёмом труб
+        const cr = (dsEl.c || (dsEl.c = document.getElementById('gameCanvas'))).getBoundingClientRect();
+        const mr = dsEl.h.firstElementChild && dsEl.h.firstElementChild.getBoundingClientRect();   // base — центр свечения без сдвига (с учётом зума)
+        if (cr.height && mr && mr.height) { const base = mr.top + mr.height / 2 - (dsEl.h.__dy || 0), dy = Math.round((cr.top + MENU_PIPE.cy / height * cr.height - base) * 2) / 2; if (dsEl.h.__dy !== dy) { dsEl.h.__dy = dy; dsEl.h.style.transform = 'translateY(' + dy + 'px)'; } }
+    }   // свечение совы — только в меню
     drawMoon();
     stormDrawBack();      // гроза: тучи, зарницы и разряды — позади домов
     // фон на загрузке может ускоряться (сова в ускорении, рывок ШАЗАМа) — после загрузки плавно возвращается к обычному
@@ -287,6 +292,7 @@ function initMenuScenery() {
 }
 
 function startOrResumeFlight() {
+    window.__bootMoon = false;   // луна с экрана загрузки держится в меню до первого полёта, дальше — луна игры
     // попытки закончились — стартуем новую игру с полным набором попыток
     try { checkDailyReset(); } catch (e) {}
     if (attempts <= 0) { returnToHome(); try { openShop(); } catch (e) {} return; }   // попытки на сегодня кончились — в лавку
