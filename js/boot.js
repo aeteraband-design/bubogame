@@ -150,7 +150,8 @@
                 // размер — как у логотипа в меню, место — вверху экрана по центру (над совой)
                 var sc = r.width / natW, z = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--menu-zoom')) || 1;
                 var x = (window.innerWidth - r.width) / 2, y = Math.round(46 * z);
-                cloneWrap.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y + 'px) scale(' + sc.toFixed(4) + ')';
+                if (exitT0) { var mp = Math.min(1, (performance.now() - exitT0) / 900); mp = mp * mp * (3 - 2 * mp); x += (r.left - x) * mp; y += (r.top - y) * mp; }   // тап: логотип плавно опускается на своё место в меню — между трубами
+                cloneWrap.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) scale(' + sc.toFixed(4) + ')';
                 var key = Math.round(x) + ',' + y + ',' + Math.round(r.width) + ',' + Math.round(natW);
                 stable = key === lastKey ? stable + 1 : 0; lastKey = key;
                 if (!shownLogo && stable > 12) { shownLogo = true; cloneWrap.style.opacity = '1'; }
@@ -176,6 +177,8 @@
             }
             function finishDismiss() {
                 document.documentElement.classList.remove('booting'); window.__booting = false;
+                el.classList.add('handoff');   // свечение совы и логотип дальше показывает само меню — точно там же, поэтому без вспышек и рывков
+                if (cloneWrap) { cloneWrap.style.transition = 'none'; cloneWrap.style.opacity = '0'; }
                 window.__musicHold = false;   // загрузка закончилась и игрок тапнул — теперь можно включать музыку меню
                 try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); setTimeout(function () { try { if (!AudioFX.musicTimer) AudioFX.startMusicLoop(); } catch (e2) {} }, 60); } } catch (e) {}   // нажатие разрешает звук: включаем музыку меню
                 el.style.pointerEvents = 'none';

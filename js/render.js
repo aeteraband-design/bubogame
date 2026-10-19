@@ -140,6 +140,7 @@ function drawScene() {
     const dsEl = drawScene.__el || (drawScene.__el = { s: document.getElementById('startScreen'), g: document.getElementById('gameOverModal') });
     const isStartMenuOpen = !dsEl.s.classList.contains('hidden');
     const isGameOverOpen = !dsEl.g.classList.contains('hidden');
+    { const mh = dsEl.h || (dsEl.h = document.getElementById('menuHalo')); if (mh && mh.__on !== isStartMenuOpen) { mh.__on = isStartMenuOpen; mh.classList.toggle('off', !isStartMenuOpen); } }   // свечение совы — только в меню
     drawMoon();
     stormDrawBack();      // гроза: тучи, зарницы и разряды — позади домов
     // фон на загрузке может ускоряться (сова в ускорении, рывок ШАЗАМа) — после загрузки плавно возвращается к обычному
