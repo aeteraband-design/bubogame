@@ -1103,7 +1103,7 @@ function drawSparkleStar(cx, cy, spikes, outerRadius, innerRadius, color, alpha)
 
 // ===== v0.13.63: декоративные трубы в главном меню — логотип всегда пролетает в проёме =====
 let menuPipes = [];
-const MENU_PIPE = { w: 86, step: 262, speed: 1.2, lc: 0, lh: 0, t: 0 };
+const MENU_PIPE = { w: 86, step: 262, speed: 1.2, lc: 0, lh: 0, t: 0, cy: null, t0: 0 };
 function menuLogoBox() {   // центр и высота логотипа в мировых координатах (через долю от высоты холста — не зависит от зума)
     const lg = document.querySelector('#startScreen > .menu-logo-wrap > div'), cv = document.getElementById('gameCanvas');
     if (!lg || !cv) return;
@@ -1114,17 +1114,33 @@ function menuLogoBox() {   // центр и высота логотипа в м�
 }
 function menuPipeGap() { return Math.max(210, MENU_PIPE.lh + 150); }
 function menuPipeMake(x) {
-    const p = { x, width: MENU_PIPE.w, j: (Math.random() - 0.5) * 2, passed: true };
+    const p = { x, width: MENU_PIPE.w, passed: true };
     menuPipeFit(p); return p;
 }
-function menuPipeFit(p) {   // проём всегда по логотипу; небольшой сдвиг — только в пределах запаса, логотип не задевает
-    const g = menuPipeGap(), slack = Math.max(0, (g - MENU_PIPE.lh) / 2 - 55);
-    const c = MENU_PIPE.lc + p.j * Math.min(slack, 22);
-    p.gap = g; p.top = c - g / 2; p.bottom = height - (c + g / 2);   // bottom — высота нижней трубы от низа экрана
+function menuPipeFit(p, off) {   // проём ровно по центру логотипа (на загрузке — по центру совы): сверху и снизу одинаковый зазор
+    const g = menuPipeGap(), c = MENU_PIPE.cy;
+    p.gap = g; p.top = c - g / 2 - (off || 0); p.bottom = height - (c + g / 2) - (off || 0);   // bottom — высота нижней трубы от низа экрана
+}
+function menuOwlCenter() {   // центр совы экрана загрузки в мировых координатах
+    const o = document.getElementById('blOwlCv'), cv = document.getElementById('gameCanvas');
+    if (!o || !cv) return height / 2;
+    const a = o.getBoundingClientRect(), c = cv.getBoundingClientRect();
+    return c.height && a.height ? ((a.top + a.height / 2) - c.top) / c.height * height : height / 2;
+}
+function menuPipesBootStart() {   // тап на загрузке: пока сова заряжает ШАЗАМ, трубы быстро выезжают сверху и снизу, сова — в проёме
+    menuLogoBox();
+    MENU_PIPE.cy = menuOwlCenter(); MENU_PIPE.t0 = performance.now();
+    menuPipes = [];
+    const x0 = width / 2 - MENU_PIPE.w / 2;
+    let x = x0; while (x > -MENU_PIPE.w) x -= MENU_PIPE.step;
+    for (x += MENU_PIPE.step; x < width + MENU_PIPE.step; x += MENU_PIPE.step) menuPipes.push(menuPipeMake(x));
 }
 function drawMenuPipes() {
     if (++MENU_PIPE.t % 15 === 1 || !MENU_PIPE.lh) menuLogoBox();
     if (!MENU_PIPE.lh) return;
+    const tgt = window.__booting ? menuOwlCenter() : MENU_PIPE.lc;   // на загрузке — по сове, в меню — плавно переезжает к логотипу
+    if (MENU_PIPE.cy == null) MENU_PIPE.cy = tgt; else MENU_PIPE.cy += (tgt - MENU_PIPE.cy) * Math.min(1, 0.07 * dtMult);
+    const ia = MENU_PIPE.t0 ? Math.min(1, (performance.now() - MENU_PIPE.t0) / 380) : 1, off = (1 - (1 - Math.pow(1 - ia, 3))) * height * 0.6;   // выезд труб
     const v = MENU_PIPE.speed * dtMult * (window.__bgSpeed || 1);
     menuPipes.forEach((p) => { p.x -= v; });
     menuPipes = menuPipes.filter((p) => p.x + p.width > -20);
@@ -1132,6 +1148,6 @@ function drawMenuPipes() {
     while (menuPipes[menuPipes.length - 1].x < width + 20) menuPipes.push(menuPipeMake(menuPipes[menuPipes.length - 1].x + MENU_PIPE.step));
     const sq = currentDifficultySqueeze, cf = currentCompressionFactor;
     currentDifficultySqueeze = 0; currentCompressionFactor = 0;
-    try { menuPipes.forEach((p) => { menuPipeFit(p); drawPipe(p); }); }
+    try { menuPipes.forEach((p) => { menuPipeFit(p, off); drawPipe(p); }); }
     finally { currentDifficultySqueeze = sq; currentCompressionFactor = cf; }
 }

@@ -168,6 +168,7 @@
             }
             function dismiss() {
                 if (dismissed || !ready) return; dismissed = true;
+                try { window.__bootPipes = true; if (typeof menuPipesBootStart === 'function') menuPipesBootStart(); } catch (e) {}   // трубы меню выезжают сверху и снизу вокруг совы
                 exitT0 = performance.now();   // сова улетает вправо, как в ШАЗАМе; экран гаснет следом
                 try { if (typeof AudioFX !== 'undefined') { AudioFX.resume(); AudioFX.playShazamCharge(); } } catch (e) {}   // зарядка — тот же звук, что у ШАЗАМа в игре
                 try { Haptics.powerup(); } catch (e) {}   // зарядка ШАЗАМа — вибрация, как в игре (тап — жест, поэтому сработает и на iPhone)

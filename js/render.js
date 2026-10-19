@@ -168,6 +168,7 @@ function drawScene() {
     if (owlBehind) { drawSpeedStars(); owl.draw(); }
     window.__sceneDrawn = true;
     const booting = !!window.__booting;   // на экране загрузки — только фон: небо, город, облака (без труб, значков и совы)
+    if (booting && window.__bootPipes && typeof drawMenuPipes === 'function') drawMenuPipes();   // тап на загрузке — трубы выезжают вокруг совы
     if (!booting) {
     drawCrystals();   // огненные шары «Опасных труб» — за трубами: выныривают из одной и скрываются в другой
     if (typeof drawWater === 'function') drawWater();   // потоки «Воды из труб» — тоже за трубами
