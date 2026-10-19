@@ -24,6 +24,6 @@ function qzHash(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h <<
     QUIZ_QUESTIONS.forEach((q) => {
         if (q.theme) return;
         q.theme = q.id === 170 || q.id === 115 ? 'space' : q.id === 113 ? 'chem' : q.id === 114 ? 'geo' : (MAP[q.cat] || 'misc');
-        q.lvl = q.diff === 'e' ? 'l' : q.diff === 'h' ? 'h' : 'm';
+        q.lvl = q.diff === 'e' ? 's' : q.diff === 'h' ? 'm' : 'l';   // старые diff: лёгкий → суперлайт, средний → лайт, сложный → средне
     });
 })();

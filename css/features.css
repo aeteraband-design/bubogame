@@ -634,3 +634,6 @@ html #rouletteModal > .glass-panel { max-width: calc(380px * var(--menu-zoom, 1)
 #goWin .go-info { background: rgba(20, 3, 38, .6); border-color: color-mix(in srgb, var(--gi) 32%, rgba(120, 44, 233, .3)); }
 #goWin .go-reason { background: rgba(20, 3, 38, .6); }
 #gameOverModal { padding: 12px !important; }
+/* v0.13.55: пять уровней в «Вопросах дня» — колонки равной ширины, подпись чуть мельче */
+#quizModal #qzWin .qz-lvls.n5{gap:5px}
+#quizModal #qzWin .qz-lvls.n5 .qz-lv b{font-size:9.5px;letter-spacing:0}

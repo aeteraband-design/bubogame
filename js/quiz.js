@@ -1,6 +1,6 @@
 // ===== ВОПРОСЫ ДНЯ =====
 // Кнопка в главном меню (под рулеткой). В день — 10 вопросов: перед каждым — кнопка «К вопросу», 5 с на чтение, 10 с на ответ
-// (таймер — кольцо справа). За верный ответ — монеты по сложности: лёгкий 30, средний 60, сложный 100. Монеты тратятся в лавке (shop.js).
+// (таймер — кольцо справа). За верный ответ — монеты по сложности (QZ_LEVELS в quiz-bank.js). Монеты тратятся в лавке (shop.js).
 // Выйти можно в любой момент между вопросами; закрыли окно посреди вопроса — он засчитывается как неотвеченный.
 // Вопросы не повторяются, пока не пройдена вся база; порядок вариантов перемешивается. Админка, «Вопросы»: список, сброс показанных и дня.
 
@@ -112,6 +112,7 @@ function quizResetSeen() { try { localStorage.removeItem(QUIZ_SEEN_KEY); } catch
 // ---------- темы и уровни (QZ_THEMES, QZ_LEVELS — в quiz-bank.js) ----------
 function qzTheme(id) { return (typeof QZ_THEMES !== 'undefined' && QZ_THEMES.find(t => t.id === id)) || { id: 'misc', name: 'Обо всём', icon: 'fa-brain', col: '#4ADE80' }; }
 function qzLevel(id) { return (typeof QZ_LEVELS !== 'undefined' && QZ_LEVELS.find(l => l.id === id)) || { id: 'm', name: 'Средне', coins: 100, col: '#FACC15' }; }
+function qzLevelsOn() { const on = QZ_LEVELS.filter(l => QUIZ_QUESTIONS.some(q => q.lvl === l.id)); return on.length ? on : QZ_LEVELS.slice(0, 1); }   // уровень без вопросов не показываем
 function qzPool(theme) { return QUIZ_QUESTIONS.filter(q => theme === 'all' || q.theme === theme); }
 function qzLeft(theme, lvl) { const seen = quizSeen(); return qzPool(theme).filter(q => seen.indexOf(q.id) < 0 && (!lvl || q.lvl === lvl)).length; }
 // следующий вопрос: из выбранной темы и выбранной сложности; один и тот же вопрос второй раз не попадается
@@ -124,6 +125,11 @@ function quizNextId(day) {
 }
 
 // ---------- день: 10 вопросов ----------
+// v0.13.55: уровни сдвинулись (лайт → суперлайт, средне → лайт, хард → средне) — переносим сохранённый выбор игрока
+(function () { try { if (localStorage.getItem('bubo_quiz_lv5')) return; const M = { s: 's', l: 's', m: 'l', h: 'm' };
+    const v = localStorage.getItem('bubo_quiz_lvl'); if (v && M[v]) localStorage.setItem('bubo_quiz_lvl', M[v]);
+    const d = JSON.parse(localStorage.getItem(QUIZ_DAY_KEY) || 'null'); if (d && d.lvl && M[d.lvl]) { d.lvl = M[d.lvl]; localStorage.setItem(QUIZ_DAY_KEY, JSON.stringify(d)); }
+    localStorage.setItem('bubo_quiz_lv5', '1'); } catch (e) {} })();
 function qzToday() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 function quizDay() {
     let d = null; try { d = JSON.parse(localStorage.getItem(QUIZ_DAY_KEY)); } catch (e) {}
@@ -378,7 +384,7 @@ function qzRulesHtml() {
     return `<div class="qz-rules">`
         + `<div class="qz-rule"><i class="fa-solid fa-list-ol"></i><span>В день — ${QUIZ_PER_DAY} вопросов. ${QZ_READ} с на чтение, потом ${QZ_ANSWER} с на ответ</span></div>`
         + `<div class="qz-rule"><i class="fa-solid fa-layer-group"></i><span>Выберите тему и сложность — вопросы не повторяются</span></div>`
-        + `<div class="qz-rule"><i class="fa-solid fa-coins"></i><span>За верный ответ: ${QZ_LEVELS.map(l => `<b style="color:${l.col}">${l.name.toLowerCase()}</b> — ${l.coins}`).join(', ')} монет</span></div>`
+        + `<div class="qz-rule"><i class="fa-solid fa-coins"></i><span>За верный ответ: ${qzLevelsOn().map(l => `<b style="color:${l.col}">${l.name.toLowerCase()}</b> — ${l.coins}`).join(', ')} ${ruPlural(qzLevelsOn().slice(-1)[0].coins, ['монета', 'монеты', 'монет'])}</span></div>`
         + `<div class="qz-rule"><i class="fa-solid fa-store"></i><span>Монеты тратятся в лавке на попытки, жизни и бонусы</span></div></div>`;
 }
 function qzRenderIntro(d, body) {
@@ -396,12 +402,13 @@ function qzRenderPick(msg) {
     try { sT = localStorage.getItem('bubo_quiz_theme') || ''; sL = localStorage.getItem('bubo_quiz_lvl') || ''; } catch (e) {}
     if (QS.selT === undefined) QS.selT = d.theme || (qzTheme(sT).id === sT ? sT : '') || 'all';   // новичку — «Обо всём», иначе последняя выбранная
     if (QS.selL === undefined) QS.selL = d.lvl || (QZ_LEVELS.some(l => l.id === sL) ? sL : '') || 's';
+    const lvOn = qzLevelsOn(); if (!lvOn.some(l => l.id === QS.selL)) QS.selL = lvOn[0].id;   // уровень без вопросов — берём первый доступный
     if (QS.selT && !qzLeft(QS.selT, QS.selL)) QS.selT = '';   // по умолчанию — Суперлайт
     const themes = qzThemeCards(QS.selL);
-    const lvls = QZ_LEVELS.map(l => `<button type="button" class="qz-lv${QS.selL === l.id ? ' on' : ''}" data-lv="${l.id}" style="--lc:${l.col};--lcA:${l.col}55"><b>${l.name}</b><span>${QZ_COIN}${l.coins}</span></button>`).join('');
+    const lvls = lvOn.map(l => `<button type="button" class="qz-lv${QS.selL === l.id ? ' on' : ''}" data-lv="${l.id}" style="--lc:${l.col};--lcA:${l.col}55"><b>${l.name}</b><span>${QZ_COIN}${l.coins}</span></button>`).join('');
     body.innerHTML = qzHead() + qzProg(d, d.ids.length)
         + (msg ? `<div class="qz-msg">${msg}</div>` : '')
-        + `<div class="qz-sec"><i class="fa-solid fa-coins"></i>Выберите сложность</div><div class="qz-lvls">${lvls}</div>`
+        + `<div class="qz-sec"><i class="fa-solid fa-coins"></i>Выберите сложность</div><div class="qz-lvls n${lvOn.length}" style="grid-template-columns:repeat(${lvOn.length},minmax(0,1fr))">${lvls}</div>`
         + `<div class="qz-sec"><i class="fa-solid fa-layer-group"></i>Выберите тему</div><div class="qz-themes">${themes}</div>`
         + `<div class="qz-btns qz-stick"><button type="button" class="btn-bubo qz-btn" data-qa="pickgo"${QS.selT && QS.selL ? '' : ' disabled'}><i class="fa-solid fa-play"></i>${d.ids.length ? 'ПРОДОЛЖИТЬ' : 'НАЧАТЬ'}</button></div>`;
 }
@@ -437,7 +444,7 @@ function qzRenderDone() {
     QS.phase = 'done';
     const ok = d.res.filter(r => r === 1).length;
     body.innerHTML = qzHead() + qzProg(d, -1) + `<div class="qz-res"><div class="qz-big win"><i class="fa-solid fa-coins"></i></div>`
-        + `<div class="qz-rt win">+${d.earned} МОНЕТ</div><div class="qz-rd">На сегодня всё! Верных ответов: <b>${ok} из ${QUIZ_PER_DAY}</b>.<br>Всего монет: <b style="color:#FFD66B">${qzCoinsTotal()}</b></div>`
+        + `<div class="qz-rt win">+${d.earned} ${ruPlural(d.earned, ['МОНЕТА', 'МОНЕТЫ', 'МОНЕТ'])}</div><div class="qz-rd">На сегодня всё! Верных ответов: <b>${ok} из ${QUIZ_PER_DAY}</b>.<br>Всего монет: <b style="color:#FFD66B">${qzCoinsTotal()}</b></div>`
         + `<div class="qz-timer"><i class="fa-regular fa-clock"></i> Новые вопросы через ${qzUntilTomorrow()}</div></div>`
         + `<div class="qz-btns"><button type="button" class="qz-btn gold" data-qa="shop"><i class="fa-solid fa-store"></i>В ЛАВКУ</button>`
         + `<button type="button" class="qz-btn sec" data-qa="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button></div>`;
@@ -470,7 +477,7 @@ function qzRenderQ(reveal) {
     let note = '', btns = '';
     if (reveal) {
         const okA = pickL === corL;
-        note = okA ? `<div class="qz-note ok">Верно! +${di.coins} монет</div>` : (pickL ? '<div class="qz-note bad">Неверно</div>' : '<div class="qz-note bad">Время вышло</div>');
+        note = okA ? `<div class="qz-note ok">Верно! +${di.coins} ${ruPlural(di.coins, ['монета', 'монеты', 'монет'])}</div>` : (pickL ? '<div class="qz-note bad">Неверно</div>' : '<div class="qz-note bad">Время вышло</div>');
         const last = d.ids.length >= QUIZ_PER_DAY;
         btns = `<div class="qz-btns">${pickL ? `<button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid ${last ? 'fa-flag-checkered' : 'fa-forward'}"></i>${last ? 'ИТОГИ ДНЯ' : 'СЛЕДУЮЩИЙ ВОПРОС'}</button>` : ''}`
             + qzNavRow(true) + `</div>`;
