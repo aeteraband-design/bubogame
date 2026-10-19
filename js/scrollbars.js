@@ -19,16 +19,16 @@
     const rgb = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(','); };
     const items = L.map(o => ({ o, t: 0, a: 0, g: 0, fr: null, rgb: rgb(o.c) }));
     const vis = (el) => el && el.offsetParent !== null && el.getClientRects().length > 0 && !el.closest('.hidden');
-    // добавляем окну два слоя фона: полоска (2px, концы плавно скруглены) и мягкое овальное свечение — без обрезанных краёв
+    // добавляем окну два слоя фона: полоска (2px, концы плавно скруглены) и лёгкое ровное свечение по всей её длине
     function attach(it, fr) {
         if (it.fr === fr) return;
         it.fr = fr;
         const cs = getComputedStyle(fr), img = cs.backgroundImage, has = img && img !== 'none';
         const add = (mine, orig) => mine + (has && orig ? ', ' + orig : '');
         const set = (p, v) => fr.style.setProperty(p, v, 'important');
-        set('background-image', add('linear-gradient(to bottom,transparent,var(--sbC,transparent) 2px,var(--sbC,transparent) calc(100% - 2px),transparent), radial-gradient(farthest-side at 100% 50%,var(--sbG,transparent),transparent)', has ? img : ''));
-        set('background-position', add('right var(--sbX,0px) top var(--sbY,0px), right var(--sbX,0px) top var(--sbGY,0px)', cs.backgroundPosition));
-        set('background-size', add('2px var(--sbH,0px), 16px var(--sbGH,0px)', cs.backgroundSize));
+        set('background-image', add('linear-gradient(to bottom,transparent,var(--sbC,transparent) 2px,var(--sbC,transparent) calc(100% - 2px),transparent), linear-gradient(to left,var(--sbG,transparent),transparent)', has ? img : ''));
+        set('background-position', add('right var(--sbX,0px) top var(--sbY,0px), right var(--sbX,0px) top var(--sbY,0px)', cs.backgroundPosition));
+        set('background-size', add('2px var(--sbH,0px), 8px var(--sbH,0px)', cs.backgroundSize));
         set('background-repeat', add('no-repeat, no-repeat', cs.backgroundRepeat));
         set('background-origin', add('border-box, border-box', cs.backgroundOrigin));
         set('background-clip', add('border-box, border-box', cs.backgroundClip));
@@ -39,7 +39,7 @@
         const fr = sc && ((it.o.f && document.querySelector(it.o.f)) || sc);
         const show = vis(sc) && sc.scrollHeight - sc.clientHeight >= 4;
         const act = show && now - it.t < 700;   // листают сейчас: полоска ярче и светится, потом свечение плавно гаснет
-        const target = show ? (act ? 1 : 0.4) : 0, gt = act ? 1 : 0;
+        const target = show ? (act ? 1 : 0.45) : 0, gt = show ? (act ? 1 : 0.3) : 0;   // свечение всегда лёгкое, при прокрутке ярче
         it.a += (target - it.a) * (act ? 0.3 : 0.08); if (Math.abs(target - it.a) < 0.01) it.a = target;
         it.g += (gt - it.g) * (act ? 0.3 : 0.06); if (Math.abs(gt - it.g) < 0.01) it.g = gt;
         if (!fr) return false;
@@ -55,10 +55,8 @@
         fr.style.setProperty('--sbX', it.o.edge ? '2px' : '0px');
         fr.style.setProperty('--sbY', (pad + (len - h) * Math.min(1, Math.max(0, p))).toFixed(1) + 'px');
         fr.style.setProperty('--sbH', h.toFixed(1) + 'px');
-        fr.style.setProperty('--sbGY', (pad + (len - h) * Math.min(1, Math.max(0, p)) - 14).toFixed(1) + 'px');
-        fr.style.setProperty('--sbGH', (h + 28).toFixed(1) + 'px');
         fr.style.setProperty('--sbC', 'rgba(' + it.rgb + ',' + it.a.toFixed(3) + ')');
-        fr.style.setProperty('--sbG', 'rgba(' + it.rgb + ',' + (it.g * 0.45).toFixed(3) + ')');
+        fr.style.setProperty('--sbG', 'rgba(' + it.rgb + ',' + (it.g * 0.4).toFixed(3) + ')');
         return show && (act || it.a !== target || it.g !== gt) || (!show && (it.a > 0 || it.g > 0));
     }
     let raf = 0;
