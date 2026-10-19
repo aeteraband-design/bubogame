@@ -171,7 +171,7 @@ function drawScene() {
     if (!booting) {
     drawCrystals();   // огненные шары «Опасных труб» — за трубами: выныривают из одной и скрываются в другой
     if (typeof drawWater === 'function') drawWater();   // потоки «Воды из труб» — тоже за трубами
-    pipes.forEach(drawPipe);
+    if (isStartMenuOpen && typeof drawMenuPipes === 'function') drawMenuPipes(); else pipes.forEach(drawPipe);   // в меню — свои декоративные трубы вокруг логотипа
     if (typeof quizDrawPortal2D === 'function') quizDrawPortal2D();   // портал в квиз-мир — в проёме между трубами
     if (typeof drawWaterFront === 'function') drawWaterFront();   // пена и водяная пыль «Водонапора» — поверх труб
 

@@ -1100,3 +1100,38 @@ function drawSparkleStar(cx, cy, spikes, outerRadius, innerRadius, color, alpha)
     ctx.fill();
     ctx.restore();
 }
+
+// ===== v0.13.63: декоративные трубы в главном меню — логотип всегда пролетает в проёме =====
+let menuPipes = [];
+const MENU_PIPE = { w: 86, step: 262, speed: 1.2, lc: 0, lh: 0, t: 0 };
+function menuLogoBox() {   // центр и высота логотипа в мировых координатах (через долю от высоты холста — не зависит от зума)
+    const lg = document.querySelector('#startScreen > .menu-logo-wrap > div'), cv = document.getElementById('gameCanvas');
+    if (!lg || !cv) return;
+    const a = lg.getBoundingClientRect(), c = cv.getBoundingClientRect();
+    if (!c.height || !a.height) return;
+    MENU_PIPE.lc = ((a.top + a.height / 2) - c.top) / c.height * height;
+    MENU_PIPE.lh = a.height / c.height * height;
+}
+function menuPipeGap() { return Math.max(210, MENU_PIPE.lh + 150); }
+function menuPipeMake(x) {
+    const p = { x, width: MENU_PIPE.w, j: (Math.random() - 0.5) * 2, passed: true };
+    menuPipeFit(p); return p;
+}
+function menuPipeFit(p) {   // проём всегда по логотипу; небольшой сдвиг — только в пределах запаса, логотип не задевает
+    const g = menuPipeGap(), slack = Math.max(0, (g - MENU_PIPE.lh) / 2 - 55);
+    const c = MENU_PIPE.lc + p.j * Math.min(slack, 22);
+    p.gap = g; p.top = c - g / 2; p.bottom = height - (c + g / 2);   // bottom — высота нижней трубы от низа экрана
+}
+function drawMenuPipes() {
+    if (++MENU_PIPE.t % 15 === 1 || !MENU_PIPE.lh) menuLogoBox();
+    if (!MENU_PIPE.lh) return;
+    const v = MENU_PIPE.speed * dtMult * (window.__bgSpeed || 1);
+    menuPipes.forEach((p) => { p.x -= v; });
+    menuPipes = menuPipes.filter((p) => p.x + p.width > -20);
+    if (!menuPipes.length) { for (let x = width * 0.12; x < width + MENU_PIPE.step; x += MENU_PIPE.step) menuPipes.push(menuPipeMake(x)); }
+    while (menuPipes[menuPipes.length - 1].x < width + 20) menuPipes.push(menuPipeMake(menuPipes[menuPipes.length - 1].x + MENU_PIPE.step));
+    const sq = currentDifficultySqueeze, cf = currentCompressionFactor;
+    currentDifficultySqueeze = 0; currentCompressionFactor = 0;
+    try { menuPipes.forEach((p) => { menuPipeFit(p); drawPipe(p); }); }
+    finally { currentDifficultySqueeze = sq; currentCompressionFactor = cf; }
+}
