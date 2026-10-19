@@ -637,3 +637,5 @@ html #rouletteModal > .glass-panel { max-width: calc(380px * var(--menu-zoom, 1)
 /* v0.13.55: пять уровней в «Вопросах дня» — колонки равной ширины, подпись чуть мельче */
 #quizModal #qzWin .qz-lvls.n5{gap:5px}
 #quizModal #qzWin .qz-lvls.n5 .qz-lv b{font-size:9.5px;letter-spacing:0}
+/* v0.13.58: обводка вариантов ответа — в цвет темы, тусклее обводки карточки вопроса */
+#quizModal #qzWin .qz-o:not(.ok):not(.bad){border-color:color-mix(in srgb,var(--tc,#A878F5) 28%,transparent)}
