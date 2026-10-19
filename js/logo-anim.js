@@ -165,7 +165,7 @@
     const back = (t) => { t = Math.max(0, Math.min(1, t)); const c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
     const lerp = (a, b, t) => a + (b - a) * t;
     const DUR = 4.2;
-    let state = null, t0 = 0, raf = 0, nextAt = performance.now() + 5000, sparks = [], flags = {}, lastT = 0;
+    let state = null, t0 = 0, raf = 0, nextAt = performance.now() + 2500, sparks = [], flags = {}, lastT = 0;
 
     function canRun() {
         const ss = document.getElementById('startScreen');
@@ -318,7 +318,7 @@
         state = null; sparks = []; LS.stars = []; LS.acc = 0; lgOn(false); txtK(0);
         if (home) { setHome(1); setIcon(0, 0, 0); } else resetIcon();
         g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height);
-        nextAt = performance.now() + 4500 + Math.random() * 1000;   // джойстик ≈5 с, потом снова сова
+        nextAt = performance.now() + 2000 + Math.random() * 1000;   // джойстик 2–3 с, потом снова сова
     }
     function schedule() { if (!raf) raf = requestAnimationFrame(tick); }
     setInterval(() => { if (!state && !raf) schedule(); }, 1000);
