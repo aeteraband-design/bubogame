@@ -765,7 +765,7 @@ function closeQuiz(e) {
     QS.phase = 'idle';
     if (qzRoot) { qzRoot.classList.add('hidden'); qzRoot.classList.remove('pay'); }
     quizMenuBadge();
-    try { if (AudioFX.mode === 'quiz' || AudioFX._pendMode === 'quiz') AudioFX.setMode(qzPrevMusic && qzPrevMusic !== 'quiz' && qzPrevMusic !== 'shop' ? qzPrevMusic : 'menu', { fade: true }); } catch (er) {}
+    try { if (AudioFX.mode === 'quiz' || AudioFX._pendMode === 'quiz') AudioFX.setMode((AudioFX._wantMode && AudioFX._wantMode()) || (qzPrevMusic && qzPrevMusic !== 'quiz' && qzPrevMusic !== 'shop' ? qzPrevMusic : 'menu'), { fade: true }); } catch (er) {}
     try { updateHUDAll(); if (typeof shopSyncBtn === 'function') shopSyncBtn(); } catch (er) {}
 }
 function quizMenuBadge() {

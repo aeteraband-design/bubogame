@@ -398,6 +398,41 @@ const AudioFX = {
     _transSparkle(t, p) {   // россыпь искорок поверх последней ноты (лавка, рулетка)
         [1567.98, 2093.00, 2637.02, 3135.96].forEach((f, i) => this._transNote(t + 0.05 + i * 0.045, f * p, 0.18, 'bell', false));
     },
+    // какая музыка должна звучать по тому, что сейчас на экране (null — не трогаем: открыто окно со своей музыкой)
+    _wantMode() {
+        const vis = (id) => { const el = document.getElementById(id); return !!(el && !el.classList.contains('hidden') && el.offsetParent !== null); };
+        if (['quizModal', 'shopModal', 'rouletteModal', 'rulesModal', 'settingsModal', 'gameOverModal', 'winModal', 'bootLoader'].some(vis)) return null;
+        const ss = document.getElementById('startScreen');
+        if (ss && !ss.classList.contains('hidden')) return 'menu';
+        return 'game';
+    },
+    // страховка от «застревания»: потерянный таймер перехода, не та музыка для экрана, громкость, упавшая в ноль
+    _watchdog() {
+        try {
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            const t = this.ctx.currentTime;
+            if (this._stopAt && !this._pendMode) this._stopAt = 0;
+            if (this._pendMode && this._stopAt && t > this._stopAt + 1.5) {   // таймер перехода потерялся (вкладка спала) — доводим переход сами
+                clearTimeout(this._fadeT);
+                const m = this._pendMode; this._pendMode = null; this._stopAt = 0;
+                this.mode = m; this.step = 0; this.stopMusic(); this.startMusicLoop(); this._fadeIn();
+                return;
+            }
+            if (this._pendMode) return;
+            if (performance.now() < (this._silentUntil || 0)) return;   // пауза после крушения — так задумано
+            if (!this.musicTimer && !(window.__musicHold && document.getElementById('bootLoader'))) { this.startMusicLoop(); return; }   // музыка остановилась и не запустилась снова
+            const want = this._wantMode();
+            if (want && this.mode !== want && (this.mode === 'menu' || this.mode === 'game' || this.mode === 'library' || this.mode === 'workshop' || this.mode === 'quiz' || this.mode === 'shop')) {
+                this.setMode(want, { fade: true });
+                return;
+            }
+            const g = this.musicGain && this.musicGain.gain;
+            if (g && !this.isMusicMuted && this.musicVolume > 0.03 && g.value < this.musicVolume * 0.05) {
+                this._lowN = (this._lowN || 0) + 1;
+                if (this._lowN >= 2) { this._lowN = 0; this._fadeIn(); }   // громкость «залипла» внизу — плавно возвращаем
+            } else this._lowN = 0;
+        } catch (e) {}
+    },
     _fadeIn() {
         try {
             const now = this.ctx.currentTime, g = this.musicGain.gain;
@@ -1760,3 +1795,5 @@ const AudioFX = {
         };
     });
 })();
+// страховка музыки: раз в секунду проверяем, что она играет и та, что нужна экрану
+setInterval(() => { try { AudioFX._watchdog(); } catch (e) {} }, 1000);

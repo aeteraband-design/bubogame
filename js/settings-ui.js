@@ -49,7 +49,7 @@
         const v = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
         const on = (id) => { const el = document.getElementById(id); return el ? (el.classList.contains('translate-x-5') ? 1 : 0) : ''; };
         return [v('musicVolumeSlider'), v('sfxVolumeSlider'), v('gfxSlider'),
-            on('settingsMusicThumb'), on('settingsSfxThumb'), on('settingsVibeThumb'), on('settingsHudSwapThumb'), on('fullscreenThumb')].join('|');
+            on('settingsMusicThumb'), on('settingsSfxThumb'), on('settingsVibeThumb'), on('settingsHudSwapThumb'), on('settingsTimerSideThumb'), on('fullscreenThumb')].join('|');
     };
     let snap = null;
     const check = () => { if (snap === null) return; save.disabled = state() === snap; };

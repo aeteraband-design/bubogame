@@ -234,7 +234,9 @@ if (sfxVolumeSlider) {
 // верхняя панель в игре: по умолчанию жизни, перья и вопросы — слева, пауза и музыка — справа; тумблер в настройках меняет местами
 const HUD_SWAP_KEY = 'bubo_hud_swap';
 function hudSwapGet() { try { const v = localStorage.getItem(HUD_SWAP_KEY); return v === null ? true : v === '1'; } catch (e) { return true; } }
-function applyHudSwap() { const on = hudSwapGet(), t = document.getElementById('topHud'); if (t) t.classList.toggle('hud-swap', on); document.documentElement.classList.toggle('hud-ll', on); }   // hud-ll: жизни и таймеры слева, уведомления о бонусах — справа
+const TIMER_SIDE_KEY = 'bubo_timer_side';   // таймеры эффектов: '1' — слева, '0' — справа; пока не выбрано — там же, где жизни
+function timerSideGet() { try { const v = localStorage.getItem(TIMER_SIDE_KEY); return v === null ? hudSwapGet() : v === '1'; } catch (e) { return true; } }
+function applyHudSwap() { const on = hudSwapGet(), t = document.getElementById('topHud'); if (t) t.classList.toggle('hud-swap', on); document.documentElement.classList.toggle('hud-ll', timerSideGet()); }   // hud-ll: жизни и таймеры слева, уведомления о бонусах — справа
 applyHudSwap();
 {
     // тумблер «Где жизни в игре»: влево — слева (по умолчанию), вправо — справа
@@ -246,8 +248,25 @@ applyHudSwap();
         if (sl) { sl.classList.toggle('text-white', left); sl.classList.toggle('text-purple-300', !left); sl.style.opacity = left ? '1' : '.55'; }
         if (sr) { sr.classList.toggle('text-white', !left); sr.classList.toggle('text-purple-300', left); sr.style.opacity = left ? '.55' : '1'; }
     };
-    const setSide = (left) => { try { localStorage.setItem(HUD_SWAP_KEY, left ? '1' : '0'); } catch (er) {} paint(); applyHudSwap(); try { _hudFitKey = ''; fitTopHud(); } catch (er) {} };
+    const setSide = (left) => { try { localStorage.setItem(HUD_SWAP_KEY, left ? '1' : '0'); } catch (er) {} paint(); applyHudSwap(); try { if (window.__paintTimerSide) window.__paintTimerSide(); } catch (er) {} try { _hudFitKey = ''; fitTopHud(); } catch (er) {} };
     if (hb) { paint(); hb.addEventListener('click', (e) => { e.stopPropagation(); setSide(!hudSwapGet()); }); }
+    if (sl) sl.addEventListener('click', (e) => { e.stopPropagation(); setSide(true); });
+    if (sr) sr.addEventListener('click', (e) => { e.stopPropagation(); setSide(false); });
+}
+
+{
+    // тумблер «Где таймеры эффектов»: таймеры с выбранной стороны, уведомления о бонусах — с другой
+    const hb = document.getElementById('settingsTimerSideToggle'), ht = document.getElementById('settingsTimerSideThumb');
+    const sl = document.getElementById('timerSideL'), sr = document.getElementById('timerSideR');
+    const paint = () => {
+        const left = timerSideGet();
+        if (ht) { ht.classList.toggle('translate-x-0', left); ht.classList.toggle('translate-x-5', !left); }
+        if (sl) { sl.classList.toggle('text-white', left); sl.classList.toggle('text-purple-300', !left); sl.style.opacity = left ? '1' : '.55'; }
+        if (sr) { sr.classList.toggle('text-white', !left); sr.classList.toggle('text-purple-300', left); sr.style.opacity = left ? '.55' : '1'; }
+    };
+    window.__paintTimerSide = paint;
+    const setSide = (left) => { try { localStorage.setItem(TIMER_SIDE_KEY, left ? '1' : '0'); } catch (er) {} paint(); applyHudSwap(); try { lastBuffStateKey = ''; } catch (er) {} };
+    if (hb) { paint(); hb.addEventListener('click', (e) => { e.stopPropagation(); setSide(!timerSideGet()); }); }
     if (sl) sl.addEventListener('click', (e) => { e.stopPropagation(); setSide(true); });
     if (sr) sr.addEventListener('click', (e) => { e.stopPropagation(); setSide(false); });
 }

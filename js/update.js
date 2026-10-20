@@ -626,7 +626,7 @@ function updateBuffHUD() {
     if (crystalTime > 0) {
         activeBuffs.push({
             key: 'crystal', left: crystalTime, text: `ОПАСНЫЕ ТРУБЫ: ${Math.ceil(crystalTime / 60)}с`,
-            color: '#FF6A3D',
+            color: '#FF4A3D',   // тот же красный, что у подсказки при взятии
             icon: 'fa-fire'
         });
     }
@@ -1015,8 +1015,9 @@ function handleRunFailure(reason, opts) {
     clearAllBuffs();
     triggerOwlFeatherExplosion();
     Haptics.death();
-    AudioFX.stopMusic();
     const delay = (opts && opts.delay) || 750;
+    AudioFX._silentUntil = performance.now() + delay + 1500;   // тишина до экрана поражения — страховка музыки её не прерывает
+    AudioFX.stopMusic();
 
     setTimeout(() => {
         attempts = Math.max(0, attempts - 1);

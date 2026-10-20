@@ -337,30 +337,43 @@
     // Список можно пополнять откуда угодно: window.LOGO_HINTS.push({ id: 'x', text: '…' или () => '…' }).
     const plN = (n, f) => f[(n % 10 === 1 && n % 100 !== 11) ? 0 : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) ? 1 : 2];
     const cfg = (k, d) => { try { return (typeof ADMIN_CFG !== 'undefined' && ADMIN_CFG[k]) || d; } catch (e) { return d; } };
+    const qpa = () => cfg('questionsPerAttempt', 200);
     const HINTS = window.LOGO_HINTS = window.LOGO_HINTS || [
-        { id: 'shop', text: 'В лавке можно купить любой бонус для полёта!' },
-        { id: 'shz1', text: () => { const n = cfg('shazamEvery', 4); return `Каждое ${n}-е ускорение включает ШАЗАМ!`; } },
-        { id: 'shz2', text: 'В ШАЗАМе сова летит сквозь трубы и притягивает значки.' },
-        { id: 'shz3', text: 'ШАЗАМ кончается — успей вылететь из трубы!' },
-        { id: 'feat', text: () => { const n = cfg('feathersForMax', 6); return `${n} ${plN(n, ['волшебное перо', 'волшебных пера', 'волшебных перьев'])} — запас сил +20%.`; } },
-        { id: 'shld', text: 'Щит спасает от удара и отбивает огненные шары.' },
-        { id: 'star', text: 'Секретная звезда — сюрприз: бонус или штраф!' },
-        { id: 'food', text: 'Пицца, бургер и хот-дог — по ½ сердца.' },
-        { id: 'coin', text: 'Каждые 50 вопросов в полёте — монеты или попытка!' },
-        { id: 'quiz', text: 'Вопросы дня — новые каждый день и монеты за ответы.' },
-        { id: 'roul', text: 'Собрал все темы — крути рулетку призов!' },
-        { id: 'paus', text: 'Пауза вверху экрана — потом продолжишь с того же места.' },
-        { id: 'rule', text: 'В правилах — всё про бонусы и опасности.' },
-        { id: 'sett', text: 'В настройках можно тише музыку или проще графику.' },
-        { id: 'rain', text: 'В дождь сова мокнет и может обледенеть. Щит спасает!' },
-        { id: 'watr', text: 'Водонапор? На ускорении сова режет воду.' },
-        { id: 'lowh', text: 'Полтора сердца или меньше — следующий удар последний!' },
-        { id: 'stam', text: 'Кончились силы — минус сердце. Лови перья и еду!' },
-        { id: 'them', text: 'Собирай темы — с ними растёт уровень сложности.' },
-        { id: 'hit', text: 'Удар о трубу — минус сердце и 2 секунды неуязвимости.' }
+        { id: 'shop', text: 'В лавке за монеты можно купить бонус на старт полёта.' },
+        { id: 'shz1', text: () => { const n = cfg('shazamEvery', 4); return `Собери ${n} ${plN(n, ['ускорение', 'ускорения', 'ускорений'])} — включится ШАЗАМ!`; } },
+        { id: 'shz2', text: 'В ШАЗАМе сова летит сквозь трубы и сама притягивает значки.' },
+        { id: 'shz3', text: 'Конец ШАЗАМа — успей вылететь из трубы, пока идёт отсчёт!' },
+        { id: 'feat', text: () => { const n = cfg('feathersForMax', 6); return `Собери ${n} ${plN(n, ['волшебное перо', 'волшебных пера', 'волшебных перьев'])} — запас сил вырастет на 20%.`; } },
+        { id: 'shld', text: () => `Щит на ${cfg('shieldSec', 10)} с: сова отскакивает от труб и не теряет сердца.` },
+        { id: 'star', text: 'Секретная звезда — сюрприз: может дать бонус, а может штраф.' },
+        { id: 'food', text: 'Пицца, бургер и хот-дог возвращают по ½ сердца.' },
+        { id: 'coin', text: 'За каждые 50 вопросов в полёте — монеты.' },
+        { id: 'qatt', text: () => `За каждые ${qpa()} вопросов в полёте — +1 попытка.` },
+        { id: 'quiz', text: 'Отвечай на «Вопросы дня» — за верные ответы дают монеты.' },
+        { id: 'roul', text: 'Собери все темы — получишь вращение рулетки призов.' },
+        { id: 'paus', text: 'Кнопка паузы вверху: выйдешь в меню, а потом продолжишь с того же места.' },
+        { id: 'rule', text: 'Не знаешь, что делает значок? Загляни в «Правила».' },
+        { id: 'sett', text: 'В «Настройках» можно сделать музыку тише или графику проще.' },
+        { id: 'rain', text: 'В дождь сова мокнет, а мокрая на морозе обрастает льдом.' },
+        { id: 'watr', text: 'Водонапор сносит сову. На ускорении она прорезает воду.' },
+        { id: 'fire', text: 'Опасные трубы стреляют огнём. Щит отбивает шары.' },
+        { id: 'lowh', text: 'Осталось полтора сердца или меньше — следующий удар закончит полёт.' },
+        { id: 'stam', text: 'Кончились силы — сова теряет сердце. Лови перья и еду!' },
+        { id: 'them', text: 'Собирай значки тем — с ними растёт уровень сложности.' },
+        { id: 'hit', text: 'Удар о трубу — минус сердце и 2 секунды неуязвимости.' },
+        { id: 'save', text: 'Прогресс сохраняется: вернёшься завтра — продолжишь с того же уровня.' }
     ];
     const GREET = { id: 'hello', text: 'Привет!' };
-    const START = { id: 'start', text: 'Жми «Начать полёт» внизу экрана!' };
+    // подсказка про кнопку внизу — с тем же названием, что сейчас на кнопке
+    const btnName = () => { const el = document.getElementById('startBtnLabel'); const t = ((el && el.textContent) || 'Начать полёт').trim().toLowerCase(); return (t.charAt(0).toUpperCase() + t.slice(1)).replace(/полет/g, 'полёт'); };
+    const START = { id: 'start', text: () => `Жми «${btnName()}» внизу экрана!` };
+    const NOATT = [
+        { id: 'na1', text: 'Попытки на сегодня кончились. Новые будут завтра!' },
+        { id: 'na2', text: 'Нет попыток? Купи ещё в лавке за монеты.' },
+        { id: 'na3', text: 'Монеты на попытки — за верные ответы в «Вопросах дня».' }
+    ];
+    let naI = 0;
+    const noAttempts = () => { try { return typeof attempts === 'number' && attempts <= 0; } catch (e) { return false; } };
     const LS_GET = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
     const LS_SET = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
     const dayKey = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
@@ -382,13 +395,11 @@
         // облачко живёт ЗА плиткой логотипа: вылетает из-за неё и прячется обратно
         + Q + '.lg-say{position:absolute;z-index:-1;pointer-events:none;width:0;height:0}'
         // аккуратная подсказка: скруглённая плашка в цвет состояния совы и маленький уголок-хвостик к сове
-        + Q + '.lg-say-b{--bg:color-mix(in srgb,var(--sc,#C4A1FF) 30%,#fff);--bgB:color-mix(in srgb,var(--sc,#C4A1FF) 42%,#fff);position:absolute;left:0;bottom:0;box-sizing:border-box;width:max-content;padding:6px 11px 7px;border-radius:12px;'
+        + Q + '.lg-say-b{--bg:color-mix(in srgb,var(--sc,#C4A1FF) 30%,#fff);--bgB:color-mix(in srgb,var(--sc,#C4A1FF) 42%,#fff);position:absolute;left:0;bottom:0;box-sizing:border-box;width:max-content;padding:6px 8px 7px;border-radius:12px;'
         + 'font:500 11.5px/1.3 Onest,sans-serif;letter-spacing:.01em;color:color-mix(in srgb,var(--sc,#C4A1FF) 28%,#1A0630);text-align:center;white-space:normal;'
         + 'background:linear-gradient(180deg,color-mix(in srgb,var(--sc,#C4A1FF) 16%,#fff) 0%,var(--bg) 55%,var(--bgB) 100%);border:0;'
         // объём: светлый блик сверху внутри, мягкая цветная тень-свечение снизу в цвет состояния совы
-        + 'box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 3px color-mix(in srgb,var(--sc,#C4A1FF) 22%,transparent);'
-        // контур, цветная тень снизу и свечение — через drop-shadow: ложатся и на плашку, и на хвостик одинаково
-        + 'filter:drop-shadow(0 0 .6px color-mix(in srgb,var(--sc,#C4A1FF) 70%,transparent)) drop-shadow(0 5px 6px color-mix(in srgb,var(--sc,#C4A1FF) 75%,transparent)) drop-shadow(0 0 7px color-mix(in srgb,var(--sc,#C4A1FF) 35%,transparent));'
+        + 'box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 3px color-mix(in srgb,var(--sc,#C4A1FF) 22%,transparent),0 0 0 1px color-mix(in srgb,var(--sc,#C4A1FF) 35%,transparent),0 7px 14px -5px color-mix(in srgb,var(--sc,#C4A1FF) 85%,transparent),0 0 12px color-mix(in srgb,var(--sc,#C4A1FF) 30%,transparent);'
         + 'transform-origin:var(--tx,16px) calc(100% + 9px);opacity:0;transform:translateY(26px) scale(.15) rotate(-14deg);will-change:transform,opacity}'
         // хвостик-«хоботок»: треугольник со скруглёнными углами, кончик чуть ниже и левее — к голове совы
         + Q + '.lg-say-b::after{content:"";position:absolute;left:calc(var(--tx,16px) - 3px);bottom:-8px;width:14px;height:10px;background:var(--bgB);'
@@ -411,10 +422,12 @@
     function pickSay() {   // какую реплику скажет сова при этом появлении (или промолчит)
         seenN++;
         if (greetPending) { greetPending = false; LS_SET('bubo_hello_day', dayKey()); lastShown = true; return GREET; }
-        if (window.__saySoon) { window.__saySoon = false; lastShown = true; return nextHint(); }   // вернулся из полёта
-        lastShown = !lastShown;
-        if (!lastShown) return null;   // через раз — без реплики
-        if (LS_GET('bubo_first_game_done') !== '1' && seenN >= 3 && (startTg = !startTg)) return START;   // новичок ещё не летал — через раз с обычными
+        const back = window.__saySoon; window.__saySoon = false;
+        if (!back) { lastShown = !lastShown; if (!lastShown) return null; }   // через раз — без реплики (после полёта — сразу)
+        lastShown = true;
+        if (noAttempts()) return NOATT[naI++ % NOATT.length];   // попытки кончились — подсказываем, где взять
+        const fresh = LS_GET('bubo_first_game_done') !== '1';
+        if ((fresh && seenN >= 3 && (startTg = !startTg)) || (back && Math.random() < 0.5)) return START;   // какую кнопку нажать
         return nextHint();
     }
     // ставим облачко: хвостик из кружочков ведёт к голове совы, плашка — выше и правее плитки, в пределах экрана и ниже кнопок верхней панели
@@ -430,6 +443,14 @@
         // ширина плашки: короткая реплика — в одну строку, длинная — не шире ~230px и края экрана
         const maxW = Math.max(110, Math.min(200, W - 8));
         sayB.style.maxWidth = maxW + 'px';
+        // плашка по ширине самой длинной строки: слева и справа от текста — столько же места, сколько сверху и снизу
+        sayB.style.width = '';
+        try {
+            const rg = document.createRange(); rg.selectNodeContents(sayT);
+            const bw = sayB.getBoundingClientRect().width, k = bw ? sayB.offsetWidth / bw : 1;
+            let mx = 0; for (const r of rg.getClientRects()) mx = Math.max(mx, r.width);
+            if (mx > 0) sayB.style.width = Math.min(maxW, Math.ceil(mx * k) + 17) + 'px';
+        } catch (e) {}
         const pw = sayB.offsetWidth, ph = sayB.offsetHeight;
         sayB.classList.toggle('ml', ph > 40);
         let px = Math.min(W - 4 - pw, Math.max(4 - ax, -pw * 0.12));   // левый край плашки относительно хвостика

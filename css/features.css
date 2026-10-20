@@ -677,3 +677,8 @@ html #rouletteModal > .glass-panel { max-width: calc(380px * var(--menu-zoom, 1)
 #qzWin .qz-x, #shWin .sh-x, #shWin .sh-coins, #rlWin .win-x, #rwWindow #closeRouletteBtn, #goWin .win-x,
 #shWin .sh-foot, #qzWin .qz-stick, #rlWin .rl-btns { will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 #rwWindow { --xc: #A878F5 !important; }   /* v0.13.89: крестик рулетки — в цвет обводки окна */
+/* v0.14.3: экран потерянной попытки — подпись сверху в одну строку, под ней иконка и число, всё по левому краю */
+#goWin .go-st { grid-template-columns: auto 1fr; grid-template-rows: auto auto; row-gap: 6px; column-gap: 7px; align-items: center; justify-items: start; text-align: left; padding: 9px 9px 10px; }
+#goWin .go-st > span { grid-row: 1; grid-column: 1 / 3; align-self: start; white-space: nowrap; font-size: 8.2px; letter-spacing: .01em; color: color-mix(in srgb, var(--c) 45%, #E9D5FF); }
+#goWin .go-st > i { grid-row: 2; grid-column: 1; width: 24px; height: 24px; border-radius: 8px; font-size: 11.5px; }
+#goWin .go-st > b { grid-row: 2; grid-column: 2; align-self: center; font-size: 16px; }

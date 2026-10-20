@@ -13,24 +13,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BUBOGAME v0.10</title>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.14.2">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.14.3">
     <!-- Onest: локальные файлы -->
-    <link rel="stylesheet" href="css/fonts.css?v=0.14.2">
+    <link rel="stylesheet" href="css/fonts.css?v=0.14.3">
 
-    <script src="js/music-hold.js?v=0.14.2"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.14.2">
+    <script src="js/music-hold.js?v=0.14.3"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.14.3">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.14.2" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.14.3" id="adminStyle">
     <!-- Tailwind: готовый файл стилей вместо онлайн-компилятора (тот следил за каждым изменением страницы и пересобирал стили прямо во время игры) -->
-    <link rel="stylesheet" href="css/tailwind.css?v=0.14.2">
+    <link rel="stylesheet" href="css/tailwind.css?v=0.14.3">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.14.2">
-    <link rel="stylesheet" href="css/features.css?v=0.14.2">
-    <link rel="stylesheet" href="css/rules.css?v=0.14.2">
-    <link rel="stylesheet" href="css/settings.css?v=0.14.2">
+    <link rel="stylesheet" href="css/boot.css?v=0.14.3">
+    <link rel="stylesheet" href="css/features.css?v=0.14.3">
+    <link rel="stylesheet" href="css/rules.css?v=0.14.3">
+    <link rel="stylesheet" href="css/settings.css?v=0.14.3">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -46,10 +46,10 @@
             </div>
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
-        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.14.2</div>
+        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.14.3</div>
     </div>
     <div id="menuHalo"><div class="mh"></div></div>   <!-- свечение совы с экрана загрузки остаётся и в главном меню -->
-    <script src="js/boot.js?v=0.14.2"></script>
+    <script src="js/boot.js?v=0.14.3"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 overflow-y-auto custom-scroll">
@@ -94,16 +94,16 @@
 
                 <div id="statsCard" class="hidden glass-panel-menu border-[#FE7600]/45 rounded-2xl p-3.5 shadow-xl text-left space-y-2">
                     <div class="flex justify-between items-center text-[11px] text-[#FE7600] font-black">
-                        <span class="uppercase tracking-wider font-black"><i class="fa-solid fa-chart-line mr-1"></i> Прогресс</span>
-                        <div id="menuAttempts" class="flex items-center space-x-1 text-purple-300 uppercase tracking-tight shrink-0"><i class="fa-solid fa-rotate-right text-[10px] text-[#FE7600]"></i><span class="text-[10px] font-black">ПОПЫТКИ: <strong id="menuAttemptsVal" class="text-white font-black text-[12px]">2</strong></span></div>
+                        <span class="uppercase tracking-wider font-black" style="color:#fff"><i class="fa-solid fa-chart-line mr-1" style="color:#FE7600"></i> Прогресс</span>
+                        <div id="menuAttempts" class="flex items-center space-x-1 text-purple-300 uppercase tracking-tight shrink-0"><i class="fa-solid fa-rotate-right text-[10px] text-[#FE7600]"></i><span class="text-[10px] font-black">ПОПЫТКИ: <strong id="menuAttemptsVal" class="font-black text-[12px]" style="color:#FE7600">2</strong></span></div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 text-purple-200">
                         <div class="bg-[#140326]/80 px-2.5 py-1 rounded-xl border border-purple-900/50 flex justify-between items-center whitespace-nowrap">
-                            <span class="text-[11px]" style="color:#FDBA74">Вопросы:</span>
+                            <span class="text-[11px] font-bold" style="color:#FE7600">Вопросы:</span>
                             <span id="menuScore" class="text-[13px] font-black ml-1" style="color:#FE7600">0</span>
                         </div>
                         <div class="bg-[#140326]/80 px-2.5 py-1 rounded-xl border border-purple-900/50 flex justify-between items-center whitespace-nowrap">
-                            <span class="text-[11px]" style="color:#C9A4FB">Темы:</span>
+                            <span class="text-[11px] font-bold" style="color:#A855F7">Темы:</span>
                             <span id="menuTokens" class="text-[13px] font-black ml-1" style="color:#A855F7">0 / 70</span>
                         </div>
                     </div>
@@ -248,7 +248,7 @@
                     </div>
                     <div id="attemptsBadge" class="flex items-center space-x-1 text-purple-300 uppercase tracking-tight shrink-0 ml-1">
                         <i class="fa-solid fa-rotate-right text-[8px] text-[#FE7600]"></i>
-                        <span class="font-black">ПОПЫТКИ: <strong id="attemptsVal" class="text-white font-black">2</strong></span>
+                        <span class="font-black">ПОПЫТКИ: <strong id="attemptsVal" class="font-black" style="color:#FE7600">2</strong></span>
                     </div>
                 </div>
 
@@ -368,6 +368,18 @@
                         <span id="hudSideL" class="font-black text-white">Слева</span>
                         <button id="settingsHudSwapToggle" type="button" class="st-sw w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors shrink-0"><div id="settingsHudSwapThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-0 transition-transform"></div></button>
                         <span id="hudSideR" class="font-black text-purple-300">Справа</span>
+                    </div>
+                </div>
+
+                <!-- Где таймеры эффектов (и уведомления о бонусах — с другой стороны) -->
+                <div class="st-row" style="--c:#FACC15">
+                    <div class="st-line">
+                        <span class="st-lbl"><span class="st-ic"><i class="fa-solid fa-stopwatch"></i></span>Где таймеры эффектов</span>
+                    </div>
+                    <div class="st-side">
+                        <span id="timerSideL" class="font-black text-white">Слева</span>
+                        <button id="settingsTimerSideToggle" type="button" class="st-sw w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors shrink-0"><div id="settingsTimerSideThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-0 transition-transform"></div></button>
+                        <span id="timerSideR" class="font-black text-purple-300">Справа</span>
                     </div>
                 </div>
 
@@ -542,50 +554,50 @@
         </div>
     </div>
 
-    <script src="js/audio.js?v=0.14.2"></script>
-    <script src="js/game-core.js?v=0.14.2"></script>
-    <script src="js/owl.js?v=0.14.2"></script>
-    <script src="js/hud.js?v=0.14.2"></script>
-    <script src="js/scenery.js?v=0.14.2"></script>
-    <script src="js/items.js?v=0.14.2"></script>
-    <script src="js/shazam.js?v=0.14.2"></script>
-    <script src="js/crystals.js?v=0.14.2"></script>
-    <script src="js/water.js?v=0.14.2"></script>
-    <script src="js/menu-fx.js?v=0.14.2"></script>
-    <script src="js/quiz.js?v=0.14.2"></script>
-    <script src="js/quiz-bank.js?v=0.14.2"></script>
-    <script src="quiz-new/music.js?v=0.14.2"></script>
-    <script src="quiz-new/kino.js?v=0.14.2"></script>
-    <script src="quiz-new/series.js?v=0.14.2"></script>
-    <script src="quiz-new/cartoons.js?v=0.14.2"></script>
-    <script src="quiz-new/games.js?v=0.14.2"></script>
-    <script src="quiz-new/memes.js?v=0.14.2"></script>
-    <script src="quiz-new/hp.js?v=0.14.2"></script>
-    <script src="quiz-new/lit.js?v=0.14.2"></script>
-    <script src="quiz-new/history.js?v=0.14.2"></script>
-    <script src="quiz-new/geo.js?v=0.14.2"></script>
-    <script src="quiz-new/chem.js?v=0.14.2"></script>
-    <script src="quiz-new/phys.js?v=0.14.2"></script>
-    <script src="quiz-new/space.js?v=0.14.2"></script>
-    <script src="quiz-new/nature.js?v=0.14.2"></script>
-    <script src="quiz-new/sport.js?v=0.14.2"></script>
-    <script src="quiz-new/food.js?v=0.14.2"></script>
-    <script src="quiz-new/art.js?v=0.14.2"></script>
-    <script src="quiz-new/humor.js?v=0.14.2"></script>
-    <script src="js/quiz-bank-build.js?v=0.14.2"></script>
-    <script src="js/shop.js?v=0.14.2"></script>
-    <script src="js/weather.js?v=0.14.2"></script>
-    <script src="js/update.js?v=0.14.2"></script>
-    <script src="js/render.js?v=0.14.2"></script>
-    <script src="js/wheel.js?v=0.14.2"></script>
-    <script src="js/ui.js?v=0.14.2"></script>
-    <script src="js/rules.js?v=0.14.2"></script>
-<script src="js/admin.js?v=0.14.2"></script>
-<script src="js/text-measure.js?v=0.14.2"></script>
-<script src="js/fullscreen.js?v=0.14.2"></script>
-<script src="js/settings-ui.js?v=0.14.2"></script>
-<script src="js/exit-confirm.js?v=0.14.2"></script>
-<script src="js/logo-anim.js?v=0.14.2"></script>
-<script src="js/scrollbars.js?v=0.14.2"></script>
+    <script src="js/audio.js?v=0.14.3"></script>
+    <script src="js/game-core.js?v=0.14.3"></script>
+    <script src="js/owl.js?v=0.14.3"></script>
+    <script src="js/hud.js?v=0.14.3"></script>
+    <script src="js/scenery.js?v=0.14.3"></script>
+    <script src="js/items.js?v=0.14.3"></script>
+    <script src="js/shazam.js?v=0.14.3"></script>
+    <script src="js/crystals.js?v=0.14.3"></script>
+    <script src="js/water.js?v=0.14.3"></script>
+    <script src="js/menu-fx.js?v=0.14.3"></script>
+    <script src="js/quiz.js?v=0.14.3"></script>
+    <script src="js/quiz-bank.js?v=0.14.3"></script>
+    <script src="quiz-new/music.js?v=0.14.3"></script>
+    <script src="quiz-new/kino.js?v=0.14.3"></script>
+    <script src="quiz-new/series.js?v=0.14.3"></script>
+    <script src="quiz-new/cartoons.js?v=0.14.3"></script>
+    <script src="quiz-new/games.js?v=0.14.3"></script>
+    <script src="quiz-new/memes.js?v=0.14.3"></script>
+    <script src="quiz-new/hp.js?v=0.14.3"></script>
+    <script src="quiz-new/lit.js?v=0.14.3"></script>
+    <script src="quiz-new/history.js?v=0.14.3"></script>
+    <script src="quiz-new/geo.js?v=0.14.3"></script>
+    <script src="quiz-new/chem.js?v=0.14.3"></script>
+    <script src="quiz-new/phys.js?v=0.14.3"></script>
+    <script src="quiz-new/space.js?v=0.14.3"></script>
+    <script src="quiz-new/nature.js?v=0.14.3"></script>
+    <script src="quiz-new/sport.js?v=0.14.3"></script>
+    <script src="quiz-new/food.js?v=0.14.3"></script>
+    <script src="quiz-new/art.js?v=0.14.3"></script>
+    <script src="quiz-new/humor.js?v=0.14.3"></script>
+    <script src="js/quiz-bank-build.js?v=0.14.3"></script>
+    <script src="js/shop.js?v=0.14.3"></script>
+    <script src="js/weather.js?v=0.14.3"></script>
+    <script src="js/update.js?v=0.14.3"></script>
+    <script src="js/render.js?v=0.14.3"></script>
+    <script src="js/wheel.js?v=0.14.3"></script>
+    <script src="js/ui.js?v=0.14.3"></script>
+    <script src="js/rules.js?v=0.14.3"></script>
+<script src="js/admin.js?v=0.14.3"></script>
+<script src="js/text-measure.js?v=0.14.3"></script>
+<script src="js/fullscreen.js?v=0.14.3"></script>
+<script src="js/settings-ui.js?v=0.14.3"></script>
+<script src="js/exit-confirm.js?v=0.14.3"></script>
+<script src="js/logo-anim.js?v=0.14.3"></script>
+<script src="js/scrollbars.js?v=0.14.3"></script>
 </body>
 </html>
