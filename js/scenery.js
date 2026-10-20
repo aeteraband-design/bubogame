@@ -419,13 +419,22 @@ function drawCity() {
                 }
             }
             ctx.globalAlpha = 1;
-            if (moonLit > 0.03 && L.bodies) {                       // светлые боковые грани домов становятся ярче на 2–3% к последнему уровню
-                ctx.fillStyle = `rgba(200, 175, 255, ${(0.03 * moonLit).toFixed(4)})`;
+            // светлые боковые грани домов (объём) реагируют на луну: пока луна низко у домов — грани вдали темнее,
+            // а рядом с луной заметно ярче (мягкое пятно); луна поднимается — свет ровнее и ярче везде. В дождь — свои засветы (weather.js)
+            const dryK = (typeof stormCover === 'number' && typeof stormSmooth === 'function') ? 1 - stormSmooth(0.2, 1, stormCover) : 1;
+            if (L.bodies && dryK > 0.02) {
+                const mp = window.__moonPos, mx = mp ? mp[0] + mp[2] / 2 : width * 0.66;
+                const low = 1 - moonLit, R = 150 + 260 * moonLit, far = li === 0 && citySprites.length > 1;
+                const lay = far ? 0.75 : 1;
                 for (let x = -off; x < width; x += L.tileW) {
                     if (x > width) break;
                     for (let bi = 0; bi < L.bodies.length; bi++) {
                         const bd = L.bodies[bi], ew = Math.max(3, bd.w * 0.045), ex = x + bd.x + bd.w - ew;
                         if (ex + ew < 0 || ex > width) continue;
+                        const dx = (ex + ew / 2 - mx) / R, spot = Math.exp(-dx * dx);
+                        const a = dryK * lay * (0.03 * moonLit + spot * (0.09 * low + 0.04 * moonLit) - 0.04 * low * (1 - spot));
+                        if (Math.abs(a) < 0.004) continue;
+                        ctx.fillStyle = a > 0 ? `rgba(215, 195, 255, ${a.toFixed(4)})` : `rgba(6, 1, 18, ${(-a).toFixed(4)})`;
                         ctx.fillRect(ex, y0 + (L.H - bd.h), ew, bd.h);
                     }
                 }
@@ -523,13 +532,36 @@ function drawMoon() {
     // и каждая перерисовка с большим мягким свечением давала подёргивание). Холст луны используется повторно, новый не создаётся
     if (!moonSprite || Math.abs(moonPhase - moonRendered) > 0.007 || (Math.abs(target - moonPhase) < 0.0005 && Math.abs(moonPhase - moonRendered) > 0.0005)) {
         moonRendered = moonPhase;
-        const f = moonPhase;
-        moonSprite = makeSprite(half * 2, half * 2, S, (c) => {
+        moonSprite = moonBuild(moonPhase, half, S, MOON_COL.y, moonSprite);
+        moonSpriteW = null;   // белая луна перерисуется, когда понадобится
+    }
+    // в дождь луна плавно белеет (бело-серая, с кратерами), после дождя снова желтеет
+    const wk = (typeof stormCover === 'number' && typeof stormSmooth === 'function') ? stormSmooth(0.1, 0.85, stormCover) : 0;
+    if (wk > 0.01 && (!moonSpriteW || moonSpriteW.__f !== moonRendered)) { moonSpriteW = moonBuild(moonRendered, half, S, MOON_COL.w, moonSpriteW); moonSpriteW.__f = moonRendered; }
+    window.__moonWhite = wk;
+    moonDrawAt(moonX - half, moonY - half, half * 2, 1);
+    window.__moonPos = [moonX - half, moonY - half, half * 2];   // для грозы: луна поверх туч
+}
+// луна на холсте: жёлтая, сверху — белая с силой «дождя»
+function moonDrawAt(x, y, s, a) {
+    const wk = window.__moonWhite || 0;
+    if (wk < 0.995 || !moonSpriteW) { ctx.globalAlpha = a; ctx.drawImage(moonSprite, x, y, s, s); }
+    if (wk > 0.01 && moonSpriteW) { ctx.globalAlpha = a * Math.min(1, wk); ctx.drawImage(moonSpriteW, x, y, s, s); }
+    ctx.globalAlpha = 1;
+}
+const MOON_COL = {
+    y: { aura: '255, 245, 220', aura2: '180, 100, 255', glow: '#FFE8A3', mid: '#F3E5AB', edge: '#D4B86A', crat: 'rgba(180, 155, 90, 0.32)' },
+    w: { aura: '236, 240, 255', aura2: '150, 140, 230', glow: '#F4F6FF', mid: '#E7EAF2', edge: '#AEB4C4', crat: 'rgba(120, 128, 148, 0.34)' }
+};
+let moonSpriteW = null;
+function moonBuild(f, half, S, MC, reuse) {
+        const moonRadius = 40;
+        return makeSprite(half * 2, half * 2, S, (c) => {
             const mx = half, my = half, r = moonRadius;
             // ореол слабее, пока луна тонкая
             const aura = c.createRadialGradient(mx, my, r * 0.5, mx, my, r * 2.8);
-            aura.addColorStop(0, `rgba(255, 245, 220, ${0.4 * (0.25 + 0.75 * f)})`);
-            aura.addColorStop(0.5, `rgba(180, 100, 255, ${0.12 * (0.4 + 0.6 * f)})`);
+            aura.addColorStop(0, `rgba(${MC.aura}, ${0.4 * (0.25 + 0.75 * f)})`);
+            aura.addColorStop(0.5, `rgba(${MC.aura2}, ${0.12 * (0.4 + 0.6 * f)})`);
             aura.addColorStop(1, 'rgba(20, 4, 40, 0)');
             c.fillStyle = aura;
             c.beginPath(); c.arc(mx, my, r * 2.8, 0, Math.PI * 2); c.fill();
@@ -549,9 +581,9 @@ function drawMoon() {
             // мягкое свечение по форме освещённой части
             c.save();
             litPath();
-            c.shadowColor = '#FFE8A3';
+            c.shadowColor = MC.glow;
             c.shadowBlur = gfxQuality === 'low' ? 0 : 22 * S * (0.35 + 0.65 * f);
-            c.fillStyle = '#F3E5AB';
+            c.fillStyle = MC.mid;
             c.fill();
             c.restore();
             // сама поверхность луны — в точности как полная луна, но только на освещённой части
@@ -559,20 +591,17 @@ function drawMoon() {
             litPath(); c.clip();
             const moonGrad = c.createRadialGradient(mx - 10, my - 10, 5, mx, my, r);
             moonGrad.addColorStop(0, '#FFFFFF');
-            moonGrad.addColorStop(0.7, '#F3E5AB');
-            moonGrad.addColorStop(1, '#D4B86A');
+            moonGrad.addColorStop(0.7, MC.mid);
+            moonGrad.addColorStop(1, MC.edge);
             c.fillStyle = moonGrad;
             c.beginPath(); c.arc(mx, my, r, 0, Math.PI * 2); c.fill();
-            c.fillStyle = 'rgba(180, 155, 90, 0.32)';
+            c.fillStyle = MC.crat;
             c.beginPath(); c.arc(mx - 12, my - 8, 7, 0, Math.PI * 2); c.fill();
             c.beginPath(); c.arc(mx + 10, my + 12, 9, 0, Math.PI * 2); c.fill();
             c.beginPath(); c.arc(mx + 14, my - 10, 5, 0, Math.PI * 2); c.fill();
             c.beginPath(); c.arc(mx - 8, my + 14, 4, 0, Math.PI * 2); c.fill();
             c.restore();
-        }, moonSprite);
-    }
-    ctx.drawImage(moonSprite, moonX - half, moonY - half, half * 2, half * 2);
-    window.__moonPos = [moonX - half, moonY - half, half * 2];   // для грозы: луна поверх туч
+        }, reuse);
 }
 
 let cloudSprite = null;

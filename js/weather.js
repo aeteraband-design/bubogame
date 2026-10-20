@@ -356,8 +356,7 @@ function stormDrawBack() {
         const mp = window.__moonPos;
         if (mp && moonSprite && cv > 0.01) {
             const tt = performance.now() / 1000, peek = 0.5 + 0.5 * Math.sin(tt * 0.21) * Math.sin(tt * 0.13 + 1.3);
-            ctx.globalAlpha = stormSmooth(0.05, 0.9, cv) * (0.08 + 0.42 * peek * peek);
-            ctx.drawImage(moonSprite, mp[0], mp[1], mp[2], mp[2]);
+            moonDrawAt(mp[0], mp[1], mp[2], stormSmooth(0.05, 0.9, cv) * (0.08 + 0.42 * peek * peek));   // уже белая в дождь
         }
         // вспышка подсвечивает и ближние тучи
         if (STORM.flash > 0.01) {

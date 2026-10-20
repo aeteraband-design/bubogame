@@ -551,15 +551,15 @@ fitThemeLabels();
     x.addEventListener('click', (e) => { e.stopPropagation(); try { localStorage.setItem('bubo_goal_hidden', '1'); } catch (er) {} const c = document.getElementById('menuGoalCard'); if (c) c.classList.add('hidden'); try { window.dispatchEvent(new Event('resize')); } catch (er) {} });
 })();
 
-// правила: своя тихая «библиотечная» музыка — включается при открытии и плавно возвращается к музыке меню при закрытии
-(function () {
-    const m = document.getElementById('rulesModal'); if (!m) return;
+// правила: своя тихая «библиотечная» музыка, настройки — «мастерская»; включаются при открытии из меню и плавно возвращаются к музыке меню при закрытии
+[['rulesModal', 'library'], ['settingsModal', 'workshop']].forEach(([MID, MODE]) => {
+    const m = document.getElementById(MID); if (!m) return;
     let was = !m.classList.contains('hidden');
     new MutationObserver(() => {
         const open = !m.classList.contains('hidden'); if (open === was) return; was = open;
         try {
-            if (open) { if (AudioFX.mode === 'menu' || AudioFX._pendMode === 'menu') AudioFX.setMode('library', { fade: true }); }
-            else if (AudioFX.mode === 'library' || AudioFX._pendMode === 'library') AudioFX.setMode('menu', { fade: true });
+            if (open) { if (AudioFX.mode === 'menu' || AudioFX._pendMode === 'menu') AudioFX.setMode(MODE, { fade: true }); }
+            else if (AudioFX.mode === MODE || AudioFX._pendMode === MODE) AudioFX.setMode('menu', { fade: true });
         } catch (e) {}
     }).observe(m, { attributes: true, attributeFilter: ['class'] });
-})();
+});
