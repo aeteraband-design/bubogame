@@ -470,6 +470,37 @@ function stormDrawLitTokens(k, cz) {
     items.forEach(drawToken);   // сами значки — в полную яркость
     ctx.restore();
 }
+// в дождь щит и ШАЗАМ не тускнеют: сова в сфере щита (или в ШАЗАМе) рисуется поверх серой «пелены» в своих цветах,
+// подсвеченная светом щита (зелёным) или ШАЗАМа (оранжевым); искры и кольца ШАЗАМа — тоже яркие
+let __owlShCv = null;
+function stormDrawLitOwl(k, cz) {
+    if (!owl || !owl.visible || !gameActive) return;
+    const shz = (typeof SHZ !== 'undefined' && SHZ.k > 0.05) ? SHZ.k : 0, sh = shieldTime > 0;
+    if (!sh && !shz) return;
+    try {
+        ctx.save();
+        if (Math.abs(cz - 1) > 0.0005) { ctx.translate(width / 2, height / 2); ctx.scale(cz, cz); ctx.translate(-width / 2, -height / 2); }
+        const S = viewScale * renderScale, box = 230, px = Math.ceil(box * S);
+        if (!__owlShCv || __owlShCv.width !== px) { __owlShCv = document.createElement('canvas'); __owlShCv.width = __owlShCv.height = px; }
+        const fc = __owlShCv.getContext('2d'), main = ctx;
+        fc.setTransform(1, 0, 0, 1, 0, 0); fc.globalCompositeOperation = 'source-over'; fc.globalAlpha = 1; fc.clearRect(0, 0, px, px);
+        fc.setTransform(S, 0, 0, S, (box / 2 - owl.x) * S, (box / 2 - owl.y) * S);
+        ctx = fc; try { if ((currentFreezeFactor || 0) > 0.01 && typeof drawFrozenOwl === 'function') drawFrozenOwl(); else owl.draw(); } finally { ctx = main; }
+        // свет щита/ШАЗАМа ложится на сову
+        fc.setTransform(1, 0, 0, 1, 0, 0); fc.globalCompositeOperation = 'source-atop';
+        const col = shz ? '#FF8A1F' : '#4ADE80';
+        const g = fc.createRadialGradient(px / 2, px / 2, 0, px / 2, px / 2, px * 0.18);
+        g.addColorStop(0, col + '40'); g.addColorStop(1, col + '00');
+        fc.fillStyle = g; fc.fillRect(0, 0, px, px);
+        fc.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = Math.min(0.92, k * 1.15);
+        ctx.drawImage(__owlShCv, owl.x - box / 2, owl.y - box / 2, box, box);
+        ctx.globalAlpha = 1;
+        if (shz && typeof shazamDrawFx === 'function') shazamDrawFx();
+        if (typeof drawShieldBubbles === 'function') drawShieldBubbles();
+        ctx.restore();
+    } catch (e) { try { ctx.restore(); } catch (e2) {} }
+}
 function stormDrawRain() {
     const si = Math.max(0, stormIntensity), rk = stormRainK(si);
     const lowQ = gfxQuality === 'low', N = lowQ ? 110 : 220;
@@ -483,6 +514,18 @@ function stormDrawRain() {
         const v = (8 + 10 * heavy) * (0.6 + 0.4 * d.z);
         d.y += v * dtMult; d.x += v * wind * dtMult;
         if (d.y > height + 20 || d.x < -40) { d.y = -Math.random() * 60; d.x = Math.random() * (width + 120); }
+    }
+    // щит не пропускает дождь: внутри сферы штрихов нет, сверху о неё разбиваются капли
+    const shOn = shieldTime > 0 && gameActive && owl && owl.visible;
+    ctx.save();
+    if (shOn) {
+        const cz = (typeof camZoom === 'number') ? camZoom : 1, ox = width / 2 + (owl.x - width / 2) * cz, oy = height / 2 + (owl.y - height / 2) * cz, R = 28 * cz;
+        ctx.beginPath(); ctx.rect(-50, -50, width + 100, height + 100); ctx.arc(ox, oy, R, 0, Math.PI * 2, true); ctx.clip('evenodd');
+        if (rk > 0.05 && typeof waterSplash === 'function' && Math.random() < rk * 0.9 * dtMult) {
+            const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2, sx = owl.x + Math.cos(a) * 28, sy = owl.y + Math.sin(a) * 28;
+            waterSplash(sx, sy, 1, a + (Math.random() - 0.5) * 0.6, 0.6, 1.2 + Math.random() * 1.2, 0.2);
+            if (typeof shieldTouch === 'function' && Math.random() < 0.3) shieldTouch(a, 0.25);
+        }
     }
     ctx.lineCap = 'round';
     ctx.strokeStyle = 'rgb(185, 210, 240)';
@@ -500,6 +543,7 @@ function stormDrawRain() {
         ctx.lineWidth = lw;
         ctx.stroke();
     }
+    ctx.restore();
     ctx.globalAlpha = 1;
 }
 
@@ -512,7 +556,8 @@ function stormDrawOwlWet(g, o) {
     const n = P.length, dt = (typeof dtMult === 'number' ? dtMult : 1);
     const at = (t) => { const i = ((Math.floor(t) % n) + n) % n, j = (i + 1) % n, f = t - Math.floor(t); return [P[i][0] + (P[j][0] - P[i][0]) * f, P[i][1] + (P[j][1] - P[i][1]) * f, i, j]; };
     // новые капли — на верхней половине контура (голова, спина, грудка)
-    if (wet > 0.1 && B.length < 6 + Math.round(wet * 8) && Math.random() < 0.05 * wet * dt) {
+    const shielded = typeof shieldTime !== 'undefined' && shieldTime > 0;   // щит прикрывает: новые капли на сову не садятся
+    if (!shielded && wet > 0.1 && B.length < 6 + Math.round(wet * 8) && Math.random() < 0.05 * wet * dt) {
         let t = 0, tries = 0;
         do { t = Math.random() * n; tries++; } while (at(t)[1] > 3 && tries < 8);
         if (at(t)[1] <= 3) B.push({ t, r: 0.4 + Math.random() * 1.15, age: 0, v: 0 });
@@ -520,7 +565,7 @@ function stormDrawOwlWet(g, o) {
     // капли и на самом теле: на голове, боку, крыле — разного размера, медленно сползают вниз и пропадают
     const BB = o._wbb || (o._wbb = []);
     const inBody = (x, y) => { let c = false; for (let i = 0, j = n - 1; i < n; j = i++) { const xi = P[i][0], yi = P[i][1], xj = P[j][0], yj = P[j][1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
-    if (wet > 0.1 && BB.length < 3 + Math.round(wet * 7) && Math.random() < 0.04 * wet * dt) {
+    if (!shielded && wet > 0.1 && BB.length < 3 + Math.round(wet * 7) && Math.random() < 0.04 * wet * dt) {
         for (let tr = 0; tr < 10; tr++) {
             const x = -13 + Math.random() * 24, y = -13 + Math.random() * 24;
             if (inBody(x, y) && Math.hypot(x - 5.2, y + 4) > 6.5) { BB.push({ x, y, r: 0.35 + Math.random() * 1.0, age: 0, v: 0.004 + Math.random() * 0.012 }); break; }
