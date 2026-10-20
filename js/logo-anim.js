@@ -341,37 +341,23 @@
     const sst = document.createElement('style');
     const Q = '#startScreen > .menu-logo-wrap ';
     sst.textContent = Q + '.lg-say{position:absolute;z-index:4;pointer-events:none;width:0;height:0}'
-        // облачко в цвет состояния совы: светлый оттенок цвета, тёмный текст того же тона, сверху «пухлые» бугорки
-        + Q + '.lg-say-b{--bg:color-mix(in srgb,var(--sc,#C4A1FF) 38%,#fff);position:absolute;left:0;bottom:0;box-sizing:border-box;width:max-content;padding:5px 11px 6px;border-radius:999px;'
-        + 'font:500 11px/1.3 Onest,sans-serif;letter-spacing:.01em;color:color-mix(in srgb,var(--sc,#C4A1FF) 30%,#1A0630);text-align:center;white-space:normal;'
-        + 'background:var(--bg);border:0;box-shadow:0 0 10px color-mix(in srgb,var(--sc,#C4A1FF) 50%,transparent),0 3px 8px rgba(20,3,38,.3);'
-        + 'transform-origin:var(--ox,12%) 100%;opacity:0;transform:scale(.3);will-change:transform,opacity}'
-        // облачко из кружочков: три «бугорка» сверху, каждый тихонько дышит в своём ритме
-        + Q + '.lg-say-b > b{position:absolute;z-index:-1;border-radius:50%;background:var(--bg);animation:lgBump 2.6s ease-in-out infinite}'
-        + Q + '.lg-say-b > b:nth-of-type(1){width:14px;height:14px;left:12%;top:-5px;animation-duration:2.4s}'
-        + Q + '.lg-say-b > b:nth-of-type(2){width:19px;height:19px;left:38%;top:-8px;animation-duration:3s;animation-delay:-.8s}'
-        + Q + '.lg-say-b > b:nth-of-type(3){width:12px;height:12px;right:14%;top:-4px;animation-duration:2.2s;animation-delay:-1.4s}'
+        // аккуратная подсказка: скруглённая плашка в цвет состояния совы и маленький уголок-хвостик к сове
+        + Q + '.lg-say-b{--bg:color-mix(in srgb,var(--sc,#C4A1FF) 30%,#fff);position:absolute;left:0;bottom:0;box-sizing:border-box;width:max-content;padding:6px 11px 7px;border-radius:12px;'
+        + 'font:500 11.5px/1.3 Onest,sans-serif;letter-spacing:.01em;color:color-mix(in srgb,var(--sc,#C4A1FF) 28%,#1A0630);text-align:center;white-space:normal;'
+        + 'background:var(--bg);border:0;box-shadow:0 0 0 1px color-mix(in srgb,var(--sc,#C4A1FF) 35%,transparent),0 0 10px color-mix(in srgb,var(--sc,#C4A1FF) 40%,transparent),0 3px 8px rgba(20,3,38,.3);'
+        + 'transform-origin:var(--ox,12%) 100%;opacity:0;transform:translateY(6px) scale(.92);will-change:transform,opacity}'
+        + Q + '.lg-say-b::after{content:"";position:absolute;left:var(--tx,16px);bottom:-4px;width:8px;height:8px;margin-left:-4px;background:var(--bg);border-radius:0 0 2px 0;transform:rotate(45deg);'
+        + 'box-shadow:1px 1px 0 0 color-mix(in srgb,var(--sc,#C4A1FF) 35%,transparent)}'
         + Q + '.lg-say-b > span{position:relative;display:block}'
-        + Q + '.lg-say-b.ml{border-radius:18px;padding:6px 11px 7px}'
-        // кружочки-хвостик того же цвета
-        + Q + '.lg-say i{position:absolute;border-radius:50%;background:color-mix(in srgb,var(--sc,#C4A1FF) 38%,#fff);'
-        + 'box-shadow:0 0 8px color-mix(in srgb,var(--sc,#C4A1FF) 55%,transparent);opacity:0;transform:scale(0)}'
-        // появление/исчезновение — по шагам из JS (класс .v): мягкий «пузырь» с лёгким пружинящим перехлёстом
-        + Q + '.lg-say i.v{animation:lgDotIn .42s cubic-bezier(.3,1.6,.5,1) forwards,lgBump 2.4s .42s ease-in-out infinite}'
-        + Q + '.lg-say i.h{animation:lgDotOut .32s ease-in forwards}'
-        + Q + '.lg-say-b.v{animation:lgSayIn .6s cubic-bezier(.3,1.45,.5,1) forwards,lgSayBob 3.2s .6s ease-in-out infinite}'
-        + Q + '.lg-say-b.h{animation:lgSayOut .34s ease-in forwards}'
-        + '@keyframes lgBump{0%,100%{scale:1}50%{scale:1.12}}'
-        + '@keyframes lgDotIn{0%{opacity:0;transform:scale(0)}60%{opacity:1}100%{opacity:1;transform:scale(1)}}'
-        + '@keyframes lgDotOut{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(0)}}'
-        + '@keyframes lgSayIn{0%{opacity:0;transform:scale(.3) rotate(-5deg);filter:blur(3px)}55%{opacity:1;filter:none}100%{opacity:1;transform:none;filter:none}}'
-        + '@keyframes lgSayOut{0%{opacity:1;transform:none}100%{opacity:0;transform:scale(.35) rotate(4deg);filter:blur(2px)}}'
-        // «дыхание» облачка: отдельным свойством translate/scale-обёртки, чтобы не спорить с появлением
-        + '@keyframes lgSayBob{0%,100%{translate:0 0}50%{translate:0 -3px}}';
+        + Q + '.lg-say-b.v{animation:lgSayIn .38s cubic-bezier(.2,.9,.3,1.15) forwards,lgSayBob 3.4s .4s ease-in-out infinite}'
+        + Q + '.lg-say-b.h{animation:lgSayOut .26s ease-in forwards}'
+        + '@keyframes lgSayIn{0%{opacity:0;transform:translateY(6px) scale(.92)}100%{opacity:1;transform:none}}'
+        + '@keyframes lgSayOut{0%{opacity:1;transform:none}100%{opacity:0;transform:translateY(4px) scale(.95)}}'
+        + '@keyframes lgSayBob{0%,100%{translate:0 0}50%{translate:0 -2px}}';
     document.head.appendChild(sst);
     const say = document.createElement('div');
     say.className = 'lg-say'; say.setAttribute('aria-hidden', 'true');
-    say.innerHTML = '<div class="lg-say-b"><b></b><b></b><b></b><span></span></div><i></i><i></i>';
+    say.innerHTML = '<div class="lg-say-b"><span></span></div>';
     say.style.display = 'none';
     wrap.appendChild(say);
     const sayB = say.firstElementChild, sayT = sayB.querySelector('span'), dots = say.querySelectorAll('i'); let saySteps = [];
@@ -397,7 +383,7 @@
         const ds = [[9, 8], [4, 4.5]];   // [сдвиг вбок, диаметр]: большой касается облачка, маленький — у совы
         const ax = cx + ts * 0.16, ay = top - ts * 0.04;      // точка у головы совы
         dots.forEach((d, i) => { const [dx, s] = ds[i]; d.style.width = d.style.height = (s * u).toFixed(1) + 'px'; d.style.left = (dx * u - s * u / 2).toFixed(1) + 'px'; });
-        const tailH = 17 * u;
+        const tailH = 11 * u;
         // ширина плашки: короткая реплика — в одну строку, длинная — не шире ~230px и края экрана
         const maxW = Math.max(110, Math.min(200, W - 8));
         sayB.style.maxWidth = maxW + 'px';
@@ -418,6 +404,7 @@
         say.style.left = ax.toFixed(1) + 'px'; say.style.top = pb.toFixed(1) + 'px';
         sayB.style.left = px.toFixed(1) + 'px';
         sayB.style.setProperty('--ox', Math.max(0, Math.min(100, -px / pw * 100)).toFixed(0) + '%');
+        sayB.style.setProperty('--tx', Math.max(12, Math.min(pw - 12, -px + 6 * u)).toFixed(1) + 'px');   // уголок — над головой совы
         // хвостик тянется от плашки к сове: верхний кружок — у низа плашки, нижний — у головы
         const span = Math.max(8, ay - pb);
         dots.forEach((d, i) => { const s = ds[i][1]; d.style.top = (i ? span * 0.7 - s * u / 2 : -s * u * 0.2).toFixed(1) + 'px'; });   // большой наполовину заходит под облачко
@@ -431,8 +418,7 @@
         [sayB, ...dots].forEach(e => e.classList.remove('v', 'h'));
         say.style.display = '';
         sayPlace(L);
-        [1, 0].forEach((di, k) => sayStep(() => dots[di].classList.add('v'), k * 170));
-        sayStep(() => sayB.classList.add('v'), 320);
+        sayStep(() => sayB.classList.add('v'), 30);
         if (h === GREET) greetPending = false;
     }
     function sayHide(now) {
@@ -441,8 +427,7 @@
         if (now) { [sayB, ...dots].forEach(e => e.classList.remove('v', 'h')); say.style.display = 'none'; return; }
         const swap = (e) => { if (e.classList.contains('v')) { e.classList.remove('v'); e.classList.add('h'); } };
         swap(sayB);
-        [0, 1].forEach((di, k) => sayStep(() => swap(dots[di]), 240 + k * 150));
-        sayStep(() => { say.style.display = 'none'; [sayB, ...dots].forEach(e => e.classList.remove('v', 'h')); }, 240 + 150 + 380);
+        sayStep(() => { say.style.display = 'none'; [sayB, ...dots].forEach(e => e.classList.remove('v', 'h')); }, 300);
     }
     function stop() {
         sayHide(true);

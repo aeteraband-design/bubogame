@@ -461,7 +461,8 @@ function stormCityLayerLight(L, li, off, y0) {
         ctx.globalAlpha = Math.min(1, a);
         ctx.drawImage(img, sx * MS, sy * MS, sw * MS, sh * MS, x0 + sx, y0 + sy, sw, sh);
     };
-    for (let x = -off; x < width; x += L.tileW) {
+    // размытые лунные засветы по силуэтам отключены — луна теперь меняет яркость «родных» светлых граней домов (scenery.js)
+    if (window.__stormRims) for (let x = -off; x < width; x += L.tileW) {
         for (let bi = 0; bi < L.bodies.length; bi++) {
             const bd = L.bodies[bi], bx = x + bd.x;
             if (bx + bd.w + 6 < 0 || bx - 6 > width) continue;

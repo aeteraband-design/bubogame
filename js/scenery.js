@@ -421,8 +421,9 @@ function drawCity() {
             ctx.globalAlpha = 1;
             // светлые боковые грани домов (объём) реагируют на луну: пока луна низко у домов — грани вдали темнее,
             // а рядом с луной заметно ярче (мягкое пятно); луна поднимается — свет ровнее и ярче везде. В дождь — свои засветы (weather.js)
-            const dryK = (typeof stormCover === 'number' && typeof stormSmooth === 'function') ? 1 - stormSmooth(0.2, 1, stormCover) : 1;
-            if (L.bodies && dryK > 0.02) {
+            // в дождь луна за тучами — пятно чуть слабее, но работает так же
+            const dryK = (typeof stormCover === 'number' && typeof stormSmooth === 'function') ? 1 - 0.3 * stormSmooth(0.2, 1, stormCover) : 1;
+            if (L.bodies) {
                 const mp = window.__moonPos, mx = mp ? mp[0] + mp[2] / 2 : width * 0.66;
                 const low = 1 - moonLit, R = 150 + 260 * moonLit, far = li === 0 && citySprites.length > 1;
                 const lay = far ? 0.75 : 1;
@@ -436,6 +437,7 @@ function drawCity() {
                         if (Math.abs(a) < 0.004) continue;
                         ctx.fillStyle = a > 0 ? `rgba(215, 195, 255, ${a.toFixed(4)})` : `rgba(6, 1, 18, ${(-a).toFixed(4)})`;
                         ctx.fillRect(ex, y0 + (L.H - bd.h), ew, bd.h);
+                        ctx.fillRect(x + bd.x, y0 + (L.H - bd.h), bd.w, 2);   // светлый карниз сверху — так же
                     }
                 }
             }
