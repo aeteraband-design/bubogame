@@ -596,7 +596,7 @@ const AudioFX = {
                         let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : (this.mode === 'quiz' ? 0.3 : (this.mode === 'shop' ? 0.19 : (this.mode === 'library' ? 0.34 : (this.mode === 'menu' ? 60 / 140 / 4 : (this.mode === 'workshop' ? 0.2 : 0.29)))))));
                         if (this.mode !== 'death' && this.mode !== 'victory' && this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop' && this.mode !== 'library' && this.mode !== 'workshop') {   // в меню темп всегда стандартный — не зависит ни от сложности, ни от ускорения
                             const diff = getDifficultyMultipliers();
-                            if (diff.musicTempoMult) d /= diff.musicTempoMult;
+                            if (diff.musicTempoMult) d /= (this._tmS || diff.musicTempoMult);
                             d /= this.updateSpeedFactor();
                         }
                         this.nextNoteTime += d;
@@ -638,8 +638,10 @@ const AudioFX = {
 
         if (this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop' && this.mode !== 'library' && this.mode !== 'workshop') {   // музыка меню всегда в стандартном темпе и высоте — сложность и ускорение на неё не влияют
             const diff = getDifficultyMultipliers();
-            if (diff.musicTempoMult) {
-                pitchMultiplier *= diff.musicTempoMult;
+            if (diff.musicTempoMult) {   // темп и высота нового уровня меняются плавно (≈4 такта), а не рывком
+                if (this.step === 0 || !this._tmS) this._tmS = diff.musicTempoMult;
+                else this._tmS += (diff.musicTempoMult - this._tmS) * 0.04;
+                pitchMultiplier *= this._tmS;
             }
 
             pitchMultiplier *= this.updateSpeedFactor();
@@ -838,6 +840,10 @@ const AudioFX = {
             // Мелодия на всех уровнях — исходная. С каждым уровнем добавляются барабаны и «нотки» сложности
             let lvl = 0;
             try { lvl = getDifficultyIndex(); } catch (e) {}
+            // смена уровня — не скачком: новые партии плавно «въезжают» примерно за 4 такта (а при откате уровня — уходят)
+            if (this.step === 0 || this._lvS === undefined) this._lvS = lvl;
+            else this._lvS += Math.sign(lvl - this._lvS) * Math.min(Math.abs(lvl - this._lvS), 0.03);
+            const W = (n) => Math.max(0, Math.min(1, this._lvS - n + 1));
             const s16 = this.step % 16;
             // Фраза — 4 такта (Dm – B♭ – F – C), как в меню; на Хард+ — 8 тактов: вторая половина тёмная, с «нотками опасности».
             const bar = Math.floor(this.step / 8), i8 = this.step % 8, c4 = bar % 4, pass = Math.floor(bar / 4) % 2;
@@ -911,16 +917,17 @@ const AudioFX = {
             gainB.connect(out);
             oscB.start(now);
             oscB.stop(now + 0.19 * len);
-            if (lvl >= 4) tone('sine', bFreq / 2, 0.18, 0.17 * len);          // Хард: низкая подложка
+            if (W(4) > 0.01) tone('sine', bFreq / 2, 0.18 * W(4), 0.17 * len);          // Хард: низкая подложка
             // Хард: новый элемент — быстрый басовый арпеджио на каждую вторую восьмую (тихо, «пульс» под мелодией)
-            if (lvl >= 4 && this.step % 2 === 1) tone('triangle', bFreq * 2, 0.03, 0.06 * len);
+            if (W(4) > 0.01 && this.step % 2 === 1) tone('triangle', bFreq * 2, 0.03 * W(4), 0.06 * len);
 
             // Мелодия — исходная; с Лайт звучит на каждый шаг (плотнее)
-            if (lvl >= 1 || this.step % 2 === 0) tone('sine', aFreq, 0.24, 0.15 * len);
+            if (this.step % 2 === 0) tone('sine', aFreq, 0.24, 0.15 * len);
+            else if (W(1) > 0.01) tone('sine', aFreq, 0.24 * W(1), 0.15 * len);
             // Хард: высокая «нотка»-отголосок в начале каждого такта
-            if (lvl >= 4 && this.step % 8 === 0) tone('triangle', aFreq * 2, 0.1, 0.3 * len);
+            if (W(4) > 0.01 && this.step % 8 === 0) tone('triangle', aFreq * 2, 0.1 * W(4), 0.3 * len);
             // Хард+: тёмный второй голос под мелодией (тревожная гармония)
-            if (lvl >= 5) tone('triangle', aFreq * 0.8409, 0.09, 0.14 * len);
+            if (W(5) > 0.01) tone('triangle', aFreq * 0.8409, 0.09 * W(5), 0.14 * len);
             if (lead && this.step % 2 === 0) tone('square', aFreq * 2, lvl === 4 ? 0.03 : 0.045, 0.12 * len);   // Хард+: верхний голос во второй половине фразы
 
             // ===== ШАЗАМ: свой слой поверх музыки уровня — плавно вступает, а за 5 с до конца так же плавно стихает =====
@@ -955,29 +962,31 @@ const AudioFX = {
             }
 
             // ===== «Весёлые» нотки из музыки меню: с Медиум — лёгкие аккорды-чопы, с Медиум+ — колокольчик в начале такта =====
-            if (lvl >= 2 && !dark && this.step % 4 === 2) this.menuChords[c4].forEach((f) => tone('square', f * pitchMultiplier, lvl >= 4 ? 0.02 : 0.016, 0.07 * len));
-            if (lvl >= 3 && !dark && this.step % 8 === 0 && (pass || lvl >= 4)) tone('sine', aFreq * 4, 0.035, 0.35 * len);
+            if (W(2) > 0.01 && !dark && this.step % 4 === 2) this.menuChords[c4].forEach((f) => tone('square', f * pitchMultiplier, (lvl >= 4 ? 0.02 : 0.016) * W(2), 0.07 * len));
+            if (W(3) > 0.01 && !dark && this.step % 8 === 0 && (pass || lvl >= 4)) tone('sine', aFreq * 4, 0.035 * W(3), 0.35 * len);
             if (lvl >= 5 && dark && this.step % 8 === 0) tone('sawtooth', aFreq / 4, 0.05, 0.6 * len, aFreq / 4 * 0.94);   // низкий тревожный «гул» в тёмных тактах
 
             // ===== Барабаны: с каждым уровнем больше =====
-            if (lvl >= 1 && this.step % 2 === 1) hat(0.1);                              // Лайт: хай-хэт «цик» на слабые доли
-            if (lvl >= 2 && this.step % 4 === 0) kick(lvl >= 5 ? 0.62 : 0.55);          // Медиум: бочка
-            if (lvl >= 3 && this.step % 8 === 4) noise('bandpass', 1200, 0.12, 0.06, 1.2); // Медиум+: «хлопок» вместе с рабочим
-            if (lvl >= 4 && this.step % 4 === 2) tone('square', bFreq * 2, 0.05, 0.08);    // Хард: короткий щипок баса
-            if (lvl >= 3 && this.step % 8 === 4) snare(lvl >= 5 ? 0.32 : 0.28);         // Медиум+: малый (рабочий) барабан
-            if (lvl === 4 && this.step % 8 === 6) hat(0.05, 0.12);                       // Хард: лёгкий открытый хай-хэт из Хард+
-            if (lvl >= 5) {                                                              // Хард+: хай-хэт на каждый шаг
-                if (this.step % 2 === 0) hat(0.08);
-                if (this.step % 8 === 6) hat(0.07, 0.16);                                // + открытый хай-хэт
-                if (this.step % 8 === 6) kick(0.42);                                     // + дополнительная бочка
-            }
-            if (lvl >= 5) {                                                              // Хард+: полный бит
-                if (s16 === 3 || s16 === 11) kick(0.45);
-                if (s16 === 12) snare(0.24);
-                if (s16 === 14 || s16 === 15) snare(0.2 + (s16 - 14) * 0.08);           // сбивка в конце фразы
-                if (this.step % 32 === 0) noise('bandpass', 6500, 0.035, 0.32, 0.9);           // тарелка-«крэш»
+            if (W(1) > 0.01 && this.step % 2 === 1) hat(0.1 * W(1));                              // Лайт: хай-хэт «цик» на слабые доли
+            if (W(2) > 0.01 && this.step % 4 === 0) kick((lvl >= 5 ? 0.62 : 0.55) * W(2));          // Медиум: бочка
+            if (W(3) > 0.01 && this.step % 8 === 4) noise('bandpass', 1200, 0.12 * W(3), 0.06, 1.2); // Медиум+: «хлопок» вместе с рабочим
+            if (W(4) > 0.01 && this.step % 4 === 2) tone('square', bFreq * 2, 0.05 * W(4), 0.08);    // Хард: короткий щипок баса
+            if (W(3) > 0.01 && this.step % 8 === 4) snare((lvl >= 5 ? 0.32 : 0.28) * W(3));
+            // Лайт: лёгкий шейкер на доли; Медиум+: прыгающий бас на октаву выше, как в музыке меню
+            if (W(1) > 0.01 && this.step % 2 === 0) noise('highpass', 6000, 0.03 * W(1) * (lvl >= 5 ? 0.5 : 1), 0.04);
+            if (W(3) > 0.01 && this.step % 4 === 3) tone('triangle', bFreq * 2, 0.07 * W(3), 0.09 * len);         // Медиум+: малый (рабочий) барабан
+            if (lvl === 4 && W(4) > 0.01 && this.step % 8 === 6) hat(0.05 * W(4), 0.12);                       // Хард: лёгкий открытый хай-хэт из Хард+
+            const w5 = W(5);
+            if (w5 > 0.01) {                                                             // Хард+: хай-хэт на каждый шаг
+                if (this.step % 2 === 0) hat(0.08 * w5);
+                if (this.step % 8 === 6) hat(0.07 * w5, 0.16);                           // + открытый хай-хэт
+                if (this.step % 8 === 6) kick(0.42 * w5);                                // + дополнительная бочка
+                if (s16 === 3 || s16 === 11) kick(0.45 * w5);                            // полный бит
+                if (s16 === 12) snare(0.24 * w5);
+                if (s16 === 14 || s16 === 15) snare((0.2 + (s16 - 14) * 0.08) * w5);    // сбивка в конце фразы
+                if (this.step % 32 === 0) noise('bandpass', 6500, 0.035 * w5, 0.32, 0.9);  // тарелка-«крэш»
                 if (this.step % 16 === 0) {                                              // тревожный аккорд
-                    [aFreq / 2, aFreq / 2 * 1.4983].forEach(f => tone('square', f, 0.05, 0.35 * len));
+                    [aFreq / 2, aFreq / 2 * 1.4983].forEach(f => tone('square', f, 0.05 * w5, 0.35 * len));
                 }
             }
         }
