@@ -293,27 +293,56 @@ const AudioFX = {
         if (T - nowT < 0.09) T += d * per;
         if (T - nowT > 0.65) T = nowT + 0.65;
         const energetic = (m) => m === 'menu' || m === 'game' || m === 'shop' || m === 'victory';
+        const calm = (m) => m === 'library' || m === 'quiz' || m === 'death';
+        const kind = newMode === 'workshop' || from === 'workshop' ? 'ws' : (energetic(from) && energetic(newMode) ? 'ee' : (energetic(from) && calm(newMode) ? 'ec' : (calm(from) && energetic(newMode) ? 'ce' : 'cc')));
         this._pendMode = newMode; this._stopAt = T;
         const g = this.musicGain.gain, vol = this.musicVolume;
+        // громкость: в спокойную музыку — старая уходит глубже и новая вступает мягче и дольше; в бодрую — короткий провал
+        const dip = { ee: 0.55, ws: 0.5, ec: 0.3, ce: 0.5, cc: 0.35 }[kind], back = { ee: 0.6, ws: 0.7, ec: 1.3, ce: 0.7, cc: 1.2 }[kind];
         g.cancelScheduledValues(nowT); g.setValueAtTime(Math.max(0.0001, g.value), nowT);
-        g.linearRampToValueAtTime(vol * 0.8, T); g.linearRampToValueAtTime(vol * 0.55, T + 0.05); g.linearRampToValueAtTime(vol, T + 0.6);
+        g.linearRampToValueAtTime(vol * Math.max(dip, kind === 'ee' ? 0.8 : dip + 0.1), T); g.linearRampToValueAtTime(vol * dip, T + 0.05); g.linearRampToValueAtTime(vol, T + back);
         try {
             const out = this.musicGain;
-            const hit = (t, type, freq, v, dur, q) => {   // шумовой удар (малый барабан / тарелка)
+            const hit = (t, type, freq, v, dur, q, f2) => {   // шумовой удар (малый барабан / тарелка / «вжух»)
                 const ns = ac.createBufferSource(), fl = ac.createBiquadFilter(), gg = ac.createGain();
-                ns.buffer = this._iceNoise(); fl.type = type; fl.frequency.setValueAtTime(freq, t); if (q) fl.Q.setValueAtTime(q, t);
-                gg.gain.setValueAtTime(0.0001, t); gg.gain.linearRampToValueAtTime(v, t + 0.004); gg.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                ns.buffer = this._iceNoise(); fl.type = type; fl.frequency.value = freq; fl.frequency.setValueAtTime(freq, t); if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur);
+                if (q) { fl.Q.value = q; fl.Q.setValueAtTime(q, t); }
+                gg.gain.value = 0.0001; gg.gain.setValueAtTime(0.0001, t); gg.gain.linearRampToValueAtTime(v, t + 0.004); gg.gain.exponentialRampToValueAtTime(0.001, t + dur);
                 ns.connect(fl); fl.connect(gg); gg.connect(out); ns.start(t); ns.stop(t + dur + 0.02);
             };
-            if (energetic(from) && energetic(newMode)) {
+            const tone = (t, type, fr, v, att, dur, f2) => {
+                const o = ac.createOscillator(), gg = ac.createGain();
+                o.type = type; o.frequency.value = fr; o.frequency.setValueAtTime(fr, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur * 0.8);
+                gg.gain.value = 0.0001; gg.gain.setValueAtTime(0.0001, t); gg.gain.linearRampToValueAtTime(v, t + att); gg.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                o.connect(gg); gg.connect(out); o.start(t); o.stop(t + dur + 0.02);
+            };
+            const kick = (t, v) => tone(t, 'sine', 120, v, 0.004, 0.24, 45);
+            const swell = (t, v) => {   // мягкий аккорд в тональности новой музыки — «мостик» между мелодиями
+                const r = this._rootOf(newMode) * 2;
+                [[r, 1], [r * 1.5, 0.6], [r * 2, 0.45]].forEach(([f, k]) => tone(t, 'sine', f, v * k, 0.18, 1.6));
+                let fn = this._firstNote(newMode, 1) * 2; while (fn > 1100) fn /= 2; tone(t + 0.05, 'sine', fn, v * 0.35, 0.01, 0.9);   // первая нота новой мелодии — колокольчиком
+            };
+            if (kind === 'ee') {
                 const sd = Math.min(d, 0.11);
                 for (let k = 3; k >= 1; k--) { const t = T - k * sd; if (t > nowT + 0.005) hit(t, 'bandpass', 1800, 0.08 + (3 - k) * 0.05, 0.09, 0.9); }   // сбивка
                 hit(T, 'highpass', 5200, 0.16, 0.9);   // тарелка в долю
-                const o = ac.createOscillator(), gk = ac.createGain();   // бочка в долю
-                o.type = 'sine'; o.frequency.setValueAtTime(120, T); o.frequency.exponentialRampToValueAtTime(45, T + 0.18);
-                gk.gain.setValueAtTime(0.0001, T); gk.gain.linearRampToValueAtTime(0.5, T + 0.004); gk.gain.exponentialRampToValueAtTime(0.001, T + 0.24);
-                o.connect(gk); gk.connect(out); o.start(T); o.stop(T + 0.26);
-            } else hit(T, 'highpass', 6500, 0.06, 1.3);   // в спокойных режимах — только тихий «шорох» тарелки
+                kick(T, 0.5);
+            } else if (kind === 'ws') {
+                // мастерская: трещотка ключа перед долей, «тук» и лёгкий лязг в долю
+                for (let k = 0; k < 4; k++) { const t = T - 0.2 + k * 0.045; if (t > nowT + 0.005) hit(t, 'bandpass', 3200 + k * 150, 0.1, 0.025, 6); }
+                kick(T, 0.42); tone(T, 'sine', 1530, 0.03, 0.002, 0.35); tone(T, 'sine', 2390, 0.02, 0.002, 0.25);
+                hit(T, 'highpass', 6000, 0.07, 0.6);
+            } else if (kind === 'ec') {
+                hit(Math.max(nowT + 0.01, T - 0.35), 'bandpass', 900, 0.05, 0.4, 0.7, 4000);   // лёгкий «вжух» вверх
+                hit(T, 'highpass', 6500, 0.07, 1.4);   // мягкая тарелка
+                swell(T, 0.07);
+            } else if (kind === 'ce') {
+                hit(Math.max(nowT + 0.01, T - 0.5), 'bandpass', 600, 0.06, 0.5, 0.8, 5000);   // «вжух» разгона
+                kick(T, 0.45); hit(T, 'highpass', 5200, 0.12, 0.8);
+            } else {
+                hit(T, 'highpass', 6500, 0.06, 1.3);
+                swell(T, 0.06);
+            }
         } catch (e) {}
         this._fadeT = setTimeout(() => {
             const m = this._pendMode; this._pendMode = null; this._stopAt = 0; if (!m) return;
