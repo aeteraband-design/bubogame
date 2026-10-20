@@ -299,11 +299,11 @@
                 if (!flags.pop) { flags.pop = 1; burst(tx, ty, 10, sparkCol(state)); }
                 const s = back((k - 0.35) / 0.65);
                 drawOwlState(tx, ty, OS * s, state, 0, 0.5, now, state.id === 'freeze' ? (t - b2) * 4.2 : 0);
+                if (k > 0.45 && flags.say && !flags.sayOn) { flags.sayOn = 1; sayShow(flags.say, L); }   // реплика — как только сова появилась
             }
         } else if (t < b4) {   // 4) сова в своём состоянии, ровно по центру плитки
             // реплика — когда сова уже встала на место; убираем заранее, чтобы облачко успело спокойно «втянуться» до ухода совы
-            if (flags.say && !flags.sayOn && t > b3 + 0.25) { flags.sayOn = 1; sayShow(flags.say, L); }
-            else if (flags.sayOn && !flags.sayOff && t > b4 - 1.0) { flags.sayOff = 1; sayHide(); }
+            if (flags.say && !flags.sayOn) { flags.sayOn = 1; sayShow(flags.say, L); }
             else if (flags.sayOn && !flags.sayOff && ((flags.pl = (flags.pl || 0) + 1) % 20) === 0) sayPlace(L);   // логотип мог сдвинуться (поворот экрана)
             setHome(0); setIcon(0, 0, 0);
             const k = t - b3;
@@ -331,23 +331,63 @@
         raf = requestAnimationFrame(tick);
     }
     // ===== Облачко-реплика совы над плиткой логотипа =====
-    // Первое появление совы после загрузки — «Привет!», дальше примерно через раз — случайная подсказка из списка.
-    // Список можно пополнять откуда угодно: window.LOGO_HINTS.push({ id: 'x', text: '…' }).
+    // «Привет!» — при первом появлении совы за день. Дальше подсказки через раз (одно появление с подсказкой, одно — без),
+    // по кругу: каждая показывается один раз, пока не пройдут все, потом круг заново (очередь хранится между запусками).
+    // Вернулся из полёта в меню — при первом появлении совы сразу подсказка. Новичок долго не начинает полёт — подскажем кнопку.
+    // Список можно пополнять откуда угодно: window.LOGO_HINTS.push({ id: 'x', text: '…' или () => '…' }).
+    const plN = (n, f) => f[(n % 10 === 1 && n % 100 !== 11) ? 0 : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) ? 1 : 2];
+    const cfg = (k, d) => { try { return (typeof ADMIN_CFG !== 'undefined' && ADMIN_CFG[k]) || d; } catch (e) { return d; } };
     const HINTS = window.LOGO_HINTS = window.LOGO_HINTS || [
-        { id: 'shop', text: 'В лавке можно купить любой бонус для полёта!' }
+        { id: 'shop', text: 'В лавке можно купить любой бонус для полёта!' },
+        { id: 'shz1', text: () => { const n = cfg('shazamEvery', 4); return `Каждое ${n}-е ускорение включает ШАЗАМ!`; } },
+        { id: 'shz2', text: 'В ШАЗАМе сова летит сквозь трубы и притягивает значки.' },
+        { id: 'shz3', text: 'ШАЗАМ кончается — успей вылететь из трубы!' },
+        { id: 'feat', text: () => { const n = cfg('feathersForMax', 6); return `${n} ${plN(n, ['волшебное перо', 'волшебных пера', 'волшебных перьев'])} — запас сил +20%.`; } },
+        { id: 'shld', text: 'Щит спасает от удара и отбивает огненные шары.' },
+        { id: 'star', text: 'Секретная звезда — сюрприз: бонус или штраф!' },
+        { id: 'food', text: 'Пицца, бургер и хот-дог — по ½ сердца.' },
+        { id: 'coin', text: 'Каждые 50 вопросов в полёте — монеты или попытка!' },
+        { id: 'quiz', text: 'Вопросы дня — новые каждый день и монеты за ответы.' },
+        { id: 'roul', text: 'Собрал все темы — крути рулетку призов!' },
+        { id: 'paus', text: 'Пауза вверху экрана — потом продолжишь с того же места.' },
+        { id: 'rule', text: 'В правилах — всё про бонусы и опасности.' },
+        { id: 'sett', text: 'В настройках можно тише музыку или проще графику.' },
+        { id: 'rain', text: 'В дождь сова мокнет и может обледенеть. Щит спасает!' },
+        { id: 'watr', text: 'Водонапор? На ускорении сова режет воду.' },
+        { id: 'lowh', text: 'Полтора сердца или меньше — следующий удар последний!' },
+        { id: 'stam', text: 'Кончились силы — минус сердце. Лови перья и еду!' },
+        { id: 'them', text: 'Собирай темы — с ними растёт уровень сложности.' },
+        { id: 'hit', text: 'Удар о трубу — минус сердце и 2 секунды неуязвимости.' }
     ];
     const GREET = { id: 'hello', text: 'Привет!' };
-    let greetPending = true, lastHintId = '', lastShown = true, sayNow = null, sayHideT = 0;
+    const START = { id: 'start', text: 'Жми «Начать полёт» внизу экрана!' };
+    const LS_GET = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const LS_SET = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+    const dayKey = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+    let greetPending = LS_GET('bubo_hello_day') !== dayKey(), lastShown = true, sayNow = null, sayHideT = 0, seenN = 0, startTg = false;
+    function nextHint() {   // по кругу без повторов
+        const ids = HINTS.filter(h => h && h.text).map(h => h.id);
+        if (!ids.length) return null;
+        let q = []; try { q = JSON.parse(LS_GET('bubo_hint_q') || '[]').filter(id => ids.indexOf(id) >= 0); } catch (e) {}
+        if (!q.length) {
+            q = ids.slice(); for (let i = q.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [q[i], q[j]] = [q[j], q[i]]; }
+            const last = LS_GET('bubo_hint_last'); if (q.length > 1 && q[0] === last) q.push(q.shift());
+        }
+        const id = q.shift(); LS_SET('bubo_hint_q', JSON.stringify(q)); LS_SET('bubo_hint_last', id);
+        return HINTS.find(h => h.id === id) || null;
+    }
     const sst = document.createElement('style');
     const Q = '#startScreen > .menu-logo-wrap ';
     sst.textContent = Q + '.lg-say{position:absolute;z-index:4;pointer-events:none;width:0;height:0}'
         // аккуратная подсказка: скруглённая плашка в цвет состояния совы и маленький уголок-хвостик к сове
-        + Q + '.lg-say-b{--bg:color-mix(in srgb,var(--sc,#C4A1FF) 30%,#fff);position:absolute;left:0;bottom:0;box-sizing:border-box;width:max-content;padding:6px 11px 7px;border-radius:12px;'
+        + Q + '.lg-say-b{--bg:color-mix(in srgb,var(--sc,#C4A1FF) 30%,#fff);--bgB:color-mix(in srgb,var(--sc,#C4A1FF) 42%,#fff);position:absolute;left:0;bottom:0;box-sizing:border-box;width:max-content;padding:6px 11px 7px;border-radius:12px;'
         + 'font:500 11.5px/1.3 Onest,sans-serif;letter-spacing:.01em;color:color-mix(in srgb,var(--sc,#C4A1FF) 28%,#1A0630);text-align:center;white-space:normal;'
-        + 'background:var(--bg);border:0;box-shadow:0 0 0 1px color-mix(in srgb,var(--sc,#C4A1FF) 35%,transparent),0 0 10px color-mix(in srgb,var(--sc,#C4A1FF) 40%,transparent),0 3px 8px rgba(20,3,38,.3);'
+        + 'background:linear-gradient(180deg,color-mix(in srgb,var(--sc,#C4A1FF) 16%,#fff) 0%,var(--bg) 55%,var(--bgB) 100%);border:0;'
+        // объём: светлый блик сверху внутри, мягкая цветная тень-свечение снизу в цвет состояния совы
+        + 'box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 3px color-mix(in srgb,var(--sc,#C4A1FF) 22%,transparent),0 0 0 1px color-mix(in srgb,var(--sc,#C4A1FF) 35%,transparent),0 7px 14px -5px color-mix(in srgb,var(--sc,#C4A1FF) 85%,transparent),0 0 12px color-mix(in srgb,var(--sc,#C4A1FF) 30%,transparent);'
         + 'transform-origin:var(--ox,12%) 100%;opacity:0;transform:translateY(6px) scale(.92);will-change:transform,opacity}'
         // хвостик-«хоботок»: треугольник со скруглёнными углами, кончик чуть ниже и левее — к голове совы
-        + Q + '.lg-say-b::after{content:"";position:absolute;left:calc(var(--tx,16px) - 3px);bottom:-8px;width:14px;height:10px;background:var(--bg);'
+        + Q + '.lg-say-b::after{content:"";position:absolute;left:calc(var(--tx,16px) - 3px);bottom:-8px;width:14px;height:10px;background:var(--bgB);'
         + "clip-path:path('M0,0 H14 C10,1.6 6.2,4.8 3,8.8 C1.9,10.2 0.3,10 0.4,8.3 C0.7,5.4 1.1,2.6 0,0 Z')}"
         + Q + '.lg-say-b > span{position:relative;display:block}'
         + Q + '.lg-say-b.v{animation:lgSayIn .38s cubic-bezier(.2,.9,.3,1.15) forwards,lgSayBob 3.4s .4s ease-in-out infinite}'
@@ -365,15 +405,13 @@
     const sayStep = (fn, ms) => saySteps.push(setTimeout(fn, ms));
     const sayClear = () => { saySteps.forEach(clearTimeout); saySteps = []; };
     function pickSay() {   // какую реплику скажет сова при этом появлении (или промолчит)
-        if (greetPending) return GREET;
-        const want = lastShown ? Math.random() < 0.3 : Math.random() < 0.8;   // примерно через раз
-        lastShown = want;
-        if (!want || !HINTS.length) return null;
-        let pool = HINTS.filter(h => h && h.text && h.id !== lastHintId);
-        if (!pool.length) pool = HINTS.filter(h => h && h.text);
-        const h = pool[Math.floor(Math.random() * pool.length)];
-        if (h) lastHintId = h.id;
-        return h || null;
+        seenN++;
+        if (greetPending) { greetPending = false; LS_SET('bubo_hello_day', dayKey()); lastShown = true; return GREET; }
+        if (window.__saySoon) { window.__saySoon = false; lastShown = true; return nextHint(); }   // вернулся из полёта
+        lastShown = !lastShown;
+        if (!lastShown) return null;   // через раз — без реплики
+        if (LS_GET('bubo_first_game_done') !== '1' && seenN >= 3 && (startTg = !startTg)) return START;   // новичок ещё не летал — через раз с обычными
+        return nextHint();
     }
     // ставим облачко: хвостик из кружочков ведёт к голове совы, плашка — выше и правее плитки, в пределах экрана и ниже кнопок верхней панели
     function sayPlace(L) {
@@ -414,13 +452,12 @@
     function sayShow(h, L) {
         if (!h) return;
         sayClear();
-        sayNow = h; sayT.textContent = h.text;
+        sayNow = h; sayT.textContent = String(typeof h.text === 'function' ? h.text() : h.text).replace(/ (—|-) /g, '\u00A0$1 ').replace(/ (и|в|с|к|о|а) /g, ' $1\u00A0');   // без висячих тире и предлогов
         say.style.setProperty('--sc', (state && state.line) || '#C4A1FF');
         [sayB, ...dots].forEach(e => e.classList.remove('v', 'h'));
         say.style.display = '';
         sayPlace(L);
         sayStep(() => sayB.classList.add('v'), 30);
-        if (h === GREET) greetPending = false;
     }
     function sayHide(now) {
         if (!sayNow && say.style.display === 'none') return;
@@ -442,6 +479,6 @@
     // makeHomeOwl();   // сова как постоянный логотип — отключено, логотип снова джойстик
     schedule();
     // уходим в полёт: анимация логотипа и облачко гаснут сразу
-    window.logoAnimStop = () => { if (raf) { cancelAnimationFrame(raf); raf = 0; } if (state) stop(); else sayHide(true); };
+    window.logoAnimStop = () => { window.__saySoon = true; if (raf) { cancelAnimationFrame(raf); raf = 0; } if (state) stop(); else sayHide(true); };
     window.logoAnimPlay = (id) => { const s = STATES.find(x => x.id === id); if (s) order.unshift(s); nextAt = 0; schedule(); };
 })();
