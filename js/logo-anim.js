@@ -106,7 +106,7 @@
             currentOvereatFactor = state.id === 'fat' ? 1 : 0;
             if (hasShz) SHZ.k = state.id === 'shazam' ? 1 : 0;
             owl.x = 0; owl.y = 0; owl.rotation = rot; owl.visible = true; owl.wing = state.id === 'freeze' ? 0 : wing; owl.lean = (state.id === 'speed' || state.id === 'shazam') ? 0.3 : 0;   // ускорение и ШАЗАМ — сова наклонена вперёд owl.boostK = state.id === 'speed' ? 1 : 0; owl.spinAngle = 0;
-            ctx = gc;
+            ctx = gc; window.__noBlink = true;
             // ускорение и ШАЗАМ: из-за совы вылетают звёздочки, как в игре (те же функции игры)
             if (fx && (state.id === 'speed' || state.id === 'shazam') && typeof updateSpeedStars === 'function') {
                 const ss_ = speedStars, sr_ = speedRamp, sa_ = speedStarAcc, sbt_ = speedBoostTime, sga = gameActive, shA = window.shazamActive;
@@ -119,7 +119,7 @@
             else owl.draw();
         } catch (e) {}
         finally {
-            ctx = main; gameActive = ga; waitingFirstTap = wft; dtMult = dm; frame = fr;
+            ctx = main; window.__noBlink = false; gameActive = ga; waitingFirstTap = wft; dtMult = dm; frame = fr;
             currentDrunkFactor = d; currentFreezeFactor = fz; currentOvereatFactor = ov; viewScale = vs; renderScale = rs;
             if (hasShz) SHZ.k = shk;
             keys.forEach(k => owl[k] = save[k]);
@@ -319,7 +319,7 @@
         state = null; sparks = []; LS.stars = []; LS.acc = 0; lgOn(false); txtK(0);
         if (home) { setHome(1); setIcon(0, 0, 0); } else resetIcon();
         g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height);
-        nextAt = performance.now() + 2000 + Math.random() * 1000;   // джойстик 2–3 с, потом снова сова
+        nextAt = performance.now() + 1700;   // джойстик ≈2 с (с переходами), потом снова сова
     }
     function schedule() { if (!raf) raf = requestAnimationFrame(tick); }
     setInterval(() => { if (!state && !raf) schedule(); }, 1000);

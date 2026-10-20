@@ -599,9 +599,9 @@ const AudioFX = {
             const lead = this.ctx.createOscillator();
             const leadGain = this.ctx.createGain();
             lead.type = 'triangle';
-            lead.frequency.setValueAtTime(dFreq, now);
+            lead.frequency.value = dFreq; lead.frequency.setValueAtTime(dFreq, now);
             lead.frequency.linearRampToValueAtTime(dFreq * 0.985, now + 0.9);
-            leadGain.gain.setValueAtTime(0.0001, now);
+            leadGain.gain.value = 0.0001; leadGain.gain.setValueAtTime(0.0001, now);
             leadGain.gain.linearRampToValueAtTime(0.42, now + 0.05);
             leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
             leadGain.gain.linearRampToValueAtTime(0, now + 0.96);
@@ -612,8 +612,8 @@ const AudioFX = {
                 const bass = this.ctx.createOscillator();
                 const bassGain = this.ctx.createGain();
                 bass.type = 'sine';
-                bass.frequency.setValueAtTime(bFreq, now);
-                bassGain.gain.setValueAtTime(0.0001, now);
+                bass.frequency.value = bFreq; bass.frequency.setValueAtTime(bFreq, now);
+                bassGain.gain.value = 0.0001; bassGain.gain.setValueAtTime(0.0001, now);
                 bassGain.gain.linearRampToValueAtTime(0.5, now + 0.08);
                 bassGain.gain.exponentialRampToValueAtTime(0.001, now + 1.9);
                 bassGain.gain.linearRampToValueAtTime(0, now + 1.92);
@@ -624,8 +624,8 @@ const AudioFX = {
             // Торжественные фанфары: яркая мажорная мелодия, бас и лёгкие барабаны
             const vt = (type, f, vol, dur) => {
                 const os = this.ctx.createOscillator(), g = this.ctx.createGain();
-                os.type = type; os.frequency.setValueAtTime(f, now);
-                g.gain.setValueAtTime(0.0001, now);
+                os.type = type; os.frequency.value = f; os.frequency.setValueAtTime(f, now);
+                g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, now);
                 g.gain.linearRampToValueAtTime(vol, now + 0.01);
                 g.gain.exponentialRampToValueAtTime(0.001, now + dur);
                 os.connect(g); g.connect(this.musicGain);
@@ -638,8 +638,8 @@ const AudioFX = {
             if (this.step % 4 === 0) { vt('sine', mf * 2, 0.08, 0.5); vt('sine', 130, 0.4, 0.15); }
             if (this.step % 8 === 4) {
                 const ns = this.ctx.createBufferSource(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-                ns.buffer = this._iceNoise(); fl.type = 'bandpass'; fl.frequency.setValueAtTime(1900, now);
-                g.gain.setValueAtTime(0.18, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                ns.buffer = this._iceNoise(); fl.type = 'bandpass'; fl.frequency.value = 1900; fl.frequency.setValueAtTime(1900, now);
+                g.gain.value = 0.18; g.gain.setValueAtTime(0.18, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
                 ns.connect(fl); fl.connect(g); g.connect(this.musicGain); ns.start(now); ns.stop(now + 0.14);
             }
         } else if (this.mode === 'shop') {
@@ -648,8 +648,8 @@ const AudioFX = {
             const f = (ph ? this.shopMelody2 : this.shopMelody)[s16];
             const pl = (type, fr, vol, dur) => {
                 const o = this.ctx.createOscillator(), g = this.ctx.createGain(), lp = this.ctx.createBiquadFilter();
-                o.type = type; o.frequency.setValueAtTime(fr, now); lp.type = 'lowpass'; lp.frequency.setValueAtTime(2600, now);
-                g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + 0.008); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                o.type = type; o.frequency.value = fr; o.frequency.setValueAtTime(fr, now); lp.type = 'lowpass'; lp.frequency.value = 2600; lp.frequency.setValueAtTime(2600, now);
+                g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + 0.008); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
                 o.connect(lp); lp.connect(g); g.connect(this.musicGain); o.start(now); o.stop(now + dur + 0.02);
             };
             if (f) { pl('triangle', f, 0.3, 0.24); pl('sine', f * 2, 0.06, 0.12); }
@@ -657,8 +657,8 @@ const AudioFX = {
             if (s % 4 === 2) { pl('sine', 523.25 * (ph ? 1.26 : 1.19), 0.05, 0.18); }   // лёгкий аккордный «плинк» на слабую долю
             {   // шейкер
                 const ns = this.ctx.createBufferSource(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-                ns.buffer = this._iceNoise(); fl.type = 'highpass'; fl.frequency.setValueAtTime(7000, now);
-                g.gain.setValueAtTime(s % 2 ? 0.05 : 0.025, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                ns.buffer = this._iceNoise(); fl.type = 'highpass'; fl.frequency.value = 7000; fl.frequency.setValueAtTime(7000, now);
+                g.gain.value = s % 2 ? 0.05 : 0.025; g.gain.setValueAtTime(s % 2 ? 0.05 : 0.025, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
                 ns.connect(fl); fl.connect(g); g.connect(this.musicGain); ns.start(now); ns.stop(now + 0.06);
             }
         } else if (this.mode === 'library') {
@@ -666,8 +666,8 @@ const AudioFX = {
             const s = this.step, ch = this.libChords[Math.floor(s / 8) % 4], f = ch[this.libArp[s % 8]];
             const tone = (type, fr, vol, dur, att, cut) => {
                 const o = this.ctx.createOscillator(), g = this.ctx.createGain(), lp = this.ctx.createBiquadFilter();
-                o.type = type; o.frequency.setValueAtTime(fr, now); lp.type = 'lowpass'; lp.frequency.setValueAtTime(cut || 2200, now);
-                g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + (att || 0.01)); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                o.type = type; o.frequency.value = fr; o.frequency.setValueAtTime(fr, now); lp.type = 'lowpass'; lp.frequency.value = cut || 2200; lp.frequency.setValueAtTime(cut || 2200, now);
+                g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + (att || 0.01)); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
                 o.connect(lp); lp.connect(g); g.connect(this.musicGain); o.start(now); o.stop(now + dur + 0.02);
             };
             tone('triangle', f * 2, 0.17, 1.1, 0.006, 2600);   // арфа
@@ -681,22 +681,22 @@ const AudioFX = {
             const f = mel[s16];
             const tone = (type, fr, vol, dur, att) => {
                 const o = this.ctx.createOscillator(), g = this.ctx.createGain(), lp = this.ctx.createBiquadFilter();
-                o.type = type; o.frequency.setValueAtTime(fr, now); lp.type = 'lowpass'; lp.frequency.setValueAtTime(1500, now);
-                g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + (att || 0.03)); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                o.type = type; o.frequency.value = fr; o.frequency.setValueAtTime(fr, now); lp.type = 'lowpass'; lp.frequency.value = 1500; lp.frequency.setValueAtTime(1500, now);
+                g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + (att || 0.03)); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
                 o.connect(lp); lp.connect(g); g.connect(this.musicGain); o.start(now); o.stop(now + dur + 0.02);
             };
             if (f) tone('triangle', f, 0.26, 0.55, 0.04);
             if (s % 4 === 0) tone('sine', this.quizBass[Math.floor(s / 4) % this.quizBass.length], 0.34, 1.0, 0.05);
             if (s % 8 === 0 || s % 8 === 5) {   // мягкая бочка
                 const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-                o.type = 'sine'; o.frequency.setValueAtTime(110, now); o.frequency.exponentialRampToValueAtTime(42, now + 0.16);
-                g.gain.setValueAtTime(0.32, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                o.type = 'sine'; o.frequency.value = 110; o.frequency.setValueAtTime(110, now); o.frequency.exponentialRampToValueAtTime(42, now + 0.16);
+                g.gain.value = 0.32; g.gain.setValueAtTime(0.32, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
                 o.connect(g); g.connect(this.musicGain); o.start(now); o.stop(now + 0.22);
             }
             if (s % 2 === 1) {   // тихий хэт
                 const ns = this.ctx.createBufferSource(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-                ns.buffer = this._iceNoise(); fl.type = 'highpass'; fl.frequency.setValueAtTime(6500, now);
-                g.gain.setValueAtTime(s % 4 === 3 ? 0.05 : 0.03, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                ns.buffer = this._iceNoise(); fl.type = 'highpass'; fl.frequency.value = 6500; fl.frequency.setValueAtTime(6500, now);
+                g.gain.value = s % 4 === 3 ? 0.05 : 0.03; g.gain.setValueAtTime(s % 4 === 3 ? 0.05 : 0.03, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
                 ns.connect(fl); fl.connect(g); g.connect(this.musicGain); ns.start(now); ns.stop(now + 0.08);
             }
         } else if (this.mode === 'menu') {
@@ -706,15 +706,15 @@ const AudioFX = {
             const ac = this.ctx, out = this.musicGain;
             const tone = (type, fr, vol, dur, att, cut, f2) => {
                 const o = ac.createOscillator(), g = ac.createGain(), lp = ac.createBiquadFilter();
-                o.type = type; o.frequency.setValueAtTime(fr, now); if (f2) o.frequency.exponentialRampToValueAtTime(f2, now + dur * 0.8);
-                lp.type = 'lowpass'; lp.frequency.setValueAtTime(cut || 3000, now);
-                g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + (att || 0.006)); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                o.type = type; o.frequency.value = fr; o.frequency.setValueAtTime(fr, now); if (f2) o.frequency.exponentialRampToValueAtTime(f2, now + dur * 0.8);
+                lp.type = 'lowpass'; lp.frequency.value = cut || 3000; lp.frequency.setValueAtTime(cut || 3000, now);
+                g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + (att || 0.006)); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
                 o.connect(lp); lp.connect(g); g.connect(out); o.start(now); o.stop(now + dur + 0.02);
             };
             const noise = (type, freq, vol, dur, q) => {
                 const ns = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
-                ns.buffer = this._iceNoise(); fl.type = type; fl.frequency.setValueAtTime(freq, now); if (q) fl.Q.setValueAtTime(q, now);
-                g.gain.setValueAtTime(vol, now); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                ns.buffer = this._iceNoise(); fl.type = type; fl.frequency.value = freq; fl.frequency.setValueAtTime(freq, now); if (q) fl.Q.value = q; fl.Q.setValueAtTime(q, now);
+                g.gain.value = vol; g.gain.setValueAtTime(vol, now); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
                 ns.connect(fl); fl.connect(g); g.connect(out); ns.start(now); ns.stop(now + dur + 0.02);
             };
             // барабаны
@@ -770,9 +770,9 @@ const AudioFX = {
             const tone = (type, f, vol, dur, f2) => {
                 const os = this.ctx.createOscillator(), g = this.ctx.createGain();
                 os.type = type;
-                os.frequency.setValueAtTime(f, now);
+                os.frequency.value = f; os.frequency.setValueAtTime(f, now);
                 if (f2) os.frequency.exponentialRampToValueAtTime(f2, now + dur * 0.8);
-                g.gain.setValueAtTime(0.0001, now);
+                g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, now);
                 g.gain.linearRampToValueAtTime(vol, now + 0.006);
                 g.gain.exponentialRampToValueAtTime(0.001, now + dur);
                 g.gain.linearRampToValueAtTime(0, now + dur + 0.01);
@@ -788,8 +788,8 @@ const AudioFX = {
                 }
                 const ns = this.ctx.createBufferSource(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
                 ns.buffer = this._noiseBuf;
-                fl.type = fType; fl.frequency.setValueAtTime(freq, now); if (q) fl.Q.setValueAtTime(q, now);
-                g.gain.setValueAtTime(vol, now);
+                fl.type = fType; fl.frequency.value = freq; fl.frequency.setValueAtTime(freq, now); if (q) fl.Q.value = q; fl.Q.setValueAtTime(q, now);
+                g.gain.value = vol; g.gain.setValueAtTime(vol, now);
                 g.gain.exponentialRampToValueAtTime(0.001, now + dur);
                 ns.connect(fl); fl.connect(g); g.connect(out);
                 ns.start(now); ns.stop(now + dur + 0.02);
@@ -802,14 +802,14 @@ const AudioFX = {
             const oscB = this.ctx.createOscillator();
             const gainB = this.ctx.createGain();
             oscB.type = lvl >= 5 ? 'sawtooth' : 'triangle';
-            oscB.frequency.setValueAtTime(bFreq, now);
-            gainB.gain.setValueAtTime(0.0001, now);
+            oscB.frequency.value = bFreq; oscB.frequency.setValueAtTime(bFreq, now);
+            gainB.gain.value = 0.0001; gainB.gain.setValueAtTime(0.0001, now);
             gainB.gain.linearRampToValueAtTime(lvl >= 5 ? 0.22 : 0.3, now + 0.006);
             gainB.gain.exponentialRampToValueAtTime(0.001, now + 0.18 * len);
             gainB.gain.linearRampToValueAtTime(0, now + 0.19 * len);
             if (lvl >= 5) {
                 const lp = this.ctx.createBiquadFilter();
-                lp.type = 'lowpass'; lp.frequency.setValueAtTime(1000, now);
+                lp.type = 'lowpass'; lp.frequency.value = 1000; lp.frequency.setValueAtTime(1000, now);
                 oscB.connect(lp); lp.connect(gainB);
             } else {
                 oscB.connect(gainB);

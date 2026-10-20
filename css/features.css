@@ -661,3 +661,9 @@ html #rouletteModal > .glass-panel { max-width: calc(380px * var(--menu-zoom, 1)
 #menuCoins .mc-tw:nth-of-type(3) { left: 25px !important; top: 23px !important; }
 #openSettingsBtn { border-color: rgba(168, 85, 247, 0.45) !important; }
 #openSettingsBtn .fa-gear { color: #A855F7 !important; }
+/* v0.13.80: 6 сердец — сердечки и отступы между ними чуть меньше, чтобы трёхзначный счёт вопросов помещался без сжатия всей панели */
+#topHud #livesContainer:has(> :nth-child(6)) i.fa-heart:not(.half-heart) { font-size: calc(11.5px * var(--tb, 1) * var(--hk, 1) * 0.92) !important; }
+#topHud #livesContainer:has(> :nth-child(6)) .half-heart { font-size: calc(7px * var(--tb, 1) * var(--hk, 1) * 0.92) !important; }
+#topHud #livesContainer:has(> :nth-child(6)) > * { width: calc(14px * var(--hk, 1) * 0.92) !important; height: calc(14px * var(--hk, 1) * 0.92) !important; }
+#topHud #livesContainer:has(> :nth-child(6)) > * + * { margin-left: calc(5px * var(--hk, 1) * 0.7) !important; }
+#topHud #livesContainer:has(> :nth-child(6)) { padding-left: calc(12px * var(--hk, 1) * 0.85) !important; padding-right: calc(12px * var(--hk, 1) * 0.85) !important; }

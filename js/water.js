@@ -297,6 +297,14 @@ function waterUpdate(speed, squeeze) {
                     if (shieldTime <= 0) waterWetOwl(wx, d.y);
                     D.splice(k, 1); continue;
                 }
+            } else if (window.MENU_OBST) {   // главное меню: вода разбивается о логотип и брызгает в стороны
+                const o = window.MENU_OBST, wx = p.x + d.x;
+                if (wx > o.x0 - d.r && wx < o.x1 + d.r && d.y + d.r > o.y0 && d.y < o.y1) {
+                    const side = wx < (o.x0 + o.x1) / 2 ? -1 : 1, edgeK = Math.min(1, Math.min(wx - o.x0, o.x1 - wx) / 30);
+                    waterSplash(wx, o.y0 - 1, d.b ? 1 : 2, -Math.PI / 2 + side * (0.5 + Math.random() * 0.7) * (0.6 + 0.4 * edgeK), 1.3, 1.8 + d.vy * 0.28);
+                    if (Math.random() < 0.02 && s.mist.length < 12) s.mist.push({ x: d.x, y: o.y0 - 4, r: 7 + Math.random() * 6, a: 0.22, vy: -0.2 });
+                    D.splice(k, 1); continue;
+                }
             }
         }
         // живая вода: близкие капли притягиваются и тянутся друг к другу ниточкой, через миг сливаются в одну (она дрожит);
@@ -354,6 +362,7 @@ function waterUpdate(speed, squeeze) {
             let gone = m.y - m.len > yb;
             if (!gone && m.y > yb) m.len = Math.max(0, m.len - (m.y - yb)), m.y = yb;
             if (!gone && gameActive && !shz) { const ddx = p.x + m.x - owl.x, ddy = m.y - owl.y; if (ddx * ddx + ddy * ddy < R * R) gone = true; }
+            if (!gone && !gameActive && window.MENU_OBST) { const o = window.MENU_OBST, mx = p.x + m.x; if (mx > o.x0 && mx < o.x1 && m.y > o.y0 && m.y - m.len < o.y1) { if (m.y - m.len < o.y0) { m.len = Math.max(0, m.len - (m.y - o.y0)); m.y = o.y0; } else gone = true; } }   // о логотип штрих обрывается
             if (!gone) for (const it of obst) { const ox = p.x + m.x - it.x, oy = m.y - it.y, rr = (it.radius || 16); if (ox * ox + oy * oy < rr * rr) { gone = true; break; } }   // о значок штрих гаснет
             if (gone || m.len <= 0) s.streaks.splice(k, 1);
         }

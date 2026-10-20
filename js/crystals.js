@@ -187,6 +187,15 @@ function crystalUpdate(speed, squeeze) {
                 crystalHit();
             }
         }
+        if (!gone && !gameActive && window.MENU_OBST) {   // главное меню: огненный шар отскакивает от логотипа
+            const o = window.MENU_OBST, nx = Math.max(o.x0, Math.min(c.x, o.x1)), ny = Math.max(o.y0, Math.min(c.y, o.y1)), dx = c.x - nx, dy = c.y - ny;
+            if (dx * dx + dy * dy < rr * rr * 1.5) {
+                const a = (dx || dy) ? Math.atan2(dy, dx) : (c.d > 0 ? -Math.PI / 2 : Math.PI / 2);
+                const pw = 3.2 + Math.random() * 1.6;
+                c.kn = true; c.kl = 60; c.kvx = Math.cos(a) * pw + (Math.random() - 0.5) * 1.6; c.kvy = Math.sin(a) * pw - (Math.sin(a) < 0 ? 0.6 : 0);
+                crystalBurst(c.x, c.y, 6);
+            }
+        }
         if (gone) crystals.splice(i, 1);
     }
 }

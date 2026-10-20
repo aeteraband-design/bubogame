@@ -1153,6 +1153,7 @@ function drawMenuPipes() {
     }
     const ia = MENU_PIPE.t0 ? Math.min(1, (performance.now() - MENU_PIPE.t0) / 380) : 1, off = (1 - (1 - Math.pow(1 - ia, 3))) * height * 0.6;   // выезд труб
     const v = MENU_PIPE.speed * dtMult * (window.__bgSpeed || 1);
+    if (!window.__booting && typeof menuFxTick === 'function') menuFxTick(MENU_PIPE.speed * (window.__bgSpeed || 1));   // редкие эффекты меню: фейерверк, вода, огонь
     menuPipes.forEach((p) => { p.x -= v; });
     menuPipes = menuPipes.filter((p) => p.x + p.width > -20);
     if (!menuPipes.length) { for (let x = width * 0.12; x < width + MENU_PIPE.step; x += MENU_PIPE.step) menuPipes.push(menuPipeMake(x)); }

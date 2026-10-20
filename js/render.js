@@ -146,7 +146,7 @@ function drawScene() {
         if (typeof MENU_PIPE !== 'undefined') { MENU_PIPE.cy = null; MENU_PIPE.t = 0; MENU_PIPE.t0 = 0; }
     }
     drawScene.__wasMenu = isStartMenuOpen;
-    { const mh = dsEl.h || (dsEl.h = document.getElementById('menuHalo')); if (mh && mh.__on !== isStartMenuOpen) { mh.__on = isStartMenuOpen; mh.classList.toggle('off', !isStartMenuOpen); } }
+    { const mh = dsEl.h || (dsEl.h = document.getElementById('menuHalo')); const hOn = isStartMenuOpen && performance.now() < (window.__haloUntil || 0); if (mh && mh.__on !== hOn) { mh.__on = hOn; mh.classList.toggle('off', !hOn); } }   // свечение совы — только при переходе с загрузки, потом плавно гаснет: в меню логотип без свечения
     if (isStartMenuOpen && dsEl.h && typeof MENU_PIPE !== 'undefined' && MENU_PIPE.cy != null) {   // свечение всегда за логотипом (на загрузке — за совой) и едет вместе с проёмом труб
         const cr = (dsEl.c || (dsEl.c = document.getElementById('gameCanvas'))).getBoundingClientRect();
         const mr = dsEl.h.firstElementChild && dsEl.h.firstElementChild.getBoundingClientRect();   // base — центр свечения без сдвига (с учётом зума)
@@ -292,6 +292,7 @@ function initMenuScenery() {
 }
 
 function startOrResumeFlight() {
+    if (typeof menuFxLeave === 'function') menuFxLeave();   // эффекты меню убираем, эффекты паузы возвращаем
     window.__bootMoon = false;   // луна с экрана загрузки держится в меню до первого полёта, дальше — луна игры
     // попытки закончились — стартуем новую игру с полным набором попыток
     try { checkDailyReset(); } catch (e) {}
@@ -475,6 +476,7 @@ function returnToHome() {
     if (bottomHud) bottomHud.classList.add('hidden');
 
     initMenuScenery();
+    if (typeof menuFxEnter === 'function') menuFxEnter();   // эффекты паузы — в сторону, в меню свои
 }
 
 // Запуск сохранения/интерфейса после загрузки всех файлов игры

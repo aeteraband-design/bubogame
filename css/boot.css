@@ -50,7 +50,7 @@
 html.booting #startScreen { visibility: hidden !important; }   /* меню появится только после тапа */
 
 /* v0.13.66: свечение совы с загрузки остаётся в главном меню — тот же размер, место и пульс, без рывка */
-#menuHalo { position: fixed; inset: 0; z-index: 1; pointer-events: none; transition: opacity 0.5s ease; }
+#menuHalo { position: fixed; inset: 0; z-index: 1; pointer-events: none; transition: opacity 1.2s ease; }
 #menuHalo.off { opacity: 0; }
 #menuHalo:not(.off) { transition: none; }   /* в меню появляется сразу, гаснет при уходе в игру плавно */
 html.booting #menuHalo { visibility: hidden; }

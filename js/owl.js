@@ -187,7 +187,7 @@ const owl = {
             drawShieldSphere(notchRadius, shieldDentAng - this.rotation, -this.rotation, shK, shCol, this.rotation + (this.lean || 0));
 
             ctx.restore();
-        } else if (invulnerableTime > 0 && Math.floor(frame / 5) % 2 === 0) {
+        } else if (invulnerableTime > 0 && !window.__noBlink && Math.floor(frame / 5) % 2 === 0) {   // в логотипе меню сова не мигает
             ctx.globalAlpha = 0.4;
         }
 

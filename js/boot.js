@@ -181,6 +181,7 @@
             }
             function finishDismiss() {
                 document.documentElement.classList.remove('booting'); window.__booting = false;
+                window.__haloUntil = performance.now() + 500;   // свечение за совой передаётся меню и через полсекунды плавно гаснет
                 el.classList.add('handoff');   // свечение совы и логотип дальше показывает само меню — точно там же, поэтому без вспышек и рывков
                 // трубы и свечение плавно подъезжают от совы к месту логотипа; сам логотип появляется там красиво: значок, потом буквы
                 try {
