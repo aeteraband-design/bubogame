@@ -541,7 +541,7 @@ function stormDrawHotFx(k, cz) {
     }
     ctx.clip('evenodd');
     try {
-        if (hot) { ctx.globalAlpha = 1; drawCrystals(); }
+        if (hot) { ctx.globalAlpha = 0.5 * k; drawCrystals(); ctx.globalAlpha = 1; }   // огоньки — в своём цвете, чуть светятся
         if (wet) {   // вода — в своих цветах и чуть светится, будто сзади луна
             ctx.globalAlpha = Math.min(1, 0.75 * k);
             if (typeof drawWater === 'function') drawWater();
@@ -563,7 +563,22 @@ function stormDrawHotFx(k, cz) {
     if (hot && typeof crystalDrawHeat === 'function') {
         ctx.save();
         if (Math.abs(cz - 1) > 0.0005) { ctx.translate(width / 2, height / 2); ctx.scale(cz, cz); ctx.translate(-width / 2, -height / 2); }
-        crystalDrawHeat(0.9 * k);
+        // в дождь трубы не «горят», а просто остаются цветными: шляпки — красные, у устья — лёгкое свечение
+        const rk = typeof crystalRedK === 'number' ? crystalRedK : 0;
+        if (rk > 0.02) {
+            let sq2 = 0; try { sq2 = crystalSqueeze(); } catch (e) {}
+            const hs = crystalHeatSprite();
+            for (const p of pipes) {
+                if (p.x + p.width < -40 || p.x > width + 40) continue;
+                const yT = p.top + sq2, yB = height - (p.bottom + sq2), w = p.width;
+                ctx.globalCompositeOperation = 'color'; ctx.globalAlpha = Math.min(1, 0.85 * rk * k); ctx.fillStyle = '#FF3A2E';
+                ctx.fillRect(p.x - 6, yT - 20, w + 12, 21); ctx.fillRect(p.x - 6, yB - 1, w + 12, 21);
+                ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, 0.22 * rk * k);
+                const R = w * 0.75; ctx.drawImage(hs, p.x + w / 2 - R, yT - R * 0.45, R * 2, R * 0.9); ctx.drawImage(hs, p.x + w / 2 - R, yB - R * 0.45, R * 2, R * 0.9);
+            }
+            ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+        }
+        if (typeof crystalMist !== 'undefined' && crystalMist.length) { const ms = crystalMistSprite(); for (const m of crystalMist) { ctx.globalAlpha = Math.max(0, Math.min(1, m.a * 0.6 * k)); ctx.drawImage(ms, m.x - m.r, m.y - m.r, m.r * 2, m.r * 2); } ctx.globalAlpha = 1; }
         ctx.restore();
     }
 }

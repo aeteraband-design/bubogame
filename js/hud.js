@@ -340,7 +340,7 @@ function buffSplit(t) {
 function buffTxtHtml(text) {
     const sp = buffSplit(text);
     if (!sp) return sentenceCase(text);
-    return `<span class="bt-l">${sentenceCase(sp.label)}</span> <span class="bt-t" data-v="${sp.time}">${sp.time.split('').map(c => `<span class="bt-c"><b>${c}</b></span>`).join('')}</span>`;
+    return `<span class="bt-l">${sentenceCase(sp.label)}</span><span class="bt-t" data-v="${sp.time}">${sp.time.split('').map(c => `<span class="bt-c"><b>${c}</b></span>`).join('')}</span><span class="bt-s">с</span>`;
 }
 function buffTxtSet(el, text) {
     if (!el) return;
@@ -363,9 +363,12 @@ function buffTxtSet(el, text) {
 }
 (function () {
     const st = document.createElement('style');
-    st.textContent = '.bt-t{display:inline-flex;font-variant-numeric:tabular-nums;vertical-align:top}'
-        + '.bt-c{position:relative;display:inline-block;overflow:hidden;height:1.25em;line-height:1.25em;vertical-align:top}'
-        + '.bt-c>b{display:block;font-weight:inherit}'
+    st.textContent = '.buff-txt:has(.bt-t),.fly-label-tag span:has(>.bt-t){display:inline-flex!important;align-items:center;line-height:1;font-weight:900!important}'
+        + '.bt-l{margin-right:.32em;font-weight:900}'
+        + '.bt-t{display:inline-flex;align-items:center}'
+        + '.bt-c{position:relative;display:inline-block;overflow:hidden;height:1.15em;line-height:1.15em;font-weight:900}'
+        + '.bt-c>b{display:block;font-weight:900}'
+        + '.bt-s{font-weight:900;margin-left:.05em}'
         + '.bt-c>b.in{animation:btIn .26s cubic-bezier(.2,.8,.3,1)}'
         + '.bt-c>b.out{position:absolute;left:0;top:0;animation:btOut .26s ease-in forwards}'
         + '@keyframes btIn{from{transform:translateY(-100%);opacity:0}to{transform:none;opacity:1}}'

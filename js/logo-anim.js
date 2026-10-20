@@ -339,7 +339,7 @@
     const cfg = (k, d) => { try { return (typeof ADMIN_CFG !== 'undefined' && ADMIN_CFG[k]) || d; } catch (e) { return d; } };
     const qpa = () => cfg('questionsPerAttempt', 200);
     const HINTS = window.LOGO_HINTS = window.LOGO_HINTS || [
-        { id: 'shop', text: 'В лавке за монеты можно купить бонус на старт полёта.' },
+        { id: 'shop', text: 'В лавке за монеты можно купить бонус к началу полёта.' },
         { id: 'shz1', text: () => { const n = cfg('shazamEvery', 4); return `Собери ${n} ${plN(n, ['ускорение', 'ускорения', 'ускорений'])} — включится ШАЗАМ!`; } },
         { id: 'shz2', text: 'В ШАЗАМе сова летит сквозь трубы и сама притягивает значки.' },
         { id: 'shz3', text: 'Конец ШАЗАМа — успей вылететь из трубы, пока идёт отсчёт!' },
@@ -349,7 +349,7 @@
         { id: 'food', text: 'Пицца, бургер и хот-дог возвращают по ½ сердца.' },
         { id: 'coin', text: 'За каждые 50 вопросов в полёте — монеты.' },
         { id: 'qatt', text: () => `За каждые ${qpa()} вопросов в полёте — +1 попытка.` },
-        { id: 'quiz', text: 'Отвечай на «Вопросы дня» — за верные ответы дают монеты.' },
+        { id: 'quiz', text: 'Отвечай на «Вопросы дня» и получай монеты.' },
         { id: 'roul', text: 'Собери все темы — получишь вращение рулетки призов.' },
         { id: 'paus', text: 'Кнопка паузы вверху: выйдешь в меню, а потом продолжишь с того же места.' },
         { id: 'rule', text: 'Не знаешь, что делает значок? Загляни в «Правила».' },
@@ -369,8 +369,8 @@
     const START = { id: 'start', text: () => `Жми «${btnName()}» внизу экрана!` };
     const NOATT = [
         { id: 'na1', text: 'Попытки на сегодня кончились. Новые будут завтра!' },
-        { id: 'na2', text: 'Нет попыток? Купи ещё в лавке за монеты.' },
-        { id: 'na3', text: 'Монеты на попытки — за верные ответы в «Вопросах дня».' }
+        { id: 'na2', text: 'Нет попыток? Их можно купить в лавке за монеты.' },
+        { id: 'na3', text: 'Монеты дают за верные ответы в «Вопросах дня».' }
     ];
     let naI = 0;
     const noAttempts = () => { try { return typeof attempts === 'number' && attempts <= 0; } catch (e) { return false; } };
@@ -441,16 +441,28 @@
         dots.forEach((d, i) => { const [dx, s] = ds[i]; d.style.width = d.style.height = (s * u).toFixed(1) + 'px'; d.style.left = (dx * u - s * u / 2).toFixed(1) + 'px'; });
         const tailH = 11 * u;
         // ширина плашки: короткая реплика — в одну строку, длинная — не шире ~230px и края экрана
-        const maxW = Math.max(110, Math.min(200, W - 8));
+        const maxW = Math.max(110, Math.min(230, W - 8));
         sayB.style.maxWidth = maxW + 'px';
-        // плашка по ширине самой длинной строки: слева и справа от текста — столько же места, сколько сверху и снизу
-        sayB.style.width = '';
-        try {
-            const rg = document.createRange(); rg.selectNodeContents(sayT);
-            const bw = sayB.getBoundingClientRect().width, k = bw ? sayB.offsetWidth / bw : 1;
-            let mx = 0; for (const r of rg.getClientRects()) mx = Math.max(mx, r.width);
-            if (mx > 0) sayB.style.width = Math.min(maxW, Math.ceil(mx * k) + 17) + 'px';
-        } catch (e) {}
+        // плашка по ширине самой длинной строки и с ровными строками: ищем самую узкую ширину без лишней строки,
+        // тогда строки выходят примерно одинаковой длины; поля слева/справа — как сверху/снизу. Считаем один раз на текст
+        const ck = sayT.textContent + '|' + maxW;
+        if (sayB.dataset.ck !== ck) {
+            sayB.dataset.ck = ck;
+            const tf0 = sayB.style.transform, an0 = sayB.style.animation;
+            sayB.style.transform = 'none'; sayB.style.animation = 'none';   // мерим без поворота и масштаба появления
+            sayB.style.width = maxW + 'px';
+            try {
+                const h0 = sayT.offsetHeight;
+                let lo = 40, hi = maxW;
+                while (hi - lo > 2) { const mid = (lo + hi) >> 1; sayB.style.width = mid + 'px'; if (sayT.offsetHeight > h0) lo = mid; else hi = mid; }
+                sayB.style.width = hi + 'px';
+                const rg = document.createRange(); rg.selectNodeContents(sayT);
+                const bw = sayB.getBoundingClientRect().width, k = bw ? sayB.offsetWidth / bw : 1;
+                let mx = 0; for (const r of rg.getClientRects()) mx = Math.max(mx, r.width);
+                if (mx > 0) sayB.style.width = Math.min(maxW, Math.ceil(mx * k) + 17) + 'px';
+            } catch (e) { sayB.style.width = ''; }
+            sayB.style.transform = tf0; sayB.style.animation = an0;
+        }
         const pw = sayB.offsetWidth, ph = sayB.offsetHeight;
         sayB.classList.toggle('ml', ph > 40);
         let px = Math.min(W - 4 - pw, Math.max(4 - ax, -pw * 0.12));   // левый край плашки относительно хвостика
@@ -505,5 +517,9 @@
     schedule();
     // уходим в полёт: анимация логотипа и облачко гаснут сразу
     window.logoAnimStop = () => { window.__saySoon = true; if (raf) { cancelAnimationFrame(raf); raf = 0; } if (state) stop(); else sayHide(true); };
+    // свернули и вернулись (или изменился размер экрана) — начинаем цикл заново, сова всегда ровно в плитке
+    const restart = () => { if (state) stop(); else sayHide(true); if (raf) { cancelAnimationFrame(raf); raf = 0; } nextAt = performance.now() + 900; schedule(); };
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { if (state) stop(); } else restart(); });
+    window.addEventListener('resize', () => { if (state) restart(); });
     window.logoAnimPlay = (id) => { const s = STATES.find(x => x.id === id); if (s) order.unshift(s); nextAt = 0; schedule(); };
 })();

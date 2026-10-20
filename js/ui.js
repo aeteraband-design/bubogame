@@ -583,7 +583,7 @@ fitThemeLabels();
                     if (Math.abs(dy) > 1) {
                         const tr0 = lg.style.transition;
                         lg.style.transition = 'none'; lg.style.translate = '0 ' + dy.toFixed(1) + 'px'; void lg.offsetWidth;
-                        lg.style.transition = 'translate .9s cubic-bezier(.45,.05,.25,1)'; lg.style.translate = '0 0';
+                        lg.style.transition = 'translate .9s cubic-bezier(.45,.05,.25,1)'; lg.style.translate = '0 0'; window.__logoGlideUntil = performance.now() + 1000;
                         setTimeout(() => { lg.style.transition = tr0; lg.style.translate = ''; }, 950);
                     }
                 }

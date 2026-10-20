@@ -117,6 +117,11 @@ function drawWater() {
     if (!waterStreams.length) return;
     const t = (typeof frame === 'number' ? frame : 0);
     ctx.save();
+    {   // пар, выходящий из нижней трубы — за трубами: появляется прямо из устья
+        const mist = waterMistSprite();
+        for (const st of waterStreams) { const p = st.pipe; if (!p) continue; for (const m of st.mist) { if (!m.back) continue; ctx.globalAlpha = Math.max(0, m.a); ctx.drawImage(mist, p.x + m.x - m.r, m.y - m.r, m.r * 2, m.r * 2); } }
+        ctx.globalAlpha = 1;
+    }
     ctx.lineCap = 'round';
     for (const s of waterStreams) {
         const p = s.pipe; if (!p) continue;
@@ -151,6 +156,7 @@ function drawWaterFront() {
         const p = s.pipe; if (!p) continue;
         const x = p.x + s.fx * p.width, w = s.w;
         for (const m of s.mist) {
+            if (m.back) continue;   // пар из нижней трубы рисуется за трубами (drawWater)
             ctx.globalAlpha = Math.max(0, m.a);
             ctx.drawImage(mist, p.x + m.x - m.r, m.y - m.r, m.r * 2, m.r * 2);
         }
@@ -240,17 +246,10 @@ function waterUpdate(speed, squeeze) {
         const s = waterStreams[i], p = s.pipe;
         const W = p.width * WK, RATE = DENS * W, IMP = PUSH / (RATE * Math.min(1, 2 * R / W) * 1.8);
         s.sq = squeeze; s.w = W;
-        if (s.on && waterTime <= 0) { s.on = false; s.steam = 1; }
+        if (s.on && waterTime <= 0) s.on = false;
         const cx = p.width * s.fx, y0 = p.top + squeeze, yb = height - (p.bottom + squeeze);
-        // поток кончился: по всей длине поднимается пар — внизу гуще и крупнее, вверху реже; плавно тает
-        if (s.steam > 0) {
-            const n = Math.round(10 * s.steam * dt + Math.random() * 0.6);
-            for (let k = 0; k < n && s.mist.length < 70; k++) {
-                const f = Math.sqrt(Math.random());   // ближе к низу — чаще
-                s.mist.push({ x: cx + (Math.random() - 0.5) * W * 1.1, y: y0 + 10 + f * (yb - y0 - 14), r: 10 + 14 * f + Math.random() * 8, a: (0.16 + 0.22 * f) * s.steam, vy: -0.25 - Math.random() * 0.35, vx: (Math.random() - 0.5) * 0.35, dec: 0.0028 });
-            }
-            s.steam = Math.max(0, s.steam - 0.022 * dt);
-        }
+        // пар: плавно набирается, пока льётся вода (~2 с), и так же плавно сходит на нет, когда вода кончилась
+        s.ramp = Math.max(0, Math.min(1, (s.ramp || 0) + (s.on ? 0.009 : -0.012) * dt));
         if (s.on) {
             // капли и пузырьки рождаются внутри трубы, над краем шляпки — наружу они выходят уже целыми
             s.acc += RATE * dt;
@@ -400,7 +399,16 @@ function waterUpdate(speed, squeeze) {
         }
         for (let k = s.rip.length - 1; k >= 0; k--) { const q = s.rip[k]; q.r += 0.45 * dt; q.a -= 0.035 * dt; if (q.a <= 0) s.rip.splice(k, 1); }
         // водяная пыль по всей высоте потока
-        if (s.on && Math.random() < (0.4 + lv * 0.16) * dt && s.mist.length < 30 + lv * 6) { const f = Math.sqrt(Math.random()); s.mist.push({ x: cx + (Math.random() - 0.5) * W, y: y0 + 15 + f * (yb - y0 - 15), r: 8 + 8 * f + Math.random() * 8, a: 0.15 + 0.1 * f + lv * 0.015, vy: -0.05 - Math.random() * 0.08, vx: (Math.random() - 0.5) * 0.25 }); }
+        // пар по всей длине струи: крупные мягкие клубы, вверху реже и легче, внизу гуще; у нижней трубы — выходит прямо из неё (за трубой)
+        if (s.ramp > 0.02 && gfxQuality !== 'low') {
+            const R = s.ramp;
+            if (Math.random() < (0.35 + lv * 0.1) * R * dt && s.mist.length < 34 + lv * 6) {
+                const f = Math.pow(Math.random(), 0.6);   // ближе к низу — чаще
+                s.mist.push({ x: cx + (Math.random() - 0.5) * W, y: y0 + 12 + f * (yb - y0 - 30), r: 12 + 10 * f + Math.random() * 8, a: (0.1 + 0.12 * f + lv * 0.012) * R, vy: -0.06 - Math.random() * 0.1, vx: (Math.random() - 0.5) * 0.22, dec: 0.0022 });
+            }
+            if (Math.random() < 0.3 * R * dt && s.mist.length < 44 + lv * 6)   // из нижней трубы
+                s.mist.push({ back: 1, x: cx + (Math.random() - 0.5) * W * 0.9, y: yb + 10, r: 12 + Math.random() * 10, a: (0.2 + lv * 0.015) * R, vy: -0.22 - Math.random() * 0.2, vx: (Math.random() - 0.5) * 0.25, dec: 0.0026 });
+        }
         // вода переливается через края нижней шляпки и стекает каплями по бокам
         if (s.hitK > 0.3 && Math.random() < 0.3 * s.hitK * dt && particles.length < 520) {
             const side = Math.random() < 0.5 ? -1 : 1;
@@ -411,7 +419,7 @@ function waterUpdate(speed, squeeze) {
             m.y += m.vy * dt; m.x += (m.vx || 0) * dt; m.r += 0.18 * dt; m.a -= (m.dec || 0.004) * dt;
             if (m.a <= 0) s.mist.splice(k, 1);
         }
-        if ((!s.on && !(s.steam > 0) && !D.length && !s.streaks.length && !s.mist.length && !s.foam.length && !s.rip.length) || p.x + p.width < -60) { waterStreams.splice(i, 1); continue; }
+        if ((!s.on && !(s.ramp > 0) && !D.length && !s.streaks.length && !s.mist.length && !s.foam.length && !s.rip.length) || p.x + p.width < -60) { waterStreams.splice(i, 1); continue; }
     }
     window.__owlInWater = hits;   // сова под струёй — для протрезвления (update.js)
     if (owl._wWet) owl._wWet = Math.max(0, owl._wWet - 0.0015 * dt);

@@ -1224,7 +1224,8 @@ function menuPipesBootStart() {   // тап на загрузке: пока со
     for (x += MENU_PIPE.step; x < width + MENU_PIPE.step; x += MENU_PIPE.step) menuPipes.push(menuPipeMake(x));
 }
 function drawMenuPipes() {
-    if (++MENU_PIPE.t % 15 === 1 || !MENU_PIPE.lh) menuLogoBox();
+    const glide = performance.now() < (window.__logoGlideUntil || 0);   // логотип плавно переезжает — проём труб едет точно вместе с ним
+    if (++MENU_PIPE.t % 15 === 1 || !MENU_PIPE.lh || glide) menuLogoBox();
     if (!MENU_PIPE.lh) return;
     const LD = window.__logoDrop;
     if (LD && !window.__booting) {   // логотип опускается в конце перехода: проём труб едет от совы к логотипу синхронно с ним
@@ -1235,7 +1236,7 @@ function drawMenuPipes() {
         MENU_PIPE.cy = LD.from + (fin - LD.from) * (LD.kp || 0);
     } else {
         const tgt = window.__booting ? menuOwlCenter() : MENU_PIPE.lc;   // на загрузке — по сове, в меню — плавно переезжает к логотипу
-        if (MENU_PIPE.cy == null) MENU_PIPE.cy = tgt; else MENU_PIPE.cy += (tgt - MENU_PIPE.cy) * Math.min(1, 0.07 * dtMult);
+        if (MENU_PIPE.cy == null || glide) MENU_PIPE.cy = tgt; else MENU_PIPE.cy += (tgt - MENU_PIPE.cy) * Math.min(1, 0.07 * dtMult);
     }
     const ia = MENU_PIPE.t0 ? Math.min(1, (performance.now() - MENU_PIPE.t0) / 380) : 1, off = (1 - (1 - Math.pow(1 - ia, 3))) * height * 0.6;   // выезд труб
     const v = MENU_PIPE.speed * dtMult * (window.__bgSpeed || 1);

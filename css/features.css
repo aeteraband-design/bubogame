@@ -704,3 +704,21 @@ html.menu-pc #rouletteModal > .glass-panel { max-width: calc(min(60vw, 100vw - 4
 .rw-card .rw-name, .rw-card .rw-sub, .rw-fly .rw-name, .rw-fly .rw-sub { font-weight: 900 !important; }
 /* правила на ПК: все разделы видны — переносятся на 2–3 строки, без прокрутки за край */
 html.menu-pc #rlWin .ru-tabs { flex-wrap: wrap; justify-content: center; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+/* v0.14.6: перелив на иконках окон — бесшовный (градиент повторяется, сдвиг ровно на один период), без «рывка» в конце круга */
+@keyframes seamFlow { from { background-position: 0 0; } to { background-position: -200% 0; } }
+html body #stWin .st-core i::before { background: linear-gradient(90deg, #A855F7 0%, #F3E8FF 20%, #C084FC 42%, #782CE9 66%, #C084FC 84%, #A855F7 100%) !important; background-size: 200% 100% !important; background-repeat: repeat-x !important; animation: seamFlow 4.5s linear infinite !important; }
+html body #exWin .ex-core i { background: linear-gradient(90deg, #F472B6 0%, #FCE7F3 22%, #F472B6 45%, #C4A1FF 70%, #F472B6 100%) !important; background-size: 200% 100% !important; background-repeat: repeat-x !important; animation: seamFlow 4.5s linear infinite !important; }
+html body #rlWin .ru-core i, html body #rlWin .rl-core i { background: linear-gradient(90deg, #FE7600 0%, #FFE0B2 22%, #FE7600 45%, #C4A1FF 70%, #FE7600 100%) !important; background-size: 200% 100% !important; background-repeat: repeat-x !important; animation: seamFlow 4.5s linear infinite !important; }
+html body #goWin .go-core i { background: linear-gradient(90deg, var(--gc) 0%, var(--gl) 22%, var(--gc) 45%, var(--gc2) 70%, var(--gc) 100%) !important; background-size: 200% 100% !important; background-repeat: repeat-x !important; animation: seamFlow 4.5s linear infinite, goBeat 2.4s ease-in-out infinite !important; }
+html body #qzWin .qz-core i { background: linear-gradient(90deg, #7DD3FC 0%, #E0F2FE 22%, #7DD3FC 45%, #C4A1FF 70%, #7DD3FC 100%) !important; background-size: 200% 100% !important; background-repeat: repeat-x !important; animation: seamFlow 4.5s linear infinite !important; }
+html body #pwWin .pw-core i { background: linear-gradient(90deg, #FFC53D 0%, #FFF3B0 22%, #FFC53D 45%, #C4A1FF 70%, #FFC53D 100%) !important; background-size: 200% 100% !important; background-repeat: repeat-x !important; animation: seamFlow 4.5s linear infinite !important; }
+html body #shWin .sh-core i { background: linear-gradient(90deg, #FFC53D 0%, #FFF3B0 22%, #FFC53D 45%, #5EEAD4 70%, #FFC53D 100%) !important; background-size: 200% 100% !important; background-repeat: repeat-x !important; animation: seamFlow 4.5s linear infinite !important; }
+/* круг вокруг иконки «Правил» — всегда ровный круг */
+#rlWin .ru-emb, #rlWin .rl-emb { flex-shrink: 0 !important; aspect-ratio: 1 / 1; }
+#rlWin .ru-ring, #rlWin .ru-glow { aspect-ratio: 1 / 1; }
+/* экран потерянной попытки: причина — красным, без слова «ПРИЧИНА», текст по центру иконки; подсказка ниже — иконка по верхнему краю */
+#goWin .go-reason { --gc: #EF4444; align-items: center !important; border-color: rgba(239, 68, 68, .6) !important; background: rgba(239, 68, 68, .1) !important; }
+#goWin .go-reason .go-reason-k { display: none !important; }
+#goWin .go-reason #gameOverReason { color: #FCA5A5; font-weight: 800; font-size: 12px; line-height: 1.35; }
+#goWin .go-info { align-items: flex-start !important; }
+#goWin .go-info .go-ii { margin-top: 1px; }
