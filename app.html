@@ -13,22 +13,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BUBOGAME v0.10</title>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.13.87">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.13.88">
     <!-- Onest: локальные файлы -->
-    <link rel="stylesheet" href="css/fonts.css?v=0.13.87">
+    <link rel="stylesheet" href="css/fonts.css?v=0.13.88">
 
-    <script src="js/music-hold.js?v=0.13.87"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.13.87">
+    <script src="js/music-hold.js?v=0.13.88"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.13.88">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.13.87" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.13.88" id="adminStyle">
     <!-- Tailwind: готовый файл стилей вместо онлайн-компилятора (тот следил за каждым изменением страницы и пересобирал стили прямо во время игры) -->
-    <link rel="stylesheet" href="css/tailwind.css?v=0.13.87">
+    <link rel="stylesheet" href="css/tailwind.css?v=0.13.88">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.13.87">
-    <link rel="stylesheet" href="css/features.css?v=0.13.87">
+    <link rel="stylesheet" href="css/boot.css?v=0.13.88">
+    <link rel="stylesheet" href="css/features.css?v=0.13.88">
+    <link rel="stylesheet" href="css/rules.css?v=0.13.88">
+    <link rel="stylesheet" href="css/settings.css?v=0.13.88">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -44,10 +46,10 @@
             </div>
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
-        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.13.87</div>
+        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.13.88</div>
     </div>
     <div id="menuHalo"><div class="mh"></div></div>   <!-- свечение совы с экрана загрузки остаётся и в главном меню -->
-    <script src="js/boot.js?v=0.13.87"></script>
+    <script src="js/boot.js?v=0.13.88"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 overflow-y-auto custom-scroll">
@@ -307,137 +309,96 @@
     <div id="rulesModal" class="hidden">
         <div id="rlWin">
             <button id="closeRulesBtn" type="button" class="win-x" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
-            <div class="rl-top"><div class="rl-emb"><div class="rl-glow"></div><div class="rl-ring"></div><div class="rl-core"><i class="fa-solid fa-book-open"></i></div>
-                <i class="rl-tw" style="left:-4px;top:12px;--s:8px;--d:0s">✦</i><i class="rl-tw" style="right:-6px;top:26px;--s:7px;--d:.9s">✦</i><i class="rl-tw" style="right:6px;top:-4px;--s:6px;--d:1.7s">✦</i></div>
-                <div class="rl-title"><b>ПРАВИЛА</b><span>Коротко обо всём, что есть в игре</span></div></div>
-            <div class="rl-scroll">
-<section class="rl-sec" style="--c:#FE7600"><h3><i class="fa-solid fa-flag-checkered"></i>Цель</h3><p class="rl-p"><span id="rulesGoalText">Лети между труб и собирай значки тем.</span></p></section><section class="rl-sec" style="--c:#FE7600"><h3><i class="fa-solid fa-hand-pointer"></i>Как летать</h3><div class="rl-row"><div class="rl-ic" style="--c:#FE7600"><i class="fa-solid fa-hand-pointer"></i></div><div class="rl-tx"><span><b style="color:#FE7600">Нажимай на экран</b> — сова взмахивает и летит вверх. Не нажимаешь — падает.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#F43F5E"><i class="fa-solid fa-heart-crack"></i></div><div class="rl-tx"><span><b style="color:#F43F5E">Трубы, земля и потолок</b> — удар отнимает сердце.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#67E8F9"><i class="fa-solid fa-feather-pointed"></i></div><div class="rl-tx"><span><b style="color:#67E8F9">Силы</b> тратятся на взмахи. Кончились — минус сердце.</span></div></div></section><section class="rl-sec" style="--c:#FFC53D"><h3><i class="fa-solid fa-rotate-right"></i>Попытки</h3><div class="rl-row"><div class="rl-ic" style="--c:#FE7600"><i class="fa-solid fa-rotate-right"></i></div><div class="rl-tx"><span><b style="color:#FE7600">На день — <span data-num="attempts">2</span> попытки.</b> Кончились сердца — сгорает попытка, но собранное за день остаётся.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#FFC53D"><i class="fa-solid fa-store"></i></div><div class="rl-tx"><span><b style="color:#FFC53D">Попытки кончились —</b> купи ещё в лавке за монеты.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#FACC15"><i class="fa-solid fa-sun"></i></div><div class="rl-tx"><span><b style="color:#FACC15">Новый день —</b> снова 2 попытки, и всё начинается сначала.</span></div></div></section><section class="rl-sec" style="--c:#A855F7"><h3><i class="fa-solid fa-gem"></i>Что собирать</h3><div class="rl-row"><div class="rl-ic" style="--c:#A855F7"><i class="fa-solid fa-layer-group"></i></div><div class="rl-tx"><span><b style="color:#A855F7">Темы</b> — главная цель. Собранная до конца тема больше не попадается.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#FE7600"><i class="fa-solid fa-circle-question"></i></div><div class="rl-tx"><span><b style="color:#FE7600">Вопросы</b> — очки полёта. За каждые 50 — монеты (50, 100, 150), за каждые <span data-num="questionsPerAttempt">200</span> — попытка.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#FFC53D"><i class="fa-solid fa-coins"></i></div><div class="rl-tx"><span><b style="color:#FFC53D">Монеты</b> — редко попадаются прямо на пути: от 50 до 300, чем сложнее уровень, тем больше.</span></div></div></section><section class="rl-sec" style="--c:#EF4444"><h3><i class="fa-solid fa-heart"></i>Сердца и силы</h3><div class="rl-row"><div class="rl-ic" style="--c:#EF4444"><i class="fa-solid fa-heart"></i></div><div class="rl-tx"><span><b style="color:#EF4444">Сердце</b> — +1 сердце (максимум 5).</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#FB923C"><i class="fa-solid fa-pizza-slice"></i></div><div class="rl-tx"><span><b style="color:#FB923C">Пицца, бургер, хот-дог</b> — по половинке сердца.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#67E8F9"><i class="fa-solid fa-feather-pointed"></i></div><div class="rl-tx"><span><b style="color:#67E8F9">Перо</b> — +50% сил.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#B5E4FF"><i class="fa-solid fa-ice-cream"></i></div><div class="rl-tx"><span><b style="color:#B5E4FF">Мороженое</b> — +20% сил.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#2DD4BF"><i class="fa-solid fa-martini-glass-citrus"></i></div><div class="rl-tx"><span><b style="color:#2DD4BF">Коктейль и пиво</b> — +15% и +10% сил.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#00F0FF"><i class="fa-solid fa-feather-pointed"></i><span class="rl-inf">∞</span></div><div class="rl-tx"><span><b style="color:#00F0FF">Волшебное перо</b> — <span data-pl="infiniteSec" data-forms="секунда|секунды|секунд">10 секунд</span> силы не тратятся. Каждые <span data-pl="feathersForMax" data-forms="волшебное перо|волшебных пера|волшебных перьев">6 волшебных перьев</span> — запас сил больше на 20%.</span></div></div></section><section class="rl-sec" style="--c:#FACC15"><h3><i class="fa-solid fa-bolt"></i>Бонусы</h3><div class="rl-row"><div class="rl-ic" style="--c:#22C55E"><i class="fa-solid fa-shield-halved"></i></div><div class="rl-tx"><span><b style="color:#22C55E">Щит</b> (<span data-pl="shieldSec" data-forms="секунда|секунды|секунд">10 секунд</span>) — сердца не теряются, от труб сова отскакивает.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#38BDF8"><i class="fa-solid fa-hourglass-half"></i></div><div class="rl-tx"><span><b style="color:#38BDF8">Замедление</b> (<span data-pl="slowSec" data-forms="секунда|секунды|секунд">10 секунд</span>) — всё медленнее, лететь легче.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#FACC15"><i class="fa-solid fa-bolt"></i></div><div class="rl-tx"><span><b style="color:#FACC15">Ускорение</b> (<span data-pl="speedSec" data-forms="секунда|секунды|секунд">10 секунд</span>) — всё быстрее.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#FF7A00"><i class="fa-solid fa-bolt-lightning"></i></div><div class="rl-tx"><span><b style="color:#FF7A00">ШАЗАМ</b> (20 секунд) — каждое <span data-num="shazamEvery">4</span>-е ускорение. Сова неуязвима, пролетает трубы и притягивает значки. За 5 секунд до конца звучит отсчёт — успей вылететь из труб.</span></div></div></section><section class="rl-sec" style="--c:#F43F5E"><h3><i class="fa-solid fa-triangle-exclamation"></i>Ловушки</h3><div class="rl-row"><div class="rl-ic" style="--c:#D946EF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5"/></svg></div><div class="rl-tx"><span><b style="color:#D946EF">Сжатие</b> (<span data-pl="compressSec" data-forms="секунда|секунды|секунд">10 секунд</span>) — проходы между трубами уже.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#FB923C"><i class="fa-solid fa-burger"></i></div><div class="rl-tx"><span><b style="color:#FB923C">Переедание</b> — после <span data-pl="overeatEvery" data-forms="порции|порций|порций">4 порций</span> еды сова толстеет и тяжелеет.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#2DD4BF"><i class="fa-solid fa-martini-glass-citrus"></i></div><div class="rl-tx"><span><b style="color:#2DD4BF">Опьянение</b> — после <span data-pl="drunkEvery" data-forms="напитка|напитков|напитков">7 напитков</span> сову шатает.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#B5E4FF"><i class="fa-solid fa-snowflake"></i></div><div class="rl-tx"><span><b style="color:#B5E4FF">Замерзание</b> — после <span data-pl="freezeEvery" data-forms="мороженого|мороженых|мороженых">3 мороженых</span> сова леденеет и слушается хуже.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#FF4A3D"><i class="fa-solid fa-fire"></i></div><div class="rl-tx"><span><b style="color:#FF4A3D">Опасные трубы</b> (10 секунд) — из труб летят огоньки, каждый отнимает пол-сердца.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#38BDF8"><i class="fa-solid fa-droplet"></i></div><div class="rl-tx"><span><b style="color:#38BDF8">Водонапор</b> (10 секунд) — из труб льётся вода и прижимает сову вниз.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#FFD700"><i class="fa-solid fa-star"></i></div><div class="rl-tx"><span><b style="color:#FFD700">Секретная звезда</b> — сюрприз: бонус или штраф. Чем сложнее уровень, тем чаще штраф.</span></div></div></section><section class="rl-sec" style="--c:#A855F7"><h3><i class="fa-solid fa-gauge-high"></i>Уровни сложности</h3><p class="rl-p">Чем больше тем собрано, тем выше уровень: сова летит быстрее, силы тратятся быстрее, проходы уже.</p><div class="rl-chips"><span style="--c:#22C55E">СУПЕРЛАЙТ</span><span style="--c:#84CC16">ЛАЙТ</span><span style="--c:#FACC15">МЕДИУМ</span><span style="--c:#FB923C">МЕДИУМ+</span><span style="--c:#EF4444">ХАРД</span><span style="--c:#E11D48">ХАРД+</span></div></section><section class="rl-sec" style="--c:#38BDF8"><h3><i class="fa-solid fa-house"></i>В главном меню</h3><div class="rl-row"><div class="rl-ic" style="--c:#38BDF8"><i class="fa-solid fa-circle-question"></i></div><div class="rl-tx"><span><b style="color:#38BDF8">Вопросы дня</b> — 10 вопросов в день. Верный ответ: 30, 60 или 100 монет.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#FFC53D"><i class="fa-solid fa-store"></i></div><div class="rl-tx"><span><b style="color:#FFC53D">Лавка</b> — покупай за монеты попытки, сердца и бонусы.</span></div></div><div class="rl-row"><div class="rl-ic" style="--c:#F472B6"><i class="fa-solid fa-dice"></i></div><div class="rl-tx"><span><b style="color:#F472B6">Рулетка</b> — вращение даётся за победу или покупается в лавке.</span></div></div></section>
-            </div>
-            <div class="rl-btns">
-                <button id="understoodRulesBtn" type="button" class="btn-bubo rl-btn"><i class="fa-solid fa-play"></i>ПОНЯТНО, В ПОЛЁТ!</button>
-                <button id="rulesBackBtn" type="button" class="rl-btn sec" onclick="event.stopPropagation(); document.getElementById('closeRulesBtn').click();"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button>
+            <div class="ru-head"><div class="ru-emb"><div class="ru-glow"></div><div class="ru-ring"></div><div class="ru-core"><i class="fa-solid fa-book-open"></i></div><i class="ru-tw" style="left:calc(50% + -46px - 4.0px);top:calc(50% + -16px - 4.0px);--s:8px;--d:0s">✦</i><i class="ru-tw" style="left:calc(50% + 48px - 3.5px);top:calc(50% + 10px - 3.5px);--s:7px;--d:0.9s">✦</i><i class="ru-tw" style="left:calc(50% + 32px - 3.0px);top:calc(50% + -38px - 3.0px);--s:6px;--d:1.7s">✦</i></div>
+                <div class="ru-title"><b>ПРАВИЛА</b><span>Всё, что есть в игре, — по разделам</span></div></div>
+            <div class="ru-tabs" id="ruTabs" role="tablist"></div>
+            <div class="ru-body"><div class="ru-scroll" id="ruScroll"><div class="ru-pane" id="ruPane"></div></div><i class="ru-sb"></i></div>
+            <div class="ru-btns">
+                <button id="understoodRulesBtn" type="button" class="btn-bubo ru-btn"><i class="fa-solid fa-play"></i>ПОНЯТНО, В ПОЛЁТ!</button>
+                <button id="rulesBackBtn" type="button" class="ru-btn sec" onclick="event.stopPropagation(); document.getElementById('closeRulesBtn').click();"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button>
             </div>
         </div>
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО НАСТРОЕК -->
     <div id="settingsModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-4 bg-[#140326]/20 backdrop-blur-[7px]">
-        <div class="glass-panel w-full max-w-xs rounded-3xl p-4 flex flex-col max-h-[90vh] border-[#782CE9]/60 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b border-[#782CE9]/30 pb-3 shrink-0">
-                <div class="flex items-center space-x-3">
-                    <span class="text-sm sm:text-base text-white uppercase tracking-wider font-black">Настройки</span>
-                </div>
-                <button id="closeSettingsBtn" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#782CE9]/30 hover:bg-[#782CE9]/60 text-purple-200 hover:text-white flex items-center justify-center transition-all">
-                    <i class="fa-solid fa-xmark text-lg sm:text-xl font-black"></i>
-                </button>
+        <div id="stWin" class="glass-panel">
+            <button id="closeSettingsBtn" type="button" class="st-x" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+            <div class="st-top">
+                <div class="st-emb"><div class="st-glow"></div><div class="st-ring"></div><div class="st-core"><i class="fa-solid fa-gear"></i></div>
+                    <i class="st-tw" style="left:6px;top:20px;--s:9px;--d:0s">✦</i><i class="st-tw" style="right:2px;top:34px;--s:7px;--d:.9s">✦</i><i class="st-tw" style="right:18px;top:2px;--s:6px;--d:1.7s">✦</i></div>
+                <div class="st-title"><b>НАСТРОЙКИ</b><span>Звук, графика и управление</span></div>
             </div>
 
-            <div class="space-y-3.5 overflow-y-auto custom-scroll pr-2 min-h-0">
-            <div class="space-y-3.5 text-left font-medium text-xs text-purple-100">
+            <div class="st-scroll custom-scroll">
                 <!-- Музыка -->
-                <div class="bg-[#140326]/70 p-3 rounded-2xl border border-white/5 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <span class="flex items-center space-x-2 text-white font-black">
-                            <i class="fa-solid fa-music text-[#FE7600]"></i>
-                            <span>Музыка</span>
-                        </span>
-                        <button id="settingsMusicToggle" class="w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors">
-                            <div id="settingsMusicThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-5 transition-transform"></div>
-                        </button>
+                <div class="st-row" style="--c:#FE7600">
+                    <div class="st-line">
+                        <span class="st-lbl"><span class="st-ic"><i class="fa-solid fa-music"></i></span>Музыка</span>
+                        <button id="settingsMusicToggle" type="button" class="st-sw w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors"><div id="settingsMusicThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-5 transition-transform"></div></button>
                     </div>
-                    <div class="space-y-1 pt-1">
-                        <div class="flex justify-between text-[10px] text-purple-300 font-medium">
-                            <span>Громкость музыки</span>
-                            <span id="musicVolLabel" class="font-black">38%</span>
-                        </div>
-                        <input id="musicVolumeSlider" type="range" min="0" max="100" value="38" class="w-full accent-[#FE7600] cursor-pointer">
-                    </div>
+                    <div class="st-sub"><span>Громкость музыки</span><b id="musicVolLabel">38%</b></div>
+                    <input id="musicVolumeSlider" type="range" min="0" max="100" value="38" class="st-range">
                 </div>
 
                 <!-- Звуки игры -->
-                <div class="bg-[#140326]/70 p-3 rounded-2xl border border-white/5 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <span class="flex items-center space-x-2 text-white font-black">
-                            <i class="fa-solid fa-volume-high text-[#00D2FF]"></i>
-                            <span>Звуки игры</span>
-                        </span>
-                        <button id="settingsSfxToggle" class="w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors">
-                            <div id="settingsSfxThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-5 transition-transform"></div>
-                        </button>
+                <div class="st-row" style="--c:#00D2FF">
+                    <div class="st-line">
+                        <span class="st-lbl"><span class="st-ic"><i class="fa-solid fa-volume-high"></i></span>Звуки игры</span>
+                        <button id="settingsSfxToggle" type="button" class="st-sw w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors"><div id="settingsSfxThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-5 transition-transform"></div></button>
                     </div>
-                    <div class="space-y-1 pt-1">
-                        <div class="flex justify-between text-[10px] text-purple-300 font-medium">
-                            <span>Громкость звуков</span>
-                            <span id="sfxVolLabel" class="font-black">100%</span>
-                        </div>
-                        <input id="sfxVolumeSlider" type="range" min="0" max="100" value="100" class="w-full accent-[#00D2FF] cursor-pointer">
-                    </div>
+                    <div class="st-sub"><span>Громкость звуков</span><b id="sfxVolLabel">100%</b></div>
+                    <input id="sfxVolumeSlider" type="range" min="0" max="100" value="100" class="st-range">
                 </div>
 
                 <!-- Вибрация -->
-                <div class="bg-[#140326]/70 p-3 rounded-2xl border border-white/5 flex justify-between items-center">
-                    <span class="flex items-center space-x-2 text-white font-black">
-                        <i class="fa-solid fa-mobile-screen-button text-[#22C55E]"></i>
-                        <span>Виброотдача</span>
-                    </span>
-                    <button id="settingsVibeToggle" class="w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors">
-                        <div id="settingsVibeThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-5 transition-transform"></div>
-                    </button>
+                <div class="st-row" style="--c:#22C55E">
+                    <div class="st-line">
+                        <span class="st-lbl"><span class="st-ic"><i class="fa-solid fa-mobile-screen-button"></i></span>Виброотдача</span>
+                        <button id="settingsVibeToggle" type="button" class="st-sw w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors"><div id="settingsVibeThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-5 transition-transform"></div></button>
+                    </div>
                 </div>
 
                 <!-- Расположение верхней панели в игре -->
-                <div class="bg-[#140326]/70 p-3 rounded-2xl border border-white/5 space-y-2">
-                    <span class="flex items-center space-x-2 text-white font-black">
-                        <i class="fa-solid fa-heart" style="color:#F43F5E"></i>
-                        <span>Где жизни в игре</span>
-                    </span>
-                    <div class="flex items-center justify-center space-x-3 pt-1">
+                <div class="st-row" style="--c:#F43F5E">
+                    <div class="st-line">
+                        <span class="st-lbl"><span class="st-ic"><i class="fa-solid fa-heart"></i></span>Где жизни в игре</span>
+                    </div>
+                    <div class="st-side">
                         <span id="hudSideL" class="font-black text-white">Слева</span>
-                        <button id="settingsHudSwapToggle" class="w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors shrink-0">
-                            <div id="settingsHudSwapThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-0 transition-transform"></div>
-                        </button>
+                        <button id="settingsHudSwapToggle" type="button" class="st-sw w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors shrink-0"><div id="settingsHudSwapThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-0 transition-transform"></div></button>
                         <span id="hudSideR" class="font-black text-purple-300">Справа</span>
+                    </div>
+                </div>
+
+                <!-- Графика -->
+                <div class="st-row" style="--c:#A855F7">
+                    <div class="st-line">
+                        <span class="st-lbl"><span class="st-ic"><i class="fa-solid fa-display"></i></span>Графика</span>
+                        <b id="gfxLabel" class="st-val">Средняя</b>
+                    </div>
+                    <input id="gfxSlider" type="range" min="0" max="2" step="1" value="1" class="st-range">
+                    <div class="st-ticks">
+                        <span class="gfx-tick" data-q="low">Низкая</span>
+                        <span class="gfx-tick" data-q="medium">Средняя</span>
+                        <span class="gfx-tick" data-q="high">Высокая</span>
+                    </div>
+                    <div id="gfxHint" class="st-hint">Баланс чёткости и скорости</div>
+                </div>
+
+                <!-- Полноэкранный режим (в установленном приложении скрыт) -->
+                <div id="stFsRow" class="st-row" style="--c:#C084FC">
+                    <div class="st-line">
+                        <span class="st-lbl"><span class="st-ic"><i class="fa-solid fa-expand"></i></span>На весь экран</span>
+                        <button id="fullscreenBtn" type="button" class="st-sw w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors"><div id="fullscreenThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-0 transition-transform"></div></button>
                     </div>
                 </div>
             </div>
 
-            <!-- Графика -->
-            <div class="bg-[#140326]/70 p-3 rounded-2xl border border-white/5 space-y-2 text-left text-xs">
-                <div class="flex justify-between items-center">
-                    <span class="flex items-center space-x-2 text-white font-black">
-                        <i class="fa-solid fa-display text-[#A855F7]"></i>
-                        <span>Графика</span>
-                    </span>
-                    <span id="gfxLabel" class="text-[10px] font-black text-[#C4A1FF]">Средняя</span>
-                </div>
-                <input id="gfxSlider" type="range" min="0" max="2" step="1" value="1" class="w-full accent-[#A855F7] cursor-pointer">
-                <div class="flex justify-between text-[9px] font-black">
-                    <span class="gfx-tick" data-q="low">Низкая</span>
-                    <span class="gfx-tick" data-q="medium">Средняя</span>
-                    <span class="gfx-tick" data-q="high">Высокая</span>
-                </div>
-                <div id="gfxHint" class="text-[10px] text-purple-300 font-medium leading-snug">Баланс чёткости и скорости</div>
+            <div class="st-btns">
+                <button id="saveSettingsBtn" type="button" class="st-btn st-save" disabled><i class="fa-solid fa-check"></i><span id="saveSettingsLabel">СОХРАНИТЬ</span></button>
+                <button id="settingsBackBtn" type="button" class="st-btn sec" onclick="event.stopPropagation(); document.getElementById('closeSettingsBtn').click();"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button>
             </div>
-
-                        <!-- Полноэкранный режим -->
-            <div class="flex justify-between items-center">
-                <span class="flex items-center space-x-2 text-white font-black">
-                    <i class="fa-solid fa-expand text-[#FE7600]"></i>
-                    <span>Во весь экран</span>
-                </span>
-                <button id="fullscreenBtn" type="button" class="w-11 h-6 rounded-full bg-[#782CE9] p-1 flex items-center transition-colors">
-                    <div id="fullscreenThumb" class="w-4 h-4 rounded-full bg-white transform translate-x-0 transition-transform"></div>
-                </button>
-            </div>
-
-</div>
-            <button id="saveSettingsBtn" class="btn-bubo w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider shrink-0 font-black shadow-lg">
-                <span id="saveSettingsLabel" class="font-black">СОХРАНИТЬ</span>
-            </button>
-            <button id="settingsBackBtn" onclick="event.stopPropagation(); document.getElementById('closeSettingsBtn').click();" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider shrink-0 font-black flex items-center justify-center space-x-2" style="margin-top:8px">
-                <i class="fa-solid fa-arrow-left text-xs font-black"></i>
-                <span class="font-black">ВЕРНУТЬСЯ В МЕНЮ</span>
-            </button>
         </div>
     </div>
 
@@ -581,47 +542,50 @@
         </div>
     </div>
 
-    <script src="js/audio.js?v=0.13.87"></script>
-    <script src="js/game-core.js?v=0.13.87"></script>
-    <script src="js/owl.js?v=0.13.87"></script>
-    <script src="js/hud.js?v=0.13.87"></script>
-    <script src="js/scenery.js?v=0.13.87"></script>
-    <script src="js/items.js?v=0.13.87"></script>
-    <script src="js/shazam.js?v=0.13.87"></script>
-    <script src="js/crystals.js?v=0.13.87"></script>
-    <script src="js/water.js?v=0.13.87"></script>
-    <script src="js/menu-fx.js?v=0.13.87"></script>
-    <script src="js/quiz.js?v=0.13.87"></script>
-    <script src="js/quiz-bank.js?v=0.13.87"></script>
-    <script src="quiz-new/music.js?v=0.13.87"></script>
-    <script src="quiz-new/kino.js?v=0.13.87"></script>
-    <script src="quiz-new/series.js?v=0.13.87"></script>
-    <script src="quiz-new/cartoons.js?v=0.13.87"></script>
-    <script src="quiz-new/games.js?v=0.13.87"></script>
-    <script src="quiz-new/memes.js?v=0.13.87"></script>
-    <script src="quiz-new/hp.js?v=0.13.87"></script>
-    <script src="quiz-new/lit.js?v=0.13.87"></script>
-    <script src="quiz-new/history.js?v=0.13.87"></script>
-    <script src="quiz-new/geo.js?v=0.13.87"></script>
-    <script src="quiz-new/chem.js?v=0.13.87"></script>
-    <script src="quiz-new/phys.js?v=0.13.87"></script>
-    <script src="quiz-new/space.js?v=0.13.87"></script>
-    <script src="quiz-new/nature.js?v=0.13.87"></script>
-    <script src="quiz-new/sport.js?v=0.13.87"></script>
-    <script src="quiz-new/food.js?v=0.13.87"></script>
-    <script src="quiz-new/art.js?v=0.13.87"></script>
-    <script src="quiz-new/humor.js?v=0.13.87"></script>
-    <script src="js/quiz-bank-build.js?v=0.13.87"></script>
-    <script src="js/shop.js?v=0.13.87"></script>
-    <script src="js/weather.js?v=0.13.87"></script>
-    <script src="js/update.js?v=0.13.87"></script>
-    <script src="js/render.js?v=0.13.87"></script>
-    <script src="js/wheel.js?v=0.13.87"></script>
-    <script src="js/ui.js?v=0.13.87"></script>
-<script src="js/admin.js?v=0.13.87"></script>
-<script src="js/text-measure.js?v=0.13.87"></script>
-<script src="js/fullscreen.js?v=0.13.87"></script>
-<script src="js/logo-anim.js?v=0.13.87"></script>
-<script src="js/scrollbars.js?v=0.13.87"></script>
+    <script src="js/audio.js?v=0.13.88"></script>
+    <script src="js/game-core.js?v=0.13.88"></script>
+    <script src="js/owl.js?v=0.13.88"></script>
+    <script src="js/hud.js?v=0.13.88"></script>
+    <script src="js/scenery.js?v=0.13.88"></script>
+    <script src="js/items.js?v=0.13.88"></script>
+    <script src="js/shazam.js?v=0.13.88"></script>
+    <script src="js/crystals.js?v=0.13.88"></script>
+    <script src="js/water.js?v=0.13.88"></script>
+    <script src="js/menu-fx.js?v=0.13.88"></script>
+    <script src="js/quiz.js?v=0.13.88"></script>
+    <script src="js/quiz-bank.js?v=0.13.88"></script>
+    <script src="quiz-new/music.js?v=0.13.88"></script>
+    <script src="quiz-new/kino.js?v=0.13.88"></script>
+    <script src="quiz-new/series.js?v=0.13.88"></script>
+    <script src="quiz-new/cartoons.js?v=0.13.88"></script>
+    <script src="quiz-new/games.js?v=0.13.88"></script>
+    <script src="quiz-new/memes.js?v=0.13.88"></script>
+    <script src="quiz-new/hp.js?v=0.13.88"></script>
+    <script src="quiz-new/lit.js?v=0.13.88"></script>
+    <script src="quiz-new/history.js?v=0.13.88"></script>
+    <script src="quiz-new/geo.js?v=0.13.88"></script>
+    <script src="quiz-new/chem.js?v=0.13.88"></script>
+    <script src="quiz-new/phys.js?v=0.13.88"></script>
+    <script src="quiz-new/space.js?v=0.13.88"></script>
+    <script src="quiz-new/nature.js?v=0.13.88"></script>
+    <script src="quiz-new/sport.js?v=0.13.88"></script>
+    <script src="quiz-new/food.js?v=0.13.88"></script>
+    <script src="quiz-new/art.js?v=0.13.88"></script>
+    <script src="quiz-new/humor.js?v=0.13.88"></script>
+    <script src="js/quiz-bank-build.js?v=0.13.88"></script>
+    <script src="js/shop.js?v=0.13.88"></script>
+    <script src="js/weather.js?v=0.13.88"></script>
+    <script src="js/update.js?v=0.13.88"></script>
+    <script src="js/render.js?v=0.13.88"></script>
+    <script src="js/wheel.js?v=0.13.88"></script>
+    <script src="js/ui.js?v=0.13.88"></script>
+    <script src="js/rules.js?v=0.13.88"></script>
+<script src="js/admin.js?v=0.13.88"></script>
+<script src="js/text-measure.js?v=0.13.88"></script>
+<script src="js/fullscreen.js?v=0.13.88"></script>
+<script src="js/settings-ui.js?v=0.13.88"></script>
+<script src="js/exit-confirm.js?v=0.13.88"></script>
+<script src="js/logo-anim.js?v=0.13.88"></script>
+<script src="js/scrollbars.js?v=0.13.88"></script>
 </body>
 </html>

@@ -18,6 +18,8 @@ function menuFxEnter() {
 // уходим в полёт: убираем эффекты меню и возвращаем то, что было в игре
 function menuFxLeave() {
     window.MENU_OBST = null;
+    try { fireworks.length = 0; } catch (e) {}   // салют меню в полёт не переносим — гасим сразу
+    menuFxSchedule(18, 35);
     try {
         const s = MFX.stash; MFX.stash = null;
         waterTime = s ? s.waterTime : 0; waterStreams = s ? s.waterStreams : []; crystalTime = s ? s.crystalTime : 0;

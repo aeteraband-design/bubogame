@@ -292,7 +292,8 @@ function initMenuScenery() {
 }
 
 function startOrResumeFlight() {
-    if (typeof menuFxLeave === 'function') menuFxLeave();   // эффекты меню убираем, эффекты паузы возвращаем
+    if (typeof menuFxLeave === 'function') menuFxLeave();   // эффекты меню убираем (фейерверки тоже), эффекты паузы возвращаем
+    try { if (typeof window.logoAnimStop === 'function') window.logoAnimStop(); } catch (e) {}   // анимация логотипа и облачко-подсказка совы — сразу прочь
     window.__bootMoon = false;   // луна с экрана загрузки держится в меню до первого полёта, дальше — луна игры
     // попытки закончились — стартуем новую игру с полным набором попыток
     try { checkDailyReset(); } catch (e) {}
@@ -438,6 +439,24 @@ setInterval(() => { try { if (!gameActive && playDay && playDay !== todayKey()) 
 
 // Пауза: запоминаем, где именно были сова, трубы и предметы (только до закрытия вкладки)
 let pausedSnapshot = null;
+// Все звуки эффектов идут через AudioFX.sfxGain одноразовыми узлами, отдельной «остановки» у них нет:
+// ставим новую шину эффектов, старую (со всеми ещё звучащими хвостами) за 0,12 с уводим в тишину и отключаем.
+// Погода (дождь/ветер) подключена к шине постоянно — её переносим на новую шину.
+function cutGameSfx() {
+    try {
+        const A = AudioFX, ac = A.ctx, old = A.sfxGain;
+        if (!ac || !old || !A.master) return;
+        const nb = ac.createGain();
+        nb.gain.setValueAtTime(A.isSfxMuted ? 0 : A.sfxVolume, ac.currentTime);
+        nb.connect(A.master);
+        const W = A._wx;
+        if (W) [W.rg, W.wg].forEach(n => { try { if (n) { n.disconnect(); n.connect(nb); } } catch (e) {} });
+        A.sfxGain = nb;
+        const t = ac.currentTime;
+        old.gain.cancelScheduledValues(t); old.gain.setValueAtTime(old.gain.value, t); old.gain.linearRampToValueAtTime(0, t + 0.12);
+        setTimeout(() => { try { old.disconnect(); } catch (e) {} }, 400);
+    } catch (e) {}
+}
 function returnToHome() {
     // погода замирает вместе с игрой: запоминаем грозу как есть и вернём её при продолжении
     try { if (typeof WX !== 'undefined' && WX.left >= 0) STORM.pausedWx = { on: WX.on, left: WX.left, peak: WX.peak, cover: stormCover, si: Math.max(0, stormIntensity), fade: STORM.fade || 0, wet: STORM.wet || 0, ice: STORM.ice || 0 }; } catch (e) {}
@@ -456,6 +475,7 @@ function returnToHome() {
     lastBuffStateKey = '';
 
     gameActive = false; waitingFirstTap = true;
+    cutGameSfx();   // длинные звуки эффектов игры (ускорение, замедление, ШАЗАМ, вода…) обрываем мягко, в меню их не слышно
     AudioFX.setMode('menu');
     StorageManager.save(); updateMenuVisibility();
     const startScreen = document.getElementById('startScreen');

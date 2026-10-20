@@ -97,16 +97,22 @@
         const main = ctx, ga = gameActive, wft = waitingFirstTap, dm = dtMult, fr = frame,
             d = currentDrunkFactor, fz = currentFreezeFactor, ov = currentOvereatFactor, vs = viewScale, rs = renderScale;
         const hasShz = typeof SHZ !== 'undefined', shk = hasShz ? SHZ.k : 0, inv0 = invulnerableTime;
+        // игровые эффекты (щит, перо, ускорение, смещения ШАЗАМа) в логотипе не рисуем — после полёта они могут остаться ненулевыми
+        const fx0 = [shieldTime, shieldAppearAnim, infiniteStaminaTime, speedBoostTime, slowMotionTime];
+        const SZ = ['dx', 'depthBack', 'depthFront', 'shieldK'], sz0 = {};
         try {
             const k = size / 96 * px;
             const sc = Math.cos(spin || 0), sn = Math.sin(spin || 0);
+            shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; speedBoostTime = 0; slowMotionTime = 0;
+            if (hasShz) SZ.forEach(n => { sz0[n] = SHZ[n]; if (typeof SHZ[n] === 'number') SHZ[n] = 0; });
             gc.setTransform(k * sc, k * sn, -k * sn, k * sc, x * px, y * px);   // spin — вращение всей совы (замёрзшая кувыркается, как в игре)
             gameActive = false; waitingFirstTap = false; dtMult = 1; frame = now / 16.67;
             currentDrunkFactor = state.id === 'drunk' ? 1 : 0;
             currentFreezeFactor = state.id === 'freeze' ? 1 : 0;
             currentOvereatFactor = state.id === 'fat' ? 1 : 0;
             if (hasShz) SHZ.k = state.id === 'shazam' ? 1 : 0;
-            owl.x = 0; owl.y = 0; owl.rotation = rot; owl.visible = true; owl.wing = state.id === 'freeze' ? 0 : wing; owl.lean = (state.id === 'speed' || state.id === 'shazam') ? 0.3 : 0;   // ускорение и ШАЗАМ — сова наклонена вперёд owl.boostK = state.id === 'speed' ? 1 : 0; owl.spinAngle = 0;
+            owl.x = 0; owl.y = 0; owl.rotation = rot; owl.visible = true; owl.wing = state.id === 'freeze' ? 0 : wing; owl.lean = (state.id === 'speed' || state.id === 'shazam') ? 0.3 : 0;   // ускорение и ШАЗАМ — сова наклонена вперёд
+            owl.boostK = state.id === 'speed' ? 1 : 0; owl.spinAngle = 0;
             ctx = gc; window.__noBlink = true; invulnerableTime = state.id === 'dizzy' ? 70 : 0;   // звёздочки над головой — только у «оглушённой» совы
             // ускорение и ШАЗАМ: из-за совы вылетают звёздочки, как в игре (те же функции игры)
             if (fx && (state.id === 'speed' || state.id === 'shazam') && typeof updateSpeedStars === 'function') {
@@ -123,6 +129,8 @@
             ctx = main; window.__noBlink = false; invulnerableTime = inv0; gameActive = ga; waitingFirstTap = wft; dtMult = dm; frame = fr;
             currentDrunkFactor = d; currentFreezeFactor = fz; currentOvereatFactor = ov; viewScale = vs; renderScale = rs;
             if (hasShz) SHZ.k = shk;
+            [shieldTime, shieldAppearAnim, infiniteStaminaTime, speedBoostTime, slowMotionTime] = fx0;
+            if (hasShz) SZ.forEach(n => { if (n in sz0) SHZ[n] = sz0[n]; });
             keys.forEach(k => owl[k] = save[k]);
             gc.setTransform(px, 0, 0, px, 0, 0);
         }
@@ -264,6 +272,7 @@
             if (now < nextAt) return;
             if (!canRun()) { nextAt = now + 2000; return; }
             state = nextState(); t0 = now; flags = {}; sparks = [];
+            flags.say = pickSay();   // реплика этого появления (или null)
             tile.style.setProperty('--lc', state.line);
         }
         if (!canRun()) { stop(); return; }
@@ -290,8 +299,11 @@
                 if (!flags.pop) { flags.pop = 1; burst(tx, ty, 10, sparkCol(state)); }
                 const s = back((k - 0.35) / 0.65);
                 drawOwlState(tx, ty, OS * s, state, 0, 0.5, now, state.id === 'freeze' ? (t - b2) * 4.2 : 0);
+                if (k > 0.55 && flags.say && !flags.sayOn) { flags.sayOn = 1; sayShow(flags.say, L); }
             }
         } else if (t < b4) {   // 4) сова в своём состоянии, ровно по центру плитки
+            if (flags.say && !flags.sayOn) { flags.sayOn = 1; sayShow(flags.say, L); }
+            else if (flags.sayOn && ((flags.pl = (flags.pl || 0) + 1) % 20) === 0) sayPlace(L);   // логотип мог сдвинуться (поворот экрана)
             setHome(0); setIcon(0, 0, 0);
             const k = t - b3;
             const pulse = 0.85 + 0.15 * Math.sin(k * 5);
@@ -301,6 +313,7 @@
             const rot = state.id === 'drunk' ? Math.sin(k * 3.2) * 0.18 : 0;
             drawOwlState(tx, ty, OS, state, rot, wing, now, state.id === 'freeze' ? (t - b2) * 4.2 : 0);   // замёрзшая кувыркается, как в игре
         } else {   // 5) сова-состояние сжимается — вспышка — возвращается главная сова
+            if (flags.sayOn && !flags.sayOff) { flags.sayOff = 1; sayHide(); }   // облачко улетает вместе с состоянием совы
             if (home) setIcon(0, 0, 0);
             const k = Math.min(1, (t - b4) / T_E);
             const os = 1 - ease(Math.min(1, k / 0.45));
@@ -316,7 +329,103 @@
         if (t >= DUR2) { stop(); return; }
         raf = requestAnimationFrame(tick);
     }
+    // ===== Облачко-реплика совы над плиткой логотипа =====
+    // Первое появление совы после загрузки — «Привет!», дальше примерно через раз — случайная подсказка из списка.
+    // Список можно пополнять откуда угодно: window.LOGO_HINTS.push({ id: 'x', text: '…' }).
+    const HINTS = window.LOGO_HINTS = window.LOGO_HINTS || [
+        { id: 'shop', text: 'В лавке можно купить любой бонус для полёта!' }
+    ];
+    const GREET = { id: 'hello', text: 'Привет!' };
+    let greetPending = true, lastHintId = '', lastShown = true, sayNow = null, sayHideT = 0;
+    const sst = document.createElement('style');
+    sst.textContent = '#startScreen > .menu-logo-wrap .lg-say{position:absolute;z-index:4;pointer-events:none;width:0;height:0}'
+        + '#startScreen > .menu-logo-wrap .lg-say-b{position:absolute;left:0;bottom:0;box-sizing:border-box;width:max-content;padding:8px 14px 9px;border-radius:999px;'
+        + 'font:900 13.5px/1.25 Onest,sans-serif;letter-spacing:.01em;color:#fff;text-align:center;white-space:normal;'
+        + 'background:radial-gradient(120% 90% at 30% 0%,color-mix(in srgb,var(--sc,#C4A1FF) 26%,transparent),transparent 70%),rgba(29,9,54,.95);'
+        + 'border:1.5px solid color-mix(in srgb,var(--sc,#C4A1FF) 70%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--sc,#C4A1FF) 40%,transparent),0 6px 14px rgba(0,0,0,.35);'
+        + 'transform-origin:var(--ox,12%) 100%;opacity:0;transform:scale(.3) translateY(8px);transition:opacity .28s ease,transform .45s cubic-bezier(.3,1.5,.5,1)}'
+        + '#startScreen > .menu-logo-wrap .lg-say-b.ml{border-radius:20px;padding:9px 14px 10px}'
+        + '#startScreen > .menu-logo-wrap .lg-say i{position:absolute;border-radius:50%;background:rgba(29,9,54,.95);border:1.5px solid color-mix(in srgb,var(--sc,#C4A1FF) 70%,transparent);'
+        + 'box-shadow:0 0 8px color-mix(in srgb,var(--sc,#C4A1FF) 40%,transparent);opacity:0;transform:scale(0);transition:opacity .2s ease,transform .3s cubic-bezier(.3,1.6,.5,1)}'
+        + '#startScreen > .menu-logo-wrap .lg-say.on i,#startScreen > .menu-logo-wrap .lg-say.on .lg-say-b{opacity:1;transform:none}'
+        + '#startScreen > .menu-logo-wrap .lg-say.on .lg-say-b{transition-delay:.24s;animation:lgSayBob 2.6s .7s ease-in-out infinite}'
+        + '#startScreen > .menu-logo-wrap .lg-say.on i:nth-of-type(2){transition-delay:.08s}#startScreen > .menu-logo-wrap .lg-say.on i:nth-of-type(1){transition-delay:.16s}'
+        + '#startScreen > .menu-logo-wrap .lg-say.off .lg-say-b{transition:opacity .22s ease,transform .3s ease}'
+        + '#startScreen > .menu-logo-wrap .lg-say.off i{transition:opacity .18s ease,transform .2s ease}'
+        + '#startScreen > .menu-logo-wrap .lg-say.off i:nth-of-type(3){transition-delay:.1s}#startScreen > .menu-logo-wrap .lg-say.off i:nth-of-type(2){transition-delay:.05s}'
+        + '@keyframes lgSayBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}';
+    document.head.appendChild(sst);
+    const say = document.createElement('div');
+    say.className = 'lg-say'; say.setAttribute('aria-hidden', 'true');
+    say.innerHTML = '<div class="lg-say-b"></div><i></i><i></i><i></i>';
+    say.style.display = 'none';
+    wrap.appendChild(say);
+    const sayB = say.firstElementChild, dots = say.querySelectorAll('i');
+    function pickSay() {   // какую реплику скажет сова при этом появлении (или промолчит)
+        if (greetPending) return GREET;
+        const want = lastShown ? Math.random() < 0.3 : Math.random() < 0.8;   // примерно через раз
+        lastShown = want;
+        if (!want || !HINTS.length) return null;
+        let pool = HINTS.filter(h => h && h.text && h.id !== lastHintId);
+        if (!pool.length) pool = HINTS.filter(h => h && h.text);
+        const h = pool[Math.floor(Math.random() * pool.length)];
+        if (h) lastHintId = h.id;
+        return h || null;
+    }
+    // ставим облачко: хвостик из кружочков ведёт к голове совы, плашка — выше и правее плитки, в пределах экрана и ниже кнопок верхней панели
+    function sayPlace(L) {
+        const W = wrap.clientWidth, H = wrap.clientHeight;
+        if (!W) return;
+        const cx = cv.offsetLeft + L.tx, top = cv.offsetTop + L.ty - L.ts / 2, ts = L.ts;
+        const u = Math.max(0.8, Math.min(1.25, ts / 74));   // кружочки — под размер плитки
+        const ds = [[10, 9], [6, 6.5], [3, 4.5]];   // [сдвиг вбок, диаметр] — от плашки к сове
+        const ax = cx + ts * 0.16, ay = top - ts * 0.04;      // точка у головы совы
+        dots.forEach((d, i) => { const [dx, s] = ds[i]; d.style.width = d.style.height = (s * u).toFixed(1) + 'px'; d.style.left = (dx * u - s * u / 2).toFixed(1) + 'px'; });
+        const tailH = 22 * u;
+        // ширина плашки: короткая реплика — в одну строку, длинная — не шире ~230px и края экрана
+        const maxW = Math.max(120, Math.min(230, W - 8));
+        sayB.style.maxWidth = maxW + 'px';
+        const pw = sayB.offsetWidth, ph = sayB.offsetHeight;
+        sayB.classList.toggle('ml', ph > 40);
+        let px = Math.min(W - 4 - pw, Math.max(4 - ax, -pw * 0.12));   // левый край плашки относительно хвостика
+        px = Math.max(4 - ax, Math.min(px, W - 4 - pw - ax));
+        let pb = ay - tailH;   // низ плашки
+        // кнопки верхней панели не перекрываем: если мешают — облачко ниже не опускаем, а сдвигаем вправо от них (или ужимаем хвостик)
+        try {
+            const wr = wrap.getBoundingClientRect(), k = wrap.offsetWidth ? wr.width / wrap.offsetWidth : 1;
+            const btns = document.querySelectorAll('#menuCoins, #startScreen .rw-menu-btn');
+            let lim = -1e9;
+            btns.forEach(b => { if (!b.offsetParent) return; const r = b.getBoundingClientRect(); const l = (r.left - wr.left) / k, rr = (r.right - wr.left) / k;
+                if (rr > ax + px - 2 && l < ax + px + pw + 2) lim = Math.max(lim, (r.bottom - wr.top) / k + 6); });
+            if (pb - ph < lim) pb = Math.min(ay - 10 * u, lim + ph);
+        } catch (e) {}
+        say.style.left = ax.toFixed(1) + 'px'; say.style.top = pb.toFixed(1) + 'px';
+        sayB.style.left = px.toFixed(1) + 'px';
+        sayB.style.setProperty('--ox', Math.max(0, Math.min(100, -px / pw * 100)).toFixed(0) + '%');
+        // хвостик тянется от плашки к сове: верхний кружок — у низа плашки, нижний — у головы
+        const span = Math.max(8, ay - pb);
+        dots.forEach((d, i) => { const s = ds[i][1]; d.style.top = (span * [0.28, 0.62, 0.92][i] - s * u / 2).toFixed(1) + 'px'; });
+    }
+    function sayShow(h, L) {
+        if (!h) return;
+        clearTimeout(sayHideT);
+        sayNow = h; sayB.textContent = h.text;
+        say.style.setProperty('--sc', (state && state.line) || '#C4A1FF');
+        say.classList.remove('on', 'off'); say.style.display = '';
+        sayPlace(L);
+        void say.offsetWidth;
+        say.classList.add('on');
+        if (h === GREET) greetPending = false;
+    }
+    function sayHide(now) {
+        if (!sayNow && say.style.display === 'none') return;
+        sayNow = null; clearTimeout(sayHideT);
+        if (now) { say.classList.remove('on', 'off'); say.style.display = 'none'; return; }
+        say.classList.remove('on'); say.classList.add('off');
+        sayHideT = setTimeout(() => { say.style.display = 'none'; say.classList.remove('off'); }, 420);
+    }
     function stop() {
+        sayHide(true);
         state = null; sparks = []; LS.stars = []; LS.acc = 0; lgOn(false); txtK(0);
         if (home) { setHome(1); setIcon(0, 0, 0); } else resetIcon();
         g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height);
@@ -326,5 +435,7 @@
     setInterval(() => { if (!state && !raf) schedule(); }, 1000);
     // makeHomeOwl();   // сова как постоянный логотип — отключено, логотип снова джойстик
     schedule();
+    // уходим в полёт: анимация логотипа и облачко гаснут сразу
+    window.logoAnimStop = () => { if (raf) { cancelAnimationFrame(raf); raf = 0; } if (state) stop(); else sayHide(true); };
     window.logoAnimPlay = (id) => { const s = STATES.find(x => x.id === id); if (s) order.unshift(s); nextAt = 0; schedule(); };
 })();

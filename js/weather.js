@@ -22,8 +22,8 @@ const WX = {
     DUR_MIN: 54, DUR_MAX: 69,    // сколько гроза «включена» (24 с нарастания + 30–45 с грозы), с
     // частота (настройка в админке): шанс начать игру сразу в дождь, первая пауза, пауза между грозами, с
     FREQ: [
-        { none: 0.45, start: 0.08, first: [120, 700], gap: [400, 900] },   // редко
-        { none: 0.25, start: 0.2, first: [30, 420], gap: [220, 520] },     // по умолчанию: случайно, нечасто, а бывает — ни разу за игру
+        { none: 0.5, start: 0.04, first: [180, 800], gap: [520, 1000] },   // редко
+        { none: 0.3, start: 0.12, first: [60, 480], gap: [300, 620] },     // по умолчанию: случайно, нечасто (пауза между грозами 5–10 мин), а бывает — ни разу за игру
         { none: 0, start: 0.4, first: [10, 70], gap: [40, 100] },        // часто
         { none: 0, start: 0.7, first: [3, 20], gap: [15, 35] }           // очень часто
     ],
@@ -33,6 +33,17 @@ let stormCover = 0;   // 0..1: сколько туч собралось (тем�
 function wxRand(a, b) { return a + Math.random() * (b - a); }
 function wxFreq() { let f = 1; try { f = ADMIN_CFG.stormFreq; } catch (e) {} return WX.FREQ[Math.max(0, Math.min(3, f | 0))] || WX.FREQ[1]; }
 function wxStart() { WX.on = true; WX.peak = wxRand(0.55, 1); WX.left = wxRand(WX.DUR_MIN, WX.DUR_MAX); }
+// самая первая игра игрока: дождь не начинается в первые ~1,5 минуты. Флаг ставится, когда первая игра закончилась (поражение) или игрок вышел в меню
+function wxFirstGame() {
+    if (WX.firstDone) return false;
+    try { WX.firstDone = localStorage.getItem('bubo_first_game_done') === '1'; } catch (e) { WX.firstDone = true; }
+    return !WX.firstDone;
+}
+function wxMarkFirstDone() {
+    if (WX.firstDone || !(STORM.flightT > 0)) return;
+    WX.firstDone = true;
+    try { localStorage.setItem('bubo_first_game_done', '1'); } catch (e) {}
+}
 function wxDt() {   // настоящие секунды с прошлого кадра (замедление и прочие эффекты на длительность грозы не влияют)
     const now = performance.now(), d = STORM.lastT ? (now - STORM.lastT) / 1000 : 0;
     STORM.lastT = now; STORM.rdt = Math.min(0.1, Math.max(0, d));
@@ -63,6 +74,7 @@ function wxTick() {
             return;
         }
         try { localStorage.removeItem('bubo_wx'); } catch (e) {}   // новая игра — своя случайная погода
+        if (wxFirstGame()) { WX.left = Math.max(wxRand(F.first[0], F.first[1]), wxRand(75, 100)); return; }   // самая первая игра: первые ~1,5 мин без дождя
         if (Math.random() < F.none) WX.left = 1e9;   // в этой игре грозы не будет
         else if (Math.random() < F.start) {
             wxStart(); stormCover = 1; stormIntensity = WX.peak; STORM.fade = 1;
@@ -72,6 +84,7 @@ function wxTick() {
         return;
     }
     if (!gameActive) return;   // дальше время грозы идёт только в полёте
+    STORM.flightT = (STORM.flightT || 0) + dt;
     // раз в ~2 с запоминаем погоду, чтобы при продолжении игры она была той же
     if ((STORM.saveT = (STORM.saveT || 0) + dt) > 2) {
         STORM.saveT = 0;
@@ -93,6 +106,10 @@ function stormClearNow() {
     STORM.cl = null; WX.on = false; WX.left = -1;
 }
 function stormUpdate() {
+    if (!WX.firstDone && STORM.flightT > 0 && !gameActive) {   // первая игра закончилась: поражение или выход в меню
+        const go = STORM.goEl || (STORM.goEl = document.getElementById('gameOverModal'));
+        if (stormInMenu() || (go && !go.classList.contains('hidden'))) wxMarkFirstDone();
+    }
     if (stormInMenu()) {
         if (stormIntensity !== 0 || stormCover !== 0 || WX.left >= 0) stormClearNow();
         if (STORM.sndRain || STORM.sndWind) { STORM.sndRain = STORM.sndWind = 0; try { AudioFX.weatherSet(0, 0, false, true); } catch (e) {} }   // в меню звук дождя стихает за ~1 с
@@ -371,10 +388,15 @@ function stormDrawFlashBack(yb) {
     ctx.globalAlpha = 1;
 }
 
-// Город: в грозу темнее и холоднее, крыши блестят от воды, вспышка мягко подсвечивает фасады и контуры крыш. После drawCity
+// Город: в грозу темнее и холоднее; в дождь луна мягко засвечивает края крыш и стены со стороны луны (мокрые грани блестят),
+// вспышка молнии делает засветы ярче. Затемнение — здесь (после drawCity), засветы — по слоям внутри drawCity (stormCityLayerLight),
+// чтобы свет дальних домов не ложился поверх ближних
 function stormDrawCityLight() {
     const si = Math.max(0, stormCover);
-    if ((si < 0.01 && STORM.flash < 0.01 && STORM.wet < 0.03) || !citySprites) return;
+    // вспышка для домов гаснет мягче самой зарницы: засветы плавно возвращаются
+    const fd = (STORM.cityF || 0) - (STORM.rdt || 0.016) / 0.9;
+    STORM.cityF = Math.max(STORM.flash || 0, fd, 0);
+    if (si < 0.01 || !citySprites) return;
     const sk = stormSmooth(0, 1, si);
     const cityTop = height * 0.3;
     if (!STORM.cityGrad || STORM.cityGradH !== height) {   // мягкий переход сверху — без видимой границы
@@ -385,30 +407,91 @@ function stormDrawCityLight() {
     ctx.globalAlpha = 0.28 * sk; ctx.fillStyle = STORM.cityGrad;
     ctx.fillRect(0, cityTop, width, height - cityTop);
     ctx.globalAlpha = 1;
-    const f = STORM.flash, wet = STORM.wet;
-    if (f < 0.01 && wet < 0.03) return;
-    citySprites.forEach((L, li) => {
-        if (!L.bodies) return;
-        const off = ((cityOffset * L.speed) % L.tileW + L.tileW) % L.tileW, y0 = height - L.H, near = li === citySprites.length - 1;
-        for (let x = -off; x < width; x += L.tileW) {
-            for (let bi = 0; bi < L.bodies.length; bi++) {
-                const bd = L.bodies[bi], bx = x + bd.x, top = y0 + (L.H - bd.h);
-                if (bx + bd.w < 0 || bx > width) continue;
-                // мокрая крыша: тонкий холодный блик по краю
-                if (wet > 0.03 && near) { ctx.globalAlpha = 0.22 * wet; ctx.fillStyle = 'rgb(170, 200, 255)'; ctx.fillRect(bx, top, bd.w, 1.1); }
-                if (f > 0.01) {
-                    const cx = bx + bd.w / 2, k = f * (0.3 + 0.7 * Math.exp(-Math.abs(cx - STORM.flashX) / 380)) * (near ? 1 : 0.7);
-                    ctx.globalCompositeOperation = 'lighter';
-                    ctx.globalAlpha = 0.1 * k; ctx.fillStyle = 'rgb(90, 170, 210)'; ctx.fillRect(bx, top, bd.w, bd.h);   // фасад слегка озаряется
-                    ctx.globalAlpha = 0.75 * k; ctx.fillStyle = 'rgb(190, 245, 255)'; ctx.fillRect(bx, top - 0.5, bd.w, 1.6);   // контур крыши
-                    const side = cx < STORM.flashX ? bx + bd.w - 1.8 : bx;   // грань, обращённая к вспышке
-                    ctx.globalAlpha = 0.5 * k; ctx.fillRect(side, top, 1.8, bd.h * 0.7);
-                    ctx.globalCompositeOperation = 'source-over';
-                }
-            }
+}
+// Маски засветов слоя (строятся один раз на слой, в половинном разрешении — мягкие края без «лесенок»):
+// top — верхние кромки крыш и надстроек, l/r — левые/правые грани стен (свет гаснет книзу). Яркость: у самой кромки 1, внутрь — плавно к 0
+function stormRimMasks(L) {
+    if (L.rim) return L.rim;
+    const MS = 0.5, W = Math.ceil(L.tileW * MS), H = Math.ceil(L.H * MS);
+    const mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
+    const sil = mk(), sg = sil.getContext('2d');
+    sg.drawImage(L.canvas, 0, 0, W, H);
+    sg.globalCompositeOperation = 'source-in'; sg.fillStyle = 'rgb(214, 206, 255)'; sg.fillRect(0, 0, W, H);   // холодный лунный цвет по силуэту
+    const tmp = mk(), tg = tmp.getContext('2d');
+    const edge = (dx, dy, n) => {
+        const c = mk(), g = c.getContext('2d');
+        g.globalCompositeOperation = 'lighter';
+        for (let k = 1; k <= n; k++) {
+            tg.globalCompositeOperation = 'source-over'; tg.clearRect(0, 0, W, H); tg.drawImage(sil, 0, 0);
+            tg.globalCompositeOperation = 'destination-out'; tg.drawImage(sil, dx * k, dy * k);   // остаётся полоса шириной k у кромки
+            g.globalAlpha = 1 / n; g.drawImage(tmp, 0, 0);
         }
-    });
-    ctx.globalAlpha = 1;
+        return c;
+    };
+    const top = edge(0, 1, 3), l = edge(1, 0, 3), r = edge(-1, 0, 3);
+    // грани стен светятся у крыши и гаснут книзу
+    const fade = mk(), fg = fade.getContext('2d');
+    for (const bd of L.bodies) {
+        const t = (L.H - bd.h) * MS, fl = Math.min(bd.h * 0.55, L.H * 0.3) * MS;
+        const gr = fg.createLinearGradient(0, t - 16 * MS, 0, t + fl);
+        gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.25, 'rgba(0,0,0,0.85)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        fg.fillStyle = gr; fg.fillRect((bd.x - 4) * MS, 0, (bd.w + 8) * MS, t + fl + 1);
+    }
+    for (const c of [l, r]) { const g = c.getContext('2d'); g.globalCompositeOperation = 'destination-in'; g.drawImage(fade, 0, 0); }
+    sil.width = sil.height = tmp.width = tmp.height = fade.width = fade.height = 0;   // временные холсты освобождаем
+    return (L.rim = { top, l, r, MS });
+}
+// Засветы от луны на домах одного слоя (вызывается из drawCity сразу после слоя). Ближе к луне — ярче; серп светит слабее полной луны;
+// высокая луна освещает в основном крыши, низкая — больше стены. При вспышке молнии засветы ярче
+function stormCityLayerLight(L, li, off, y0) {
+    if (!L.bodies || stormCover < 0.02) return;
+    const rain = stormSmooth(0.2, 1, stormCover) * (0.55 + 0.45 * Math.min(1, STORM.wet || 0));
+    const fl = STORM.cityF || 0;
+    if (rain < 0.01) return;
+    const mp = window.__moonPos;
+    const mx = mp ? mp[0] + mp[2] / 2 : width * 0.66, my = mp ? mp[1] + mp[2] / 2 : height * 0.2;
+    const ph = typeof moonPhase === 'number' && moonPhase > 0 ? Math.max(0, Math.min(1, (moonPhase - 0.06) / 0.94)) : 0.5;
+    const moonK = 0.35 + 0.65 * ph;
+    const far = li === 0 && citySprites.length > 1;
+    const base = rain * (far ? 0.72 : 0.9) * (1 + 1.8 * fl);
+    const R = stormRimMasks(L), MS = R.MS, reach = Math.max(width, height) * 0.55;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const blit = (img, a, x0, sx, sw, sy, sh) => {
+        if (a < 0.006) return;
+        ctx.globalAlpha = Math.min(1, a);
+        ctx.drawImage(img, sx * MS, sy * MS, sw * MS, sh * MS, x0 + sx, y0 + sy, sw, sh);
+    };
+    for (let x = -off; x < width; x += L.tileW) {
+        for (let bi = 0; bi < L.bodies.length; bi++) {
+            const bd = L.bodies[bi], bx = x + bd.x;
+            if (bx + bd.w + 6 < 0 || bx - 6 > width) continue;
+            const top = y0 + L.H - bd.h, cx = bx + bd.w / 2;
+            const vx = mx - cx, vy = top - my, len = Math.hypot(vx, vy) || 1;
+            const fall = Math.exp(-Math.hypot(vx, vy * 0.8) / reach);
+            // вспышка подсвечивает дома рядом с разрядом сильнее
+            const fk = fl > 0.01 ? 1 + 1.2 * fl * Math.exp(-Math.abs(cx - STORM.flashX) / 380) : 1;
+            const k = base * fk * Math.min(1, moonK * (0.25 + 0.75 * fall) + 0.35 * fl);
+            const sx = Math.max(0, bd.x - 6), sw = Math.min(L.tileW, bd.x + bd.w + 6) - sx;
+            const sy = Math.max(0, L.H - bd.h - 30), sh = L.H - sy;
+            // кромки крыш: тем ярче, чем выше луна над крышей
+            blit(R.top, k * (0.45 + 0.55 * Math.max(0, vy / len)), x, sx, sw, sy, sh);
+            // грань со стороны луны (у дома прямо под луной — обе, плавно)
+            const side = 0.3 + 0.7 * Math.abs(vx) / len, t = stormClamp(0.5 + vx / Math.max(40, bd.w * 1.2));
+            blit(R.r, k * side * t, x, sx, sw, sy, sh);
+            blit(R.l, k * side * (1 - t), x, sx, sw, sy, sh);
+        }
+    }
+    // вспышка: весь слой на миг чуть светлеет
+    if (fl > 0.01) {
+        ctx.globalAlpha = 0.12 * fl * (far ? 0.7 : 1);
+        const kk = L.canvas.width / L.tileW;
+        for (let x = -off; x < width; x += L.tileW) {
+            const d0 = Math.max(0, x), d1 = Math.min(width, x + L.tileW);
+            if (d1 > d0) ctx.drawImage(L.canvas, (d0 - x) * kk, 0, (d1 - d0) * kk, L.canvas.height, d0, y0, d1 - d0, L.H);
+        }
+    }
+    ctx.restore();
 }
 
 // ---------- дождь (поверх всего: труб, значков и совы) ----------

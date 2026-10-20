@@ -1,0 +1,136 @@
+/* ===== Окно НАСТРОЕК — в стиле лавки и вопросов: эмблема-шестерёнка, фиолетовая гамма ===== */
+@property --stA { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@property --stFt { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --stFb { syntax: '<length>'; inherits: false; initial-value: 0px; }
+
+#settingsModal.hidden { display: none !important; }
+/* окно по высоте — по содержимому; если не помещается — до краёв экрана, листается середина, кнопки всегда видны */
+html body #settingsModal > #stWin {
+    position: relative; width: 100% !important; max-width: 380px !important; height: auto !important;
+    max-height: calc((100vh - 24px) / var(--menu-zoom, 1)) !important;
+    zoom: var(--menu-zoom, 1); overflow: hidden !important;
+    display: flex; flex-direction: column; gap: 14px; padding: 16px 16px 18px; border-radius: 24px !important;
+    font-family: Onest, sans-serif; color: #fff; text-align: left;
+    background-color: rgba(29, 9, 54, .97);
+    background-image: radial-gradient(110% 45% at 50% -8%, rgba(168, 85, 247, .26), transparent 62%), radial-gradient(80% 40% at 100% 105%, rgba(120, 44, 233, .18), transparent 60%);
+    border: 1.5px solid rgba(168, 85, 247, .45); box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
+}
+@supports (height: 100dvh) { html body #settingsModal > #stWin { max-height: calc((100dvh - 24px) / var(--menu-zoom, 1)) !important; } }
+#stWin > :not(.st-scroll) { flex-shrink: 0; }
+
+/* шапка: эмблема с вращающимся кольцом и звёздочками */
+#stWin .st-top { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+#stWin .st-emb { position: relative; width: 106px; height: 106px; display: flex; align-items: center; justify-content: center; }
+#stWin .st-glow { position: absolute; inset: 14px; border-radius: 50%; background: radial-gradient(circle, rgba(168, 85, 247, .32), rgba(120, 44, 233, .12) 55%, transparent 72%); animation: stPulse 3.2s ease-in-out infinite; }
+#stWin .st-ring { position: absolute; inset: 6px; border-radius: 50%; padding: 1.5px;
+    background: conic-gradient(from var(--stA), rgba(168, 85, 247, 0) 0deg, #E9D5FF 70deg, #A855F7 140deg, rgba(120, 44, 233, 0) 200deg, rgba(168, 85, 247, 0) 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; animation: stRing 3.6s linear infinite; opacity: .95; }
+#stWin .st-core { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+#stWin .st-core i { font-size: 44px; animation: stGear 14s linear infinite; }
+#stWin .st-core i::before { background: linear-gradient(110deg, #A855F7 0%, #F3E8FF 22%, #C084FC 40%, #782CE9 60%, #C084FC 80%, #F3E8FF 100%); background-size: 250% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent; animation: stFlow 4.5s linear infinite; }
+#stWin .st-core i { filter: drop-shadow(0 0 7px rgba(168, 85, 247, .55)); }
+#stWin .st-tw { position: absolute; font-style: normal; font-size: var(--s); color: #F3E8FF; text-shadow: 0 0 8px #A855F7; animation: stTw 2.4s ease-in-out infinite; animation-delay: var(--d); }
+@keyframes stRing { to { --stA: 360deg; } }
+@keyframes stGear { to { transform: rotate(360deg); } }
+@keyframes stFlow { to { background-position: -250% 0; } }
+@keyframes stPulse { 0%, 100% { opacity: .6; transform: scale(.95); } 50% { opacity: 1; transform: scale(1.05); } }
+@keyframes stTw { 0%, 100% { opacity: .15; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.1); } }
+#stWin .st-title { text-align: center; margin-top: -4px; }
+#stWin .st-title b { display: block; font-weight: 900; font-size: 27px; letter-spacing: .02em; line-height: 1.05;
+    background: linear-gradient(90deg, #C4A1FF, #F3E8FF 45%, #A855F7); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#stWin .st-title span { display: block; margin-top: 6px; font-weight: 600; font-size: 12px; color: #C4B5FD; }
+
+/* крестик — фиолетовый (общие размеры заданы в features.css) */
+#settingsModal { --xc: #A855F7; }
+
+/* листаемая середина: мягкое затенение сверху/снизу, только когда есть что листать в эту сторону */
+#stWin .st-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 9px;
+    margin: 0 -4px; padding: 2px 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--stFt), #000 calc(100% - var(--stFb)), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 var(--stFt), #000 calc(100% - var(--stFb)), transparent 100%);
+    transition: --stFt .25s ease, --stFb .25s ease; }
+#stWin .st-scroll::-webkit-scrollbar { display: none; }
+#stWin .st-scroll.ft { --stFt: 22px; }
+#stWin .st-scroll.fb { --stFb: 26px; }
+
+/* пункты — карточки как строки в окне вопросов */
+#stWin .st-row { flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; padding: 11px 12px; border-radius: 15px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--c) 8%, transparent), rgba(20, 3, 38, .62) 75%);
+    border: 1px solid color-mix(in srgb, var(--c) 24%, rgba(168, 85, 247, .2)); }
+#stWin .st-row[hidden], html.is-app #stFsRow { display: none !important; }
+#stWin .st-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 30px; }
+#stWin .st-lbl { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 13.5px; color: #fff; min-width: 0; }
+#stWin .st-ic { flex: 0 0 30px; width: 30px; height: 30px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 13px;
+    color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); }
+#stWin .st-sub { display: flex; justify-content: space-between; font-weight: 600; font-size: 11px; color: #C4B5FD; margin-bottom: -2px; }
+#stWin .st-sub b, #stWin .st-val { font-weight: 900; color: #E9D5FF; font-size: 11.5px; }
+#stWin .st-val { color: #C4A1FF; }
+#stWin .st-range { width: 100%; margin: 0; accent-color: var(--c); cursor: pointer; height: 20px; }
+#stWin .st-ticks { display: flex; justify-content: space-between; font-weight: 900; font-size: 10px; margin-top: -4px; }
+#stWin .st-hint { font-weight: 600; font-size: 11px; line-height: 1.3; color: #C4B5FD; }
+#stWin .st-side { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 13px; }
+#stWin .st-side > span { cursor: pointer; }
+#stWin .st-sw { flex: 0 0 auto; cursor: pointer; }
+
+/* кнопки внизу — всегда видны */
+#stWin .st-btns { display: flex; flex-direction: column; gap: 8px; }
+#stWin .st-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 10px; border-radius: 16px;
+    font-weight: 900; font-size: 13px; letter-spacing: .05em; color: #fff; cursor: pointer; transition: transform .12s, opacity .25s, filter .25s, box-shadow .25s; }
+#stWin .st-btn:active { transform: scale(.97); }
+#stWin .st-save { background: linear-gradient(135deg, #A855F7 0%, #782CE9 100%); border: 1px solid rgba(233, 213, 255, .45); box-shadow: 0 4px 22px rgba(168, 85, 247, .5); }
+#stWin .st-save:disabled { cursor: default; opacity: .42; filter: saturate(.45); box-shadow: none; transform: none; pointer-events: none; }
+#stWin .st-btn.sec { padding: 11px 10px; font-size: 11.5px; background: rgba(45, 14, 82, .9); border: 1px solid rgba(168, 85, 247, .5); }
+#stWin .st-btn.sec i { color: #C4A1FF; }
+
+/* низкие экраны — шапка компактнее, чтобы пунктам оставалось место */
+@media (max-height: 700px) {
+    #stWin .st-emb { width: 84px; height: 84px; }
+    #stWin .st-emb .st-ring { inset: 4px; }
+    #stWin .st-core i { font-size: 34px; }
+    #stWin .st-title b { font-size: 24px; }
+    html body #settingsModal > #stWin { gap: 12px; padding-top: 14px; }
+}
+
+/* ===== Окно «ВЫ ТОЧНО ХОТИТЕ ВЫЙТИ?» (кнопка/жест «Назад» в главном меню) ===== */
+@property --exA { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+#exitConfirmModal { position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: rgba(20, 3, 38, .3); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); animation: exIn .22s ease-out; }
+#exitConfirmModal.hidden { display: none; }
+.gfx-low #exitConfirmModal { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(20, 3, 38, .7); }
+#startScreen.menu-under-exit > * { opacity: 0 !important; pointer-events: none !important; }
+@keyframes exIn { from { opacity: 0; } to { opacity: 1; } }
+#exWin { position: relative; width: 100%; max-width: 340px; zoom: var(--menu-zoom, 1); display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 18px 16px 16px; border-radius: 24px; font-family: Onest, sans-serif; color: #fff; text-align: center;
+    background: radial-gradient(110% 50% at 50% -10%, rgba(244, 114, 182, .2), transparent 62%), radial-gradient(80% 40% at 0% 105%, rgba(168, 85, 247, .16), transparent 60%), rgba(29, 9, 54, .97);
+    border: 1.5px solid rgba(168, 85, 247, .45); box-shadow: 0 10px 40px rgba(0, 0, 0, .5); animation: exPop .26s cubic-bezier(.2, .9, .3, 1.2); }
+@keyframes exPop { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+#exWin .ex-emb { position: relative; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; }
+#exWin .ex-glow { position: absolute; inset: 12px; border-radius: 50%; background: radial-gradient(circle, rgba(244, 114, 182, .3), rgba(168, 85, 247, .12) 55%, transparent 72%); animation: stPulse 3.2s ease-in-out infinite; }
+#exWin .ex-ring { position: absolute; inset: 5px; border-radius: 50%; padding: 1.5px;
+    background: conic-gradient(from var(--exA), rgba(244, 114, 182, 0) 0deg, #FBCFE8 70deg, #A855F7 140deg, rgba(168, 85, 247, 0) 200deg, rgba(244, 114, 182, 0) 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; animation: exRing 3.6s linear infinite; }
+@keyframes exRing { to { --exA: 360deg; } }
+#exWin .ex-core { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+#exWin .ex-core i { font-size: 40px; background: linear-gradient(110deg, #F472B6 0%, #FCE7F3 22%, #F472B6 40%, #C4A1FF 60%, #F472B6 80%, #FCE7F3 100%); background-size: 250% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 6px rgba(244, 114, 182, .5)); animation: stFlow 4.5s linear infinite; }
+#exWin .ex-tw { position: absolute; font-style: normal; font-size: var(--s); color: #FCE7F3; text-shadow: 0 0 8px #F472B6; animation: stTw 2.4s ease-in-out infinite; animation-delay: var(--d); }
+#exWin .ex-title { margin-top: -6px; font-weight: 900; font-size: 24px; line-height: 1.1; letter-spacing: .02em;
+    background: linear-gradient(90deg, #F9A8D4, #FDF4FF 45%, #C4A1FF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#exWin .ex-text { margin-top: -6px; font-weight: 600; font-size: 13px; line-height: 1.35; color: #C4B5FD; max-width: 270px; }
+#exWin .ex-btns { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 2px; }
+#exWin .ex-btn { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 13px 8px; border-radius: 16px; font-weight: 900; font-size: 13px;
+    letter-spacing: .06em; color: #fff; cursor: pointer; transition: transform .12s, filter .2s; }
+#exWin .ex-btn:active { transform: scale(.96); }
+#exWin .ex-yes { background: rgba(34, 197, 94, .08); border: 1.5px solid #22C55E; color: #BBF7D0; }
+#exWin .ex-yes i { color: #4ADE80; }
+#exWin .ex-no { background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%); border: 1px solid rgba(255, 255, 255, .22); box-shadow: 0 4px 20px rgba(239, 68, 68, .45); }
+.ex-toast { position: absolute; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); z-index: 61; transform: translateX(-50%); zoom: var(--menu-zoom, 1);
+    padding: 10px 16px; border-radius: 14px; white-space: nowrap; pointer-events: none; font: 800 13px/1.2 Onest, sans-serif; color: #fff;
+    background: rgba(29, 9, 54, .95); border: 1px solid rgba(168, 85, 247, .6); box-shadow: 0 0 18px rgba(168, 85, 247, .4); animation: exToast 2.6s ease forwards; }
+@keyframes exToast { 0% { opacity: 0; translate: 0 10px; } 12% { opacity: 1; translate: 0 0; } 82% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+    #stWin .st-core i, #stWin .st-ring, #exWin .ex-ring { animation: none; }
+}

@@ -667,3 +667,12 @@ html #rouletteModal > .glass-panel { max-width: calc(380px * var(--menu-zoom, 1)
 #topHud #livesContainer:has(> :nth-child(6)) > * { width: calc(14px * var(--hk, 1) * 0.92) !important; height: calc(14px * var(--hk, 1) * 0.92) !important; }
 #topHud #livesContainer:has(> :nth-child(6)) > * + * { margin-left: calc(5px * var(--hk, 1) * 0.7) !important; }
 #topHud #livesContainer:has(> :nth-child(6)) { padding-left: calc(12px * var(--hk, 1) * 0.85) !important; padding-right: calc(12px * var(--hk, 1) * 0.85) !important; }
+/* v0.13.81: лавка — баланс без плашки и видимой обводки: только монетки и число, по невидимому контуру бегает светлый блик (меню не трогаем) */
+#shopModal #shWin .sh-coins { background: transparent !important; border-color: transparent !important; box-shadow: none !important; }
+/* v0.13.81: глюки после прокрутки окон. Причина: внутри листающегося окна есть липкий низ (sticky .sh-foot / .qz-stick / .rl-btns) — он всегда
+   на отдельном слое композитора; браузер (Chrome/Android, Safari) после прокрутки «на ходу» переносит перекрывающиеся с ним абсолютные элементы
+   шапки (крестик, плашка монет) в общий слой и перерисовывает их с другим сглаживанием при zoom окна — тонкая обводка пропадает/мигает,
+   крестик дёргается. Лечение: шапка и низ с самого начала на своих слоях, окно изолирует свой стек — при прокрутке ничего не перестраивается. */
+#qzWin, #shWin, #rlWin, #rwWindow, #goWin, #winWindow { isolation: isolate; }
+#qzWin .qz-x, #shWin .sh-x, #shWin .sh-coins, #rlWin .win-x, #rwWindow #closeRouletteBtn, #goWin .win-x,
+#shWin .sh-foot, #qzWin .qz-stick, #rlWin .rl-btns { will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden; }

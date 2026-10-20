@@ -430,6 +430,7 @@ function drawCity() {
                     }
                 }
             }
+            if (typeof stormCityLayerLight === 'function' && stormCover > 0.02) stormCityLayerLight(L, li, off, y0);   // в дождь: засветы от луны на крышах и стенах (до ближнего слоя — не ложатся поверх него)
         }
         // жизнь в окнах: свет то загорается, то гаснет, плавно
         for (let t = 0; t < 2; t++) {
