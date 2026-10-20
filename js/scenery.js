@@ -346,6 +346,20 @@ function fwGlowLayer(L, off, y0, lights, far) {
     }
 }
 
+// мягкий ореол окна: радиальное пятно цвета окна, готовое один раз на цвет
+const winGlowCache = {};
+function winGlowSprite(rgb) {
+    if (winGlowCache[rgb]) return winGlowCache[rgb];
+    const S = 24, c = document.createElement('canvas'); c.width = c.height = S;
+    const g = c.getContext('2d'), gr = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    gr.addColorStop(0, rgb); gr.addColorStop(0.45, rgb); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.globalAlpha = 1; g.fillStyle = gr; g.fillRect(0, 0, S, S);
+    g.globalCompositeOperation = 'destination-in';
+    const m = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    m.addColorStop(0, 'rgba(0,0,0,0.9)'); m.addColorStop(0.5, 'rgba(0,0,0,0.35)'); m.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = m; g.fillRect(0, 0, S, S);
+    return (winGlowCache[rgb] = c);
+}
 function drawCity() {
     const S = Math.max(1, viewScale * renderScale);
     const key = `${Math.round(height)}|${S.toFixed(2)}|${gfxQuality}`;
@@ -448,6 +462,10 @@ function drawCity() {
             const wn = L.windows[Math.floor(Math.random() * L.windows.length)];
             if (wn && Math.random() < 0.06 * dtMult) wn.on = !wn.on;
         }
+        // окна мягко светятся (ореол из готовой картинки, режим «свет»); в дождь — чуть сильнее, город будто подсвечен
+        const wRain = (typeof stormCover === 'number' && typeof stormSmooth === 'function') ? stormSmooth(0.2, 1, stormCover) : 0;
+        const wGlow = (li > 0 ? 0.95 : 0.65) * (1 + 1.2 * wRain), wCore = 1.15 + 0.5 * wRain, wPad = li > 0 ? 6 : 4;
+        const glowL = [];
         for (let wl = 0; wl < 2; wl++) { const arr = wl ? L.wrapped : L.windows; if (!arr) continue;   // без склейки массивов каждый кадр (меньше мусора в памяти)
         for (let wi = 0; wi < arr.length; wi++) { const wn = arr[wi];
             const src = wn.twin || wn;
@@ -464,10 +482,20 @@ function drawCity() {
                     ctx.globalAlpha = src.a * 0.18;
                     ctx.fillRect(sx - 1.2, y0 + wn.y - 1.2, wn.w + 2.4, wn.h + 2.4);
                 }
-                ctx.globalAlpha = src.a;
+                ctx.globalAlpha = Math.min(1, src.a * wCore);
                 ctx.fillRect(sx, y0 + wn.y, wn.w, wn.h);
+                glowL.push(sx, y0 + wn.y, wn.w, wn.h, src.a, src.rgb);
             }
         } }
+        if (glowL.length && gfxQuality !== 'low') {   // ореолы — одним проходом поверх
+            ctx.globalCompositeOperation = 'lighter';
+            for (let i = 0; i < glowL.length; i += 6) {
+                ctx.globalAlpha = Math.min(1, glowL[i + 4] * wGlow);
+                ctx.drawImage(winGlowSprite('rgb(255,196,118)'), glowL[i] - wPad, glowL[i + 1] - wPad, glowL[i + 2] + wPad * 2, glowL[i + 3] + wPad * 2);
+            }
+            ctx.globalCompositeOperation = 'source-over';
+        }
+        ctx.globalAlpha = 1;
         if (fwL.length) fwGlowLayer(L, off, y0, fwL, li === 0 && citySprites.length > 1);   // залпы подсвечивают дома
         // красные лампы на шпилях мигают, каждая в своём ритме
         if (L.beacons && L.beacons.length) {
