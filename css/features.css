@@ -722,3 +722,6 @@ html body #shWin .sh-core i { background: linear-gradient(90deg, #FFC53D 0%, #FF
 #goWin .go-reason #gameOverReason { color: #FCA5A5; font-weight: 800; font-size: 12px; line-height: 1.35; }
 #goWin .go-info { align-items: flex-start !important; }
 #goWin .go-info .go-ii { margin-top: 1px; }
+/* числа в плашках экрана поражения — помещаются и трёхзначные (120/120) */
+#goWin .go-st > b { font-size: 14.5px !important; letter-spacing: -0.01em; white-space: nowrap; }
+#goWin .go-st { column-gap: 6px !important; padding-left: 8px !important; padding-right: 7px !important; min-width: 0; }

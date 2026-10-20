@@ -80,9 +80,12 @@ function update() {
         let sob = 0;
         try { if (typeof stormSmooth === 'function' && typeof stormCover === 'number') sob = stormSmooth(0.3, 1, stormCover); } catch (e) {}
         const inW = (window.__owlInWater || 0) > 0 && typeof waterTime !== 'undefined' && waterTime > 0;
-        const rate = 1 + 1.2 * sob + (inW ? 6 : 0);
+        // дождь — время идёт в 1,5 раза быстрее, под струёй — вдвое; скорость меняется плавно
+        const tgt = 1 + 0.5 * sob + (inW ? 0.5 : 0);
+        window.__sobRate = (window.__sobRate || 1) + (tgt - (window.__sobRate || 1)) * Math.min(1, 0.06 * dtMult);
+        const rate = window.__sobRate;
         drunkTime -= dtMult * rate;
-        const lv = inW ? 2 : (sob > 0.3 ? 1 : 0);
+        const lv = rate > 1.6 ? 2 : (rate > 1.15 ? 1 : 0);
         if (lv !== window.__soberLv) {   // таймер опьянения «смывается»: светится голубым, при струе — сильнее
             window.__soberLv = lv;
             try { const el = document.querySelector('#buffBar .buff-tag[data-key="drunk"]'); if (el) { el.classList.toggle('sober1', lv === 1); el.classList.toggle('sober2', lv === 2); } } catch (e) {}
@@ -1050,7 +1053,7 @@ function showGameOverScreen(reason) {
     const $ = (id) => document.getElementById(id);
     const totalItems = getTotalCollectedThemes();
     if ($('finalScore')) $('finalScore').innerText = score;
-    if ($('finalTokens')) $('finalTokens').innerText = `${totalItems} / ${TOTAL_THEMES}`;
+    if ($('finalTokens')) $('finalTokens').innerText = `${totalItems}/${TOTAL_THEMES}`;   // без пробелов — влезает и 120/120
     if ($('finalAttempts')) $('finalAttempts').innerText = `${attempts}`;
     if ($('gameOverReason')) $('gameOverReason').innerText = reason;
     let lvlName = '';

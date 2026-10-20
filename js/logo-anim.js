@@ -97,6 +97,7 @@
         const main = ctx, ga = gameActive, wft = waitingFirstTap, dm = dtMult, fr = frame,
             d = currentDrunkFactor, fz = currentFreezeFactor, ov = currentOvereatFactor, vs = viewScale, rs = renderScale;
         const hasShz = typeof SHZ !== 'undefined', shk = hasShz ? SHZ.k : 0, inv0 = invulnerableTime;
+        const stW = typeof STORM !== 'undefined' ? [STORM.wet, STORM.ice] : null, wfT = typeof WATERFX !== 'undefined' ? WATERFX.wetT : 0, owW = owl._wWet;
         // игровые эффекты (щит, перо, ускорение, смещения ШАЗАМа) в логотипе не рисуем — после полёта они могут остаться ненулевыми
         const fx0 = [shieldTime, shieldAppearAnim, infiniteStaminaTime, speedBoostTime, slowMotionTime];
         const SZ = ['dx', 'depthBack', 'depthFront', 'shieldK'], sz0 = {};
@@ -109,6 +110,8 @@
             gameActive = false; waitingFirstTap = false; dtMult = 1; frame = now / 16.67;
             currentDrunkFactor = state.id === 'drunk' ? 1 : 0;
             currentFreezeFactor = state.id === 'freeze' ? 1 : 0;
+            if (typeof STORM !== 'undefined') { STORM.wet = 0; STORM.ice = state.id === 'freeze' ? (state._ice || 0) : 0; }   // в логотипе — не погода игры: замёрзшая сова со своим случайным количеством льдинок
+            if (typeof WATERFX !== 'undefined') WATERFX.wetT = 0; owl._wWet = 0;
             currentOvereatFactor = state.id === 'fat' ? 1 : 0;
             if (hasShz) SHZ.k = state.id === 'shazam' ? 1 : 0;
             owl.x = 0; owl.y = 0; owl.rotation = rot; owl.visible = true; owl.wing = state.id === 'freeze' ? 0 : wing; owl.lean = (state.id === 'speed' || state.id === 'shazam') ? 0.3 : 0;   // ускорение и ШАЗАМ — сова наклонена вперёд
@@ -129,6 +132,7 @@
             ctx = main; window.__noBlink = false; invulnerableTime = inv0; gameActive = ga; waitingFirstTap = wft; dtMult = dm; frame = fr;
             currentDrunkFactor = d; currentFreezeFactor = fz; currentOvereatFactor = ov; viewScale = vs; renderScale = rs;
             if (hasShz) SHZ.k = shk;
+            if (stW) { STORM.wet = stW[0]; STORM.ice = stW[1]; } if (typeof WATERFX !== 'undefined') WATERFX.wetT = wfT; owl._wWet = owW;
             [shieldTime, shieldAppearAnim, infiniteStaminaTime, speedBoostTime, slowMotionTime] = fx0;
             if (hasShz) SZ.forEach(n => { if (n in sz0) SHZ[n] = sz0[n]; });
             keys.forEach(k => owl[k] = save[k]);
@@ -272,6 +276,7 @@
             if (now < nextAt) return;
             if (!canRun()) { const h = window.__logoAnimHold || 0; nextAt = now < h ? h : now + 2000; return; }   // после загрузки — ровно к концу паузы
             state = nextState(); t0 = now; flags = {}; sparks = [];
+            if (state.id === 'freeze') state._ice = Math.random() < 0.3 ? 0 : 0.25 + Math.random() * 0.75;   // льдинок то больше, то меньше, а то и нет
             flags.say = pickSay();   // реплика этого появления (или null)
             tile.style.setProperty('--lc', state.line);
         }

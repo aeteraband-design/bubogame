@@ -402,12 +402,14 @@ function waterUpdate(speed, squeeze) {
         // пар по всей длине струи: крупные мягкие клубы, вверху реже и легче, внизу гуще; у нижней трубы — выходит прямо из неё (за трубой)
         if (s.ramp > 0.02 && gfxQuality !== 'low') {
             const R = s.ramp;
-            if (Math.random() < (0.35 + lv * 0.1) * R * dt && s.mist.length < 34 + lv * 6) {
+            // оптимизация: немного крупных медленных клубов вместо множества мелких — тот же туман, в разы меньше рисования
+            const cap = (gfxQuality === 'high' ? 14 : 10) + lv;
+            if (Math.random() < (0.12 + lv * 0.03) * R * dt && s.mist.length < cap) {
                 const f = Math.pow(Math.random(), 0.6);   // ближе к низу — чаще
-                s.mist.push({ x: cx + (Math.random() - 0.5) * W, y: y0 + 12 + f * (yb - y0 - 30), r: 12 + 10 * f + Math.random() * 8, a: (0.1 + 0.12 * f + lv * 0.012) * R, vy: -0.06 - Math.random() * 0.1, vx: (Math.random() - 0.5) * 0.22, dec: 0.0022 });
+                s.mist.push({ x: cx + (Math.random() - 0.5) * W * 0.9, y: y0 + 14 + f * (yb - y0 - 34), r: 18 + 12 * f + Math.random() * 8, a: (0.13 + 0.14 * f + lv * 0.012) * R, vy: -0.04 - Math.random() * 0.06, vx: (Math.random() - 0.5) * 0.15, dec: 0.0015 });
             }
-            if (Math.random() < 0.3 * R * dt && s.mist.length < 44 + lv * 6)   // из нижней трубы
-                s.mist.push({ back: 1, x: cx + (Math.random() - 0.5) * W * 0.9, y: yb + 10, r: 12 + Math.random() * 10, a: (0.2 + lv * 0.015) * R, vy: -0.22 - Math.random() * 0.2, vx: (Math.random() - 0.5) * 0.25, dec: 0.0026 });
+            if (Math.random() < 0.1 * R * dt && s.mist.length < cap + 4)   // из нижней трубы
+                s.mist.push({ back: 1, x: cx + (Math.random() - 0.5) * W * 0.8, y: yb + 12, r: 16 + Math.random() * 10, a: (0.24 + lv * 0.015) * R, vy: -0.18 - Math.random() * 0.12, vx: (Math.random() - 0.5) * 0.2, dec: 0.0022 });
         }
         // вода переливается через края нижней шляпки и стекает каплями по бокам
         if (s.hitK > 0.3 && Math.random() < 0.3 * s.hitK * dt && particles.length < 520) {
@@ -416,7 +418,7 @@ function waterUpdate(speed, squeeze) {
         }
         for (let k = s.mist.length - 1; k >= 0; k--) {
             const m = s.mist[k];
-            m.y += m.vy * dt; m.x += (m.vx || 0) * dt; m.r += 0.18 * dt; m.a -= (m.dec || 0.004) * dt;
+            m.y += m.vy * dt; m.x += (m.vx || 0) * dt; m.r += (m.dec ? 0.1 : 0.18) * dt; m.a -= (m.dec || 0.004) * dt;
             if (m.a <= 0) s.mist.splice(k, 1);
         }
         if ((!s.on && !(s.ramp > 0) && !D.length && !s.streaks.length && !s.mist.length && !s.foam.length && !s.rip.length) || p.x + p.width < -60) { waterStreams.splice(i, 1); continue; }

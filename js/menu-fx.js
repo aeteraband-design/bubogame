@@ -12,6 +12,9 @@ function menuFxEnter() {
     try {
         MFX.stash = { waterTime, waterStreams, crystalTime, crystals, crystalRedK, wetT: WATERFX.wetT };
         waterTime = 0; waterStreams = []; crystalTime = 0; crystals = []; crystalRedK = 0;
+        MFX.stash.ice = (typeof STORM !== 'undefined' && STORM.ice) || 0; MFX.stash.wWet = owl._wWet || 0;
+        WATERFX.wetT = 0; if (typeof STORM !== 'undefined') STORM.ice = 0; owl._wWet = 0;   // меню — всегда «чистое»: без мокрых труб, льда и капель
+        if (typeof crystalMist !== 'undefined') crystalMist.length = 0;
     } catch (e) { MFX.stash = null; }
     menuFxSchedule(18, 35);
 }
@@ -23,7 +26,7 @@ function menuFxLeave() {
     try {
         const s = MFX.stash; MFX.stash = null;
         waterTime = s ? s.waterTime : 0; waterStreams = s ? s.waterStreams : []; crystalTime = s ? s.crystalTime : 0;
-        crystals = s ? s.crystals : []; crystalRedK = s ? s.crystalRedK : 0; if (s) WATERFX.wetT = s.wetT;
+        crystals = s ? s.crystals : []; crystalRedK = s ? s.crystalRedK : 0; if (s) WATERFX.wetT = s.wetT; if (s && typeof STORM !== 'undefined') STORM.ice = s.ice || 0; if (s) owl._wWet = s.wWet || 0;
     } catch (e) {}
 }
 
