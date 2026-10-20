@@ -713,7 +713,7 @@ const AudioFX = {
             };
             const noise = (type, freq, vol, dur, q) => {
                 const ns = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
-                ns.buffer = this._iceNoise(); fl.type = type; fl.frequency.value = freq; fl.frequency.setValueAtTime(freq, now); if (q) fl.Q.value = q; fl.Q.setValueAtTime(q, now);
+                ns.buffer = this._iceNoise(); fl.type = type; fl.frequency.value = freq; fl.frequency.setValueAtTime(freq, now); if (q) { fl.Q.value = q; fl.Q.setValueAtTime(q, now); }
                 g.gain.value = vol; g.gain.setValueAtTime(vol, now); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
                 ns.connect(fl); fl.connect(g); g.connect(out); ns.start(now); ns.stop(now + dur + 0.02);
             };
@@ -788,7 +788,7 @@ const AudioFX = {
                 }
                 const ns = this.ctx.createBufferSource(), fl = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
                 ns.buffer = this._noiseBuf;
-                fl.type = fType; fl.frequency.value = freq; fl.frequency.setValueAtTime(freq, now); if (q) fl.Q.value = q; fl.Q.setValueAtTime(q, now);
+                fl.type = fType; fl.frequency.value = freq; fl.frequency.setValueAtTime(freq, now); if (q) { fl.Q.value = q; fl.Q.setValueAtTime(q, now); }
                 g.gain.value = vol; g.gain.setValueAtTime(vol, now);
                 g.gain.exponentialRampToValueAtTime(0.001, now + dur);
                 ns.connect(fl); fl.connect(g); g.connect(out);
