@@ -521,10 +521,17 @@ function stormDrawRain() {
     if (shOn) {
         const cz = (typeof camZoom === 'number') ? camZoom : 1, ox = width / 2 + (owl.x - width / 2) * cz, oy = height / 2 + (owl.y - height / 2) * cz, R = 28 * cz;
         ctx.beginPath(); ctx.rect(-50, -50, width + 100, height + 100); ctx.arc(ox, oy, R, 0, Math.PI * 2, true); ctx.clip('evenodd');
-        if (rk > 0.05 && typeof waterSplash === 'function' && Math.random() < rk * 0.9 * dtMult) {
-            const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2, sx = owl.x + Math.cos(a) * 28, sy = owl.y + Math.sin(a) * 28;
-            waterSplash(sx, sy, 1, a + (Math.random() - 0.5) * 0.6, 0.6, 1.2 + Math.random() * 1.2, 0.2);
-            if (typeof shieldTouch === 'function' && Math.random() < 0.3) shieldTouch(a, 0.25);
+        // капля долетела до сферы: на этом месте — маленький всплеск, сама капля дальше не летит
+        for (const d of D) {
+            const dx = d.x - ox, dy = d.y - oy;
+            if (dy < R * 0.35 && dx * dx + dy * dy < R * R) {
+                if (d.z > 0.6 && typeof waterSplash === 'function') {
+                    const a = Math.atan2(dy, dx);
+                    waterSplash(owl.x + Math.cos(a) * 28, owl.y + Math.sin(a) * 28, 1, a + (Math.random() - 0.5) * 0.7, 0.6, 1 + Math.random(), 0.2, 0.7);
+                    if (typeof shieldTouch === 'function' && Math.random() < 0.15) shieldTouch(a, 0.2);
+                }
+                d.y = -Math.random() * 60; d.x = Math.random() * (width + 120);
+            }
         }
     }
     ctx.lineCap = 'round';

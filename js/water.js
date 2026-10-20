@@ -192,13 +192,14 @@ function drawWaterFront() {
 })();
 
 // брызги: капли-слёзы, летящие веером, вперемешку с пузырьками; на них действует тяжесть
-function waterSplash(x, y, n, dir, spread, power, bubK) {
+function waterSplash(x, y, n, dir, spread, power, bubK, sizeK) {
+    const sk = sizeK || 1;
     for (let i = 0; i < n; i++) {
         if (particles.length >= 520) return;
         const a2 = dir + (Math.random() - 0.5) * spread, v = power * (0.5 + Math.random() * 0.8), bub = Math.random() < (bubK === undefined ? 0.4 : bubK);
         particles.push({ kind: bub ? 'wbub' : 'wdrop', x: x + (Math.random() - 0.5) * 4, y: y + (Math.random() - 0.5) * 4,
             vx: Math.cos(a2) * v, vy: Math.sin(a2) * v, grav: bub ? 0.03 : 0.16, alpha: 0.95, decay: 0.028 + Math.random() * 0.02,
-            size: bub ? 1.2 + Math.random() * 2 : 1.1 + Math.random() * 1.9 });
+            size: (bub ? 1.2 + Math.random() * 2 : 1.1 + Math.random() * 1.9) * sk });
     }
 }
 // капля попала в сову: на теле появляется бусинка воды в месте удара (контур OWL_BODY_PTS, масштаб тела 1.29)
@@ -292,7 +293,8 @@ function waterUpdate(speed, squeeze) {
                     hits++; imp += IMP;
                     if (shieldTime > 0 && typeof shieldTouch === 'function') { shieldTouch(Math.atan2(ddy, ddx), 0.45); if (Math.random() < 0.08) shieldPop(Math.atan2(ddy, ddx), 0.3, 1); }   // капля попала в сферу щита — место касания подсвечивается
                     const out = Math.atan2(ddy, ddx);
-                    waterSplash(wx, d.y, d.b ? 1 : 2, out < 0 ? out : -Math.PI / 2 + (ddx >= 0 ? 0.9 : -0.9), 1.6, 2.4 + d.vy * 0.25);
+                    if (shieldTime > 0) { if (Math.random() < 0.6) waterSplash(wx, d.y, 1, out < 0 ? out : -Math.PI / 2 + (ddx >= 0 ? 0.9 : -0.9), 1.2, 1.8 + d.vy * 0.2, 0.25, 0.75); }   // о щит — аккуратный всплеск
+                    else waterSplash(wx, d.y, d.b ? 1 : 2, out < 0 ? out : -Math.PI / 2 + (ddx >= 0 ? 0.9 : -0.9), 1.6, 2.4 + d.vy * 0.25);
                     if (Math.random() < 0.03 && s.mist.length < 12) s.mist.push({ x: d.x, y: d.y, r: 7 + Math.random() * 6, a: 0.28, vy: -0.2 });
                     if (shieldTime <= 0) waterWetOwl(wx, d.y);
                     D.splice(k, 1); continue;
