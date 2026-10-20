@@ -68,13 +68,15 @@
             // (подсказываем это), а если игрок продолжил играть — при первом касании «Назад» снова работает как обычно
             setTimeout(() => {
                 if (document.visibilityState === 'hidden') return;
-                exiting = false; toast('Нажмите «Назад» ещё раз, чтобы выйти');
-                setTimeout(() => window.addEventListener('pointerdown', () => arm(), { once: true, capture: true }), 200);
-            }, 300);
+                exiting = false; toast('Свайп «Назад» ещё раз — игра свернётся');
+                // запись возвращаем только по настоящему тапу (click): свайп от края даёт pointerdown, но не click —
+                // раньше он успевал вернуть запись, и второй «назад» снова открывал меню вместо выхода
+                setTimeout(() => window.addEventListener('click', () => arm(), { once: true, capture: true }), 200);
+            }, 150);
         };
         exitStuck = stuck;
         try { history.back(); } catch (e) {}
-        clearTimeout(exitT); exitT = setTimeout(stuck, 450);
+        clearTimeout(exitT); exitT = setTimeout(stuck, 300);
     }
 
     // --- открытые окна: [id, как закрыть] — сверху вниз по слоям ---
@@ -116,7 +118,7 @@
         if (exiting) {   // идём назад до выхода со страницы
             clearTimeout(exitT);
             try { history.back(); } catch (e) {}
-            exitT = setTimeout(() => { if (exitStuck) exitStuck(); }, 450);
+            exitT = setTimeout(() => { if (exitStuck) exitStuck(); }, 300);
             return;
         }
         onBack();

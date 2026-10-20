@@ -234,13 +234,16 @@
         const lbl = ab.querySelector('span');
         if (!sure) { sure = true; lbl.textContent = 'ТОЧНО СБРОСИТЬ?'; clearTimeout(t); t = setTimeout(() => { sure = false; lbl.textContent = 'СБРОСИТЬ ИГРУ'; }, 3000); return; }
         sure = false; clearTimeout(t);
+        // настройки админки — тоже к стандартным
+        try { window.applyAdminConfig(ADMIN_DEFAULTS); renderBody(); } catch (er) {}
         try { resetEntireGame({ attempts: MAX_ATTEMPTS }); playDay = todayKey(); zeroDay = ''; } catch (er) {}
         try { if (typeof quizResetDay === 'function') quizResetDay(); } catch (er) {}
         try { localStorage.removeItem('bubo_shop_earn_hidden'); } catch (er) {}   // подсказка в лавке снова покажется, как новичку
         try { localStorage.removeItem('bubo_goal_hidden'); } catch (er) {}   // «Цель полёта» тоже снова покажется
         // полный сброс, как у нового игрока: монеты, покупки «на старт», вращения рулетки, пройденные вопросы и выбор темы
         try { if (typeof coinsSet === 'function') coinsSet(0); } catch (er) {}
-        try { ['bubo_shop_pending', 'bubo_quiz_theme', 'bubo_quiz_lvl', 'bubo_last_prize'].forEach(k => localStorage.removeItem(k)); } catch (er) {}
+        try { ['bubo_shop_pending', 'bubo_quiz_theme', 'bubo_quiz_lvl', 'bubo_last_prize', 'bubo_quiz_sub', 'bubo_quiz_prog', 'bubo_first_game_done', 'bubo_wx'].forEach(k => localStorage.removeItem(k)); } catch (er) {}
+        try { if (typeof quizMenuBadge === 'function') quizMenuBadge(); } catch (er) {}
         try { if (typeof quizResetSeen === 'function') quizResetSeen(); } catch (er) {}
         try { rouletteSpins = 0; if (typeof rwUpdateUI === 'function') rwUpdateUI(); } catch (er) {}
         try { updateMenuVisibility(); } catch (er) {}

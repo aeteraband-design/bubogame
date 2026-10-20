@@ -339,20 +339,25 @@
     let greetPending = true, lastHintId = '', lastShown = true, sayNow = null, sayHideT = 0;
     const sst = document.createElement('style');
     sst.textContent = '#startScreen > .menu-logo-wrap .lg-say{position:absolute;z-index:4;pointer-events:none;width:0;height:0}'
-        + '#startScreen > .menu-logo-wrap .lg-say-b{position:absolute;left:0;bottom:0;box-sizing:border-box;width:max-content;padding:8px 14px 9px;border-radius:999px;'
-        + 'font:900 13.5px/1.25 Onest,sans-serif;letter-spacing:.01em;color:#fff;text-align:center;white-space:normal;'
-        + 'background:radial-gradient(120% 90% at 30% 0%,color-mix(in srgb,var(--sc,#C4A1FF) 26%,transparent),transparent 70%),rgba(29,9,54,.95);'
-        + 'border:1.5px solid color-mix(in srgb,var(--sc,#C4A1FF) 70%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--sc,#C4A1FF) 40%,transparent),0 6px 14px rgba(0,0,0,.35);'
-        + 'transform-origin:var(--ox,12%) 100%;opacity:0;transform:scale(.3) translateY(8px);transition:opacity .28s ease,transform .45s cubic-bezier(.3,1.5,.5,1)}'
-        + '#startScreen > .menu-logo-wrap .lg-say-b.ml{border-radius:20px;padding:9px 14px 10px}'
-        + '#startScreen > .menu-logo-wrap .lg-say i{position:absolute;border-radius:50%;background:rgba(29,9,54,.95);border:1.5px solid color-mix(in srgb,var(--sc,#C4A1FF) 70%,transparent);'
-        + 'box-shadow:0 0 8px color-mix(in srgb,var(--sc,#C4A1FF) 40%,transparent);opacity:0;transform:scale(0);transition:opacity .2s ease,transform .3s cubic-bezier(.3,1.6,.5,1)}'
-        + '#startScreen > .menu-logo-wrap .lg-say.on i,#startScreen > .menu-logo-wrap .lg-say.on .lg-say-b{opacity:1;transform:none}'
-        + '#startScreen > .menu-logo-wrap .lg-say.on .lg-say-b{transition-delay:.24s;animation:lgSayBob 2.6s .7s ease-in-out infinite}'
-        + '#startScreen > .menu-logo-wrap .lg-say.on i:nth-of-type(2){transition-delay:.08s}#startScreen > .menu-logo-wrap .lg-say.on i:nth-of-type(1){transition-delay:.16s}'
-        + '#startScreen > .menu-logo-wrap .lg-say.off .lg-say-b{transition:opacity .22s ease,transform .3s ease}'
-        + '#startScreen > .menu-logo-wrap .lg-say.off i{transition:opacity .18s ease,transform .2s ease}'
-        + '#startScreen > .menu-logo-wrap .lg-say.off i:nth-of-type(3){transition-delay:.1s}#startScreen > .menu-logo-wrap .lg-say.off i:nth-of-type(2){transition-delay:.05s}'
+        // белое облачко: максимально скруглённое, мягко светится; текст тёмно-фиолетовый
+        + '#startScreen > .menu-logo-wrap .lg-say-b{position:absolute;left:0;bottom:0;box-sizing:border-box;width:max-content;padding:7px 14px 8px;border-radius:999px;'
+        + 'font:900 12.5px/1.25 Onest,sans-serif;letter-spacing:.01em;color:#2B0F4C;text-align:center;white-space:normal;'
+        + 'background:linear-gradient(180deg,#FFFFFF 0%,#F6F0FF 100%);border:0;'
+        + 'box-shadow:0 0 10px rgba(255,255,255,.55),0 0 22px color-mix(in srgb,var(--sc,#C4A1FF) 45%,transparent),0 4px 10px rgba(20,3,38,.35);'
+        + 'transform-origin:var(--ox,12%) 100%;opacity:0;transform:scale(.2) translateY(10px) rotate(-6deg);filter:blur(2px);'
+        + 'transition:opacity .25s ease,transform .55s cubic-bezier(.25,1.6,.45,1),filter .3s ease}'
+        + '#startScreen > .menu-logo-wrap .lg-say-b.ml{border-radius:22px;padding:8px 14px 9px}'
+        // кружочки-хвостик: белые, залитые, со свечением; появляются по очереди от совы к облачку
+        + '#startScreen > .menu-logo-wrap .lg-say i{position:absolute;border-radius:50%;background:#fff;'
+        + 'box-shadow:0 0 6px rgba(255,255,255,.6),0 0 10px color-mix(in srgb,var(--sc,#C4A1FF) 45%,transparent);opacity:0;transform:scale(0) translateY(6px);'
+        + 'transition:opacity .2s ease,transform .38s cubic-bezier(.3,1.8,.5,1)}'
+        + '#startScreen > .menu-logo-wrap .lg-say.on i,#startScreen > .menu-logo-wrap .lg-say.on .lg-say-b{opacity:1;transform:none;filter:none}'
+        + '#startScreen > .menu-logo-wrap .lg-say.on .lg-say-b{transition-delay:.3s;animation:lgSayBob 3s 1s ease-in-out infinite}'
+        + '#startScreen > .menu-logo-wrap .lg-say.on i:nth-of-type(3){transition-delay:0s}#startScreen > .menu-logo-wrap .lg-say.on i:nth-of-type(2){transition-delay:.1s}#startScreen > .menu-logo-wrap .lg-say.on i:nth-of-type(1){transition-delay:.2s}'
+        // исчезновение: облачко сжимается и тает, затем кружочки по очереди к сове
+        + '#startScreen > .menu-logo-wrap .lg-say.off .lg-say-b{transition:opacity .25s ease,transform .3s cubic-bezier(.5,0,.8,.4),filter .25s ease;transform:scale(.5) translateY(6px);filter:blur(2px)}'
+        + '#startScreen > .menu-logo-wrap .lg-say.off i{transition:opacity .2s ease,transform .22s ease}'
+        + '#startScreen > .menu-logo-wrap .lg-say.off i:nth-of-type(1){transition-delay:.12s}#startScreen > .menu-logo-wrap .lg-say.off i:nth-of-type(2){transition-delay:.18s}#startScreen > .menu-logo-wrap .lg-say.off i:nth-of-type(3){transition-delay:.24s}'
         + '@keyframes lgSayBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}';
     document.head.appendChild(sst);
     const say = document.createElement('div');
@@ -422,7 +427,7 @@
         sayNow = null; clearTimeout(sayHideT);
         if (now) { say.classList.remove('on', 'off'); say.style.display = 'none'; return; }
         say.classList.remove('on'); say.classList.add('off');
-        sayHideT = setTimeout(() => { say.style.display = 'none'; say.classList.remove('off'); }, 420);
+        sayHideT = setTimeout(() => { say.style.display = 'none'; say.classList.remove('off'); }, 560);
     }
     function stop() {
         sayHide(true);

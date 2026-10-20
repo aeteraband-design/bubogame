@@ -61,6 +61,9 @@
     document.addEventListener('webkitfullscreenchange', later);
 
     // окно открылось — запоминаем исходные значения, кнопка приглушена, список сверху
+    // заливка дорожки ползунков до текущего значения (--p)
+    const fill = () => modal.querySelectorAll('.st-range').forEach((r) => { const mn = +r.min || 0, mx = +r.max || 100; r.style.setProperty('--p', ((+r.value - mn) / ((mx - mn) || 1) * 100) + '%'); });
+    modal.addEventListener('input', fill); modal.addEventListener('change', fill); modal.addEventListener('click', () => requestAnimationFrame(fill)); fill();
     let wasOpen = false;
     const onToggle = () => {
         const open = !modal.classList.contains('hidden');
@@ -68,7 +71,7 @@
             applyAppMode();
             save.disabled = true; snap = null;
             sc.scrollTop = 0;
-            requestAnimationFrame(() => { snap = state(); save.disabled = true; fades(); });
+            requestAnimationFrame(() => { snap = state(); save.disabled = true; fades(); fill(); });
         }
         if (!open) snap = null;
         wasOpen = open;
