@@ -32,6 +32,21 @@ const WX = {
 let stormCover = 0;   // 0..1: сколько туч собралось (темнеют облака, небо, наплывают тучи)
 function wxRand(a, b) { return a + Math.random() * (b - a); }
 function wxFreq() { let f = 1; try { f = ADMIN_CFG.stormFreq; } catch (e) {} return WX.FREQ[Math.max(0, Math.min(3, f | 0))] || WX.FREQ[1]; }
+// админка поменяла частоту гроз — применяем сразу к текущей игре (и к погоде, сохранённой на время паузы)
+function wxAdminFreqChanged(oldF, newF) {
+    try {
+        if (oldF === newF) return;
+        const F = wxFreq(), up = newF > oldF;
+        const fix = (o) => {   // o — {on, left}
+            if (up && !o.on) o.left = Math.min(o.left, newF >= 2 ? 1.5 : wxRand(F.first[0], F.first[1]));   // чаще — гроза почти сразу
+            if (!up && o.on && newF === 0) o.left = Math.min(o.left, 4);                                     // реже — текущая гроза скоро стихнет
+            if (!up && !o.on) o.left = Math.max(o.left, wxRand(F.gap[0], F.gap[1]) * 0.5);
+        };
+        if (STORM.pausedWx) fix(STORM.pausedWx);
+        else if (WX.left >= 0) fix(WX);
+        try { localStorage.removeItem('bubo_wx'); } catch (e) {}
+    } catch (e) {}
+}
 function wxStart() { WX.on = true; WX.peak = wxRand(0.55, 1); WX.left = wxRand(WX.DUR_MIN, WX.DUR_MAX); }
 // самая первая игра игрока: дождь не начинается в первые ~1,5 минуты. Флаг ставится, когда первая игра закончилась (поражение) или игрок вышел в меню
 function wxFirstGame() {
@@ -509,6 +524,49 @@ function stormGrade() {
     ctx.fillRect(0, 0, width, height);
     ctx.restore();
 }
+// в дождь огонь «Опасных труб» и вода «Водонапора» не тускнеют: перерисовываются поверх серой пелены (только в проёмах, не на трубах)
+function stormDrawHotFx(k, cz) {
+    const hot = (typeof crystalRedK === 'number' && crystalRedK > 0.02) || (typeof crystals !== 'undefined' && crystals.length) || (typeof crystalMist !== 'undefined' && crystalMist.length);
+    const wet = typeof waterStreams !== 'undefined' && waterStreams.length;
+    if (!hot && !wet) return;
+    ctx.save();
+    if (Math.abs(cz - 1) > 0.0005) { ctx.translate(width / 2, height / 2); ctx.scale(cz, cz); ctx.translate(-width / 2, -height / 2); }
+    let sq = 0; try { sq = crystalSqueeze(); } catch (e) {}
+    // обрезка: весь экран, кроме тел труб (чтобы шары и вода не легли поверх труб)
+    ctx.beginPath(); ctx.rect(-50, -50, width + 100, height + 100);
+    for (const p of pipes) {
+        if (p.x + p.width < -40 || p.x > width + 40) continue;
+        ctx.rect(p.x - 5, -50, p.width + 10, p.top + sq + 50);
+        ctx.rect(p.x - 5, height - (p.bottom + sq), p.width + 10, p.bottom + sq + 50);
+    }
+    ctx.clip('evenodd');
+    try {
+        if (hot) { ctx.globalAlpha = 1; drawCrystals(); }
+        if (wet) {   // вода — в своих цветах и чуть светится, будто сзади луна
+            ctx.globalAlpha = Math.min(1, 0.75 * k);
+            if (typeof drawWater === 'function') drawWater();
+            ctx.globalAlpha = Math.min(1, 0.75 * k);
+            if (typeof drawWaterFront === 'function') drawWaterFront();
+            ctx.globalCompositeOperation = 'lighter';
+            for (const st of waterStreams) {
+                const p = st.pipe; if (!p || !st.on) continue;
+                const x = p.x + p.width * st.fx, w = st.w || p.width * 0.8, y0 = p.top + sq, yb = height - (p.bottom + sq);
+                const g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
+                g.addColorStop(0, 'rgba(170, 220, 255, 0)'); g.addColorStop(0.5, `rgba(190, 230, 255, ${(0.07 * k).toFixed(3)})`); g.addColorStop(1, 'rgba(170, 220, 255, 0)');
+                ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(x - w / 2 - 6, y0, w + 12, yb - y0);
+            }
+            ctx.globalCompositeOperation = 'source-over';
+        }
+    } catch (e) {}
+    ctx.restore();
+    // жар труб — поверх и на самих трубах: в дождь ярче
+    if (hot && typeof crystalDrawHeat === 'function') {
+        ctx.save();
+        if (Math.abs(cz - 1) > 0.0005) { ctx.translate(width / 2, height / 2); ctx.scale(cz, cz); ctx.translate(-width / 2, -height / 2); }
+        crystalDrawHeat(0.9 * k);
+        ctx.restore();
+    }
+}
 // в дождь значки не тускнеют: рисуются поверх серой «пелены» в полную яркость и мягко светят вокруг, как огоньки в темноте.
 // Сова, подлетая к значку, плавно возвращает свои цвета и окрашивается его светом с той стороны, где значок.
 let __owlLitCv = null;
@@ -527,6 +585,10 @@ function stormDrawLitTokens(k, cz) {
             const dist = Math.hypot(it.x - owl.x, it.y - owl.y), D = 190;
             if (dist < D) { const a = Math.pow(1 - dist / D, 1.4); if (a > bestA) { bestA = a; best = { col, dx: it.x - owl.x, dy: it.y - owl.y, dist }; } }
         }
+    }
+    if (owl && owl.visible && typeof crystals !== 'undefined') for (const c of crystals) {   // огненные шары тоже освещают сову
+        const dist = Math.hypot(c.x - owl.x, c.y - owl.y), D = 170;
+        if (dist < D) { const a = Math.pow(1 - dist / D, 1.3); if (a > bestA) { bestA = a; best = { col: '#FF5A3D', dx: c.x - owl.x, dy: c.y - owl.y, dist }; } }
     }
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
     // сова у значка: поверх серой — та же сова в цвете (тем сильнее, чем ближе), с цветным бликом со стороны значка

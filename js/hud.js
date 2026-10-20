@@ -330,6 +330,48 @@ function sentenceCase(s) {
     const i = s.search(/[a-zа-яё]/i);
     return i < 0 ? s : s.slice(0, i) + s[i].toUpperCase() + s.slice(i + 1);
 }
+// таймеры эффектов двумя цифрами: 20, 19 … 02, 01; цифры при смене «сползают» вниз, новые приезжают сверху
+function buffSplit(t) {
+    const m = /^(.*?)[:\s]\s*(\d+)\s*с$/i.exec(String(t || ''));
+    if (!m) return null;
+    const sec = +m[2];
+    return { label: m[1].trim(), time: String(sec).padStart(2, '0') };   // 20, 19 … 02, 01
+}
+function buffTxtHtml(text) {
+    const sp = buffSplit(text);
+    if (!sp) return sentenceCase(text);
+    return `<span class="bt-l">${sentenceCase(sp.label)}</span> <span class="bt-t" data-v="${sp.time}">${sp.time.split('').map(c => `<span class="bt-c"><b>${c}</b></span>`).join('')}</span>`;
+}
+function buffTxtSet(el, text) {
+    if (!el) return;
+    const sp = buffSplit(text);
+    if (!sp) { const t = sentenceCase(text); if (el.textContent !== t) el.textContent = t; return; }
+    let lab = el.querySelector('.bt-l'), tm = el.querySelector('.bt-t');
+    if (!lab || !tm) { el.innerHTML = buffTxtHtml(text); return; }
+    const L = sentenceCase(sp.label); if (lab.textContent !== L) lab.textContent = L;
+    if (tm.dataset.v === sp.time) return;
+    tm.dataset.v = sp.time;
+    const cells = [...tm.children];
+    if (cells.length !== sp.time.length) { tm.innerHTML = sp.time.split('').map(c => `<span class="bt-c"><b>${c}</b></span>`).join(''); return; }
+    sp.time.split('').forEach((c, i) => {
+        const cell = cells[i], cur = cell.querySelector('b:not(.out)');
+        if (cur && cur.textContent === c) return;
+        const nb = document.createElement('b'); nb.textContent = c; nb.className = 'in';
+        if (cur) { cur.className = 'out'; setTimeout(() => { try { cur.remove(); } catch (e) {} }, 300); }
+        cell.appendChild(nb);
+    });
+}
+(function () {
+    const st = document.createElement('style');
+    st.textContent = '.bt-t{display:inline-flex;font-variant-numeric:tabular-nums;vertical-align:top}'
+        + '.bt-c{position:relative;display:inline-block;overflow:hidden;height:1.25em;line-height:1.25em;vertical-align:top}'
+        + '.bt-c>b{display:block;font-weight:inherit}'
+        + '.bt-c>b.in{animation:btIn .26s cubic-bezier(.2,.8,.3,1)}'
+        + '.bt-c>b.out{position:absolute;left:0;top:0;animation:btOut .26s ease-in forwards}'
+        + '@keyframes btIn{from{transform:translateY(-100%);opacity:0}to{transform:none;opacity:1}}'
+        + '@keyframes btOut{from{transform:none;opacity:1}to{transform:translateY(100%);opacity:0}}';
+    document.head.appendChild(st);
+})();
 function findArrivalTarget(targetType) {
     let targetElem = null;
     let isThemeBadge = false;
@@ -391,7 +433,7 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
         tag.style.color = color;
         tag.style.border = `1.5px solid ${color}`;
         tag.style.boxShadow = `0 0 12px ${color}88`;
-        tag.innerHTML = `<span style="display:inline-flex;min-width:11px;height:14px;justify-content:center;align-items:center;flex-shrink:0">${iconHtml}</span><span style="font-weight:900!important;">${sentenceCase(textLabel)}</span>`; // иконки одной ширины — текст подсказок ровно по левому краю
+        tag.innerHTML = `<span style="display:inline-flex;min-width:11px;height:14px;justify-content:center;align-items:center;flex-shrink:0">${iconHtml}</span><span style="font-weight:900!important;">${buffTxtHtml(textLabel)}</span>`; // иконки одной ширины — текст подсказок ровно по левому краю
         fxLayer.appendChild(tag);
         tag.style.justifyContent = 'flex-start';
         tag.style.textAlign = 'left';
@@ -577,6 +619,25 @@ function spawnHeartBreak(slot, glyphPx) {
 // Левый блок HUD (сердца, сила, вопросы) не должен доходить до кнопок справа: если не помещается
 // (6 сердец, трёхзначный счёт) — всё в нём пропорционально уменьшается через --hk, высота плашек та же.
 let _hudFitKey = '';
+// таймеры эффектов — ровно по краю верхней панели со своей стороны (по левому краю жизней или по правому краю кнопок)
+function alignBuffBar() {
+    try {
+        const bb = document.getElementById('buffBar'), hud = document.getElementById('topHud');
+        if (!bb || !hud || !hud.offsetWidth) return;
+        const left = document.documentElement.classList.contains('hud-ll');
+        const rs = [...hud.children].filter(e => e.offsetWidth).map(e => e.getBoundingClientRect());
+        if (!rs.length) return;
+        const par = bb.offsetParent || bb.parentElement, pr = par.getBoundingClientRect(), pz = par.offsetWidth ? pr.width / par.offsetWidth : 1;
+        if (left) {
+            const L = Math.min(...rs.map(r => r.left));
+            bb.style.setProperty('left', ((L - pr.left) / pz).toFixed(1) + 'px', 'important'); bb.style.removeProperty('right');
+        } else {
+            const R = Math.max(...rs.map(r => r.right));
+            bb.style.setProperty('right', ((pr.right - R) / pz).toFixed(1) + 'px', 'important'); bb.style.removeProperty('left');
+        }
+    } catch (e) {}
+}
+window.addEventListener('resize', () => setTimeout(alignBuffBar, 60));
 function fitTopHud() {
     const hud = document.getElementById('topHud'); if (!hud) return;
     const left = hud.firstElementChild, right = hud.lastElementChild; if (!left || !right || left === right) return;
@@ -594,6 +655,7 @@ function fitTopHud() {
         if (k <= 0.7) break;
     }
     _hudFitKey = key;
+    alignBuffBar();
 }
 (function () {
     const hud = document.getElementById('topHud'); if (!hud || typeof ResizeObserver === 'undefined') return;

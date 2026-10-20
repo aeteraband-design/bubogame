@@ -76,8 +76,18 @@ function update() {
         if (overeatTime <= 0) { overeatTime = 0; AudioFX.playOverEatEnd(); }
     }
     if (drunkTime > 0) {
-        drunkTime -= dtMult;
-        if (drunkTime <= 0) { drunkTime = 0; AudioFX.playDrunkEnd(); }
+        // вода отрезвляет: под дождём опьянение проходит быстрее, под струёй «Водонапора» — намного быстрее
+        let sob = 0;
+        try { if (typeof stormSmooth === 'function' && typeof stormCover === 'number') sob = stormSmooth(0.3, 1, stormCover); } catch (e) {}
+        const inW = (window.__owlInWater || 0) > 0 && typeof waterTime !== 'undefined' && waterTime > 0;
+        const rate = 1 + 1.2 * sob + (inW ? 6 : 0);
+        drunkTime -= dtMult * rate;
+        const lv = inW ? 2 : (sob > 0.3 ? 1 : 0);
+        if (lv !== window.__soberLv) {   // таймер опьянения «смывается»: светится голубым, при струе — сильнее
+            window.__soberLv = lv;
+            try { const el = document.querySelector('#buffBar .buff-tag[data-key="drunk"]'); if (el) { el.classList.toggle('sober1', lv === 1); el.classList.toggle('sober2', lv === 2); } } catch (e) {}
+        }
+        if (drunkTime <= 0) { drunkTime = 0; window.__soberLv = -1; AudioFX.playDrunkEnd(); }
     }
     if (freezeTime > 0) {
         freezeTime -= dtMult;
@@ -676,12 +686,13 @@ function updateBuffHUD() {
 function makeBuffEl(b) {
     const el = document.createElement('div');
     el.dataset.key = b.key;
-    el.className = 'buff-tag text-[10px] font-black rounded-xl shadow-lg flex items-center' + (b.key === 'shazam' ? ' buff-shazam' : '');
+    el.className = 'buff-tag text-[10px] font-black rounded-xl shadow-lg flex items-center' + (b.key === 'shazam' ? ' buff-shazam' : '') + (b.key === 'drunk' && window.__soberLv > 0 ? ' sober' + window.__soberLv : '');
     el.style.cssText = `transition: opacity 0.2s; padding: 3px 6px 3px 6px; gap: 3px; background-color: rgba(20, 3, 38, 0.95); border: 1.5px solid ${b.color}; box-shadow: 0 0 12px ${b.color}88; color: ${b.color};`;
-    el.innerHTML = `<span style="display:inline-flex;min-width:11px;height:14px;justify-content:center;align-items:center;flex-shrink:0">${b.svgIcon ? b.svgIcon : `<i class="fa-solid ${b.icon}" style="color: ${b.color};"></i>`}</span><span class="buff-txt" style="font-weight:900!important;">${sentenceCase(b.text)}</span>`;
+    el.innerHTML = `<span style="display:inline-flex;min-width:11px;height:14px;justify-content:center;align-items:center;flex-shrink:0">${b.svgIcon ? b.svgIcon : `<i class="fa-solid ${b.icon}" style="color: ${b.color};"></i>`}</span><span class="buff-txt" style="font-weight:900!important;">${buffTxtHtml(b.text)}</span>`;
     return el;
 }
 function renderBuffBar(bar, list) {
+    if (typeof alignBuffBar === 'function' && !bar.children.length) alignBuffBar();   // первый таймер — выравниваем по краю панели
     const z = uiFx();   // панель таймеров масштабируется transform: scale(--fx)
     const els = new Map();
     [...bar.children].forEach(el => { if (!el.dataset.leaving) els.set(el.dataset.key, el); });
@@ -691,8 +702,7 @@ function renderBuffBar(bar, list) {
         if (cur.length === list.length && list.every((b, i) => b.key === cur[i])) {
             list.forEach((b) => {
                 const el = els.get(b.key);
-                const txt = el.querySelector('.buff-txt'); const t = sentenceCase(b.text);
-                if (txt && txt.textContent !== t) txt.textContent = t;
+                buffTxtSet(el.querySelector('.buff-txt'), b.text);
                 const hidden = !!(buffArrive[b.key] && performance.now() < buffArrive[b.key]);
                 if (hidden) { el.style.transition = 'opacity 0.12s'; el.style.opacity = '0'; } else if (el.style.opacity === '0' && !buffArrive[b.key]) el.style.opacity = '1';
             });
@@ -715,8 +725,7 @@ function renderBuffBar(bar, list) {
     list.forEach((b) => {
         let el = els.get(b.key);
         if (!el) el = makeBuffEl(b);
-        const txt = el.querySelector('.buff-txt'); const t = sentenceCase(b.text);
-        if (txt && txt.textContent !== t) txt.textContent = t;
+        buffTxtSet(el.querySelector('.buff-txt'), b.text);
         const hidden = !!(buffArrive[b.key] && performance.now() < buffArrive[b.key]);
         if (hidden) { el.style.transition = 'opacity 0.12s'; el.style.opacity = '0'; } else if (el.style.opacity === '0' && !buffArrive[b.key]) el.style.opacity = '1';
         bar.appendChild(el);   // переставляет в нужный порядок

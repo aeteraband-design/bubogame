@@ -411,12 +411,38 @@ function drawCity() {
             const k = L.canvas.width / L.tileW;
             ctx.globalAlpha = 1;   // все дома непрозрачные — звёзды сквозь них не видны
             const moonLit = moonPhase > 0 ? Math.max(0, Math.min(1, (moonPhase - 0.06) / 0.94)) : 0;
-            for (let pass = 0; pass < (moonLit > 0.04 ? 2 : 1); pass++) {
-                if (pass === 1) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.3 * moonLit; }   // луна светит: все элементы города светлеют
-                for (let x = -off; x < width; x += L.tileW) {
-                    const d0 = Math.max(0, x), d1 = Math.min(width, x + L.tileW);
-                    if (d1 <= d0) continue;
-                    ctx.drawImage(L.canvas, (d0 - x) * k, 0, (d1 - d0) * k, L.canvas.height, d0, y0, d1 - d0, L.H);
+            for (let x = -off; x < width; x += L.tileW) {
+                const d0 = Math.max(0, x), d1 = Math.min(width, x + L.tileW);
+                if (d1 <= d0) continue;
+                ctx.drawImage(L.canvas, (d0 - x) * k, 0, (d1 - d0) * k, L.canvas.height, d0, y0, d1 - d0, L.H);
+            }
+            // луна освещает город: у луны дома светлее, чем дальше — тем темнее (плавно, полосами по ширине);
+            // с ростом луны свет сильнее и шире, в дождь — слабее
+            {
+                const mp = window.__moonPos, mxL = mp ? mp[0] + mp[2] / 2 : width * 0.66;
+                const rainK = (typeof stormCover === 'number' && typeof stormSmooth === 'function') ? stormSmooth(0.2, 1, stormCover) : 0;
+                const Rl = 240 + 320 * moonLit, base = 0.3 * moonLit, near = 0.07 + 0.1 * moonLit, dk = 1 - 0.35 * rainK;
+                if ((base + near) * dk > 0.01 && gfxQuality !== 'low') {
+                    ctx.globalCompositeOperation = 'lighter';
+                    const N = 24, sw = width / N;
+                    for (let i = 0; i < N; i++) {
+                        const sx0 = Math.round(i * sw), sx1 = Math.round((i + 1) * sw), cxs = (sx0 + sx1) / 2, dd = (cxs - mxL) / Rl, spot = Math.exp(-dd * dd);
+                        const a = dk * (base * (0.5 + 0.5 * spot) + near * spot);
+                        if (a < 0.004) continue;
+                        ctx.globalAlpha = Math.min(1, a);
+                        for (let x = -off; x < width; x += L.tileW) {
+                            const d0 = Math.max(sx0, x), d1 = Math.min(sx1, x + L.tileW);
+                            if (d1 <= d0) continue;
+                            ctx.drawImage(L.canvas, (d0 - x) * k, 0, (d1 - d0) * k, L.canvas.height, d0, y0, d1 - d0, L.H);
+                        }
+                    }
+                    ctx.globalAlpha = 1;
+                } else if (moonLit > 0.04) {   // слабая графика — как раньше, ровно
+                    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.3 * moonLit;
+                    for (let x = -off; x < width; x += L.tileW) {
+                        const d0 = Math.max(0, x), d1 = Math.min(width, x + L.tileW);
+                        if (d1 > d0) ctx.drawImage(L.canvas, (d0 - x) * k, 0, (d1 - d0) * k, L.canvas.height, d0, y0, d1 - d0, L.H);
+                    }
                 }
             }
             ctx.globalCompositeOperation = 'source-over';
@@ -542,7 +568,7 @@ function moonPhaseTarget() {
 }
 function drawMoon() {
     const moonRadius = 40;
-    const moonX = Math.min(width - 64, Math.max(416, width * 2 / 3));
+    const moonX = width > height * 1.15 ? width - 96 : Math.min(width - 64, Math.max(416, width * 2 / 3));   // на ПК — у самого края, как на телефоне, не наезжает на логотип
     // высота луны зависит от её фазы: полумесяц — низко, под логотипом меню (выглядывает из-за домов), полная — высоко в небе.
     // В игре фаза растёт с прогрессом; в меню и на загрузке показывается любая фаза — и стоит на той же высоте, что была бы в игре
     const rr = Math.max(0, Math.min(1, ((moonPhase < 0 ? moonPhaseTarget() : moonPhase) - 0.06) / 0.94)), re = rr * rr * (3 - 2 * rr);
@@ -1174,7 +1200,7 @@ function menuLogoBox() {   // центр и высота логотипа в м�
     MENU_PIPE.lc = ((a.top + a.height / 2) - c.top) / c.height * height;
     MENU_PIPE.lh = a.height / c.height * height;
 }
-function menuPipeGap() { return Math.max(210, MENU_PIPE.lh + 150); }
+function menuPipeGap() { const wide = width > height * 1.15; return Math.max(wide ? 190 : 210, MENU_PIPE.lh + (wide ? 105 : 150)); }   // на ПК проём чуть уже — трубы не наезжают на нижнее меню
 function menuPipeMake(x) {
     const p = { x, width: MENU_PIPE.w, passed: true };
     menuPipeFit(p); return p;

@@ -186,6 +186,7 @@ function drawScene() {
     if (typeof drawWater === 'function') drawWater();   // потоки «Воды из труб» — тоже за трубами
     if (isStartMenuOpen && typeof drawMenuPipes === 'function') drawMenuPipes(); else pipes.forEach(drawPipe);   // в меню — свои декоративные трубы вокруг логотипа
     if (typeof quizDrawPortal2D === 'function') quizDrawPortal2D();   // портал в квиз-мир — в проёме между трубами
+    if (typeof crystalDrawHeat === 'function') crystalDrawHeat(1);   // «Опасные трубы»: трубы калятся, из устьев — красный туман
     if (typeof drawWaterFront === 'function') drawWaterFront();   // пена и водяная пыль «Водонапора» — поверх труб
 
     items.forEach(it => {
@@ -234,7 +235,7 @@ function drawScene() {
     drawIceShards();
     ctx.restore();   // конец слоя камеры
     if (typeof stormGrade === 'function') stormGrade();   // в дождь — серее и мрачнее
-    if (!booting && typeof stormGradeK === 'function') { const lk = stormGradeK(); if (lk >= 0.02) { stormDrawLitTokens(lk, camZoom); if (typeof stormDrawLitOwl === 'function') stormDrawLitOwl(lk, camZoom); } }   // значки — яркие и светятся
+    if (!booting && typeof stormGradeK === 'function') { const lk = stormGradeK(); if (lk >= 0.02) { stormDrawHotFx(lk, camZoom); stormDrawLitTokens(lk, camZoom); if (typeof stormDrawLitOwl === 'function') stormDrawLitOwl(lk, camZoom); } }   // значки — яркие и светятся
     stormDrawRain();        // дождь — поверх труб, значков и совы
 }
 

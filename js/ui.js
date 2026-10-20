@@ -236,7 +236,7 @@ const HUD_SWAP_KEY = 'bubo_hud_swap';
 function hudSwapGet() { try { const v = localStorage.getItem(HUD_SWAP_KEY); return v === null ? true : v === '1'; } catch (e) { return true; } }
 const TIMER_SIDE_KEY = 'bubo_timer_side';   // таймеры эффектов: '1' — слева, '0' — справа; пока не выбрано — там же, где жизни
 function timerSideGet() { try { const v = localStorage.getItem(TIMER_SIDE_KEY); return v === null ? hudSwapGet() : v === '1'; } catch (e) { return true; } }
-function applyHudSwap() { const on = hudSwapGet(), t = document.getElementById('topHud'); if (t) t.classList.toggle('hud-swap', on); document.documentElement.classList.toggle('hud-ll', timerSideGet()); }   // hud-ll: жизни и таймеры слева, уведомления о бонусах — справа
+function applyHudSwap() { const on = hudSwapGet(), t = document.getElementById('topHud'); if (t) t.classList.toggle('hud-swap', on); document.documentElement.classList.toggle('hud-ll', timerSideGet()); try { if (typeof alignBuffBar === 'function') setTimeout(alignBuffBar, 30); } catch (e) {} }   // hud-ll: жизни и таймеры слева, уведомления о бонусах — справа
 applyHudSwap();
 {
     // тумблер «Где жизни в игре»: влево — слева (по умолчанию), вправо — справа
@@ -567,7 +567,30 @@ fitThemeLabels();
 // крестик на «Цели полёта»: скрыть навсегда
 (function () {
     const x = document.getElementById('menuGoalX'); if (!x) return;
-    x.addEventListener('click', (e) => { e.stopPropagation(); try { localStorage.setItem('bubo_goal_hidden', '1'); } catch (er) {} const c = document.getElementById('menuGoalCard'); if (c) c.classList.add('hidden'); try { window.dispatchEvent(new Event('resize')); } catch (er) {} });
+    x.addEventListener('click', (e) => {
+        e.stopPropagation(); try { localStorage.setItem('bubo_goal_hidden', '1'); } catch (er) {}
+        const c = document.getElementById('menuGoalCard'); if (!c) return;
+        // карточка тает, логотип плавно съезжает на новое место (вместе с ним — проём труб), без рывка
+        c.style.transition = 'opacity .22s ease'; c.style.opacity = '0';
+        setTimeout(() => {
+            const lg = document.querySelector('#startScreen > .menu-logo-wrap > div'), wrap = lg && lg.parentElement;
+            const r0 = lg ? lg.getBoundingClientRect() : null;
+            c.classList.add('hidden'); c.style.opacity = ''; c.style.transition = '';
+            try {
+                if (lg && r0) {
+                    const r1 = lg.getBoundingClientRect(), wr = wrap.getBoundingClientRect(), zf = wrap.offsetWidth ? wr.width / wrap.offsetWidth : 1;
+                    const dy = ((r0.top + r0.height / 2) - (r1.top + r1.height / 2)) / zf;
+                    if (Math.abs(dy) > 1) {
+                        const tr0 = lg.style.transition;
+                        lg.style.transition = 'none'; lg.style.translate = '0 ' + dy.toFixed(1) + 'px'; void lg.offsetWidth;
+                        lg.style.transition = 'translate .9s cubic-bezier(.45,.05,.25,1)'; lg.style.translate = '0 0';
+                        setTimeout(() => { lg.style.transition = tr0; lg.style.translate = ''; }, 950);
+                    }
+                }
+            } catch (er) {}
+            try { window.dispatchEvent(new Event('resize')); } catch (er) {}
+        }, 220);
+    });
 })();
 
 // правила: своя тихая «библиотечная» музыка, настройки — «мастерская»; включаются при открытии из меню и плавно возвращаются к музыке меню при закрытии

@@ -188,8 +188,9 @@
 
     // Применение настроек «на лету» + сохранение в браузере
     window.applyAdminConfig = function (cfgIn) {
-        const oldMax = MAX_ATTEMPTS;
+        const oldMax = MAX_ATTEMPTS, oldStorm = (ADMIN_CFG && ADMIN_CFG.stormFreq) | 0;
         ADMIN_CFG = normalizeAdminCfg(cfgIn);
+        try { if (typeof wxAdminFreqChanged === 'function') wxAdminFreqChanged(oldStorm, ADMIN_CFG.stormFreq | 0); } catch (e) {}
         try { localStorage.setItem(ADMIN_KEY, JSON.stringify(ADMIN_CFG)); } catch (e) {}
         MAX_ATTEMPTS = ADMIN_CFG.attempts;
         if (!hasStartedCampaign) { maxLives = ADMIN_CFG.maxLives; lives = Math.min(lives, maxLives); }   // новая игра — сразу новый максимум сердечек

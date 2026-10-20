@@ -49,7 +49,7 @@ function crystalOnTheme() {
     const plan = crystalPlanBuild(), n = getTotalCollectedThemes();
     for (const p of plan) if (!p.done && n >= p.at) { p.done = true; crystalPending = p.kind || true; }
 }
-function crystalReset() { crystalTime = 0; crystals.length = 0; crystalRedK = 0; }
+function crystalReset() { crystalTime = 0; crystals.length = 0; crystalRedK = 0; crystalMist.length = 0; }
 
 // значок взят: включаем эффект
 function registerCrystal() {
@@ -112,11 +112,76 @@ function crystalBurst(x, y, n) {
     }
 }
 // вызывается каждый кадр после движения труб: speed — скорость, с которой уезжают трубы, squeeze — текущее сужение проёма
+// ===== жар труб: красный туман из устьев и лёгкое свечение раскалённых труб =====
+const crystalMist = [];
+let __cMistSpr = null, __cHeatSpr = null;
+function crystalMistSprite() {
+    if (__cMistSpr) return __cMistSpr;
+    const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+    const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255, 90, 60, 0.5)'); gr.addColorStop(0.5, 'rgba(240, 40, 50, 0.2)'); gr.addColorStop(1, 'rgba(220, 20, 40, 0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    return (__cMistSpr = c);
+}
+function crystalHeatSprite() {   // мягкое красное пятно у устья
+    if (__cHeatSpr) return __cHeatSpr;
+    const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d');
+    const gr = g.createRadialGradient(48, 48, 0, 48, 48, 48);
+    gr.addColorStop(0, 'rgba(255, 120, 70, 0.75)'); gr.addColorStop(0.35, 'rgba(255, 60, 50, 0.35)'); gr.addColorStop(1, 'rgba(200, 10, 30, 0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 96, 96);
+    return (__cHeatSpr = c);
+}
+function crystalSqueeze() { try { return currentDifficultySqueeze + (currentCompressionFactor * compressionMaxForLevel()); } catch (e) { return 0; } }
+// boost: 1 — обычно; в дождь рисуется ещё раз поверх серой пелены — ярко
+function crystalDrawHeat(boost) {
+    const rk = typeof crystalRedK === 'number' ? crystalRedK : 0;
+    if (rk < 0.02 && !crystalMist.length) return;
+    const sq = crystalSqueeze(), hs = crystalHeatSprite(), ms = crystalMistSprite();
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    if (rk > 0.02) {
+        const t = (typeof frame === 'number' ? frame : 0);
+        for (const p of pipes) {
+            if (p.x + p.width < -40 || p.x > width + 40) continue;
+            const w = p.width, cx = p.x + w / 2, flick = 0.88 + 0.12 * Math.sin(t * 0.13 + p.x * 0.05);
+            const yT = p.top + sq, yB = height - (p.bottom + sq);
+            // раскалённая труба: красный отсвет по телу, сильнее у устья
+            for (const [y0, dir] of [[yT, -1], [yB, 1]]) {
+                const L = 150, g = ctx.createLinearGradient(0, y0, 0, y0 + dir * L);
+                g.addColorStop(0, `rgba(255, 60, 40, ${(0.16 * rk * boost * flick).toFixed(3)})`); g.addColorStop(1, 'rgba(255, 40, 40, 0)');
+                ctx.globalAlpha = 1; ctx.fillStyle = g;
+                ctx.fillRect(p.x - 5, Math.min(y0, y0 + dir * L), w + 10, L);
+                ctx.globalAlpha = Math.min(1, 0.55 * rk * boost * flick);
+                const R = w * 0.95; ctx.drawImage(hs, cx - R, y0 - R * 0.55, R * 2, R * 1.1);   // свечение из устья
+            }
+        }
+    }
+    for (const m of crystalMist) { ctx.globalAlpha = Math.max(0, Math.min(1, m.a * boost)); ctx.drawImage(ms, m.x - m.r, m.y - m.r, m.r * 2, m.r * 2); }
+    ctx.restore();
+}
+function crystalMistUpdate(speed, squeeze) {
+    const dt = dtMult, rk = typeof crystalRedK === 'number' ? crystalRedK : 0;
+    if (rk > 0.1 && gfxQuality !== 'low') {
+        for (const p of pipes) {
+            if (p.x + p.width < -30 || p.x > width + 30) continue;
+            if (Math.random() < 0.22 * rk * dt && crystalMist.length < 60) {
+                const top = Math.random() < 0.5, y0 = top ? p.top + squeeze : height - (p.bottom + squeeze);
+                crystalMist.push({ x: p.x + 6 + Math.random() * (p.width - 12), y: y0 + (top ? 4 : -4), vy: (top ? 1 : -1) * (0.12 + Math.random() * 0.3), vx: (Math.random() - 0.5) * 0.2, r: 10 + Math.random() * 10, a: 0.22 + 0.16 * rk });
+            }
+        }
+    }
+    for (let i = crystalMist.length - 1; i >= 0; i--) {
+        const m = crystalMist[i];
+        m.x += (m.vx - speed) * dt; m.y += m.vy * dt; m.r += 0.13 * dt; m.a -= 0.0032 * dt;
+        if (m.a <= 0 || m.x < -60) crystalMist.splice(i, 1);
+    }
+}
 function crystalUpdate(speed, squeeze) {
     const dt = dtMult, shz = typeof shazamBusy === 'function' && shazamBusy();
     // новая игра (тем снова 0): план выпадения — заново
     if (CRYSTAL.plan && CRYSTAL.plan.some((q) => q.done) && getTotalCollectedThemes() === 0) { CRYSTAL.plan = null; crystalPending = false; }
     crystalRedK = Math.max(0, Math.min(1, crystalRedK + (crystalTime > 0 ? 1 : -1) * dt / 50));   // трубы краснеют и остывают ~0,8 с
+    crystalMistUpdate(speed, squeeze);
     if (crystalTime > 0) {
         crystalTime -= dt;
         if (crystalTime <= 0 && !shz) { try { AudioFX.playPipesCool(); } catch (e) {} }   // трубы остывают
