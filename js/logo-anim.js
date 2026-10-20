@@ -299,11 +299,12 @@
                 if (!flags.pop) { flags.pop = 1; burst(tx, ty, 10, sparkCol(state)); }
                 const s = back((k - 0.35) / 0.65);
                 drawOwlState(tx, ty, OS * s, state, 0, 0.5, now, state.id === 'freeze' ? (t - b2) * 4.2 : 0);
-                if (k > 0.55 && flags.say && !flags.sayOn) { flags.sayOn = 1; sayShow(flags.say, L); }
             }
         } else if (t < b4) {   // 4) сова в своём состоянии, ровно по центру плитки
-            if (flags.say && !flags.sayOn) { flags.sayOn = 1; sayShow(flags.say, L); }
-            else if (flags.sayOn && ((flags.pl = (flags.pl || 0) + 1) % 20) === 0) sayPlace(L);   // логотип мог сдвинуться (поворот экрана)
+            // реплика — когда сова уже встала на место; убираем заранее, чтобы облачко успело спокойно «втянуться» до ухода совы
+            if (flags.say && !flags.sayOn && t > b3 + 0.25) { flags.sayOn = 1; sayShow(flags.say, L); }
+            else if (flags.sayOn && !flags.sayOff && t > b4 - 1.0) { flags.sayOff = 1; sayHide(); }
+            else if (flags.sayOn && !flags.sayOff && ((flags.pl = (flags.pl || 0) + 1) % 20) === 0) sayPlace(L);   // логотип мог сдвинуться (поворот экрана)
             setHome(0); setIcon(0, 0, 0);
             const k = t - b3;
             const pulse = 0.85 + 0.15 * Math.sin(k * 5);
@@ -338,34 +339,41 @@
     const GREET = { id: 'hello', text: 'Привет!' };
     let greetPending = true, lastHintId = '', lastShown = true, sayNow = null, sayHideT = 0;
     const sst = document.createElement('style');
-    sst.textContent = '#startScreen > .menu-logo-wrap .lg-say{position:absolute;z-index:4;pointer-events:none;width:0;height:0}'
-        // белое облачко: максимально скруглённое, мягко светится; текст тёмно-фиолетовый
-        + '#startScreen > .menu-logo-wrap .lg-say-b{position:absolute;left:0;bottom:0;box-sizing:border-box;width:max-content;padding:7px 14px 8px;border-radius:999px;'
-        + 'font:900 12.5px/1.25 Onest,sans-serif;letter-spacing:.01em;color:#2B0F4C;text-align:center;white-space:normal;'
-        + 'background:linear-gradient(180deg,#FFFFFF 0%,#F6F0FF 100%);border:0;'
-        + 'box-shadow:0 0 10px rgba(255,255,255,.55),0 0 22px color-mix(in srgb,var(--sc,#C4A1FF) 45%,transparent),0 4px 10px rgba(20,3,38,.35);'
-        + 'transform-origin:var(--ox,12%) 100%;opacity:0;transform:scale(.2) translateY(10px) rotate(-6deg);filter:blur(2px);'
-        + 'transition:opacity .25s ease,transform .55s cubic-bezier(.25,1.6,.45,1),filter .3s ease}'
-        + '#startScreen > .menu-logo-wrap .lg-say-b.ml{border-radius:22px;padding:8px 14px 9px}'
-        // кружочки-хвостик: белые, залитые, со свечением; появляются по очереди от совы к облачку
-        + '#startScreen > .menu-logo-wrap .lg-say i{position:absolute;border-radius:50%;background:#fff;'
-        + 'box-shadow:0 0 6px rgba(255,255,255,.6),0 0 10px color-mix(in srgb,var(--sc,#C4A1FF) 45%,transparent);opacity:0;transform:scale(0) translateY(6px);'
-        + 'transition:opacity .2s ease,transform .38s cubic-bezier(.3,1.8,.5,1)}'
-        + '#startScreen > .menu-logo-wrap .lg-say.on i,#startScreen > .menu-logo-wrap .lg-say.on .lg-say-b{opacity:1;transform:none;filter:none}'
-        + '#startScreen > .menu-logo-wrap .lg-say.on .lg-say-b{transition-delay:.3s;animation:lgSayBob 3s 1s ease-in-out infinite}'
-        + '#startScreen > .menu-logo-wrap .lg-say.on i:nth-of-type(3){transition-delay:0s}#startScreen > .menu-logo-wrap .lg-say.on i:nth-of-type(2){transition-delay:.1s}#startScreen > .menu-logo-wrap .lg-say.on i:nth-of-type(1){transition-delay:.2s}'
-        // исчезновение: облачко сжимается и тает, затем кружочки по очереди к сове
-        + '#startScreen > .menu-logo-wrap .lg-say.off .lg-say-b{transition:opacity .25s ease,transform .3s cubic-bezier(.5,0,.8,.4),filter .25s ease;transform:scale(.5) translateY(6px);filter:blur(2px)}'
-        + '#startScreen > .menu-logo-wrap .lg-say.off i{transition:opacity .2s ease,transform .22s ease}'
-        + '#startScreen > .menu-logo-wrap .lg-say.off i:nth-of-type(1){transition-delay:.12s}#startScreen > .menu-logo-wrap .lg-say.off i:nth-of-type(2){transition-delay:.18s}#startScreen > .menu-logo-wrap .lg-say.off i:nth-of-type(3){transition-delay:.24s}'
-        + '@keyframes lgSayBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}';
+    const Q = '#startScreen > .menu-logo-wrap ';
+    sst.textContent = Q + '.lg-say{position:absolute;z-index:4;pointer-events:none;width:0;height:0}'
+        // облачко в цвет состояния совы: светлый оттенок цвета, тёмный текст того же тона, сверху «пухлые» бугорки
+        + Q + '.lg-say-b{--bg:color-mix(in srgb,var(--sc,#C4A1FF) 38%,#fff);position:absolute;left:0;bottom:0;box-sizing:border-box;width:max-content;padding:7px 14px 8px;border-radius:999px;'
+        + 'font:500 12.5px/1.25 Onest,sans-serif;letter-spacing:.01em;color:color-mix(in srgb,var(--sc,#C4A1FF) 30%,#1A0630);text-align:center;white-space:normal;'
+        + 'background:var(--bg);border:0;box-shadow:0 0 12px color-mix(in srgb,var(--sc,#C4A1FF) 55%,transparent),0 4px 10px rgba(20,3,38,.35);'
+        + 'transform-origin:var(--ox,12%) 100%;opacity:0;transform:scale(.3);will-change:transform,opacity}'
+        + Q + '.lg-say-b::before,' + Q + '.lg-say-b::after{content:"";position:absolute;z-index:-1;border-radius:50%;background:var(--bg)}'
+        + Q + '.lg-say-b::before{width:22px;height:22px;left:18%;top:-8px}'
+        + Q + '.lg-say-b::after{width:16px;height:16px;right:20%;top:-5px}'
+        + Q + '.lg-say-b > span{position:relative;display:block}'
+        + Q + '.lg-say-b.ml{border-radius:22px;padding:8px 14px 9px}'
+        // кружочки-хвостик того же цвета
+        + Q + '.lg-say i{position:absolute;border-radius:50%;background:color-mix(in srgb,var(--sc,#C4A1FF) 38%,#fff);'
+        + 'box-shadow:0 0 8px color-mix(in srgb,var(--sc,#C4A1FF) 55%,transparent);opacity:0;transform:scale(0)}'
+        // появление/исчезновение — по шагам из JS (класс .v): мягкий «пузырь» с лёгким пружинящим перехлёстом
+        + Q + '.lg-say i.v{animation:lgDotIn .42s cubic-bezier(.3,1.6,.5,1) forwards}'
+        + Q + '.lg-say i.h{animation:lgDotOut .32s ease-in forwards}'
+        + Q + '.lg-say-b.v{animation:lgSayIn .6s cubic-bezier(.3,1.45,.5,1) forwards,lgSayBob 3.2s .6s ease-in-out infinite}'
+        + Q + '.lg-say-b.h{animation:lgSayOut .34s ease-in forwards}'
+        + '@keyframes lgDotIn{0%{opacity:0;transform:scale(0)}60%{opacity:1}100%{opacity:1;transform:scale(1)}}'
+        + '@keyframes lgDotOut{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(0)}}'
+        + '@keyframes lgSayIn{0%{opacity:0;transform:scale(.3) rotate(-5deg);filter:blur(3px)}55%{opacity:1;filter:none}100%{opacity:1;transform:none;filter:none}}'
+        + '@keyframes lgSayOut{0%{opacity:1;transform:none}100%{opacity:0;transform:scale(.35) rotate(4deg);filter:blur(2px)}}'
+        // «дыхание» облачка: отдельным свойством translate/scale-обёртки, чтобы не спорить с появлением
+        + '@keyframes lgSayBob{0%,100%{translate:0 0}50%{translate:0 -3px}}';
     document.head.appendChild(sst);
     const say = document.createElement('div');
     say.className = 'lg-say'; say.setAttribute('aria-hidden', 'true');
-    say.innerHTML = '<div class="lg-say-b"></div><i></i><i></i><i></i>';
+    say.innerHTML = '<div class="lg-say-b"><span></span></div><i></i><i></i><i></i>';
     say.style.display = 'none';
     wrap.appendChild(say);
-    const sayB = say.firstElementChild, dots = say.querySelectorAll('i');
+    const sayB = say.firstElementChild, sayT = sayB.firstElementChild, dots = say.querySelectorAll('i'); let saySteps = [];
+    const sayStep = (fn, ms) => saySteps.push(setTimeout(fn, ms));
+    const sayClear = () => { saySteps.forEach(clearTimeout); saySteps = []; };
     function pickSay() {   // какую реплику скажет сова при этом появлении (или промолчит)
         if (greetPending) return GREET;
         const want = lastShown ? Math.random() < 0.3 : Math.random() < 0.8;   // примерно через раз
@@ -411,23 +419,27 @@
         const span = Math.max(8, ay - pb);
         dots.forEach((d, i) => { const s = ds[i][1]; d.style.top = (span * [0.28, 0.62, 0.92][i] - s * u / 2).toFixed(1) + 'px'; });
     }
+    // показ: кружок у совы → средний → верхний → облачко; скрытие — в обратном порядке
     function sayShow(h, L) {
         if (!h) return;
-        clearTimeout(sayHideT);
-        sayNow = h; sayB.textContent = h.text;
+        sayClear();
+        sayNow = h; sayT.textContent = h.text;
         say.style.setProperty('--sc', (state && state.line) || '#C4A1FF');
-        say.classList.remove('on', 'off'); say.style.display = '';
+        [sayB, ...dots].forEach(e => e.classList.remove('v', 'h'));
+        say.style.display = '';
         sayPlace(L);
-        void say.offsetWidth;
-        say.classList.add('on');
+        [2, 1, 0].forEach((di, k) => sayStep(() => dots[di].classList.add('v'), k * 150));
+        sayStep(() => sayB.classList.add('v'), 420);
         if (h === GREET) greetPending = false;
     }
     function sayHide(now) {
         if (!sayNow && say.style.display === 'none') return;
-        sayNow = null; clearTimeout(sayHideT);
-        if (now) { say.classList.remove('on', 'off'); say.style.display = 'none'; return; }
-        say.classList.remove('on'); say.classList.add('off');
-        sayHideT = setTimeout(() => { say.style.display = 'none'; say.classList.remove('off'); }, 560);
+        sayNow = null; sayClear();
+        if (now) { [sayB, ...dots].forEach(e => e.classList.remove('v', 'h')); say.style.display = 'none'; return; }
+        const swap = (e) => { if (e.classList.contains('v')) { e.classList.remove('v'); e.classList.add('h'); } };
+        swap(sayB);
+        [0, 1, 2].forEach((di, k) => sayStep(() => swap(dots[di]), 260 + k * 140));
+        sayStep(() => { say.style.display = 'none'; [sayB, ...dots].forEach(e => e.classList.remove('v', 'h')); }, 260 + 2 * 140 + 360);
     }
     function stop() {
         sayHide(true);
