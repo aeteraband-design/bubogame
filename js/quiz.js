@@ -495,6 +495,7 @@ function qzBody() { return document.getElementById('qzBody'); }
 
 // экран «готов?» перед каждым вопросом (и первый экран с правилами)
 function qzRenderReady() {
+    qzMusicBrowse();
     const d = quizDay(), body = qzBody(); if (!body) return;
     { const w = document.getElementById('qzWin'); if (w) w.classList.remove('busy'); }
     QS.phase = 'ready';
@@ -523,7 +524,10 @@ function qzRenderIntro(d, body) {
         + `<div class="qz-rd" style="text-align:center">Монет сейчас: <b style="color:#FFD66B">${qzCoinsTotal()}</b></div></div>`;
 }
 // выбор темы и сложности: карточки тем своего цвета, ниже — уровни и сколько монет за вопрос
+// вне вопроса (выбор темы, итоги) — обычная музыка окна вопросов
+function qzMusicBrowse() { try { if (AudioFX.mode === 'think' || AudioFX._pendMode === 'think') AudioFX.setMode('quiz', { fade: true }); } catch (e) {} }
 function qzRenderPick(msg, ok) {
+    qzMusicBrowse();
     const d = quizDay(), body = qzBody(); if (!body) return;
     { const w = document.getElementById('qzWin'); if (w) w.classList.remove('busy'); }
     QS.phase = 'pick';
@@ -575,6 +579,7 @@ function qzPickGo() {
     QS.phase = 'ready'; qzStartQuestion();
 }
 function qzRenderDone() {
+    qzMusicBrowse();
     const d = quizDay(), body = qzBody(); if (!body) return;
     { const w = document.getElementById('qzWin'); if (w) w.classList.remove('busy'); }
     QS.phase = 'done';
@@ -615,7 +620,7 @@ function qzRenderQ(reveal) {
         const okA = pickL === corL;
         note = okA ? `<div class="qz-note ok">Верно! +${di.coins} ${ruPlural(di.coins, ['монета', 'монеты', 'монет'])}</div>` : (pickL ? '<div class="qz-note bad">Неверно</div>' : '<div class="qz-note bad">Время вышло</div>');
         const last = d.ids.length >= QUIZ_PER_DAY;
-        btns = `<div class="qz-btns">${pickL ? `<button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid ${last ? 'fa-flag-checkered' : 'fa-forward'}"></i>${last ? 'ИТОГИ ДНЯ' : 'СЛЕДУЮЩИЙ ВОПРОС'}</button>` : ''}`
+        btns = `<div class="qz-btns">${true ? `<button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid ${last ? 'fa-flag-checkered' : 'fa-forward'}"></i>${last ? 'ИТОГИ ДНЯ' : 'СЛЕДУЮЩИЙ ВОПРОС'}</button>` : ''}`
             + qzNavRow(true) + `</div>`;
     } else {
         note = `<div class="qz-note read" id="qzNote">${QS.phase === 'read' ? 'Читайте вопрос…' : 'Выбирайте ответ!'}</div>`;
@@ -633,7 +638,7 @@ function qzRenderQ(reveal) {
 function qzTick() {
     cancelAnimationFrame(QS.raf);
     if (QS.phase !== 'read' && QS.phase !== 'answer') return;
-    const t = (performance.now() - QS.t0) / 1000, C = 2 * Math.PI * 15;
+    const t = (Date.now() - QS.t0) / 1000, C = 2 * Math.PI * 15;   // по настоящим часам: свернул игру — время всё равно шло
     const fg = document.getElementById('qzTmFg'), tm = document.getElementById('qzTm'), nb = document.getElementById('qzTmN'), ic = document.getElementById('qzTmI');
     if (QS.phase === 'read') {
         const k = Math.min(1, t / QZ_READ);
@@ -672,7 +677,8 @@ function qzStartQuestion() {
         if (!d.cur) { d.cur = quizNextId(d); d.ord = qzShuffleOrd(); }
         if (!d.cur) { d.theme = ''; quizSaveDay(d); QS.selT = ''; qzRenderPick('В этой теме вопросы такой сложности закончились — выберите другую тему или сложность'); return; }
         d.shown = true; quizSaveDay(d);
-        QS.phase = 'read'; QS.pick = null; QS.t0 = performance.now(); qzTrapBack();
+        QS.phase = 'read'; QS.pick = null; QS.t0 = Date.now(); qzTrapBack();
+        try { AudioFX.thinkLv = d.lvl; if (AudioFX.mode !== 'think' && AudioFX._pendMode !== 'think') AudioFX.setMode('think', { fade: true }); } catch (e) {}   // своя музыка «на подумать» по уровню
         clearTimeout(QS.autoT);
         qzRenderQ(false); qzTick();
     }
@@ -699,8 +705,8 @@ function qzAnswer(L) {
     } catch (e) {}
     if (ok) qzGainFx(di.coins);
     quizMenuBadge();
-    // время вышло — сразу следующий вопрос (через миг, чтобы увидеть правильный ответ)
-    if (!L) QS.autoT = setTimeout(() => { if (qzRoot && !qzRoot.classList.contains('hidden') && QS.phase === 'reveal') { if (d.ids.length >= QUIZ_PER_DAY) qzRenderDone(); else qzStartQuestion(); } }, 1800);
+    // время вышло — следующий вопрос только по кнопке (сам не запускается)
+    if (false) QS.autoT = setTimeout(() => { if (qzRoot && !qzRoot.classList.contains('hidden') && QS.phase === 'reveal') { if (d.ids.length >= QUIZ_PER_DAY) qzRenderDone(); else qzStartQuestion(); } }, 1800);
 }
 // заработали монеты: у счётчика «+N» справа от кружков всплывает прибавка, счётчик вспыхивает золотом, разлетаются искорки
 function qzGainFx(n) {
@@ -765,7 +771,7 @@ function closeQuiz(e) {
     QS.phase = 'idle';
     if (qzRoot) { qzRoot.classList.add('hidden'); qzRoot.classList.remove('pay'); }
     quizMenuBadge();
-    try { if (AudioFX.mode === 'quiz' || AudioFX._pendMode === 'quiz') AudioFX.setMode((AudioFX._wantMode && AudioFX._wantMode()) || (qzPrevMusic && qzPrevMusic !== 'quiz' && qzPrevMusic !== 'shop' ? qzPrevMusic : 'menu'), { fade: true }); } catch (er) {}
+    try { if (AudioFX.mode === 'quiz' || AudioFX._pendMode === 'quiz' || AudioFX.mode === 'think' || AudioFX._pendMode === 'think') AudioFX.setMode((AudioFX._wantMode && AudioFX._wantMode()) || (qzPrevMusic && qzPrevMusic !== 'quiz' && qzPrevMusic !== 'shop' ? qzPrevMusic : 'menu'), { fade: true }); } catch (er) {}
     try { updateHUDAll(); if (typeof shopSyncBtn === 'function') shopSyncBtn(); } catch (er) {}
 }
 function quizMenuBadge() {

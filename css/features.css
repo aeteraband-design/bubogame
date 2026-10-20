@@ -692,3 +692,15 @@ html #rouletteModal > .glass-panel { max-width: calc(380px * var(--menu-zoom, 1)
 #topHud #livesContainer > * + * { margin-left: calc(3.85px * var(--tb, 1) * var(--hk, 1)) !important; }
 #topHud #livesContainer:has(> :nth-child(6)) > * { width: calc(10.75px * var(--tb, 1) * var(--hk, 1) * 0.92) !important; height: calc(10.75px * var(--tb, 1) * var(--hk, 1) * 0.92) !important; }
 #topHud #livesContainer:has(> :nth-child(6)) > * + * { margin-left: calc(3.85px * var(--tb, 1) * var(--hk, 1) * 0.7) !important; }
+/* ===== v0.14.5: на ПК окна шире — 3/5 экрана (резинятся под ширину), содержимое перестраивается ===== */
+html.menu-pc #qzWin, html.menu-pc #shWin, html.menu-pc #rulesModal > #rlWin, html.menu-pc #settingsModal > #stWin { max-width: calc(min(60vw, 100vw - 48px) / var(--menu-zoom, 1)) !important; }
+html.menu-pc #rouletteModal > .glass-panel { max-width: calc(min(60vw, 100vw - 48px) / min(var(--menu-zoom, 1), 1.1)) !important; }
+/* темы вопросов и товары лавки — сколько поместится в ряд (телефон: 2 и 3, ПК: 3 и 4–5) */
+#qzWin .qz-themes { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important; }
+#shWin .sh-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)) !important; }
+/* настройки: широкое окно — параметры в 2 колонки, узкое — в одну */
+#stWin .st-scroll { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(265px, 1fr)); align-content: start; }
+/* рулетка: надписи на карточках — жирнее */
+.rw-card .rw-name, .rw-card .rw-sub, .rw-fly .rw-name, .rw-fly .rw-sub { font-weight: 900 !important; }
+/* правила на ПК: все разделы видны — переносятся на 2–3 строки, без прокрутки за край */
+html.menu-pc #rlWin .ru-tabs { flex-wrap: wrap; justify-content: center; overflow: visible; -webkit-mask-image: none; mask-image: none; }

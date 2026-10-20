@@ -605,3 +605,13 @@ fitThemeLabels();
         } catch (e) {}
     }).observe(m, { attributes: true, attributeFilter: ['class'] });
 });
+
+// разделы правил и админки на компьютере: колесо мыши листает строку разделов вбок (к началу или к концу)
+document.addEventListener('wheel', (e) => {
+    const el = e.target && e.target.closest && e.target.closest('.ru-tabs, .adm-tabs');
+    if (!el || el.scrollWidth <= el.clientWidth + 1) return;
+    const d = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (!d) return;
+    e.preventDefault();
+    el.scrollBy({ left: d * (e.deltaMode === 1 ? 32 : 1.2), behavior: 'auto' });
+}, { passive: false });

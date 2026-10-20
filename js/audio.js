@@ -102,6 +102,15 @@ const AudioFX = {
     menuChords: [[293.66, 349.23, 440.00], [293.66, 349.23, 466.16], [261.63, 349.23, 440.00], [261.63, 329.63, 392.00]],
     gameBass:   [146.83, 146.83, 174.61, 146.83, 196.00, 174.61, 130.81, 164.81],
     gameArp:    [293.66, 349.23, 440.00, 587.33, 523.25, 440.00, 349.23, 392.00],
+    // вопросы дня — своя музыка «на подумать» для каждого уровня: Суперлайт и Лайт — мягкая колыбельная, Средне — живее, Сложно — напряжённее, но дружелюбно
+    thinkLv: 's',
+    _thinkSet() {
+        const lv = this.thinkLv;
+        if (lv === 'x') return { d: 0.21, roots: [146.83, 116.54, 98.00, 110.00], ch: [[293.66, 349.23, 440.00], [233.08, 293.66, 349.23], [196.00, 233.08, 293.66], [220.00, 277.18, 329.63]] };
+        if (lv === 'm') return { d: 0.25, roots: [110.00, 87.31, 130.81, 98.00], ch: [[220.00, 261.63, 329.63], [174.61, 220.00, 261.63], [261.63, 329.63, 392.00], [196.00, 246.94, 293.66]] };
+        return { d: lv === 'l' ? 0.28 : 0.31, roots: [130.81, 110.00, 87.31, 98.00], ch: [[261.63, 329.63, 392.00], [220.00, 261.63, 329.63], [174.61, 220.00, 261.63], [196.00, 246.94, 293.66]] };
+    },
+    _thinkD() { return this._thinkSet().d; },
     // настройки — «мастерская»: весёлый грув Am – F – G – Em, маримба, щелчки трещотки ключа, лязг металла и вздохи поршня
     wsRoots: [110.00, 87.31, 98.00, 82.41],
     wsChords: [[220.00, 261.63, 329.63], [174.61, 220.00, 261.63], [196.00, 246.94, 293.66], [164.81, 196.00, 246.94]],
@@ -351,7 +360,7 @@ const AudioFX = {
     },
     // длина шага и высота музыки режима (в игре — с учётом сложности, ускорения и замедления)
     _modeStep(m) {
-        let d = m === 'game' ? 0.185 : (m === 'death' ? 0.56 : (m === 'victory' ? 0.2 : (m === 'quiz' ? 0.3 : (m === 'shop' ? 0.19 : (m === 'library' ? 0.34 : (m === 'menu' ? 60 / 140 / 4 : (m === 'workshop' ? 0.2 : 0.29))))))), p = 1;
+        let d = m === 'game' ? 0.185 : (m === 'death' ? 0.56 : (m === 'victory' ? 0.2 : (m === 'quiz' ? 0.3 : (m === 'shop' ? 0.19 : (m === 'library' ? 0.34 : (m === 'menu' ? 60 / 140 / 4 : (m === 'workshop' ? 0.2 : (m === 'think' ? this._thinkD() : 0.29)))))))), p = 1;
         if (m === 'game') {
             try { const diff = getDifficultyMultipliers(); if (diff.musicTempoMult) { d /= diff.musicTempoMult; p *= diff.musicTempoMult; } } catch (e) {}
             const sf = this.speedFactor || 1; d /= sf; p *= sf;
@@ -370,13 +379,14 @@ const AudioFX = {
         else if (m === 'death') f = this.deathMelody[s % this.deathMelody.length];
         else if (m === 'game') f = this.gameArp4[Math.floor(s / 8) % 4][s % 8];
         else if (m === 'workshop') f = this.wsLead[Math.floor(s / 8) % 4][s % 8];
+        else if (m === 'think') { const T = this._thinkSet(); f = T.ch[Math.floor(s / 8) % 4][[0, 2, 1, 2][s % 4]] * 2; }
         return f ? f * (p || 1) : 0;
     },
     _firstNote(m, p) {
         for (let s = 0; s < 4; s++) { const f = this._melodyAt(m, s, p); if (f) return f; }
         return 440;
     },
-    _rootOf(m) { return { workshop: 110.00, library: 146.83, menu: 146.83, game: 146.83, shop: 130.81, victory: 130.81, quiz: 110.00, death: 110.00 }[m] || 130.81; },
+    _rootOf(m) { return { think: 130.81, workshop: 110.00, library: 146.83, menu: 146.83, game: 146.83, shop: 130.81, victory: 130.81, quiz: 110.00, death: 110.00 }[m] || 130.81; },
     _modeTone(m) { return { library: 'soft', shop: 'pluck', game: 'pluck', victory: 'brass', quiz: 'soft', death: 'soft' }[m] || 'tri'; },
     _transNote(t, f, dur, tone, last) {
         const ctx = this.ctx;
@@ -628,8 +638,8 @@ const AudioFX = {
                     // ноты ставятся заранее (на 0.35 с вперёд) точно по времени аудио — подвисания игры музыку не рвут
                     while (this.nextNoteTime < t + 0.35 && !(this._stopAt && this.nextNoteTime >= this._stopAt - 0.001)) {
                         this.playMusicStep(this.nextNoteTime);
-                        let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : (this.mode === 'quiz' ? 0.3 : (this.mode === 'shop' ? 0.19 : (this.mode === 'library' ? 0.34 : (this.mode === 'menu' ? 60 / 140 / 4 : (this.mode === 'workshop' ? 0.2 : 0.29)))))));
-                        if (this.mode !== 'death' && this.mode !== 'victory' && this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop' && this.mode !== 'library' && this.mode !== 'workshop') {   // в меню темп всегда стандартный — не зависит ни от сложности, ни от ускорения
+                        let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : (this.mode === 'quiz' ? 0.3 : (this.mode === 'shop' ? 0.19 : (this.mode === 'library' ? 0.34 : (this.mode === 'menu' ? 60 / 140 / 4 : (this.mode === 'workshop' ? 0.2 : (this.mode === 'think' ? this._thinkD() : 0.29))))))));
+                        if (this.mode !== 'death' && this.mode !== 'victory' && this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop' && this.mode !== 'library' && this.mode !== 'workshop' && this.mode !== 'think') {   // в меню темп всегда стандартный — не зависит ни от сложности, ни от ускорения
                             const diff = getDifficultyMultipliers();
                             if (diff.musicTempoMult) d /= (this._tmS || diff.musicTempoMult);
                             d /= this.updateSpeedFactor();
@@ -671,7 +681,7 @@ const AudioFX = {
         const now = when || this.ctx.currentTime;
         let pitchMultiplier = 1.0;
 
-        if (this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop' && this.mode !== 'library' && this.mode !== 'workshop') {   // музыка меню всегда в стандартном темпе и высоте — сложность и ускорение на неё не влияют
+        if (this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop' && this.mode !== 'library' && this.mode !== 'workshop' && this.mode !== 'think') {   // музыка меню всегда в стандартном темпе и высоте — сложность и ускорение на неё не влияют
             const diff = getDifficultyMultipliers();
             if (diff.musicTempoMult) {   // темп и высота нового уровня меняются плавно (≈4 такта), а не рывком
                 if (this.step === 0 || !this._tmS) this._tmS = diff.musicTempoMult;
@@ -788,6 +798,35 @@ const AudioFX = {
                 g.gain.value = s % 4 === 3 ? 0.05 : 0.03; g.gain.setValueAtTime(s % 4 === 3 ? 0.05 : 0.03, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
                 ns.connect(fl); fl.connect(g); g.connect(this.musicGain); ns.start(now); ns.stop(now + 0.08);
             }
+        } else if (this.mode === 'think') {
+            // «на подумать»: электропиано перебором, тёплый бас, тихие «часики»; на Сложно — пульс баса и двойной тик
+            const T = this._thinkSet(), lv = this.thinkLv, s = this.step, st = s % 8, bar = Math.floor(s / 8) % 4, pass = Math.floor(s / 32) % 2;
+            const ac = this.ctx, out = this.musicGain, d = T.d;
+            const tone = (type, fr, vol, dur, att, cut, at) => {
+                const t = now + (at || 0), o = ac.createOscillator(), g = ac.createGain(), lp = ac.createBiquadFilter();
+                o.type = type; o.frequency.value = fr; o.frequency.setValueAtTime(fr, t);
+                lp.type = 'lowpass'; lp.frequency.value = cut || 2400; lp.frequency.setValueAtTime(cut || 2400, t);
+                g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + (att || 0.008)); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                o.connect(lp); lp.connect(g); g.connect(out); o.start(t); o.stop(t + dur + 0.02);
+            };
+            const tick = (vol, at) => {
+                const t = now + (at || 0), ns = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+                ns.buffer = this._iceNoise(); fl.type = 'bandpass'; fl.frequency.value = 5200; fl.frequency.setValueAtTime(5200, t); fl.Q.value = 3; fl.Q.setValueAtTime(3, t);
+                g.gain.value = vol; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+                ns.connect(fl); fl.connect(g); g.connect(out); ns.start(t); ns.stop(t + 0.05);
+            };
+            const ch = T.ch[bar], r = T.roots[bar], pool = [ch[0], ch[1], ch[2], ch[0] * 2];
+            const pat = pass ? [0, 2, 1, 3, 2, 1, 3, 2] : [0, 1, 2, 3, 2, 1, 2, 1];
+            const f = pool[pat[st]];
+            tone('sine', f, 0.23, d * 2.6, 0.006, 3000); tone('triangle', f * 2, 0.04, d * 1.2, 0.004, 4000);   // электропиано
+            if (st === 0) { tone('sine', r, 0.34, d * 7, 0.05, 700); ch.forEach(c => tone('triangle', c, 0.045, d * 7.5, 0.25, 1300)); }   // бас и мягкий аккорд
+            if (lv !== 's' && st === 4) tone('sine', r * 1.5, 0.12, d * 3, 0.03, 700);
+            if (lv === 'x' && st % 2 === 1) tone('triangle', r * 2, 0.05, d * 0.8, 0.004, 900);   // пульс баса на Сложно
+            if ((st === 0 || st === 5) && pass) tone('sine', ch[2] * 4, 0.03, d * 4, 0.003, 7000);   // колокольчик
+            // «часики»: Суперлайт — на доли, Лайт и Средне — каждый шаг, Сложно — ещё и между шагами
+            if (lv === 's') { if (st % 2 === 0) tick(st % 4 === 0 ? 0.045 : 0.03); }
+            else { tick(st % 2 === 0 ? 0.045 : 0.028); if (lv === 'x') tick(0.02, d / 2); }
+            if ((lv === 'm' || lv === 'x') && (st === 0 || st === 4)) tone('sine', 100, lv === 'x' ? 0.3 : 0.22, 0.18, 0.003, 600);   // мягкая бочка
         } else if (this.mode === 'workshop') {
             // мастерская: 8 шагов на такт, 4 такта; каждый второй проход — маримба на октаву выше с колокольчиком
             const s = this.step, st = s % 8, bar = Math.floor(s / 8) % 4, pass = Math.floor(s / 32) % 2;
@@ -899,8 +938,13 @@ const AudioFX = {
                 if (c === 7 && i8 >= 6) aMul = 0.5;                      // финал проваливается вниз — и снова светлое начало
             }
             const s8 = this.step % 8;
-            const bFreq = bassArr[s8 % bassArr.length] * pitchMultiplier;
-            const aFreq = arpArr[i8 % arpArr.length] * pitchMultiplier * aMul;
+            // дождь: музыка становится задумчивее — в тактах F и C терция уходит в минор (Dm – B♭ – Fm – Cm), темп прежний
+            let rainK = 0; try { if (typeof stormSmooth === 'function' && typeof stormCover === 'number') rainK = stormSmooth(0.2, 1, stormCover); } catch (e) {}
+            if (s8 === 0 || this._rainBar === undefined) this._rainBar = rainK > 0.45;   // решаем в начале такта — без фальши посреди фразы
+            const RM = this._rainBar && !dark ? (c4 === 2 ? [[440, 415.30], [880, 830.61], [220, 207.65]] : (c4 === 3 ? [[329.63, 311.13], [659.25, 622.25], [164.81, 155.56]] : null)) : null;
+            const rm = (f) => { if (RM) for (const [a0, b0] of RM) if (Math.abs(f - a0) < 0.5) return b0; return f; };
+            const bFreq = rm(bassArr[s8 % bassArr.length]) * pitchMultiplier;
+            const aFreq = rm(arpArr[i8 % arpArr.length]) * pitchMultiplier * aMul;
             const out = this.musicGain;
             const tone = (type, f, vol, dur, f2) => {
                 const os = this.ctx.createOscillator(), g = this.ctx.createGain();
@@ -972,7 +1016,7 @@ const AudioFX = {
                 this._shK = (this._shK || 0) + (tgt - (this._shK || 0)) * (tgt > (this._shK || 0) ? 0.14 : 0.25);
                 const k = this._shK;
                 if (k > 0.02) {
-                    const ch = dark ? [aFreq / 2, aFreq / 2 * 1.189, aFreq / 2 * 1.498] : this.menuChords[c4].map(f => f * pitchMultiplier);
+                    const ch = dark ? [aFreq / 2, aFreq / 2 * 1.189, aFreq / 2 * 1.498] : this.menuChords[c4].map(f => rm(f) * pitchMultiplier);
                     const pool = [ch[0], ch[1], ch[2], ch[0] * 2, ch[1] * 2, ch[2] * 2];
                     // искры: быстрые колокольчики по нотам аккорда (на всех уровнях)
                     tone('sine', pool[3 + (this.step % 3)] * 2, 0.03 * k, 0.12 * len);
@@ -996,8 +1040,16 @@ const AudioFX = {
                 }
             }
 
+            // дождь: тихая подложка-«вздох» на корне аккорда и редкая грустная нотка сверху
+            if (rainK > 0.05 && s8 === 0) {
+                const root = rm(bassArr[0]) * pitchMultiplier;
+                tone('sine', root, 0.07 * rainK, 1.4 * len);
+                tone('triangle', root * 1.5, 0.025 * rainK, 1.2 * len);
+                if (c4 % 2 === 1) tone('sine', aFreq * 2, 0.04 * rainK, 0.9 * len, aFreq * 2 * 0.94);
+            }
+
             // ===== «Весёлые» нотки из музыки меню: с Медиум — лёгкие аккорды-чопы, с Медиум+ — колокольчик в начале такта =====
-            if (W(2) > 0.01 && !dark && this.step % 4 === 2) this.menuChords[c4].forEach((f) => tone('square', f * pitchMultiplier, (lvl >= 4 ? 0.02 : 0.016) * W(2), 0.07 * len));
+            if (W(2) > 0.01 && !dark && this.step % 4 === 2) this.menuChords[c4].forEach((f) => tone('square', rm(f) * pitchMultiplier, (lvl >= 4 ? 0.02 : 0.016) * W(2), 0.07 * len));
             if (W(3) > 0.01 && !dark && this.step % 8 === 0 && (pass || lvl >= 4)) tone('sine', aFreq * 4, 0.035 * W(3), 0.35 * len);
             if (lvl >= 5 && dark && this.step % 8 === 0) tone('sawtooth', aFreq / 4, 0.05, 0.6 * len, aFreq / 4 * 0.94);   // низкий тревожный «гул» в тёмных тактах
 
