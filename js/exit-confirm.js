@@ -8,7 +8,8 @@
     const ST = { bubo: 'guard' };
     let exiting = false;
     // каждое обработанное «назад» снимает одну запись — сразу кладём новую (глубина истории не растёт)
-    function arm() { if (exiting) return; try { history.pushState(ST, ''); } catch (e) {} }
+    function arm() { if (exiting || window.__booting) return;   // на экране загрузки «назад» не ловим — сразу выход
+        try { history.pushState(ST, ''); } catch (e) {} }
 
     // --- окно подтверждения выхода ---
     let root = null;
@@ -47,6 +48,7 @@
         if (rearm) arm();
     }
     window.openExitConfirm = openExit;
+    window.__exitArm = () => arm();   // после заставки — ставим запись сразу
     window.closeExitConfirm = closeExit;
 
     function toast(text) {
@@ -121,6 +123,7 @@
             exitT = setTimeout(() => { if (exitStuck) exitStuck(); }, 300);
             return;
         }
+        if (window.__booting) { try { history.back(); } catch (e) {} return; }   // экран загрузки — без вопроса
         onBack();
     });
 
@@ -135,6 +138,7 @@
     // Chrome может «перепрыгивать» такие записи при нажатии «назад».
     arm();
     let gest = false;
-    const onGesture = () => { if (gest) return; gest = true; arm(); };
-    ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => window.addEventListener(ev, onGesture, { once: true, capture: true, passive: true }));
+    // первое касание ПОСЛЕ загрузки (касания во время заставки запись не ставят)
+    const onGesture = () => { if (gest || window.__booting) return; gest = true; arm(); };
+    ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => window.addEventListener(ev, onGesture, { capture: true, passive: true }));
 })();

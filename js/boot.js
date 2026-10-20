@@ -180,7 +180,7 @@
                 setTimeout(finishDismiss, 1100);
             }
             function finishDismiss() {
-                document.documentElement.classList.remove('booting'); window.__booting = false;
+                document.documentElement.classList.remove('booting'); window.__booting = false; try { if (window.__exitArm) window.__exitArm(); } catch (e) {}
                 el.classList.add('handoff');   // свечение совы и логотип дальше показывает само меню — точно там же, поэтому без вспышек и рывков
                 // трубы и свечение плавно подъезжают от совы к месту логотипа; сам логотип появляется там красиво: значок, потом буквы
                 try {
