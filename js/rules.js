@@ -45,7 +45,7 @@
     }
     const ball = (icon, c) => `<span class="ru-ic" style="--c:${c}">${glyph(icon)}</span>`;
     // строка: иконка, жирный заголовок цветом иконки, текст; side — что-то справа (цена, шанс)
-    const row = (icon, c, title, text, side) => `<div class="ru-row">${ball(icon, c)}<div class="ru-tx">${title ? `<b style="color:${c}">${title}</b>${text ? ' — ' : ''}` : ''}${text || ''}</div>${side ? `<div class="ru-side">${side}</div>` : ''}</div>`;
+    const row = (icon, c, title, text, side) => `<div class="ru-row">${ball(icon, c)}<div class="ru-tx"><span>${title ? `<b style="color:${c}">${title}</b>${text ? ' — ' : ''}` : ''}${text || ''}</span></div>${side ? `<div class="ru-side">${side}</div>` : ''}</div>`;
     const sec = (icon, c, title, inner) => `<section class="ru-sec" style="--c:${c}"><h3><span class="ru-hi">${glyph(icon)}</span>${title}</h3>${inner}</section>`;
     const p = (html) => `<p class="ru-p">${html}</p>`;
     const coin = (n) => `<span class="ru-price"><i class="fa-solid fa-coins"></i>${n}</span>`;

@@ -676,3 +676,4 @@ html #rouletteModal > .glass-panel { max-width: calc(380px * var(--menu-zoom, 1)
 #qzWin, #shWin, #rlWin, #rwWindow, #goWin, #winWindow { isolation: isolate; }
 #qzWin .qz-x, #shWin .sh-x, #shWin .sh-coins, #rlWin .win-x, #rwWindow #closeRouletteBtn, #goWin .win-x,
 #shWin .sh-foot, #qzWin .qz-stick, #rlWin .rl-btns { will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+#rwWindow { --xc: #A878F5 !important; }   /* v0.13.89: крестик рулетки — в цвет обводки окна */

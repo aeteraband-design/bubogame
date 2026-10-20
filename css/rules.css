@@ -158,3 +158,15 @@
     #rlWin .ru-pane.ru-in { animation: none; }
 }
 .gfx-low #rlWin .ru-ring, .gfx-low #rlWin .ru-core i, .gfx-low #rlWin .ru-glow, .gfx-low #rlWin .ru-tw { animation-duration: 0s; animation-play-state: paused; }
+/* v0.13.89: иконки в кружках — белые и контрастные: кружок чуть темнее, без теней под значками */
+#rlWin .ru-ic { background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 78%, #fff), color-mix(in srgb, var(--c) 82%, #000) 62%, color-mix(in srgb, var(--c) 55%, #000)) !important;
+    box-shadow: 0 0 9px color-mix(in srgb, var(--c) 45%, transparent) !important; color: #fff !important; }
+#rlWin .ru-ic i, #rlWin .ru-ic svg { filter: none !important; color: #fff !important; }
+#rlWin .ru-tt > span.ru-ic { color: #fff !important; font-size: 14px !important; }
+/* волшебное перо — как в игре: перо чуть левее, ∞ справа внизу, без жирной тени */
+#rlWin .ru-ic .fa-feather-pointed + .ru-inf { right: 4px; bottom: 4px; font: 900 11px/1 Onest, sans-serif; text-shadow: 0 0 2px rgba(0, 0, 0, 0.55); }
+#rlWin .ru-ic i.fa-feather-pointed:has(+ .ru-inf) { transform: translateX(-3px); }
+/* v0.13.89: текст рядом с кружком: одна или две строки — ровно по центру кружка, дальше строки идут вниз */
+#rlWin .ru-row { align-items: flex-start; }
+#rlWin .ru-row > .ru-ic { margin-top: 2.5px; }
+#rlWin .ru-tx { padding-top: 0 !important; min-height: 35px; display: flex; flex-direction: column; justify-content: center; }
