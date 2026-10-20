@@ -923,6 +923,37 @@ const AudioFX = {
             if (lvl >= 5) tone('triangle', aFreq * 0.8409, 0.09, 0.14 * len);
             if (lead && this.step % 2 === 0) tone('square', aFreq * 2, lvl === 4 ? 0.03 : 0.045, 0.12 * len);   // Хард+: верхний голос во второй половине фразы
 
+            // ===== ШАЗАМ: свой слой поверх музыки уровня — плавно вступает, а за 5 с до конца так же плавно стихает =====
+            {
+                let tgt = 0;
+                try { if (typeof shazamActive === 'function' && shazamActive()) tgt = Math.max(0, Math.min(1, SHZ.left / 300)); } catch (e) {}
+                this._shK = (this._shK || 0) + (tgt - (this._shK || 0)) * (tgt > (this._shK || 0) ? 0.14 : 0.25);
+                const k = this._shK;
+                if (k > 0.02) {
+                    const ch = dark ? [aFreq / 2, aFreq / 2 * 1.189, aFreq / 2 * 1.498] : this.menuChords[c4].map(f => f * pitchMultiplier);
+                    const pool = [ch[0], ch[1], ch[2], ch[0] * 2, ch[1] * 2, ch[2] * 2];
+                    // искры: быстрые колокольчики по нотам аккорда (на всех уровнях)
+                    tone('sine', pool[3 + (this.step % 3)] * 2, 0.03 * k, 0.12 * len);
+                    // геройский мотив: звонкая «пила» с октавой, только звуки аккорда — всегда в лад (с Лайт)
+                    const pat = bar % 2 ? [5, -1, 4, 3, -1, 2, 3, -1] : [3, -1, 4, 5, -1, 4, 3, 2];
+                    const pi = pat[s8];
+                    if (lvl >= 1 && pi >= 0 && !dark) {
+                        const f = pool[pi];
+                        const os = this.ctx.createOscillator(), lp = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+                        os.type = 'sawtooth'; os.frequency.value = f; os.frequency.setValueAtTime(f, now);
+                        lp.type = 'lowpass'; lp.frequency.value = 2600; lp.frequency.setValueAtTime(2600, now);
+                        g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime((lvl >= 4 ? 0.06 : 0.045) * k, now + 0.01); g.gain.exponentialRampToValueAtTime(0.001, now + 0.22 * len);
+                        os.connect(lp); lp.connect(g); g.connect(out); os.start(now); os.stop(now + 0.24 * len);
+                        tone('sine', f * 2, 0.035 * k, 0.18 * len);
+                    }
+                    // с Медиум+: «пульс» на октаву ниже на каждом шаге — ощущение полёта
+                    if (lvl >= 3) tone('triangle', ch[0] / 2, 0.06 * k, 0.1 * len);
+                    // Хард и Хард+: силовой аккорд-удар в начале такта и восходящий «вжух» к следующему такту
+                    if (lvl >= 4 && s8 === 0) [ch[0], ch[0] * 1.498].forEach(f => tone('square', f, 0.04 * k, 0.3 * len));
+                    if (lvl >= 4 && s8 === 6) noise('bandpass', 900, 0.05 * k, 0.28 * len, 1.1);
+                }
+            }
+
             // ===== «Весёлые» нотки из музыки меню: с Медиум — лёгкие аккорды-чопы, с Медиум+ — колокольчик в начале такта =====
             if (lvl >= 2 && !dark && this.step % 4 === 2) this.menuChords[c4].forEach((f) => tone('square', f * pitchMultiplier, lvl >= 4 ? 0.02 : 0.016, 0.07 * len));
             if (lvl >= 3 && !dark && this.step % 8 === 0 && (pass || lvl >= 4)) tone('sine', aFreq * 4, 0.035, 0.35 * len);
