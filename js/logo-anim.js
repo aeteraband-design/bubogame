@@ -270,7 +270,7 @@
         const dt = Math.min(0.05, (now - (lastT || now)) / 1000); lastT = now;
         if (!state) {
             if (now < nextAt) return;
-            if (!canRun()) { nextAt = now + 2000; return; }
+            if (!canRun()) { const h = window.__logoAnimHold || 0; nextAt = now < h ? h : now + 2000; return; }   // после загрузки — ровно к концу паузы
             state = nextState(); t0 = now; flags = {}; sparks = [];
             flags.say = pickSay();   // реплика этого появления (или null)
             tile.style.setProperty('--lc', state.line);
@@ -346,8 +346,9 @@
         + 'font:500 11.5px/1.3 Onest,sans-serif;letter-spacing:.01em;color:color-mix(in srgb,var(--sc,#C4A1FF) 28%,#1A0630);text-align:center;white-space:normal;'
         + 'background:var(--bg);border:0;box-shadow:0 0 0 1px color-mix(in srgb,var(--sc,#C4A1FF) 35%,transparent),0 0 10px color-mix(in srgb,var(--sc,#C4A1FF) 40%,transparent),0 3px 8px rgba(20,3,38,.3);'
         + 'transform-origin:var(--ox,12%) 100%;opacity:0;transform:translateY(6px) scale(.92);will-change:transform,opacity}'
-        + Q + '.lg-say-b::after{content:"";position:absolute;left:var(--tx,16px);bottom:-4px;width:8px;height:8px;margin-left:-4px;background:var(--bg);border-radius:0 0 2px 0;transform:rotate(45deg);'
-        + 'box-shadow:1px 1px 0 0 color-mix(in srgb,var(--sc,#C4A1FF) 35%,transparent)}'
+        // хвостик-«хоботок»: треугольник со скруглёнными углами, кончик чуть ниже и левее — к голове совы
+        + Q + '.lg-say-b::after{content:"";position:absolute;left:calc(var(--tx,16px) - 3px);bottom:-8px;width:14px;height:10px;background:var(--bg);'
+        + "clip-path:path('M0,0 H14 C10,1.6 6.2,4.8 3,8.8 C1.9,10.2 0.3,10 0.4,8.3 C0.7,5.4 1.1,2.6 0,0 Z')}"
         + Q + '.lg-say-b > span{position:relative;display:block}'
         + Q + '.lg-say-b.v{animation:lgSayIn .38s cubic-bezier(.2,.9,.3,1.15) forwards,lgSayBob 3.4s .4s ease-in-out infinite}'
         + Q + '.lg-say-b.h{animation:lgSayOut .26s ease-in forwards}'

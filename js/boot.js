@@ -186,7 +186,7 @@
                 try {
                     var D = window.__logoDrop = { off: 0, zf: 1, k: 1, kp: 0, t0: performance.now() };
                     (function glide() { var v = Math.min(1, (performance.now() - D.t0) / 800); D.kp = v * v * (3 - 2 * v); if (v < 1) requestAnimationFrame(glide); else window.__logoDrop = null; })();
-                    window.__logoAnimHold = performance.now() + 4000;   // сначала джойстик, сова в логотипе — потом
+                    window.__logoAnimHold = performance.now() + 2800;   // логотип прилетает (~0,8 с) и 2 с стоит джойстиком   // сначала джойстик, сова в логотипе — потом
                     var lw = document.querySelector('#startScreen > .menu-logo-wrap'), tl = lw && lw.querySelector('.fa-gamepad'), tile = tl && tl.parentElement;
                     var words = lw ? lw.querySelectorAll('.tracking-tight > span') : [];
                     if (tile && tile.animate) {
