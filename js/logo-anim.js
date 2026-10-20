@@ -73,7 +73,8 @@
         { id: 'drunk', glow: '45,212,191', line: '#5EEAD4' },
         { id: 'fat', glow: '244,114,182', line: '#F9A8D4' },
         { id: 'shazam', glow: '254,118,0', line: '#FFA733' },
-        { id: 'speed', glow: '250,204,21', line: '#FDE047' }
+        { id: 'speed', glow: '250,204,21', line: '#FDE047' },
+        { id: 'dizzy', glow: '196,167,255', line: '#E9D5FF' }   // ударилась о трубу: звёздочки над головой — только в этом состоянии
     ];
     let order = [], dpr = 1, lastId = '';
     function nextState() {
@@ -95,7 +96,7 @@
         const save = {}; keys.forEach(k => save[k] = owl[k]);
         const main = ctx, ga = gameActive, wft = waitingFirstTap, dm = dtMult, fr = frame,
             d = currentDrunkFactor, fz = currentFreezeFactor, ov = currentOvereatFactor, vs = viewScale, rs = renderScale;
-        const hasShz = typeof SHZ !== 'undefined', shk = hasShz ? SHZ.k : 0;
+        const hasShz = typeof SHZ !== 'undefined', shk = hasShz ? SHZ.k : 0, inv0 = invulnerableTime;
         try {
             const k = size / 96 * px;
             const sc = Math.cos(spin || 0), sn = Math.sin(spin || 0);
@@ -106,7 +107,7 @@
             currentOvereatFactor = state.id === 'fat' ? 1 : 0;
             if (hasShz) SHZ.k = state.id === 'shazam' ? 1 : 0;
             owl.x = 0; owl.y = 0; owl.rotation = rot; owl.visible = true; owl.wing = state.id === 'freeze' ? 0 : wing; owl.lean = (state.id === 'speed' || state.id === 'shazam') ? 0.3 : 0;   // ускорение и ШАЗАМ — сова наклонена вперёд owl.boostK = state.id === 'speed' ? 1 : 0; owl.spinAngle = 0;
-            ctx = gc; window.__noBlink = true;
+            ctx = gc; window.__noBlink = true; invulnerableTime = state.id === 'dizzy' ? 70 : 0;   // звёздочки над головой — только у «оглушённой» совы
             // ускорение и ШАЗАМ: из-за совы вылетают звёздочки, как в игре (те же функции игры)
             if (fx && (state.id === 'speed' || state.id === 'shazam') && typeof updateSpeedStars === 'function') {
                 const ss_ = speedStars, sr_ = speedRamp, sa_ = speedStarAcc, sbt_ = speedBoostTime, sga = gameActive, shA = window.shazamActive;
@@ -119,7 +120,7 @@
             else owl.draw();
         } catch (e) {}
         finally {
-            ctx = main; window.__noBlink = false; gameActive = ga; waitingFirstTap = wft; dtMult = dm; frame = fr;
+            ctx = main; window.__noBlink = false; invulnerableTime = inv0; gameActive = ga; waitingFirstTap = wft; dtMult = dm; frame = fr;
             currentDrunkFactor = d; currentFreezeFactor = fz; currentOvereatFactor = ov; viewScale = vs; renderScale = rs;
             if (hasShz) SHZ.k = shk;
             keys.forEach(k => owl[k] = save[k]);
@@ -147,12 +148,12 @@
     }
     window.__owlCenter = (id) => owlCenter(STATES.find(x => x.id === id));
     function owlSize(state, size) {
-        const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : state);
+        const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : (state.id === 'dizzy' ? STATES.find(t => t.id === 'normal') : state));
         return state.id === 'fat' ? size : size * 0.56 / Math.max(0.3, c.w, c.h);   // одинаково крупно во всех состояниях; «полная» — по своему размеру
     }
     function drawOwlState(x, y, size, state, rot, wing, now, spin, gc, px, fx) {
         // ШАЗАМ: молнии вокруг совы не считаем — центр и размер как у наклонённой совы (ускорение)
-        const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : state);
+        const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : (state.id === 'dizzy' ? STATES.find(t => t.id === 'normal') : state));
         size = owlSize(state, size);
         const a = spin || 0, cs = Math.cos(a), sn = Math.sin(a), dx = c.dx * size, dy = c.dy * size;
         // крутим вокруг видимого центра совы: она остаётся ровно посередине плитки
