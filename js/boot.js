@@ -181,7 +181,6 @@
             }
             function finishDismiss() {
                 document.documentElement.classList.remove('booting'); window.__booting = false;
-                window.__haloUntil = performance.now() + 500;   // свечение за совой передаётся меню и через полсекунды плавно гаснет
                 el.classList.add('handoff');   // свечение совы и логотип дальше показывает само меню — точно там же, поэтому без вспышек и рывков
                 // трубы и свечение плавно подъезжают от совы к месту логотипа; сам логотип появляется там красиво: значок, потом буквы
                 try {
@@ -249,6 +248,8 @@
                 if (exitT0) { var et = (now - exitT0) / 600; bgT = et < 1 ? 3.6 : 9; }
                 window.__bgSpeed = (window.__bgSpeed || 1) + (bgT - (window.__bgSpeed || 1)) * Math.min(1, 0.06 * k);
                 drawOwl(now, d, fz, ov, fin);
+                // свечение — всегда за совой: прилетает с ней, а при ШАЗАМе улетает вместе с ней за край и тает
+                if (owlBox) { owlBox.style.setProperty('--hx', (MV.x * 2.5).toFixed(1) + 'px'); owlBox.style.setProperty('--hy', (MV.y * 2.5).toFixed(1) + 'px'); owlBox.style.setProperty('--ho', Math.max(0, 1 - (MV.exit || 0) * 1.1).toFixed(3)); }
                 syncLogo();
                 if (!ready) {
                     if (shown >= 99.9 && ep >= 1) { ready = true; go.classList.add('ready'); el.querySelector('.bl-foot').classList.add('done'); }
