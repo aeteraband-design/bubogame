@@ -378,22 +378,26 @@
     }
     const sst = document.createElement('style');
     const Q = '#startScreen > .menu-logo-wrap ';
-    sst.textContent = Q + '.lg-say{position:absolute;z-index:4;pointer-events:none;width:0;height:0}'
+    sst.textContent = '#startScreen > .menu-logo-wrap{isolation:isolate}'
+        // облачко живёт ЗА плиткой логотипа: вылетает из-за неё и прячется обратно
+        + Q + '.lg-say{position:absolute;z-index:-1;pointer-events:none;width:0;height:0}'
         // аккуратная подсказка: скруглённая плашка в цвет состояния совы и маленький уголок-хвостик к сове
         + Q + '.lg-say-b{--bg:color-mix(in srgb,var(--sc,#C4A1FF) 30%,#fff);--bgB:color-mix(in srgb,var(--sc,#C4A1FF) 42%,#fff);position:absolute;left:0;bottom:0;box-sizing:border-box;width:max-content;padding:6px 11px 7px;border-radius:12px;'
         + 'font:500 11.5px/1.3 Onest,sans-serif;letter-spacing:.01em;color:color-mix(in srgb,var(--sc,#C4A1FF) 28%,#1A0630);text-align:center;white-space:normal;'
         + 'background:linear-gradient(180deg,color-mix(in srgb,var(--sc,#C4A1FF) 16%,#fff) 0%,var(--bg) 55%,var(--bgB) 100%);border:0;'
         // объём: светлый блик сверху внутри, мягкая цветная тень-свечение снизу в цвет состояния совы
-        + 'box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 3px color-mix(in srgb,var(--sc,#C4A1FF) 22%,transparent),0 0 0 1px color-mix(in srgb,var(--sc,#C4A1FF) 35%,transparent),0 7px 14px -5px color-mix(in srgb,var(--sc,#C4A1FF) 85%,transparent),0 0 12px color-mix(in srgb,var(--sc,#C4A1FF) 30%,transparent);'
-        + 'transform-origin:var(--ox,12%) 100%;opacity:0;transform:translateY(6px) scale(.92);will-change:transform,opacity}'
+        + 'box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -2px 3px color-mix(in srgb,var(--sc,#C4A1FF) 22%,transparent);'
+        // контур, цветная тень снизу и свечение — через drop-shadow: ложатся и на плашку, и на хвостик одинаково
+        + 'filter:drop-shadow(0 0 .6px color-mix(in srgb,var(--sc,#C4A1FF) 70%,transparent)) drop-shadow(0 5px 6px color-mix(in srgb,var(--sc,#C4A1FF) 75%,transparent)) drop-shadow(0 0 7px color-mix(in srgb,var(--sc,#C4A1FF) 35%,transparent));'
+        + 'transform-origin:var(--tx,16px) calc(100% + 9px);opacity:0;transform:translateY(26px) scale(.15) rotate(-14deg);will-change:transform,opacity}'
         // хвостик-«хоботок»: треугольник со скруглёнными углами, кончик чуть ниже и левее — к голове совы
         + Q + '.lg-say-b::after{content:"";position:absolute;left:calc(var(--tx,16px) - 3px);bottom:-8px;width:14px;height:10px;background:var(--bgB);'
         + "clip-path:path('M0,0 H14 C10,1.6 6.2,4.8 3,8.8 C1.9,10.2 0.3,10 0.4,8.3 C0.7,5.4 1.1,2.6 0,0 Z')}"
         + Q + '.lg-say-b > span{position:relative;display:block}'
-        + Q + '.lg-say-b.v{animation:lgSayIn .38s cubic-bezier(.2,.9,.3,1.15) forwards,lgSayBob 3.4s .4s ease-in-out infinite}'
-        + Q + '.lg-say-b.h{animation:lgSayOut .26s ease-in forwards}'
-        + '@keyframes lgSayIn{0%{opacity:0;transform:translateY(6px) scale(.92)}100%{opacity:1;transform:none}}'
-        + '@keyframes lgSayOut{0%{opacity:1;transform:none}100%{opacity:0;transform:translateY(4px) scale(.95)}}'
+        + Q + '.lg-say-b.v{animation:lgSayIn .62s cubic-bezier(.25,.8,.3,1) forwards,lgSayBob 3.4s .62s ease-in-out infinite}'
+        + Q + '.lg-say-b.h{animation:lgSayOut .46s cubic-bezier(.5,0,.75,.4) forwards}'
+        + '@keyframes lgSayIn{0%{opacity:0;transform:translateY(26px) scale(.15) rotate(-14deg)}30%{opacity:1}68%{transform:translateY(-3px) scale(1.04) rotate(2deg)}100%{opacity:1;transform:none}}'
+        + '@keyframes lgSayOut{0%{opacity:1;transform:none}28%{opacity:1;transform:translateY(-3px) scale(1.04) rotate(-2deg)}80%{opacity:1}100%{opacity:0;transform:translateY(26px) scale(.15) rotate(12deg)}}'
         + '@keyframes lgSayBob{0%,100%{translate:0 0}50%{translate:0 -2px}}';
     document.head.appendChild(sst);
     const say = document.createElement('div');
@@ -465,7 +469,7 @@
         if (now) { [sayB, ...dots].forEach(e => e.classList.remove('v', 'h')); say.style.display = 'none'; return; }
         const swap = (e) => { if (e.classList.contains('v')) { e.classList.remove('v'); e.classList.add('h'); } };
         swap(sayB);
-        sayStep(() => { say.style.display = 'none'; [sayB, ...dots].forEach(e => e.classList.remove('v', 'h')); }, 300);
+        sayStep(() => { say.style.display = 'none'; [sayB, ...dots].forEach(e => e.classList.remove('v', 'h')); }, 500);
     }
     function stop() {
         sayHide(true);
