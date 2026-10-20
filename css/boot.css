@@ -57,4 +57,5 @@ html.booting #menuHalo { visibility: hidden; }
 #menuHalo .mh { position: absolute; left: 50%; top: 50%; width: 360px; height: 360px; margin: -180px 0 0 -180px; zoom: var(--menu-zoom, 1); transform: scale(0.88); transform-origin: 50% 50%; }
 #menuHalo .mh::before { content: ''; position: absolute; left: 50%; top: 50%; width: 534px; height: 534px; margin: -267px 0 0 -267px; border-radius: 50%; background: radial-gradient(circle, rgba(146, 72, 251, 0.40) 0%, rgba(106, 32, 212, 0.20) 45%, transparent 70%); animation: blHalo 3s ease-in-out infinite; }
 #bootLoader.handoff .bl-owlbox::before { visibility: hidden; }   /* при переходе в меню свечение берёт на себя #menuHalo */
-#bootLoader .bl-owlbox::before { translate: var(--hx, 0px) var(--hy, 0px); filter: opacity(var(--ho, 1)); }   /* v0.13.82: свечение следует за совой и тает, когда она улетает */
+#bootLoader .bl-owlbox::before { left: calc(50% + var(--hx, 0px)); top: calc(50% + var(--hy, 0px)); -webkit-filter: opacity(var(--ho, 1)); filter: opacity(var(--ho, 1)); }   /* v0.13.82: свечение следует за совой и тает, когда она улетает */
+#menuHalo { display: none !important; }   /* v0.13.83: в меню свечения нет */
