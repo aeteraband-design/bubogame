@@ -639,3 +639,25 @@ html #rouletteModal > .glass-panel { max-width: calc(380px * var(--menu-zoom, 1)
 #quizModal #qzWin .qz-lvls.n5 .qz-lv b{font-size:9.5px;letter-spacing:0}
 /* v0.13.58: обводка вариантов ответа — в цвет темы, тусклее обводки карточки вопроса */
 #quizModal #qzWin .qz-o:not(.ok):not(.bad){border-color:color-mix(in srgb,var(--tc,#A878F5) 28%,transparent)}
+
+/* v0.13.79: «Правила» и «Настройки» — стекло с размытием, как у карточек меню; «Настройки» в фиолетовом тоне (как «GAME») */
+#openRulesBtn, #openSettingsBtn { background: rgba(36, 10, 66, 0.55) !important; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+#openSettingsBtn { box-shadow: 0 0 14px rgba(168, 85, 247, 0.12) !important; }
+.gfx-low #openRulesBtn, .gfx-low #openSettingsBtn { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgba(36, 10, 66, 0.85) !important; }
+/* v0.13.79: в игре кнопки музыки больше нет — панель сверху чуть крупнее (×1,1) */
+#topHud #musicToggleBtn { display: none !important; }
+#topHud { zoom: calc(var(--ui-zoom, 1) * 1.1); }
+#buffBar { top: calc(3.5rem + 6px); }
+/* v0.13.79: кнопки главного меню на столько же крупнее: 36 → 40 px */
+#startScreen #openRouletteBtn.rw-menu-btn, #startScreen #openQuizBtn.rw-menu-btn, #startScreen #openShopBtn.rw-menu-btn { width: 40px !important; height: 40px !important; border-radius: 13px !important; }
+#startScreen #openRouletteBtn.rw-menu-btn { right: 14px !important; }
+#startScreen #openQuizBtn.rw-menu-btn { right: 62px !important; }
+#startScreen #openShopBtn.rw-menu-btn { right: 110px !important; }
+#startScreen #openRouletteBtn.rw-menu-btn i, #startScreen #openShopBtn.rw-menu-btn i { font-size: 16.5px !important; }
+#startScreen #openQuizBtn.rw-menu-btn i.fa-comments { font-size: 15.5px !important; }
+#menuCoins { height: 40px !important; border-radius: 13px !important; gap: 7px !important; padding: 0 12px 0 10px !important; font-size: 15.5px !important; }
+#menuCoins .mc-coin { font-size: 16.5px !important; }
+#menuCoins .mc-tw:nth-of-type(2) { left: 7px !important; top: 3px !important; }
+#menuCoins .mc-tw:nth-of-type(3) { left: 25px !important; top: 23px !important; }
+#openSettingsBtn { border-color: rgba(168, 85, 247, 0.45) !important; }
+#openSettingsBtn .fa-gear { color: #A855F7 !important; }
