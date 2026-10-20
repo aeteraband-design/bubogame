@@ -39,7 +39,7 @@ function menuFxLogoRect() {
 const MFX_COLORS = ['#22C55E', '#84CC16', '#FACC15', '#FB923C', '#EF4444', '#E11D48', '#38BDF8', '#A855F7', '#F472B6', '#2DD4BF'];
 function menuFxFireworks() {
     if (typeof launchFireworkShow !== 'function') return;
-    const n = [1, 3, 5][Math.floor(Math.random() * 3)];
+    const n = 1 + Math.floor(Math.random() * 6);   // от 1 до 6 ракет, как в игре
     const before = fireworks.length;
     launchFireworkShow(MFX_COLORS[0], n);
     const pool = MFX_COLORS.slice();
@@ -57,13 +57,12 @@ function menuFxTick(speed) {
     if (!MFX.next) menuFxSchedule(18, 35);
     const busy = (waterTime > 0) || (crystalTime > 0) || (typeof fireworks !== 'undefined' && fireworks.length > 0);
     if (!busy && now >= MFX.next && !document.hidden) {
-        let kinds = ['fw', 'water', 'fire'].filter((k) => k !== MFX.last);
-        const k = kinds[Math.floor(Math.random() * kinds.length)];
+        const k = 'fw';   // в меню — только фейерверки (вода и огонь отключены)
         MFX.last = k;
         if (k === 'fw') menuFxFireworks();
         else if (k === 'water') { waterTime = MFX.WATER_SEC * 60; WATERFX.id++; try { AudioFX.playWaterStart(); } catch (e) {} }
         else { crystalTime = MFX.FIRE_SEC * 60; CRYSTAL.id++; try { AudioFX.playPipesHeat(); } catch (e) {} }
-        menuFxSchedule(30, 55);
+        menuFxSchedule(20, 40);
     }
     // вода и огонь работают с трубами меню (на время расчёта подставляем их вместо игровых)
     const savedPipes = pipes, ox = owl.x;
