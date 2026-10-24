@@ -97,7 +97,10 @@ QUIZ_QUESTIONS.forEach(q => { if (!q.diff) q.diff = QZ_DIFF.e.includes(q.id) ? '
 const QUIZ_PER_DAY = 10, QZ_READ = 5, QZ_ANSWER = 10;   // вопросов в день; секунд на чтение и на ответ
 const QUIZ_SEEN_KEY = 'bubo_quiz_seen', QUIZ_DAY_KEY = 'bubo_quiz_day10';
 const QZ_LETTERS = ['A', 'B', 'C', 'D'];
-const QZ_BALL_COL = { A: '#FE7600', B: '#A855F7', C: '#38BDF8', D: '#E879F9' };   // D — светло-фиолетовый, чтобы не путался с красным «неверно»
+// четыре максимально разных цвета (без зелёного и красного — это «верно»/«неверно»): оранжевый, синий, жёлтый, розовый
+const QZ_BALL_COL = { A: '#FF7A00', B: '#2F6BFF', C: '#FFD000', D: '#FF4FB8' };
+const QZ_BALL_TXT = { C: '#2A1600' };   // на жёлтом — тёмная буква, иначе плохо видно
+const qzTxt = (L) => (QZ_BALL_TXT[L] ? `;color:${QZ_BALL_TXT[L]};text-shadow:none` : '');
 
 // старый «квиз-мир» убран: заглушки для мест, которые его вызывали
 const QZ = { on: false, phase: '' };
@@ -206,6 +209,7 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-o{display:flex;align-items:center;gap:7px;min-height:0;box-sizing:border-box;padding:7px;border-radius:12px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:11.5px;line-height:1.22;transition:all .25s;min-width:0}
 #qzWin .qz-o span{display:block;min-width:0;overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
 #qzWin .qz-o b{flex:0 0 auto;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10.5px;color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+#qzWin .qz-o:not(.ok):not(.bad){border-color:color-mix(in srgb,var(--c) 65%,transparent);background:color-mix(in srgb,var(--c) 12%,rgba(20,3,38,.6))}
 #qzWin .qz-o.ok{background:rgba(34,197,94,.2);border-color:#22C55E}
 #qzWin .qz-o.bad{background:rgba(239,68,68,.2);border-color:#EF4444}
 #qzWin .qz-o.dim{opacity:.45}
@@ -610,9 +614,9 @@ function qzRenderQ(reveal) {
     const idx = reveal ? d.ids.length - 1 : d.ids.length;
     const opts = QZ_LETTERS.map((L, i) => {
         const cls = reveal ? (L === corL ? ' ok' : L === pickL ? ' bad' : ' dim') : '';
-        return `<div class="qz-o${cls}"><b style="background:${QZ_BALL_COL[L]}">${L}</b><span>${q.options[ord[i]]}</span></div>`;
+        return `<div class="qz-o${cls}" style="--c:${QZ_BALL_COL[L]}"><b style="background:${QZ_BALL_COL[L]}${qzTxt(L)}">${L}</b><span>${q.options[ord[i]]}</span></div>`;
     }).join('');
-    const balls = QZ_LETTERS.map(L => `<button type="button" class="qz-ball${reveal ? (L === corL ? ' ok' : L === pickL ? ' bad' : '') + (L === pickL ? ' picked' : '') : ''}" data-qa="${L}" style="--c:${QZ_BALL_COL[L]}">${L}</button>`).join('');
+    const balls = QZ_LETTERS.map(L => `<button type="button" class="qz-ball${reveal ? (L === corL ? ' ok' : L === pickL ? ' bad' : '') + (L === pickL ? ' picked' : '') : ''}" data-qa="${L}" style="--c:${QZ_BALL_COL[L]}${qzTxt(L)}">${L}</button>`).join('');
     const C = 2 * Math.PI * 15;
     const ring = `<div class="qz-tm" id="qzTm"><svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="15"/><circle class="fg" id="qzTmFg" cx="18" cy="18" r="15" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${C.toFixed(2)}"/></svg><i class="fa-solid fa-eye" id="qzTmI"></i><b id="qzTmN"></b></div>`;
     let note = '', btns = '';

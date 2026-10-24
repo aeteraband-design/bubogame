@@ -726,9 +726,13 @@ function renderBuffBar(bar, list) {
     els.forEach((el, k) => {
         if (keep.has(k)) return;
         el.dataset.leaving = '1';
-        const orr = bar.clientWidth - el.offsetLeft - el.offsetWidth, ot = el.offsetTop;   // запоминаем место ДО отрыва от потока — иначе таймер прыгает наверх
-        el.style.position = 'absolute'; el.style.left = 'auto'; el.style.right = orr + 'px'; el.style.top = ot + 'px';   // таймеры прижаты вправо
-        el.style.transition = 'opacity 0.25s ease, transform 0.25s ease'; el.style.opacity = '0'; el.style.transform = 'scale(0.9)';
+        // запоминаем место ДО отрыва от потока и держим таймер ровно там (со своей стороны экрана), затем быстро растворяем — никуда не улетает
+        const lft = document.documentElement.classList.contains('hud-ll');
+        const ol = el.offsetLeft, orr = bar.clientWidth - ol - el.offsetWidth, ot = el.offsetTop;
+        el.style.transition = 'none'; el.style.position = 'absolute'; el.style.top = ot + 'px';
+        if (lft) { el.style.left = ol + 'px'; el.style.right = 'auto'; } else { el.style.left = 'auto'; el.style.right = orr + 'px'; }
+        void el.offsetWidth;
+        el.style.transition = 'opacity 0.22s ease'; el.style.opacity = '0';
         setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 270);
     });
     // обновляем / добавляем в нужном порядке

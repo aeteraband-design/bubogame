@@ -637,6 +637,7 @@ function alignBuffBar() {
         const barEdge = () => { const r = bb.getBoundingClientRect(); return left ? r.left : r.right; };
         const gap = () => (left ? 1 : -1) * (barEdge() - hudEdge());   // 0 — края совпали
         const put = (v) => bb.style.setProperty(prop, Math.max(-40, v).toFixed(2) + 'px', 'important');
+        const trSave = bb.style.transition; bb.style.transition = 'none';   // без анимации: иначе замер идёт по старому месту, а панель «едет»
         bb.style.removeProperty(other);
         let x = parseFloat(getComputedStyle(bb)[prop]); if (!isFinite(x)) x = 0;
         for (let i = 0; i < 3; i++) {                 // два-три шага секущей: подходит для любого масштаба экрана
@@ -646,6 +647,7 @@ function alignBuffBar() {
             x = x - g0 / s;
         }
         put(x);
+        void bb.offsetWidth; bb.style.transition = trSave;
     } catch (e) {}
 }
 window.addEventListener('resize', () => setTimeout(alignBuffBar, 60));
