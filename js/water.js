@@ -112,6 +112,8 @@ function waterMistSprite() {
     g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
     return (__wMist = c);
 }
+// пар рисуется один раз за кадр: в дождь вода перерисовывается поверх серой пелены, а пар — нет (он и так светлый)
+let __steamOn = true;
 // за трубами: штрихи потока, капли, пузырьки
 function drawWater() {
     if (!waterStreams.length) return;
@@ -119,7 +121,7 @@ function drawWater() {
     ctx.save();
     {   // пар, выходящий из нижней трубы — за трубами: появляется прямо из устья
         const mist = waterMistSprite();
-        for (const st of waterStreams) { const p = st.pipe; if (!p) continue; for (const m of st.mist) { if (!m.back) continue; ctx.globalAlpha = Math.max(0, m.a); ctx.drawImage(mist, p.x + m.x - m.r, m.y - m.r, m.r * 2, m.r * 2); } }
+        if (__steamOn) for (const st of waterStreams) { const p = st.pipe; if (!p) continue; for (const m of st.mist) { if (!m.back) continue; ctx.globalAlpha = Math.max(0, m.a); ctx.drawImage(mist, p.x + m.x - m.r, m.y - m.r, m.r * 2, m.r * 2); } }
         ctx.globalAlpha = 1;
     }
     ctx.lineCap = 'round';
@@ -155,7 +157,7 @@ function drawWaterFront() {
     for (const s of waterStreams) {
         const p = s.pipe; if (!p) continue;
         const x = p.x + s.fx * p.width, w = s.w;
-        for (const m of s.mist) {
+        for (const m of (__steamOn ? s.mist : [])) {
             if (m.back) continue;   // пар из нижней трубы рисуется за трубами (drawWater)
             ctx.globalAlpha = Math.max(0, m.a);
             ctx.drawImage(mist, p.x + m.x - m.r, m.y - m.r, m.r * 2, m.r * 2);
@@ -403,13 +405,14 @@ function waterUpdate(speed, squeeze) {
         if (s.ramp > 0.02 && gfxQuality !== 'low') {
             const R = s.ramp;
             // оптимизация: немного крупных медленных клубов вместо множества мелких — тот же туман, в разы меньше рисования
-            const cap = (gfxQuality === 'high' ? 14 : 10) + lv;
-            if (Math.random() < (0.12 + lv * 0.03) * R * dt && s.mist.length < cap) {
+            // меньше клубов, но крупнее: площадь тумана та же, а частиц вдвое меньше (быстрее при дожде)
+            const cap = (gfxQuality === 'high' ? 8 : 6) + (lv >> 1);
+            if (Math.random() < (0.06 + lv * 0.015) * R * dt && s.mist.length < cap) {
                 const f = Math.pow(Math.random(), 0.6);   // ближе к низу — чаще
-                s.mist.push({ x: cx + (Math.random() - 0.5) * W * 0.9, y: y0 + 14 + f * (yb - y0 - 34), r: 18 + 12 * f + Math.random() * 8, a: (0.13 + 0.14 * f + lv * 0.012) * R, vy: -0.04 - Math.random() * 0.06, vx: (Math.random() - 0.5) * 0.15, dec: 0.0015 });
+                s.mist.push({ x: cx + (Math.random() - 0.5) * W * 0.9, y: y0 + 14 + f * (yb - y0 - 34), r: 26 + 16 * f + Math.random() * 10, a: (0.11 + 0.12 * f + lv * 0.01) * R, vy: -0.04 - Math.random() * 0.06, vx: (Math.random() - 0.5) * 0.15, dec: 0.0013 });
             }
-            if (Math.random() < 0.1 * R * dt && s.mist.length < cap + 4)   // из нижней трубы
-                s.mist.push({ back: 1, x: cx + (Math.random() - 0.5) * W * 0.8, y: yb + 12, r: 16 + Math.random() * 10, a: (0.24 + lv * 0.015) * R, vy: -0.18 - Math.random() * 0.12, vx: (Math.random() - 0.5) * 0.2, dec: 0.0022 });
+            if (Math.random() < 0.05 * R * dt && s.mist.length < cap + 2)   // из нижней трубы
+                s.mist.push({ back: 1, x: cx + (Math.random() - 0.5) * W * 0.8, y: yb + 12, r: 24 + Math.random() * 12, a: (0.2 + lv * 0.012) * R, vy: -0.18 - Math.random() * 0.12, vx: (Math.random() - 0.5) * 0.2, dec: 0.002 });
         }
         // вода переливается через края нижней шляпки и стекает каплями по бокам
         if (s.hitK > 0.3 && Math.random() < 0.3 * s.hitK * dt && particles.length < 520) {

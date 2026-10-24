@@ -477,7 +477,8 @@ function stormCityLayerLight(L, li, off, y0) {
         ctx.drawImage(img, sx * MS, sy * MS, sw * MS, sh * MS, x0 + sx, y0 + sy, sw, sh);
     };
     // размытые лунные засветы по силуэтам отключены — луна теперь меняет яркость «родных» светлых граней домов (scenery.js)
-    if (window.__stormRims) for (let x = -off; x < width; x += L.tileW) {
+    // молния всегда подсвечивает кромки домов (даже когда лунные засветы выключены): только на миг, по вспышке
+    if (window.__stormRims || fl > 0.01) for (let x = -off; x < width; x += L.tileW) {
         for (let bi = 0; bi < L.bodies.length; bi++) {
             const bd = L.bodies[bi], bx = x + bd.x;
             if (bx + bd.w + 6 < 0 || bx - 6 > width) continue;
@@ -486,7 +487,8 @@ function stormCityLayerLight(L, li, off, y0) {
             const fall = Math.exp(-Math.hypot(vx, vy * 0.8) / reach);
             // вспышка подсвечивает дома рядом с разрядом сильнее
             const fk = fl > 0.01 ? 1 + 1.2 * fl * Math.exp(-Math.abs(cx - STORM.flashX) / 380) : 1;
-            const k = base * fk * Math.min(1, moonK * (0.25 + 0.75 * fall) + 0.35 * fl);
+            // без лунных засветов — только вспышка: кромки ярко вспыхивают у разряда и гаснут вместе с ней
+            const k = window.__stormRims ? base * fk * Math.min(1, moonK * (0.25 + 0.75 * fall) + 0.35 * fl) : fl * fk * (0.55 + 0.45 * fall) * 1.1;
             const sx = Math.max(0, bd.x - 6), sw = Math.min(L.tileW, bd.x + bd.w + 6) - sx;
             const sy = Math.max(0, L.H - bd.h - 30), sh = L.H - sy;
             // кромки крыш: тем ярче, чем выше луна над крышей
@@ -544,9 +546,11 @@ function stormDrawHotFx(k, cz) {
         if (hot) { ctx.globalAlpha = 0.5 * k; drawCrystals(); ctx.globalAlpha = 1; }   // огоньки — в своём цвете, чуть светятся
         if (wet) {   // вода — в своих цветах и чуть светится, будто сзади луна
             ctx.globalAlpha = Math.min(1, 0.75 * k);
+            __steamOn = false;   // пар уже нарисован в основном проходе — здесь только вода (быстрее)
             if (typeof drawWater === 'function') drawWater();
             ctx.globalAlpha = Math.min(1, 0.75 * k);
             if (typeof drawWaterFront === 'function') drawWaterFront();
+            __steamOn = true;
             ctx.globalCompositeOperation = 'lighter';
             for (const st of waterStreams) {
                 const p = st.pipe; if (!p || !st.on) continue;
@@ -571,10 +575,11 @@ function stormDrawHotFx(k, cz) {
             for (const p of pipes) {
                 if (p.x + p.width < -40 || p.x > width + 40) continue;
                 const yT = p.top + sq2, yB = height - (p.bottom + sq2), w = p.width;
-                ctx.globalCompositeOperation = 'color'; ctx.globalAlpha = Math.min(1, 0.85 * rk * k); ctx.fillStyle = '#FF3A2E';
-                ctx.fillRect(p.x - 6, yT - 20, w + 12, 21); ctx.fillRect(p.x - 6, yB - 1, w + 12, 21);
-                ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, 0.22 * rk * k);
-                const R = w * 0.75; ctx.drawImage(hs, p.x + w / 2 - R, yT - R * 0.45, R * 2, R * 0.9); ctx.drawImage(hs, p.x + w / 2 - R, yB - R * 0.45, R * 2, R * 0.9);
+                // в дождь свечение труб шире и ярче (только в дождь)
+                ctx.globalCompositeOperation = 'color'; ctx.globalAlpha = Math.min(1, 0.9 * rk * k); ctx.fillStyle = '#FF3A2E';
+                ctx.fillRect(p.x - 8, yT - 30, w + 16, 31); ctx.fillRect(p.x - 8, yB - 1, w + 16, 31);
+                ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, 0.4 * rk * k);
+                const R = w * 1.0; ctx.drawImage(hs, p.x + w / 2 - R, yT - R * 0.5, R * 2, R * 1.1); ctx.drawImage(hs, p.x + w / 2 - R, yB - R * 0.5, R * 2, R * 1.1);
             }
             ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
         }

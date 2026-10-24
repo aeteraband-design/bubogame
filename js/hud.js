@@ -628,15 +628,17 @@ function alignBuffBar() {
         const bb = document.getElementById('buffBar'), hud = document.getElementById('topHud');
         if (!bb || !hud || !hud.offsetWidth) return;
         const left = document.documentElement.classList.contains('hud-ll');
-        const rs = [...hud.children].filter(e => e.offsetWidth).map(e => e.getBoundingClientRect());
-        if (!rs.length) return;
-        const par = bb.offsetParent || bb.parentElement, pr = par.getBoundingClientRect(), pz = par.offsetWidth ? pr.width / par.offsetWidth : 1;
+        const kids = [...hud.children].filter(e => e.offsetWidth);
+        if (!kids.length) return;
+        const par = bb.offsetParent || bb.parentElement;
+        // считаем через offset* (не getBoundingClientRect): на iOS Safari zoom и transform дают сдвиг, из-за которого таймеры уезжали
+        const ox = (el) => { let x = 0, n = el; while (n && n !== par) { x += n.offsetLeft; n = n.offsetParent; } return x; };
         if (left) {
-            const L = Math.min(...rs.map(r => r.left));
-            bb.style.setProperty('left', ((L - pr.left) / pz).toFixed(1) + 'px', 'important'); bb.style.removeProperty('right');
+            const L = Math.min(...kids.map(e => ox(e)));
+            bb.style.setProperty('left', L + 'px', 'important'); bb.style.removeProperty('right');
         } else {
-            const R = Math.max(...rs.map(r => r.right));
-            bb.style.setProperty('right', ((pr.right - R) / pz).toFixed(1) + 'px', 'important'); bb.style.removeProperty('left');
+            const R = Math.max(...kids.map(e => ox(e) + e.offsetWidth));
+            bb.style.setProperty('right', Math.max(0, par.offsetWidth - R) + 'px', 'important'); bb.style.removeProperty('left');
         }
     } catch (e) {}
 }

@@ -164,9 +164,9 @@ function crystalMistUpdate(speed, squeeze) {
     if (rk > 0.1 && gfxQuality !== 'low') {
         for (const p of pipes) {
             if (p.x + p.width < -30 || p.x > width + 30) continue;
-            if (Math.random() < 0.22 * rk * dt && crystalMist.length < 60) {
+            if (Math.random() < 0.12 * rk * dt && crystalMist.length < 36) {
                 const top = Math.random() < 0.5, y0 = top ? p.top + squeeze : height - (p.bottom + squeeze);
-                crystalMist.push({ x: p.x + 6 + Math.random() * (p.width - 12), y: y0 + (top ? 4 : -4), vy: (top ? 1 : -1) * (0.12 + Math.random() * 0.3), vx: (Math.random() - 0.5) * 0.2, r: 10 + Math.random() * 10, a: 0.22 + 0.16 * rk });
+                crystalMist.push({ x: p.x + 6 + Math.random() * (p.width - 12), y: y0 + (top ? 4 : -4), vy: (top ? 1 : -1) * (0.12 + Math.random() * 0.3), vx: (Math.random() - 0.5) * 0.2, r: 14 + Math.random() * 12, a: 0.2 + 0.14 * rk });
             }
         }
     }
