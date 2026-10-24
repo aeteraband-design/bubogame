@@ -467,6 +467,7 @@ function drawCity() {
                 const mp = window.__moonPos, mx = mp ? mp[0] + mp[2] / 2 : width * 0.66;
                 const low = 1 - moonLit, R = 150 + 260 * moonLit, far = li === 0 && citySprites.length > 1;
                 const lay = far ? 0.75 : 1;
+                const flc = (typeof STORM !== 'undefined' && STORM.cityF) || 0, flX = typeof STORM !== 'undefined' ? STORM.flashX : 0;   // вспышка молнии
                 for (let x = -off; x < width; x += L.tileW) {
                     if (x > width) break;
                     for (let bi = 0; bi < L.bodies.length; bi++) {
@@ -474,10 +475,18 @@ function drawCity() {
                         if (ex + ew < 0 || ex > width) continue;
                         const dx = (ex + ew / 2 - mx) / R, spot = Math.exp(-dx * dx);
                         const a = dryK * lay * (0.03 * moonLit + spot * (0.09 * low + 0.04 * moonLit) - 0.04 * low * (1 - spot));
-                        if (Math.abs(a) < 0.004) continue;
-                        ctx.fillStyle = a > 0 ? `rgba(215, 195, 255, ${a.toFixed(4)})` : `rgba(6, 1, 18, ${(-a).toFixed(4)})`;
-                        ctx.fillRect(ex, y0 + (L.H - bd.h), ew, bd.h);
-                        ctx.fillRect(x + bd.x, y0 + (L.H - bd.h), bd.w, 2);   // светлый карниз сверху — так же
+                        if (Math.abs(a) >= 0.004) {
+                            ctx.fillStyle = a > 0 ? `rgba(215, 195, 255, ${a.toFixed(4)})` : `rgba(6, 1, 18, ${(-a).toFixed(4)})`;
+                            ctx.fillRect(ex, y0 + (L.H - bd.h), ew, bd.h);
+                            ctx.fillRect(x + bd.x, y0 + (L.H - bd.h), bd.w, 2);   // светлый карниз сверху — так же
+                        }
+                        // молния: те же чёткие грани (правая стена и карниз) на миг вспыхивают холодным светом, без размытия; ближе к разряду — ярче
+                        if (flc > 0.01) {
+                            const fa = Math.min(0.55, flc * lay * (0.14 + 0.32 * Math.exp(-Math.abs(ex - flX) / 420)));
+                            ctx.fillStyle = `rgba(205, 225, 255, ${fa.toFixed(4)})`;
+                            ctx.fillRect(ex, y0 + (L.H - bd.h), ew, bd.h);
+                            ctx.fillRect(x + bd.x, y0 + (L.H - bd.h), bd.w, 2);
+                        }
                     }
                 }
             }
@@ -1148,6 +1157,12 @@ function pipeWater(pipe, dripY, topCapY, bottomY, capX, capW) {
             ctx.globalAlpha = 0.85; ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx.fill();
             if (d.y >= bottomY || d.y > height) {
                 if (d.y >= bottomY) { splash(d.x, bottomY, 5, 1); W.beads.push({ c: 1, x: d.x, rm: 0.9 + Math.random() * 0.6, age: 0, life: 200 + Math.random() * 200 }); }
+                W.drip = null;
+            }
+            // капля попала в сову: маленький всплеск, на сове остаётся капелька и стекает по ней (в щите — просто разбивается о щит)
+            else if (typeof gameActive !== 'undefined' && gameActive && owl.visible !== false && Math.hypot(d.x - owl.x, d.y - owl.y) < owl.radius * 1.05) {
+                if (!(typeof shieldTime !== 'undefined' && shieldTime > 0) && typeof waterDripOwl === 'function') waterDripOwl(d.x, d.y);
+                splash(d.x, d.y, 3, 0.8);
                 W.drip = null;
             }
         }

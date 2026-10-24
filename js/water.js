@@ -223,6 +223,15 @@ function waterWetOwl(hx, hy) {
     for (let i = 0; i < P.length; i++) { const d = (P[i][0] - lx) ** 2 + (P[i][1] - ly) ** 2; if (d < bd) { bd = d; bi = i; } }
     B.push({ t: bi + Math.random() * 0.8, r: 0.4 + Math.random() * 1.15, age: 0, v: 0 });
 }
+// капля, сорвавшаяся с трубы, попала в сову: капелька садится в месте удара и стекает по контуру (сова целиком при этом не промокает)
+function waterDripOwl(hx, hy) {
+    const P = (typeof OWL_BODY_PTS !== 'undefined') ? OWL_BODY_PTS.p : null; if (!P) return;
+    const lx = (hx - owl.x) / 1.29, ly = (hy - owl.y) / 1.29;
+    let bi = 0, bd = 1e9;
+    for (let i = 0; i < P.length; i++) { const d = (P[i][0] - lx) ** 2 + (P[i][1] - ly) ** 2; if (d < bd) { bd = d; bi = i; } }
+    const B = owl._wb || (owl._wb = []);
+    if (B.length < 18) B.push({ t: bi + Math.random() * 0.5, r: 0.9 + Math.random() * 0.7, age: 0, v: 0, own: 1 });
+}
 function waterUpdate(speed, squeeze) {
     const dt = dtMult, shz = typeof shazamBusy === 'function' && shazamBusy();
     let lv0 = 0; try { lv0 = getDifficultyIndex(); } catch (e) {}

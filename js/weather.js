@@ -126,7 +126,7 @@ function stormUpdate() {
         if (stormInMenu() || (go && !go.classList.contains('hidden'))) wxMarkFirstDone();
     }
     if (stormInMenu()) {
-        if (stormIntensity !== 0 || stormCover !== 0 || WX.left >= 0) stormClearNow();
+        if (stormIntensity !== 0 || stormCover !== 0 || WX.left >= 0 || (STORM.wet || 0) > 0) stormClearNow();   // в меню сова всегда сухая
         if (STORM.sndRain || STORM.sndWind) { STORM.sndRain = STORM.sndWind = 0; try { AudioFX.weatherSet(0, 0, false, true); } catch (e) {} }   // в меню звук дождя стихает за ~1 с
         return;
     }
@@ -477,8 +477,8 @@ function stormCityLayerLight(L, li, off, y0) {
         ctx.drawImage(img, sx * MS, sy * MS, sw * MS, sh * MS, x0 + sx, y0 + sy, sw, sh);
     };
     // размытые лунные засветы по силуэтам отключены — луна теперь меняет яркость «родных» светлых граней домов (scenery.js)
-    // молния всегда подсвечивает кромки домов (даже когда лунные засветы выключены): только на миг, по вспышке
-    if (window.__stormRims || fl > 0.01) for (let x = -off; x < width; x += L.tileW) {
+    // размытые засветы по силуэтам выключены: молния подсвечивает чёткие «родные» грани домов (scenery.js)
+    if (window.__stormRims) for (let x = -off; x < width; x += L.tileW) {
         for (let bi = 0; bi < L.bodies.length; bi++) {
             const bd = L.bodies[bi], bx = x + bd.x;
             if (bx + bd.w + 6 < 0 || bx - 6 > width) continue;
@@ -487,8 +487,7 @@ function stormCityLayerLight(L, li, off, y0) {
             const fall = Math.exp(-Math.hypot(vx, vy * 0.8) / reach);
             // вспышка подсвечивает дома рядом с разрядом сильнее
             const fk = fl > 0.01 ? 1 + 1.2 * fl * Math.exp(-Math.abs(cx - STORM.flashX) / 380) : 1;
-            // без лунных засветов — только вспышка: кромки ярко вспыхивают у разряда и гаснут вместе с ней
-            const k = window.__stormRims ? base * fk * Math.min(1, moonK * (0.25 + 0.75 * fall) + 0.35 * fl) : fl * fk * (0.55 + 0.45 * fall) * 1.1;
+            const k = base * fk * Math.min(1, moonK * (0.25 + 0.75 * fall) + 0.35 * fl);
             const sx = Math.max(0, bd.x - 6), sw = Math.min(L.tileW, bd.x + bd.w + 6) - sx;
             const sy = Math.max(0, L.H - bd.h - 30), sh = L.H - sy;
             // кромки крыш: тем ярче, чем выше луна над крышей
@@ -501,7 +500,7 @@ function stormCityLayerLight(L, li, off, y0) {
     }
     // вспышка: весь слой на миг чуть светлеет
     if (fl > 0.01) {
-        ctx.globalAlpha = 0.12 * fl * (far ? 0.7 : 1);
+        ctx.globalAlpha = 0.07 * fl * (far ? 0.7 : 1);
         const kk = L.canvas.width / L.tileW;
         for (let x = -off; x < width; x += L.tileW) {
             const d0 = Math.max(0, x), d1 = Math.min(width, x + L.tileW);
@@ -747,15 +746,16 @@ function stormDrawOwlWet(g, o) {
         const b = BB[k]; b.age += dt;
         b.v = Math.min(0.09, b.v + 0.00012 * dt * b.r);   // крупная капля сползает быстрее
         b.y += b.v * dt; b.x -= b.v * 0.15 * dt;          // чуть назад по ходу полёта
-        const life = Math.min(1, b.age / 25) * (wet < 0.02 ? 0 : 1);
+        const wv = b.own ? 1 : Math.min(1, wet * 2);   // капля с трубы видна и на сухой сове
+        const life = Math.min(1, b.age / 25) * (wet < 0.02 && !b.own ? 0 : 1);
         if (!inBody(b.x, b.y + b.r) || b.age > 700 || life <= 0) { BB.splice(k, 1); continue; }
         const r = b.r * (0.5 + 0.5 * Math.min(1, b.age / 30)), st = 1 + Math.min(0.5, b.v * 8);   // в движении чуть вытягивается
         g.save(); g.translate(b.x, b.y);
-        g.globalAlpha = 0.55 * Math.min(1, wet * 2) * life; g.fillStyle = 'rgb(150, 196, 240)';
+        g.globalAlpha = 0.55 * wv * life; g.fillStyle = 'rgb(150, 196, 240)';
         g.beginPath(); g.ellipse(0, 0, r, r * st, 0, 0, Math.PI * 2); g.fill();
-        g.globalAlpha = 0.5 * Math.min(1, wet * 2) * life; g.strokeStyle = 'rgba(90, 140, 200, 0.9)'; g.lineWidth = Math.max(0.12, r * 0.18);
+        g.globalAlpha = 0.5 * wv * life; g.strokeStyle = 'rgba(90, 140, 200, 0.9)'; g.lineWidth = Math.max(0.12, r * 0.18);
         g.beginPath(); g.ellipse(0, 0, r, r * st, 0, 0.2, Math.PI - 0.2); g.stroke();   // тень снизу
-        g.globalAlpha = 0.95 * Math.min(1, wet * 2) * life; g.fillStyle = '#F4FBFF';
+        g.globalAlpha = 0.95 * wv * life; g.fillStyle = '#F4FBFF';
         g.beginPath(); g.arc(-r * 0.35, -r * 0.35 * st, Math.max(0.15, r * 0.28), 0, Math.PI * 2); g.fill();   // блик
         g.restore();
     }
@@ -769,7 +769,8 @@ function stormDrawOwlWet(g, o) {
         b.t += dir * b.v * dt;
         const [x, y, i, j] = at(b.t);
         // внизу капля срывается
-        if ((y > 13 && slope > 0.3) || b.age > 900 || wet < 0.02) {
+        const wv = b.own ? 1 : Math.min(1, wet * 2);   // капля с трубы видна и на сухой сове
+        if ((y > 13 && slope > 0.3) || b.age > 900 || (wet < 0.02 && !b.own)) {
             if (y > 13 && gameActive && typeof particles !== 'undefined') particles.push({ x: o.x + x * 1.29, y: o.y + (y + 2.7) * 1.29, vx: -0.2, vy: 1.2, color: '#ACD0F5', alpha: 0.8, size: 0.9, decay: 0.03 });
             B.splice(k, 1); continue;
         }
@@ -778,9 +779,9 @@ function stormDrawOwlWet(g, o) {
         let nx = -ty, ny = tx; if (nx * (x + 1) + ny * (y - 3) < 0) { nx = -nx; ny = -ny; }   // нормаль наружу (от центра тела)
         const out = Math.atan2(ny, nx), gr = Math.min(1, b.age / 30), r = b.r * (0.5 + 0.5 * gr);
         g.save(); g.translate(x, y); g.rotate(out + Math.PI / 2);
-        g.globalAlpha = 0.75 * Math.min(1, wet * 2); g.fillStyle = 'rgb(172, 208, 245)';
+        g.globalAlpha = 0.75 * wv; g.fillStyle = 'rgb(172, 208, 245)';
         g.beginPath(); g.ellipse(0, 0, r, r * 1.1, 0, Math.PI, 0); g.ellipse(0, 0, r, r * 0.35, 0, 0, Math.PI); g.fill();
-        g.globalAlpha = 0.9 * Math.min(1, wet * 2); g.fillStyle = '#F2FAFF';
+        g.globalAlpha = 0.9 * wv; g.fillStyle = '#F2FAFF';
         g.fillRect(-r * 0.45, -r * 0.8, Math.max(0.18, r * 0.4), Math.max(0.18, r * 0.4));
         g.restore();
     }

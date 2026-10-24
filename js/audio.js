@@ -1021,31 +1021,32 @@ const AudioFX = {
                 if (k > 0.02) {
                     const ch = dark ? [aFreq / 2, aFreq / 2 * 1.189, aFreq / 2 * 1.498] : this.menuChords[c4].map(f => rm(f) * pitchMultiplier);
                     const pool = [ch[0], ch[1], ch[2], ch[0] * 2, ch[1] * 2, ch[2] * 2];
-                    // ШАЗАМ — супергеройский электро-маршевый слой: «двойная пила» с расстройкой (толстый эпичный звук) и фильтр-свип,
-                    // героический мотив на звуках аккорда, низкий пульс баса и электрические разряды-«зигзаги» на долях
-                    // четыре разных мотива по тактам — мелодия не повторяется по кругу, как у геройского саундтрека
-                    const PATS = [[3, -1, 4, 5, -1, 4, 3, 2], [5, -1, 4, 3, -1, 2, 3, -1], [2, 3, 4, -1, 5, 4, 3, -1], [4, -1, 3, 5, -1, 4, 2, 3]];
-                    const pat = PATS[bar % 4];
-                    const pi = pat[s8];
-                    if (pi >= 0) {
-                        const f = pool[pi];
-                        [1, 1.0068].forEach((det) => {
-                            const os = this.ctx.createOscillator(), lp = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-                            os.type = 'sawtooth'; os.frequency.setValueAtTime(f * det, now);
-                            lp.type = 'lowpass'; lp.Q.value = 5; lp.frequency.setValueAtTime(700, now); lp.frequency.exponentialRampToValueAtTime(4200, now + 0.1 * len);
-                            g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime((lvl >= 4 ? 0.045 : 0.035) * k, now + 0.008); g.gain.exponentialRampToValueAtTime(0.001, now + 0.2 * len);
-                            os.connect(lp); lp.connect(g); g.connect(out); os.start(now); os.stop(now + 0.22 * len);
-                        });
-                    }
-                    // низкий пульс баса: квадратная октава вниз на каждом шестнадцатом — ощущение полёта
-                    tone('square', ch[0] / 2, 0.03 * k, 0.07 * len);
-                    // электрические зигзаги: треск-разряд на каждой второй восьмой, свист-свип вверх на первой доле такта
-                    if (s8 % 2 === 0) this._noiseBand(now, 0.06, 3200, 7600, 2.5, 0.05 * k, 0.003);
-                    if (s8 === 0) this._toneSweep(now, 0.45 * len, 260, 960, 500, 4200, 0.03 * k, 'sawtooth', 0.04);
-                    if (s8 === 2 || s8 === 6) this._noiseBand(now, 0.05, 4200, 9000, 3, 0.04 * k, 0.002);   // короткие вспышки-искры между нотами
-                    // Хард и выше: силовой аккорд-удар в начале такта и «вжух» к следующему такту
-                    if (lvl >= 4 && s8 === 0) [ch[0], ch[0] * 1.498].forEach(f => tone('square', f, 0.04 * k, 0.3 * len));
-                    if (lvl >= 4 && s8 === 6) noise('bandpass', 900, 0.05 * k, 0.28 * len, 1.1);
+                    // ШАЗАМ — геройская «электро-фанфара»: мягкая «медь» (квадрат + треугольник через фильтр, без «пилы»),
+                    // скачущий бас октавами, марш-барабан и редкие электрические разряды. Без высоких «пиков» — не путается со звуком сбора
+                    const brass = (f, vol, dur) => {
+                        const os = this.ctx.createOscillator(), o2 = this.ctx.createOscillator(), lp = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+                        os.type = 'square'; os.frequency.setValueAtTime(f, now);
+                        o2.type = 'triangle'; o2.frequency.setValueAtTime(f / 2, now);
+                        lp.type = 'lowpass'; lp.Q.value = 0.7; lp.frequency.setValueAtTime(500, now); lp.frequency.linearRampToValueAtTime(1500, now + 0.06); lp.frequency.exponentialRampToValueAtTime(800, now + dur);
+                        g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime(vol, now + 0.03); g.gain.setValueAtTime(vol, now + dur * 0.6); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                        os.connect(lp); o2.connect(lp); lp.connect(g); g.connect(out);
+                        os.start(now); o2.start(now); os.stop(now + dur + 0.02); o2.stop(now + dur + 0.02);
+                    };
+                    // ритм фанфары на такт: ТАА — та-ТАА — та-та (как у героев в кино); ноты — звуки аккорда, через такт мотив поднимается
+                    const up = bar % 2;
+                    const FAN = { 0: [ch[0], 0.42], 3: [ch[2], 0.14], 4: [up ? ch[0] * 2 : ch[1] * 2, 0.5], 6: [ch[2], 0.14], 7: [up ? ch[1] * 2 : ch[0] * 2, 0.16] };
+                    const fn = FAN[s8];
+                    if (fn) { const v = (lvl >= 4 ? 0.05 : 0.04) * k; brass(fn[0], v, fn[1] * len); if (s8 === 0 || s8 === 4) brass(fn[0] * 1.498, v * 0.6, fn[1] * len); }   // на сильных долях — с квинтой, звучит мощно
+                    // скачущий бас: корень — октава выше, восьмыми
+                    tone('triangle', s8 % 2 ? ch[0] : ch[0] / 2, 0.07 * k, 0.12 * len);
+                    // марш: «малый барабан» на 2 и 4 долю, в конце чётного такта — короткая дробь
+                    if (s8 === 2 || s8 === 6) noise('bandpass', 1700, 0.07 * k, 0.12 * len, 0.9);
+                    if (s8 === 7 && bar % 2 === 0) noise('bandpass', 1700, 0.04 * k, 0.05, 0.9);
+                    // электричество: в конце нечётного такта — треск разряда, уходящий вниз; в начале фразы — гул набегающего тока
+                    if (s8 === 7 && bar % 2 === 1) this._crackle(now, 0.22 * len, 5200, 1200, 0.07 * k, 1.4);
+                    if (s8 === 0 && bar % 4 === 0) this._noiseBand(now, 0.5 * len, 300, 2400, 1.1, 0.04 * k, 0.2);
+                    // Хард и выше: глухой силовой удар в начале такта
+                    if (lvl >= 4 && s8 === 0) noise('lowpass', 220, 0.12 * k, 0.25 * len);
                 }
             }
 

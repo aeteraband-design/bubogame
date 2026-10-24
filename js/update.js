@@ -812,6 +812,17 @@ function clearAllBuffs() {
     }
 }
 
+// секретная звезда не даёт один и тот же штраф два раза подряд (например, «−1 жизнь» и снова «−1 жизнь»)
+const __lastPick = {};
+function pickWeightedNoRepeat(tag, options) {
+    // сравниваем по виду эффекта (kind), а не по номеру варианта: «−35% сил» и «−25% сил» — один и тот же штраф
+    const kindOf = (o) => (typeof o.kind === 'function' ? o.kind() : (o.kind || options.indexOf(o)));
+    const prev = __lastPick[tag];
+    const pool = options.filter((o) => kindOf(o) !== prev);
+    const o = pickWeighted(pool.length ? pool : options);
+    __lastPick[tag] = kindOf(o);
+    return o;
+}
 function pickWeighted(options) {
     let r = Math.random() * options.reduce((sum, o) => sum + o.w, 0);
     for (const o of options) { if ((r -= o.w) < 0) return o; }
@@ -825,8 +836,8 @@ function handleSecretRoulette(originX, originY) {
     const THEME_KEYS = ['music', 'logic', 'kino', 'series', 'cartoons', 'fun'];
 
     if (Math.random() < negativeChance) {
-        return pickWeighted([
-            { w: 25, run() {
+        return pickWeightedNoRepeat('neg', [
+            { w: 25, kind: 'life', run() {
                 if (lives <= 1.5) {
                     // Последняя жизнь: обычная подсказка «Штраф: -1 Жизнь», игра останавливается, сова разлетается перьями,
                     // после короткой паузы — стандартный экран смерти
@@ -845,14 +856,14 @@ function handleSecretRoulette(originX, originY) {
                 triggerTopHUDPop('heart');
                 return { label: 'Штраф: -1 Жизнь', color: '#EF4444', icon: 'fa-heart-crack', isScoreAdd: false };
             } },
-            { w: 22, run() {
+            { w: 22, kind: 'stamina', run() {
                 stamina = Math.max(5.0, stamina - 35.0);
                 updateStaminaHUD();
                 AudioFX.playHit();
                 triggerTopHUDPop('stamina');
                 return { label: 'Штраф: -35% Сил', color: '#F43F5E', icon: 'fa-feather-pointed', isScoreAdd: false };
             } },
-            { w: 22, run() {
+            { w: 22, kind: () => (THEME_KEYS.some((k) => (collected[k] || 0) > 0) ? 'theme' : 'stamina'), run() {
                 const existing = THEME_KEYS.filter(k => (collected[k] || 0) > 0);
                 if (existing.length === 0) {
                     stamina = Math.max(5.0, stamina - 25.0);
@@ -867,13 +878,13 @@ function handleSecretRoulette(originX, originY) {
                 triggerBadgeAnimation(lostKey, true);
                 return { label: `Штраф: -1 ${CATEGORIES[lostKey].name}`, color: '#F43F5E', icon: 'fa-triangle-exclamation', isScoreAdd: false };
             } },
-            { w: 13, run() {
+            { w: 13, kind: 'compress', run() {
                 AudioFX.playCompressStart();
                 compressionTime = ADMIN_CFG.compressSec * 60;
                 Haptics.powerup();
                 return { label: `Сжатие ${ADMIN_CFG.compressSec}с`, color: '#D946EF', icon: 'svg-compress', isScoreAdd: false };
             } },
-            { w: 14, run() {
+            { w: 14, kind: 'speed', run() {
                 AudioFX.playStarCollect();
                 slowMotionTime = 0;
                 speedBoostTime = ADMIN_CFG.speedSec * 60;
@@ -885,6 +896,7 @@ function handleSecretRoulette(originX, originY) {
         ]).run();
     }
 
+    __lastPick.neg = null;   // выпал бонус — серия штрафов прервалась
     return pickWeighted([
         { w: 14, run() {
             stamina = maxStamina;

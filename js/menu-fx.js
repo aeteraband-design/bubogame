@@ -8,13 +8,14 @@ window.MENU_OBST = null;   // прямоугольник логотипа в м�
 function menuFxSchedule(minS, maxS) { MFX.next = performance.now() + (minS + Math.random() * (maxS - minS)) * 1000; }
 
 // вошли в меню из игры: эффекты паузы — в сторону, меню начинает с чистого листа
-function menuFxEnter() {
+function menuFxEnter(keep) {
     try {
         MFX.stash = { waterTime, waterStreams, crystalTime, crystals, crystalRedK, wetT: WATERFX.wetT };
         waterTime = 0; waterStreams = []; crystalTime = 0; crystals = []; crystalRedK = 0;
         MFX.stash.ice = (typeof STORM !== 'undefined' && STORM.ice) || 0; MFX.stash.wWet = owl._wWet || 0;
-        WATERFX.wetT = 0; if (typeof STORM !== 'undefined') STORM.ice = 0; owl._wWet = 0;   // меню — всегда «чистое»: без мокрых труб, льда и капель
+        WATERFX.wetT = 0; if (typeof STORM !== 'undefined') STORM.ice = 0; owl._wWet = 0; owl._wb = []; owl._wbb = [];   // меню — всегда «чистое»: без мокрых труб, льда и капель
         if (typeof crystalMist !== 'undefined') crystalMist.length = 0;
+        if (keep === false) MFX.stash = null;   // игра закончилась (не пауза): мокрота, лёд, вода и огонь в новую игру не переносятся
     } catch (e) { MFX.stash = null; }
     menuFxSchedule(18, 35);
 }

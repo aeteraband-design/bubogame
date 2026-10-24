@@ -327,6 +327,8 @@ function startOrResumeFlight() {
     if (lives <= 0.5) { lives = startLives; stamina = maxStamina; }
 
     if (!isFlightPaused) {
+        // новый полёт (не продолжение паузы): сова сухая, без льда; вода и огонь прошлого полёта не продолжаются
+        try { if (typeof waterReset === 'function') waterReset(); if (typeof crystalReset === 'function') crystalReset(); owl._wWet = 0; owl._wb = []; owl._wbb = []; if (typeof STORM !== 'undefined') STORM.ice = 0; } catch (e) {}
         invulnerableTime = 0; if (typeof shazamReset === 'function') shazamReset(); shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal';
         lastBuffStateKey = '';
         resetOvereatDrunk();
@@ -418,6 +420,8 @@ function resetEntireGame(opts) {
     if (typeof shazamReset === 'function') shazamReset(); shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal'; invulnerableTime = 0;
     if (typeof stormClearNow === 'function') stormClearNow();   // новая игра — с ясного неба
     if (typeof STORM !== 'undefined') STORM.pausedWx = null;
+    // новая игра — с чистого листа: сова сухая, без льда, без воды и огня прошлой игры, погода прошлой не вспоминается
+    try { if (typeof waterReset === 'function') waterReset(); if (typeof crystalReset === 'function') crystalReset(); owl._wWet = 0; owl._wb = []; owl._wbb = []; if (typeof STORM !== 'undefined') STORM.ice = 0; if (typeof MFX !== 'undefined') MFX.stash = null; localStorage.removeItem('bubo_wx'); } catch (e) {}
     resetOvereatDrunk();
     pipes = []; items = []; particles = [];
     snapProgressVisuals();
@@ -459,8 +463,10 @@ function cutGameSfx() {
     } catch (e) {}
 }
 function returnToHome() {
+    const pausing = !!gameActive;   // пауза посреди полёта; иначе игра закончилась (победа, поражение) — в следующую ничего не переносим
+    try { if (!pausing && typeof STORM !== 'undefined') STORM.pausedWx = null; } catch (e) {}
     // погода замирает вместе с игрой: запоминаем грозу как есть и вернём её при продолжении
-    try { if (typeof WX !== 'undefined' && WX.left >= 0) STORM.pausedWx = { on: WX.on, left: WX.left, peak: WX.peak, cover: stormCover, si: Math.max(0, stormIntensity), fade: STORM.fade || 0, wet: STORM.wet || 0, ice: STORM.ice || 0 }; } catch (e) {}
+    try { if (typeof WX !== 'undefined' && WX.left >= 0 && pausing) STORM.pausedWx = { on: WX.on, left: WX.left, peak: WX.peak, cover: stormCover, si: Math.max(0, stormIntensity), fade: STORM.fade || 0, wet: STORM.wet || 0, ice: STORM.ice || 0 }; } catch (e) {}
     if (gameActive) {
         isFlightPaused = true;
         pausedSnapshot = {
@@ -497,7 +503,7 @@ function returnToHome() {
     if (bottomHud) bottomHud.classList.add('hidden');
 
     initMenuScenery();
-    if (typeof menuFxEnter === 'function') menuFxEnter();   // эффекты паузы — в сторону, в меню свои
+    if (typeof menuFxEnter === 'function') menuFxEnter(pausing);   // эффекты паузы — в сторону, в меню свои
 }
 
 // Запуск сохранения/интерфейса после загрузки всех файлов игры
