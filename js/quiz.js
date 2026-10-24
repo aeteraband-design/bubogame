@@ -97,9 +97,9 @@ QUIZ_QUESTIONS.forEach(q => { if (!q.diff) q.diff = QZ_DIFF.e.includes(q.id) ? '
 const QUIZ_PER_DAY = 10, QZ_READ = 5, QZ_ANSWER = 10;   // вопросов в день; секунд на чтение и на ответ
 const QUIZ_SEEN_KEY = 'bubo_quiz_seen', QUIZ_DAY_KEY = 'bubo_quiz_day10';
 const QZ_LETTERS = ['A', 'B', 'C', 'D'];
-// четыре максимально разных цвета (без зелёного и красного — это «верно»/«неверно»): оранжевый, синий, жёлтый, розовый
-const QZ_BALL_COL = { A: '#FF7A00', B: '#2F6BFF', C: '#FFD000', D: '#FF4FB8' };
-const QZ_BALL_TXT = { C: '#2A1600' };   // на жёлтом — тёмная буква, иначе плохо видно
+// четыре разных красивых цвета, разнесённых по кругу оттенков (без зелёного и красного — это «верно»/«неверно»): оранжевый, голубой, фиолетовый, розовый; буквы белые
+const QZ_BALL_COL = { A: '#FF7A00', B: '#0EA5E9', C: '#7C4DFF', D: '#FF4FA3' };
+const QZ_BALL_TXT = {};
 const qzTxt = (L) => (QZ_BALL_TXT[L] ? `;color:${QZ_BALL_TXT[L]};text-shadow:none` : '');
 
 // старый «квиз-мир» убран: заглушки для мест, которые его вызывали
