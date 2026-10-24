@@ -24,6 +24,8 @@ function resize(soft) {
     // единый множитель для подсказок, летящих шариков и таймеров: один и тот же на любом телефоне и в любом браузере
     // (раньше подсказки масштабировались transform, а таймеры — zoom, и браузеры по-разному считали их размер и позицию)
     const fxStr = String(Math.min(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom')) || 1, 1.25).toFixed(3));
+    // зум верхней панели — готовым числом: Safari на iPhone не понимает calc() в zoom и рисовал панель мельче, чем на Android
+    document.documentElement.style.setProperty('--tophud-zoom', ((parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom')) || 1) * 1.1).toFixed(3));
     document.documentElement.style.setProperty('--fx', fxStr);
     __uiFx = parseFloat(fxStr) || 1;   // запоминаем — чтобы не спрашивать у браузера стили на каждом подборе
     // нижняя плашка с темами на ПК растёт меньше, чтобы не занимать много места

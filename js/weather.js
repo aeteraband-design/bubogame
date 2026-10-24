@@ -575,8 +575,10 @@ function stormDrawHotFx(k, cz) {
                 if (p.x + p.width < -40 || p.x > width + 40) continue;
                 const yT = p.top + sq2, yB = height - (p.bottom + sq2), w = p.width;
                 // в дождь свечение труб шире и ярче (только в дождь)
+                // перекрашиваем только саму шляпку (её точный контур: 19 px высотой, на 5 px шире трубы, скругление 6) — без прямоугольника вокруг
                 ctx.globalCompositeOperation = 'color'; ctx.globalAlpha = Math.min(1, 0.9 * rk * k); ctx.fillStyle = '#FF3A2E';
-                ctx.fillRect(p.x - 8, yT - 30, w + 16, 31); ctx.fillRect(p.x - 8, yB - 1, w + 16, 31);
+                const cap = (x, y, cw, ch, r) => { ctx.moveTo(x + r, y); ctx.arcTo(x + cw, y, x + cw, y + ch, r); ctx.arcTo(x + cw, y + ch, x, y + ch, r); ctx.arcTo(x, y + ch, x, y, r); ctx.arcTo(x, y, x + cw, y, r); ctx.closePath(); };
+                ctx.beginPath(); cap(p.x - 5, yT - 19, w + 10, 19, 6); cap(p.x - 5, yB, w + 10, 19, 6); ctx.fill();
                 ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, 0.4 * rk * k);
                 const R = w * 1.0; ctx.drawImage(hs, p.x + w / 2 - R, yT - R * 0.5, R * 2, R * 1.1); ctx.drawImage(hs, p.x + w / 2 - R, yB - R * 0.5, R * 2, R * 1.1);
             }

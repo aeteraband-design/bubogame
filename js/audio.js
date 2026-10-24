@@ -987,7 +987,7 @@ const AudioFX = {
             gainB.gain.linearRampToValueAtTime(0, now + 0.19 * len);
             if (lvl >= 5) {
                 const lp = this.ctx.createBiquadFilter();
-                lp.type = 'lowpass'; lp.frequency.value = 1000; lp.frequency.setValueAtTime(1000, now);
+                lp.type = 'lowpass'; lp.frequency.value = 700; lp.frequency.setValueAtTime(700, now);   // бас Хард+ — темнее, без жужжания
                 oscB.connect(lp); lp.connect(gainB);
             } else {
                 oscB.connect(gainB);
@@ -1010,7 +1010,7 @@ const AudioFX = {
                 let lo = 0; for (const b0 of pc) for (let o = 0.25; o <= 2; o *= 2) { const v = b0 * o; if (v < aFreq * 0.97 && v > lo) lo = v; }
                 if (lo) tone('triangle', lo, 0.09 * W(5), 0.14 * len);
             }
-            if (lead && this.step % 2 === 0) tone('square', aFreq * 2, lvl === 4 ? 0.03 : 0.045, 0.12 * len);   // Хард+: верхний голос во второй половине фразы
+            if (lead && this.step % 2 === 0) tone('square', aFreq * 2, 0.03, 0.12 * len);   // верхний голос во второй половине фразы — на Хард+ так же тихо, как на Хард (не перекрывает мелодию)
 
             // ===== ШАЗАМ: свой слой поверх музыки уровня — плавно вступает, а за 5 с до конца так же плавно стихает =====
             {
@@ -1061,9 +1061,9 @@ const AudioFX = {
             if (W(2) > 0.01 && !dark && this.step % 4 === 2) this.menuChords[c4].forEach((f) => tone('square', rm(f) * pitchMultiplier, (lvl >= 4 ? 0.02 : 0.016) * W(2), 0.07 * len));
             if (W(3) > 0.01 && !dark && this.step % 8 === 0 && (pass || lvl >= 4)) tone('sine', aFreq * 4, 0.035 * W(3), 0.35 * len);
             if (lvl >= 5 && warn && this.step % 8 === 0) tone('sawtooth', aFreq / 4, 0.04, 0.6 * len, aFreq / 4 * 0.94);
-            // Хард+, вторая половина: «страшные нотки» — острый тритон, съезжающий вниз, и далёкий тихий вой
-            if (lvl >= 5 && warn && this.step % 8 === 3) tone('sawtooth', aFreq * 1.414, 0.022, 0.35 * len, aFreq * 1.33);
-            if (lvl >= 5 && warn && this.step % 8 === 7) tone('triangle', aFreq * 0.5 * 1.059, 0.03, 0.3 * len, aFreq * 0.5 * 0.94);   // низкий тревожный «гул» во второй половине восьмёрки
+            // Хард+: та же музыка, что на Хард, плюс «опасность»: низкий гул во второй половине восьмёрки и в самом её конце —
+            // короткий хроматический подъём баса на полтона за шаг («сейчас что-то будет»), после чего фраза начинается снова
+            if (lvl >= 5 && bar % 8 === 7 && s8 >= 5) tone('triangle', bFreq * 2 * Math.pow(1.0595, s8 - 4), 0.06, 0.13 * len);
 
             // ===== Барабаны: с каждым уровнем больше =====
             if (W(1) > 0.01 && this.step % 2 === 1) hat(0.1 * W(1));                              // Лайт: хай-хэт «цик» на слабые доли
