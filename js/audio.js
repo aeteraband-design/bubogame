@@ -1021,23 +1021,26 @@ const AudioFX = {
                 if (k > 0.02) {
                     const ch = dark ? [aFreq / 2, aFreq / 2 * 1.189, aFreq / 2 * 1.498] : this.menuChords[c4].map(f => rm(f) * pitchMultiplier);
                     const pool = [ch[0], ch[1], ch[2], ch[0] * 2, ch[1] * 2, ch[2] * 2];
-                    // искры: быстрые колокольчики по нотам аккорда (на всех уровнях)
-                    tone('sine', pool[3 + (this.step % 3)] * 2, 0.03 * k, 0.12 * len);
-                    // геройский мотив: звонкая «пила» с октавой, только звуки аккорда — всегда в лад (с Лайт)
+                    // ШАЗАМ — супергеройский электро-маршевый слой: «двойная пила» с расстройкой (толстый эпичный звук) и фильтр-свип,
+                    // героический мотив на звуках аккорда, низкий пульс баса и электрические разряды-«зигзаги» на долях
                     const pat = bar % 2 ? [5, -1, 4, 3, -1, 2, 3, -1] : [3, -1, 4, 5, -1, 4, 3, 2];
                     const pi = pat[s8];
-                    if (lvl >= 1 && pi >= 0 && !dark) {
+                    if (pi >= 0) {
                         const f = pool[pi];
-                        const os = this.ctx.createOscillator(), lp = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
-                        os.type = 'sawtooth'; os.frequency.value = f; os.frequency.setValueAtTime(f, now);
-                        lp.type = 'lowpass'; lp.frequency.value = 2600; lp.frequency.setValueAtTime(2600, now);
-                        g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime((lvl >= 4 ? 0.06 : 0.045) * k, now + 0.01); g.gain.exponentialRampToValueAtTime(0.001, now + 0.22 * len);
-                        os.connect(lp); lp.connect(g); g.connect(out); os.start(now); os.stop(now + 0.24 * len);
-                        tone('sine', f * 2, 0.035 * k, 0.18 * len);
+                        [1, 1.0068].forEach((det) => {
+                            const os = this.ctx.createOscillator(), lp = this.ctx.createBiquadFilter(), g = this.ctx.createGain();
+                            os.type = 'sawtooth'; os.frequency.setValueAtTime(f * det, now);
+                            lp.type = 'lowpass'; lp.Q.value = 5; lp.frequency.setValueAtTime(700, now); lp.frequency.exponentialRampToValueAtTime(4200, now + 0.1 * len);
+                            g.gain.setValueAtTime(0.0001, now); g.gain.linearRampToValueAtTime((lvl >= 4 ? 0.045 : 0.035) * k, now + 0.008); g.gain.exponentialRampToValueAtTime(0.001, now + 0.2 * len);
+                            os.connect(lp); lp.connect(g); g.connect(out); os.start(now); os.stop(now + 0.22 * len);
+                        });
                     }
-                    // с Медиум+: «пульс» на октаву ниже на каждом шаге — ощущение полёта
-                    if (lvl >= 3) tone('triangle', ch[0] / 2, 0.06 * k, 0.1 * len);
-                    // Хард и Хард+: силовой аккорд-удар в начале такта и восходящий «вжух» к следующему такту
+                    // низкий пульс баса: квадратная октава вниз на каждом шестнадцатом — ощущение полёта
+                    tone('square', ch[0] / 2, 0.03 * k, 0.07 * len);
+                    // электрические зигзаги: треск-разряд на каждой второй восьмой, свист-свип вверх на первой доле такта
+                    if (s8 % 2 === 0) this._noiseBand(now, 0.06, 3200, 7600, 2.5, 0.05 * k, 0.003);
+                    if (s8 === 0) this._toneSweep(now, 0.45 * len, 260, 960, 500, 4200, 0.03 * k, 'sawtooth', 0.04);
+                    // Хард и выше: силовой аккорд-удар в начале такта и «вжух» к следующему такту
                     if (lvl >= 4 && s8 === 0) [ch[0], ch[0] * 1.498].forEach(f => tone('square', f, 0.04 * k, 0.3 * len));
                     if (lvl >= 4 && s8 === 6) noise('bandpass', 900, 0.05 * k, 0.28 * len, 1.1);
                 }
