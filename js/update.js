@@ -559,10 +559,17 @@ function sendTagToTimer(tag, key) {
         tag.style.width = 'auto'; const w1 = tag.offsetWidth; tag.style.width = w0 + 'px';
         void tag.offsetWidth;
         const er = el.getBoundingClientRect(), tr = tag.getBoundingClientRect();
+        // сколько экранных пикселей в одном «пикселе» стиля left/top: на iPhone zoom и scale считаются иначе, поэтому меряем, а не угадываем
+        tag.style.transition = 'none';
+        const L0 = parseFloat(tag.style.left) || 0, T0 = parseFloat(tag.style.top) || 0;
+        tag.style.left = (L0 + 100) + 'px'; tag.style.top = (T0 + 100) + 'px';
+        const pr = tag.getBoundingClientRect();
+        const sx = Math.abs(pr.left - tr.left) / 100 || 1, sy = Math.abs(pr.top - tr.top) / 100 || 1;
+        tag.style.left = L0 + 'px'; tag.style.top = T0 + 'px';
         tag.style.transition = 'left 0.55s cubic-bezier(0.22, 1, 0.36, 1), top 0.55s cubic-bezier(0.22, 1, 0.36, 1), width 0.35s ease';
         const fx = tr.width / Math.max(1, w0);   // подсказка масштабирована (scale --fx) от центра
-        tag.style.left = (parseFloat(tag.style.left) + (er.right - tr.right) - (w1 - w0) * (1 + fx) / 2) + 'px';   // таймеры прижаты вправо: совпадают правые края
-        tag.style.top = (parseFloat(tag.style.top) + ((er.top + er.height / 2) - (tr.top + tr.height / 2))) + 'px';
+        tag.style.left = (L0 + (er.right - tr.right) / sx - (w1 - w0) * (1 + fx) / 2) + 'px';   // таймеры прижаты вправо: совпадают правые края
+        tag.style.top = (T0 + ((er.top + er.height / 2) - (tr.top + tr.height / 2)) / sy) + 'px';
         tag.style.width = w1 + 'px';
         setTimeout(() => {
             showTimer();

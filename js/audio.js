@@ -921,20 +921,19 @@ const AudioFX = {
             const s16 = this.step % 16;
             // Фраза — 4 такта (Dm – B♭ – F – C), как в меню; на Хард+ — 8 тактов: вторая половина тёмная, с «нотками опасности».
             const bar = Math.floor(this.step / 8), i8 = this.step % 8, c4 = bar % 4, pass = Math.floor(bar / 4) % 2;
-            let arpArr = this.gameArp4[c4], bassArr = this.gameBass4[c4], aMul = 1, lead = false, dark = false;
+            let arpArr = this.gameArp4[c4], bassArr = this.gameBass4[c4], aMul = 1, lead = false, dark = false, warn = false;
             if (lvl === 4) {
                 if (c4 === 1 && i8 >= 6) aMul = 2;                       // ответ фразы — окончание на октаву выше
                 if (c4 >= 2) lead = true;                                // вторая половина — верхний голос
                 if (c4 === 3 && i8 >= 6 && pass) aMul = 2;               // через раз конец фразы взлетает
             } else if (lvl >= 5) {
+                // Хард+: тот же мотив, что на Хард (4 такта фразы), — но вторая половина восьмёрки не уходит в чужую мелодию:
+                // те же ноты, верхний голос в концах фраз и тревожный низкий гул («опасность») поверх
                 const c = bar % 8;
-                if (!this._arpRev) this._arpRev = this.gameArp.slice().reverse();
-                if (c === 1 && i8 >= 6) aMul = 2;
-                if (c === 2 || c === 3) lead = true;
-                if (c === 4) { arpArr = this.gameArpHard; bassArr = this.gameBassHard; dark = true; }   // опасность: тёмный вариант
-                if (c === 5) { arpArr = this._arpRev; lead = true; }
-                if (c === 6) { arpArr = this.gameArpTense; bassArr = this.gameBassHard; dark = true; lead = true; }
-                if (c === 7) { arpArr = this.gameArpHardSoft; }
+                if (c % 4 === 1 && i8 >= 6) aMul = 2;                    // ответ фразы — на октаву выше
+                if (c % 4 === 3 && i8 >= 6) aMul = 2;                    // конец фразы взлетает
+                if (c % 4 >= 2) lead = true;                             // вторая половина фразы — верхний голос
+                if (c >= 4) warn = true;                                 // вторая половина восьмёрки — с «опасностью»
                 if (c === 7 && i8 >= 6) aMul = 0.5;                      // финал проваливается вниз — и снова светлое начало
             }
             const s8 = this.step % 8;
@@ -1054,7 +1053,7 @@ const AudioFX = {
             // ===== «Весёлые» нотки из музыки меню: с Медиум — лёгкие аккорды-чопы, с Медиум+ — колокольчик в начале такта =====
             if (W(2) > 0.01 && !dark && this.step % 4 === 2) this.menuChords[c4].forEach((f) => tone('square', rm(f) * pitchMultiplier, (lvl >= 4 ? 0.02 : 0.016) * W(2), 0.07 * len));
             if (W(3) > 0.01 && !dark && this.step % 8 === 0 && (pass || lvl >= 4)) tone('sine', aFreq * 4, 0.035 * W(3), 0.35 * len);
-            if (lvl >= 5 && dark && this.step % 8 === 0) tone('sawtooth', aFreq / 4, 0.05, 0.6 * len, aFreq / 4 * 0.94);   // низкий тревожный «гул» в тёмных тактах
+            if (lvl >= 5 && warn && this.step % 8 === 0) tone('sawtooth', aFreq / 4, 0.04, 0.6 * len, aFreq / 4 * 0.94);   // низкий тревожный «гул» во второй половине восьмёрки
 
             // ===== Барабаны: с каждым уровнем больше =====
             if (W(1) > 0.01 && this.step % 2 === 1) hat(0.1 * W(1));                              // Лайт: хай-хэт «цик» на слабые доли

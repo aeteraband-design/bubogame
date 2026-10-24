@@ -630,16 +630,22 @@ function alignBuffBar() {
         const left = document.documentElement.classList.contains('hud-ll');
         const kids = [...hud.children].filter(e => e.offsetWidth);
         if (!kids.length) return;
-        const par = bb.offsetParent || bb.parentElement;
-        // считаем через offset* (не getBoundingClientRect): на iOS Safari zoom и transform дают сдвиг, из-за которого таймеры уезжали
-        const ox = (el) => { let x = 0, n = el; while (n && n !== par) { x += n.offsetLeft; n = n.offsetParent; } return x; };
-        if (left) {
-            const L = Math.min(...kids.map(e => ox(e)));
-            bb.style.setProperty('left', L + 'px', 'important'); bb.style.removeProperty('right');
-        } else {
-            const R = Math.max(...kids.map(e => ox(e) + e.offsetWidth));
-            bb.style.setProperty('right', Math.max(0, par.offsetWidth - R) + 'px', 'important'); bb.style.removeProperty('left');
+        // край панели жизней/кнопок берём на экране (getBoundingClientRect), а отступ таймеров подбираем так,
+        // чтобы край самих таймеров совпал с ним. Замеры только по экрану: без offset*, zoom и transform (на iPhone они расходятся)
+        const prop = left ? 'left' : 'right', other = left ? 'right' : 'left';
+        const hudEdge = () => { const rs = kids.map(e => e.getBoundingClientRect()); return left ? Math.min(...rs.map(r => r.left)) : Math.max(...rs.map(r => r.right)); };
+        const barEdge = () => { const r = bb.getBoundingClientRect(); return left ? r.left : r.right; };
+        const gap = () => (left ? 1 : -1) * (barEdge() - hudEdge());   // 0 — края совпали
+        const put = (v) => bb.style.setProperty(prop, Math.max(-40, v).toFixed(2) + 'px', 'important');
+        bb.style.removeProperty(other);
+        let x = parseFloat(getComputedStyle(bb)[prop]); if (!isFinite(x)) x = 0;
+        for (let i = 0; i < 3; i++) {                 // два-три шага секущей: подходит для любого масштаба экрана
+            put(x); const g0 = gap(); if (Math.abs(g0) < 0.3) break;
+            put(x + 20); const g1 = gap();
+            const s = (g1 - g0) / 20; if (!isFinite(s) || Math.abs(s) < 1e-3) break;
+            x = x - g0 / s;
         }
+        put(x);
     } catch (e) {}
 }
 window.addEventListener('resize', () => setTimeout(alignBuffBar, 60));
