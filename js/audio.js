@@ -614,6 +614,7 @@ const AudioFX = {
             if (st !== prev) {
                 this._lastSpeedState = st;
                 // отдельные звуки ускорения/замедления убраны: темп и высота музыки сами показывают, что игра ускорилась или замедлилась
+                if (st === 'slow') this.playSlowEnter(); else if (prev === 'slow') this.playSlowExit();   // вход в замедление и выход из него — короткие «оседание» и «подъём»
             }
         } catch (e) {}
         this.updateSpeedFactor(); // фиксируем начало плавного разгона/торможения
@@ -1422,7 +1423,7 @@ const AudioFX = {
             noise.start(now);
         } catch(e) {}
     },
-    playCompressStart() {
+    playSlowEnter() {   // вход в замедление: тон мягко «оседает» вниз (раньше это был звук сжатия труб)
         try {
             if (!this.ctx || this.ctx.state !== 'running') return;
             const now = this.ctx.currentTime;
@@ -1440,7 +1441,38 @@ const AudioFX = {
             osc.stop(now + 0.34);
         } catch(e) {}
     },
+    // Трубы сжимаются: далёкая мягкая сирена «у-уи-у» (треугольник через фильтр, с лёгким дрожанием) и звук самого движения —
+    // низкий гул поднимается, пока трубы съезжаются, и шипит гидравлика. Негромко, в тональности игры (ре)
+    playCompressStart() {
+        try {
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            const t = this.ctx.currentTime;
+            this._toneSweep(t, 0.55, 73.4, 146.8, 240, 760, 0.075, 'triangle', 0.15);   // движение: гул поднимается на октаву (ре — ре)
+            this._noiseBand(t, 0.5, 260, 1100, 1.3, 0.045, 0.2);                           // гидравлика: «пшш» по ходу сжатия
+            const ctx = this.ctx, o = ctx.createOscillator(), lfo = ctx.createOscillator(), lg = ctx.createGain(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
+            const s0 = t + 0.06, L = 1.15;
+            o.type = 'triangle';
+            o.frequency.setValueAtTime(293.66, s0);                         // ре
+            o.frequency.linearRampToValueAtTime(440, s0 + L * 0.45);        // плавно вверх к ля
+            o.frequency.linearRampToValueAtTime(293.66, s0 + L);            // и обратно
+            lfo.frequency.value = 6; lg.gain.value = 5; lfo.connect(lg); lg.connect(o.frequency);   // лёгкое дрожание, как у сирены
+            lp.type = 'lowpass'; lp.frequency.value = 1600; lp.Q.value = 0.6;
+            g.gain.setValueAtTime(0.0001, s0); g.gain.linearRampToValueAtTime(0.06, s0 + 0.18); g.gain.setValueAtTime(0.06, s0 + L * 0.6); g.gain.linearRampToValueAtTime(0.0001, s0 + L);
+            o.connect(lp); lp.connect(g); g.connect(this.sfxGain || ctx.destination);
+            o.start(s0); lfo.start(s0); o.stop(s0 + L + 0.05); lfo.stop(s0 + L + 0.05);
+        } catch (e) {}
+    },
+    // Трубы расходятся: гул опускается, воздух с шипением выходит, сверху — мягкий спуск «отбой тревоги» (ля — ре)
     playCompressEnd() {
+        try {
+            if (!this.ctx || this.ctx.state !== 'running') return;
+            const t = this.ctx.currentTime;
+            this._toneSweep(t, 0.6, 146.8, 73.4, 760, 240, 0.065, 'triangle', 0.1);
+            this._noiseBand(t, 0.65, 1100, 240, 1.1, 0.045, 0.08);
+            this._toneSweep(t + 0.05, 0.6, 440, 293.66, 1600, 1000, 0.045, 'triangle', 0.15);
+        } catch (e) {}
+    },
+    playSlowExit() {   // выход из замедления: тон «поднимается» обратно (раньше это был звук разжатия труб)
         try {
             if (!this.ctx || this.ctx.state !== 'running') return;
             const now = this.ctx.currentTime;
@@ -1839,7 +1871,7 @@ const AudioFX = {
     const TRIM = {
         playFlap: 1.25, playCollect: 1.2, playThemeCollect: 1.15, playStarCollect: 1.15, playMaxStaminaChime: 0.85,
         playOverEat: 1.0, playDrunk: 1.15, playFreeze: 0.9, playFreezeEnd: 1.15, playDrunkEnd: 1.25, playOverEatEnd: 1.2,
-        playCompressStart: 1.2, playCompressEnd: 1.2, playHit: 0.85, playShieldBump: 0.8, playMaxUp: 0.6, playShieldCollect: 0.85,
+        playCompressStart: 1.0, playCompressEnd: 1.0, playSlowEnter: 1.2, playSlowExit: 1.2, playHit: 0.85, playShieldBump: 0.8, playMaxUp: 0.6, playShieldCollect: 0.85,
         playAttemptBonus: 0.85, playRouletteTick: 2.2, playRouletteWin: 0.8, playLevelUp: 1.0, playLowStaminaAlert: 1.6,
         playSlowMoStart: 0.14, playSlowMoEnd: 0.19, playSpeedUpStart: 0.38, playSpeedUpEnd: 0.38, playLevelShift: 0.37
     };

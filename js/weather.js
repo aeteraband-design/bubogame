@@ -322,36 +322,55 @@ function stormSkyGrad() {
 function stormStarK() { return 1 - 0.85 * stormSmooth(0, 0.85, stormCover); }
 
 // Задний план: грозовое небо, тучи, зарницы и разряды (всё позади домов). Вызывается после луны, до города
-// Освещение луной: слой туч рисуется на отдельный холст, поверх (только по самим тучам) — тень везде,
-// светлое лунное пятно вокруг луны (сторона туч к луне светлее) и затемнение книзу. Потом слой целиком кладётся на сцену.
-function stormLitLayer(k, drawFn) {
-    const main = ctx, cv = main.canvas;
-    let L = STORM.litCv;
-    if (!L) { L = STORM.litCv = document.createElement('canvas'); STORM.litCtx = L.getContext('2d'); }
-    if (L.width !== cv.width || L.height !== cv.height) { L.width = cv.width; L.height = cv.height; }
-    const g = STORM.litCtx, T = main.getTransform();
-    g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.clearRect(0, 0, L.width, L.height);
-    g.setTransform(T);
-    ctx = g;
-    try { drawFn(); } finally { ctx = main; }
-    g.globalAlpha = 1; g.globalCompositeOperation = 'source-atop';
-    // общая тень
-    g.fillStyle = `rgba(22, 12, 42, ${0.45 * k})`; g.fillRect(-50, -50, width + 100, height + 100);
-    // лунный свет: мягкое светлое пятно с центром в луне
+// Свет луны на тучах (тень, светлое пятно у луны, темнее книзу) — одна заранее смешанная картинка в 1/4 размера:
+// три градиента подряд дают то же самое, что их готовая смесь, а плавные градиенты от уменьшения не меняются.
+// Пересчитывается, только когда меняются сила грозы, место луны или размер экрана
+function stormLitOverlay(k) {
     const mp = window.__moonPos;
     const mx = mp ? mp[0] + mp[2] / 2 : width * 0.8, my = mp ? mp[1] + mp[2] / 2 : height * 0.18;
-    const R = Math.max(width, height) * 0.75;
-    const rg = g.createRadialGradient(mx, my, 0, mx, my, R);
+    const key = Math.round(k * 200) + '|' + Math.round(mx / 3) + '|' + Math.round(my / 3) + '|' + width + '|' + height;
+    const C = STORM.litOv || (STORM.litOv = []);
+    for (const o of C) if (o.key === key) return o.cv;
+    const o = C.length >= 4 ? C.shift() : { cv: document.createElement('canvas'), key: '' };
+    const S = 0.25, cv = o.cv;
+    cv.width = Math.ceil((width + 100) * S); cv.height = Math.ceil((height + 100) * S);
+    const g = cv.getContext('2d');
+    g.setTransform(S, 0, 0, S, 50 * S, 50 * S);   // координаты — как у сцены, начало в (-50, -50)
+    g.fillStyle = `rgba(22, 12, 42, ${0.45 * k})`; g.fillRect(-50, -50, width + 100, height + 100);   // общая тень
+    const R = Math.max(width, height) * 0.75, rg = g.createRadialGradient(mx, my, 0, mx, my, R);   // лунный свет вокруг луны
     rg.addColorStop(0, `rgba(236, 226, 255, ${0.82 * k})`); rg.addColorStop(0.18, `rgba(206, 190, 240, ${0.62 * k})`);
     rg.addColorStop(0.45, `rgba(150, 128, 200, ${0.3 * k})`); rg.addColorStop(1, 'rgba(120, 100, 170, 0)');
     g.fillStyle = rg; g.fillRect(-50, -50, width + 100, height + 100);
-    // книзу тучи темнее
-    const vg = g.createLinearGradient(0, height * 0.12, 0, height * 0.6);
+    const vg = g.createLinearGradient(0, height * 0.12, 0, height * 0.6);   // книзу тучи темнее
     vg.addColorStop(0, 'rgba(18, 8, 34, 0)'); vg.addColorStop(1, `rgba(18, 8, 34, ${0.55 * k})`);
     g.fillStyle = vg; g.fillRect(-50, -50, width + 100, height + 100);
-    g.globalCompositeOperation = 'source-over';
-    main.save(); main.setTransform(1, 0, 0, 1, 0, 0); main.globalAlpha = 1; main.drawImage(L, 0, 0); main.restore();
+    o.key = key; C.push(o);
+    return cv;
 }
+// Освещение луной: слой туч рисуется на отдельный холст, поверх (только по самим тучам) кладётся свет луны, потом слой — на сцену.
+// Тучи мягкие, поэтому на плотных экранах телефона слой рисуется в ~1,5 пикселя на точку (а не в 2,5–3): в 3–4 раза меньше работы,
+// на вид то же самое. Это главный источник тормозов в дождь (слоёв три за кадр)
+// slot — свой холст (0 или 1); noBlit — не класть на сцену сразу (два слоя туч складываются вместе и кладутся одним разом)
+function stormLitLayer(k, drawFn, slot, noBlit) {
+    const main = ctx, cv = main.canvas;
+    const dpr = cv.width / Math.max(1, width), q = dpr > 1.6 ? 1.5 / dpr : 1;
+    const W = Math.max(1, Math.round(cv.width * q)), H = Math.max(1, Math.round(cv.height * q));
+    const LS = STORM.litCvs || (STORM.litCvs = []);
+    let L = LS[slot || 0];
+    if (!L) { L = LS[slot || 0] = document.createElement('canvas'); L._g = L.getContext('2d'); }
+    if (L.width !== W || L.height !== H) { L.width = W; L.height = H; }
+    const g = L._g, T = main.getTransform();
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.clearRect(0, 0, W, H);
+    g.setTransform(T.a * q, T.b * q, T.c * q, T.d * q, T.e * q, T.f * q);
+    ctx = g;
+    try { drawFn(); } finally { ctx = main; }
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-atop';
+    g.drawImage(stormLitOverlay(k), -50, -50, width + 100, height + 100);
+    g.globalCompositeOperation = 'source-over';
+    if (!noBlit) stormLitBlit(L);
+    return L;
+}
+function stormLitBlit(L) { const cv = ctx.canvas; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.drawImage(L, 0, 0, cv.width, cv.height); ctx.restore(); }
 function stormDrawBack() {
     const si = Math.max(0, stormIntensity), cv = stormCover;
     if (cv < 0.005 && !(STORM.cl && stormCloudsAny(STORM.cl))) return;
@@ -360,13 +379,21 @@ function stormDrawBack() {
         const spr = stormBuildClouds(), L = stormCloudSet(), yb = stormCloudBottom(), first = !L.init; L.init = true;
         // тучи рисуются слоями на отдельный холст и освещаются луной целиком: у луны светлые, к краям и вниз темнеют
         const lk = stormSmooth(0, 0.85, cv);   // освещение луной и тень нарастают вместе с грозой
-        stormLitLayer(0.85 * lk, () => {
+        // без вспышки дальний и ближний слои туч складываются на своём холсте и кладутся на сцену одним разом (меньше работы в дождь)
+        const merge = !(STORM.flash > 0.01);
+        const LA = stormLitLayer(0.85 * lk, () => {
             stormDrawCloudLayer(L.low, spr.far, (r) => height * (0.34 + r * 0.17), cv, si, 0.9, 0, first, null);   // за домами, у горизонта
             stormDrawCloudLayer(L.far, spr.far, (r) => 20 + r * Math.max(10, yb - 70), cv, si, 0.9, 0, first, null);
-        });
-        // зарница внутри туч и сам разряд — между дальним и ближним слоем туч
-        if (STORM.flash > 0.01) stormDrawFlashBack(yb);
-        stormLitLayer(lk, () => stormDrawCloudLayer(L.near, spr.near, (r) => -12 + r * Math.max(10, yb - 40), cv, si, 0.97, 0, first, null));
+        }, 0, merge);
+        const nearFn = () => stormDrawCloudLayer(L.near, spr.near, (r) => -12 + r * Math.max(10, yb - 40), cv, si, 0.97, 0, first, null);
+        if (merge) {
+            const LB = stormLitLayer(lk, nearFn, 1, true), ga = LA._g;
+            ga.setTransform(1, 0, 0, 1, 0, 0); ga.globalAlpha = 1; ga.globalCompositeOperation = 'source-over'; ga.drawImage(LB, 0, 0);
+            stormLitBlit(LA);
+        } else {
+            stormDrawFlashBack(yb);   // зарница внутри туч и сам разряд — между дальним и ближним слоем туч
+            stormLitLayer(lk, nearFn, 1);
+        }
         // луна сквозь плотные тучи лишь иногда проглядывает: то чуть видна, то почти скрыта
         const mp = window.__moonPos;
         if (mp && moonSprite && cv > 0.01) {
@@ -544,8 +571,9 @@ function stormDrawHotFx(k, cz) {
     try {
         if (hot) { ctx.globalAlpha = 0.5 * k; drawCrystals(); ctx.globalAlpha = 1; }   // огоньки — в своём цвете, чуть светятся
         if (wet) {   // вода — в своих цветах и чуть светится, будто сзади луна
-            ctx.globalAlpha = Math.min(1, 0.75 * k);
-            __steamOn = false;   // пар уже нарисован в основном проходе — здесь только вода (быстрее)
+            // в дождь вода рисуется только здесь (в основном проходе её больше нет) — в полную яркость; пар над трубой уже нарисован
+            ctx.globalAlpha = 1;
+            __steamOn = false; __steamBack = true;
             if (typeof drawWater === 'function') drawWater();
             ctx.globalAlpha = Math.min(1, 0.75 * k);
             if (typeof drawWaterFront === 'function') drawWaterFront();

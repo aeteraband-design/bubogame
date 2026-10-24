@@ -183,7 +183,8 @@ function drawScene() {
     if (booting && window.__bootPipes && typeof drawMenuPipes === 'function') drawMenuPipes();   // тап на загрузке — трубы выезжают вокруг совы
     if (!booting) {
     drawCrystals();   // огненные шары «Опасных труб» — за трубами: выныривают из одной и скрываются в другой
-    if (typeof drawWater === 'function') drawWater();   // потоки «Воды из труб» — тоже за трубами
+    // потоки «Водонапора» — за трубами; в дождь вода рисуется один раз — поверх серой пелены (stormDrawHotFx), а не дважды
+    if (typeof drawWater === 'function' && !(typeof stormGradeK === 'function' && stormGradeK() >= 0.02)) drawWater();
     if (isStartMenuOpen && typeof drawMenuPipes === 'function') drawMenuPipes(); else pipes.forEach(drawPipe);   // в меню — свои декоративные трубы вокруг логотипа
     if (typeof quizDrawPortal2D === 'function') quizDrawPortal2D();   // портал в квиз-мир — в проёме между трубами
     if (typeof crystalDrawHeat === 'function') crystalDrawHeat(0.5);   // «Опасные трубы»: трубы калятся, из устьев — красный туман

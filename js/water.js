@@ -113,7 +113,16 @@ function waterMistSprite() {
     return (__wMist = c);
 }
 // пар рисуется один раз за кадр: в дождь вода перерисовывается поверх серой пелены, а пар — нет (он и так светлый)
-let __steamOn = true;
+let __steamOn = true, __steamBack = true;   // пар над трубой / пар из нижней трубы (за трубами)
+// штрих потока — готовая картинка (светлая голова, хвост тает вверх) вместо нового градиента на каждый штрих каждый кадр
+let __wStreak = null;
+function waterStreakSprite() {
+    if (__wStreak) return __wStreak;
+    const c = document.createElement('canvas'); c.width = 4; c.height = 64; const g = c.getContext('2d');
+    const gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(170, 230, 255, 0)'); gr.addColorStop(1, 'rgba(200, 240, 255, 1)');
+    g.fillStyle = gr; g.fillRect(0, 0, 4, 64);
+    return (__wStreak = c);
+}
 // за трубами: штрихи потока, капли, пузырьки
 function drawWater() {
     if (!waterStreams.length) return;
@@ -121,19 +130,17 @@ function drawWater() {
     ctx.save();
     {   // пар, выходящий из нижней трубы — за трубами: появляется прямо из устья
         const mist = waterMistSprite();
-        if (__steamOn) for (const st of waterStreams) { const p = st.pipe; if (!p) continue; for (const m of st.mist) { if (!m.back) continue; ctx.globalAlpha = Math.max(0, m.a); ctx.drawImage(mist, p.x + m.x - m.r, m.y - m.r, m.r * 2, m.r * 2); } }
+        if (__steamBack) for (const st of waterStreams) { const p = st.pipe; if (!p) continue; for (const m of st.mist) { if (!m.back) continue; ctx.globalAlpha = Math.max(0, m.a); ctx.drawImage(mist, p.x + m.x - m.r, m.y - m.r, m.r * 2, m.r * 2); } }
         ctx.globalAlpha = 1;
     }
     ctx.lineCap = 'round';
     for (const s of waterStreams) {
         const p = s.pipe; if (!p) continue;
         // штрихи-«дождь» внутри потока: светлая голова, хвост растворяется вверх
-        for (const k of s.streaks) {
-            const x = p.x + k.x, L = k.len;
-            const g = ctx.createLinearGradient(0, k.y - L, 0, k.y);
-            g.addColorStop(0, 'rgba(170, 230, 255, 0)'); g.addColorStop(1, `rgba(200, 240, 255, ${k.a})`);
-            ctx.strokeStyle = g; ctx.lineWidth = k.w;
-            ctx.beginPath(); ctx.moveTo(x, k.y - L); ctx.lineTo(x, k.y); ctx.stroke();
+        {
+            const spS = waterStreakSprite(), A0 = ctx.globalAlpha;
+            for (const k of s.streaks) { ctx.globalAlpha = A0 * k.a; ctx.drawImage(spS, p.x + k.x - k.w / 2, k.y - k.len, k.w, k.len); }
+            ctx.globalAlpha = A0;
         }
         // перемычки: сливающиеся пары и только что разорвавшиеся
         for (const d of s.drops) {
