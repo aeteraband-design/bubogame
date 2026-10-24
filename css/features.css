@@ -637,7 +637,7 @@ html #rouletteModal > .glass-panel { max-width: calc(380px * var(--menu-zoom, 1)
 #quizModal #qzWin .qz-lvls.n5{gap:5px}
 #quizModal #qzWin .qz-lvls.n5 .qz-lv b{font-size:9.5px;letter-spacing:0}
 /* v0.13.58: обводка вариантов ответа — в цвет темы, тусклее обводки карточки вопроса */
-#quizModal #qzWin .qz-o:not(.ok):not(.bad){border:1.5px solid var(--c,#A878F5);padding:6.5px;background:color-mix(in srgb,var(--c,#A878F5) 14%,rgba(20,3,38,.6));box-shadow:0 0 8px color-mix(in srgb,var(--c,#A878F5) 35%,transparent)}   /* обводка карточки ответа — в цвет её кнопки */
+#quizModal #qzWin .qz-o:not(.ok):not(.bad){border:1px solid color-mix(in srgb,var(--c,#A878F5) 38%,transparent);padding:7px;background:rgba(20,3,38,.6);box-shadow:none}   /* аккуратная еле заметная обводка в цвет кнопки, без подсветки */
 
 /* v0.13.79: «Правила» и «Настройки» — стекло с размытием, как у карточек меню; «Настройки» в фиолетовом тоне (как «GAME») */
 #openRulesBtn, #openSettingsBtn { background: rgba(36, 10, 66, 0.55) !important; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }

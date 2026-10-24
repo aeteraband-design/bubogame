@@ -209,7 +209,7 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-o{display:flex;align-items:center;gap:7px;min-height:0;box-sizing:border-box;padding:7px;border-radius:12px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:11.5px;line-height:1.22;transition:all .25s;min-width:0}
 #qzWin .qz-o span{display:block;min-width:0;overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
 #qzWin .qz-o b{flex:0 0 auto;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10.5px;color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
-#qzWin .qz-o:not(.ok):not(.bad){border:1.5px solid var(--c);padding:6.5px;background:color-mix(in srgb,var(--c) 14%,rgba(20,3,38,.6));box-shadow:0 0 8px color-mix(in srgb,var(--c) 35%,transparent)}
+#qzWin .qz-o:not(.ok):not(.bad){border:1px solid color-mix(in srgb,var(--c,#A878F5) 38%,transparent);padding:7px;background:rgba(20,3,38,.6);box-shadow:none}
 #qzWin .qz-o.ok{background:rgba(34,197,94,.2);border-color:#22C55E}
 #qzWin .qz-o.bad{background:rgba(239,68,68,.2);border-color:#EF4444}
 #qzWin .qz-o.dim{opacity:.45}
