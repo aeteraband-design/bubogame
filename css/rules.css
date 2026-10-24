@@ -86,15 +86,15 @@
 #rlWin .ru-hi { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; position: relative; width: 16px; height: 16px; font-size: 14px; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--c) 60%, transparent)); }
 #rlWin .ru-hi svg { width: 15px; height: 15px; }
 #rlWin .ru-hi .ru-inf { right: -4px; bottom: -3px; }
-#rlWin .ru-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; }
+#rlWin .ru-row { display: flex; gap: 10px; padding: 6px 0; }
 #rlWin .ru-row + .ru-row { border-top: 1px solid rgba(255, 255, 255, 0.06); }
-#rlWin .ru-ic { flex: 0 0 30px; width: 30px; height: 30px; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff;
+#rlWin .ru-ic { flex: 0 0 30px; width: 30px; height: 30px; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; font-size: 13px; 
     background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 55%, #fff), var(--c) 60%, color-mix(in srgb, var(--c) 70%, #000));
     box-shadow: 0 0 10px color-mix(in srgb, var(--c) 50%, transparent), inset 0 -2px 0 rgba(0, 0, 0, 0.2); }
-#rlWin .ru-ic i { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25)); }
+
 #rlWin .ru-ic svg { width: 15px; height: 15px; }
 #rlWin .ru-inf { position: absolute; right: 3px; bottom: 1px; font-size: 10px; font-weight: 900; line-height: 1; color: #fff; text-shadow: 0 0 2px #000, 0 0 3px #000; }
-#rlWin .ru-tx { flex: 1 1 auto; min-width: 0; padding-top: 5px; font-weight: 600; font-size: 12.5px; line-height: 1.4; color: rgba(237, 229, 248, 0.88); }
+#rlWin .ru-tx { flex: 1 1 auto; min-width: 0; font-weight: 600; font-size: 12.5px; line-height: 1.4; color: rgba(237, 229, 248, 0.88); }
 #rlWin .ru-tx b, #rlWin .ru-p b { font-weight: 900; }
 #rlWin .ru-side { flex: 0 0 auto; align-self: center; }
 #rlWin .ru-p { margin: 0 0 6px; font-weight: 600; font-size: 12.5px; line-height: 1.45; color: rgba(237, 229, 248, 0.88); }

@@ -6,7 +6,7 @@
     background: rgba(20, 3, 38, 0.82); -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
 #adminModal.hidden { display: none !important; }
 /* окно всегда на весь экран (с отступом 12px) — размер не прыгает при переключении вкладок */
-#adminModal .adm-panel { width: 100%; max-width: 448px; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 22px; text-align: left;
+#adminModal .adm-panel { width: 100%; max-width: 448px; display: flex; flex-direction: column; gap: 10px; padding: 12px; text-align: left;
     zoom: var(--menu-zoom, 1); height: calc((100dvh - 24px) / var(--menu-zoom, 1)); max-height: calc((100dvh - 24px) / var(--menu-zoom, 1));
     background: linear-gradient(180deg, rgba(36, 10, 66, 0.97), rgba(24, 6, 46, 0.97)); border: 1px solid rgba(254, 118, 0, 0.4); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55); }
 #adminModal .adm-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(120, 44, 233, 0.3); flex: 0 0 auto; }
@@ -41,13 +41,13 @@
 #adminModal .adm-btn-2.sure { background: rgba(244, 63, 94, 0.25); border-color: #F43F5E; color: #fecdd3; }
 #adminModal .adm-btn:active { transform: scale(0.97); }
 /* Плашка сил: ширина по самому широкому значению «100%» (с текущим шрифтом), по бокам такой же отступ, как сверху и снизу */
-#topHud #staminaBadge { width: calc(46px + 10px * var(--tb, 1) * var(--stam-k, 2.56)) !important; padding-left: 0 !important; padding-right: 0 !important; justify-content: center !important; box-sizing: border-box; }
+#topHud #staminaBadge { padding-left: 0 !important; padding-right: 0 !important; justify-content: center !important; box-sizing: border-box; }
 /* Верхние иконки одного видимого размера: сердечки чуть меньше, перо и вопрос подогнаны по высоте к сердечку (у них глиф крупнее) */
-#topHud #livesContainer i.fa-heart:not(.half-heart) { font-size: calc(11.5px * var(--tb, 1)) !important; }
-#topHud #staminaIcon { font-size: calc(11.75px * var(--tb, 1)) !important; }
+
+
 #topHud #staminaVal, #topHud #scoreVal { line-height: 1 !important; }
 /* цифры строго по центру плашки по вертикали */
-#topHud #scoreIcon { font-size: calc(11.9px * var(--tb, 1)) !important; }
+
 
 /* Плоские иконки пива и сжатия труб (в стиле остальных, без контура) */
 .fa-bubo-beer:before, .fa-bubo-squeeze:before { content: ""; display: inline-block; width: 0.95em; height: 0.95em; vertical-align: -0.1em; background-color: currentColor;
@@ -73,10 +73,10 @@
 #adminModal .adm-chip-reset { font: 800 12px 'Onest', sans-serif; color: #fff; background: rgba(225, 29, 72, 0.28); border: 1px solid rgba(244, 63, 94, 0.7); border-radius: 12px; padding: 10px 22px; cursor: pointer; }
 
 /* Плашки «+1 попытка» и «Макс. сила +20%» — как подсказки, только немного крупнее */
-.attempt-banner .att-pill.hint-like { display: inline-flex !important; align-items: center; gap: 4px; padding: 3.5px 8px !important; border-radius: 9999px !important;
+.attempt-banner .att-pill.hint-like { display: inline-flex !important; align-items: center; 
     background: rgba(20, 3, 38, 0.95) !important; border: 1.5px solid currentColor; font-weight: 900; white-space: nowrap; text-shadow: none !important; }
-.attempt-banner .att-pill.hint-like i { font-size: 8.5px !important; color: inherit !important; }
-.attempt-banner .att-pill.hint-like span { font-size: 8.5px !important; font-weight: 900 !important; letter-spacing: 0 !important; color: inherit !important; }
+.attempt-banner .att-pill.hint-like i { color: inherit !important; }
+.attempt-banner .att-pill.hint-like span { font-weight: 900 !important; color: inherit !important; }
 
 /* «+1 попытка»: плашка «ПОПЫТКИ» вспыхивает золотом, стрелка делает оборот, число переливается */
 #attemptsBadge { transform-origin: center; }
