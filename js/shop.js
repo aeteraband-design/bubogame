@@ -1,7 +1,8 @@
 // ===== МОНЕТЫ И ЛАВКА =====
-// Монеты — валюта: вопросы дня (30 / 60 / 100 за верный ответ, до 10 вопросов в день — максимум ~550, обычно 300–400),
-// в полёте — по 40 за каждые 50 собранных вопросов, в рулетке — редкий приз 500 монет. Монеты не сгорают при смене дня.
-// Баланс: попытка стоит 1000 — это 2–3 дня хороших ответов или очень хороший полёт; плохо сыграв, сразу докупить не выйдет.
+// Монеты — редкая валюта, их копят. Доход: в полёте 15 монет за каждые 50 вопросов (на каждом 300-м — попытка вместо монет),
+// мелкие монеты на пути (5–30 по уровню), вопросы дня 2 / 4 / 8 / 15 за верный ответ, в рулетке — 300 монет.
+// Обычно выходит 120–180 монет в день, у активного игрока 250–350. Цены: разовый бонус — на день-два, попытка — на 3–4 дня,
+// вращение рулетки (там настоящие призы) — 2–3 недели активной игры. Монеты не сгорают при смене дня.
 const COINS_KEY = 'bubo_coins', SHOP_PEND_KEY = 'bubo_shop_pending';
 function coinsGet() { try { return Math.max(0, parseInt(localStorage.getItem(COINS_KEY), 10) || 0); } catch (e) { return 0; } }
 function coinsSet(n) { try { localStorage.setItem(COINS_KEY, String(Math.max(0, Math.round(n)))); } catch (e) {} shopSyncBtn(); }
@@ -26,25 +27,31 @@ function shopOnFlightStart() {
 
 // товары. can() — можно ли купить сейчас (false → кнопка «нельзя» с пояснением why)
 const SHOP_ITEMS = [
-    { key: 'a1', name: '+1 попытка', desc: 'Ещё один полёт', icon: 'fa-rotate-right', col: '#FE7600', price: 1000,
+    { key: 'a1', name: '+1 попытка', desc: 'Ещё один полёт', icon: 'fa-rotate-right', col: '#FE7600', price: 600,
       buy() { attempts = Math.min(99, attempts + 1); zeroDay = ''; } },
-    { key: 'spin', name: 'Вращение рулетки', desc: 'Крути и выигрывай призы', icon: 'fa-dice', col: '#A855F7', price: 800,
+    { key: 'spin', name: 'Вращение рулетки', desc: 'Крути и выигрывай призы', icon: 'fa-dice', col: '#A855F7', price: 5000,
       buy() { rouletteSpins = Math.min(99, rouletteSpins + 1); try { rwUpdateUI(); } catch (e) {} } },
-    { key: 'life', name: '+1 жизнь', desc: 'Сердце прямо сейчас', icon: 'fa-heart-circle-plus', col: '#EC4899', price: 250,
+    { key: 'life', name: '+1 жизнь', desc: 'Сердце прямо сейчас', icon: 'fa-heart-circle-plus', col: '#EC4899', price: 120,
       can() { return lives < maxLives ? '' : 'Сердца полные'; },
       buy() { lives = Math.min(maxLives, (lives <= 0.5 ? startLives : lives) + 1); } },
-    { key: 'hearts', name: '6 жизней', desc: 'Максимум 6, старт с 4', icon: 'fa-heart', col: '#F43F5E', price: 1800,
+    { key: 'hearts', name: '6 жизней', desc: 'Максимум 6, старт с 4', icon: 'fa-heart', col: '#F43F5E', price: 500,
       can() { return maxLives < 6 ? '' : 'Уже есть'; },
       buy() { startLives = Math.max(startLives, 4); maxLives = Math.max(maxLives, 6); } },
-    { key: 'stamina', name: '+20% к силе', desc: 'Максимум сил больше', icon: 'fa-bolt', col: '#00F0FF', price: 900,
+    { key: 'stamina', name: '+20% к силе', desc: 'Максимум сил больше', icon: 'fa-bolt', col: '#00F0FF', price: 300,
       can() { return maxStamina < 200 ? '' : 'Максимум'; },
       buy() { maxStamina = Math.min(200, maxStamina + 20); stamina = maxStamina; } },
-    { key: 'refill', name: 'Полные силы', desc: 'Запас сил до краёв', icon: 'fa-battery-full', col: '#22C55E', price: 120,
+    { key: 'refill', name: 'Полные силы', desc: 'Запас сил до краёв', icon: 'fa-battery-full', col: '#22C55E', price: 60,
       can() { return stamina < maxStamina - 0.5 ? '' : 'Силы полные'; },
       buy() { stamina = maxStamina; } },
-    { key: 'shield', name: 'Щит на старте', desc: 'В начале следующего полёта', icon: 'fa-shield-halved', col: '#4ADE80', price: 300, pend: true },
-    { key: 'slow', name: 'Замедление на старте', desc: 'В начале следующего полёта', icon: 'fa-hourglass-half', col: '#38BDF8', price: 250, pend: true },
-    { key: 'shazam', name: 'ШАЗАМ на старте', desc: 'Суперскорость с первых секунд', icon: 'fa-bolt-lightning', col: '#FF7A00', price: 900, pend: true }
+    // эффекты в запас (до 3 каждого): в полёте — кнопкой сбоку, когда нужно
+    { key: 'shield', name: 'Щит', desc: 'В запас — включишь в полёте', icon: 'fa-shield-halved', col: '#4ADE80', price: 150, inv: true,
+      can() { return invCount('shield') >= INV_MAX ? 'Запас полон' : ''; } },
+    { key: 'speed', name: 'Ускорение', desc: 'В запас — включишь в полёте', icon: 'fa-bolt', col: '#FACC15', price: 120, inv: true,
+      can() { return invCount('speed') >= INV_MAX ? 'Запас полон' : ''; } },
+    { key: 'slow', name: 'Замедление', desc: 'В запас — включишь в полёте', icon: 'fa-hourglass-half', col: '#38BDF8', price: 100, inv: true,
+      can() { return invCount('slow') >= INV_MAX ? 'Запас полон' : ''; } },
+    { key: 'shazam', name: 'ШАЗАМ', desc: 'В запас — включишь в полёте', icon: 'fa-bolt-lightning', col: '#FF7A00', price: 350, inv: true,
+      can() { return invCount('shazam') >= INV_MAX ? 'Запас полон' : ''; } }
 ];
 
 (function () {
@@ -170,7 +177,8 @@ function shopRender() {
         else if (c < it.price) btn = `<div class="sh-buy no"><i class="fa-solid fa-coins sh-cg"></i>${it.price}</div>`;
         else if (shSure === it.key) btn = `<button type="button" class="sh-buy sure" data-sh="${it.key}">КУПИТЬ?</button>`;
         else btn = `<button type="button" class="sh-buy" data-sh="${it.key}"><i class="fa-solid fa-coins sh-cg"></i>${it.price}</button>`;
-        return `<div class="sh-it" data-it="${it.key}" style="--c:${it.col}"><div class="sh-ic"><i class="fa-solid ${it.icon}"></i></div><div class="sh-nm">${it.name}</div><div class="sh-ds">${it.desc}</div>${btn}</div>`;
+        const ds = it.inv ? `${it.desc}<br><b style="color:${it.col}">В запасе: ${invCount(it.key)} из ${INV_MAX}</b>` : it.desc;
+        return `<div class="sh-it" data-it="${it.key}" style="--c:${it.col}"><div class="sh-ic"><i class="fa-solid ${it.icon}"></i></div><div class="sh-nm">${it.name}</div><div class="sh-ds">${ds}</div>${btn}</div>`;
     }).join('');
 }
 // первое нажатие — «Купить?», второе (в течение 3 с) — покупка
@@ -182,7 +190,8 @@ function shopTap(key) {
     const c = coinsGet(); if (c < it.price) { shopRender(); return; }
     if (it.can && it.can()) { shopRender(); return; }
     coinsSet(c - it.price);
-    if (it.pend) { const p = shopPend(); p[it.key] = 1; shopSetPend(p); }
+    if (it.inv) invAdd(it.key);
+    else if (it.pend) { const p = shopPend(); p[it.key] = 1; shopSetPend(p); }
     else try { it.buy(); } catch (e) {}
     try { StorageManager.save(); updateHUDAll(); } catch (e) {}
     try { AudioFX.playAttemptBonus(); Haptics.powerup(); } catch (e) {}

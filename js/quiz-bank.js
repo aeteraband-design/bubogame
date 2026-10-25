@@ -26,10 +26,10 @@ const QZ_THEMES = [
 ];
 // уровни сложности и монеты за верный ответ
 const QZ_LEVELS = [
-    { id: 's', name: 'Суперлайт', coins: 1, col: '#4ADE80' },
-    { id: 'l', name: 'Лайт', coins: 3, col: '#A3E635' },
-    { id: 'm', name: 'Средне', coins: 5, col: '#FACC15' },
-    { id: 'x', name: 'Сложно', coins: 10, col: '#F87171' }
+    { id: 's', name: 'Суперлайт', coins: 2, col: '#4ADE80' },
+    { id: 'l', name: 'Лайт', coins: 4, col: '#A3E635' },
+    { id: 'm', name: 'Средне', coins: 8, col: '#FACC15' },
+    { id: 'x', name: 'Сложно', coins: 15, col: '#F87171' }
 ];
 
 const QZ_BANK = {

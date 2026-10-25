@@ -88,9 +88,9 @@
         crystal() { return typeof CRYSTAL !== 'undefined' ? CRYSTAL : { SEC: 10, HIT_DMG: 0.5, PER_PIPE: [1, 1, 2, 2, 3, 3] }; },
         water() { return typeof WATERFX !== 'undefined' ? WATERFX : { SEC: 10 }; },
         levelStart(i) { return Math.ceil(i * this.total() / Math.max(1, LV().length)); },
-        coinOnPath(i) { return 50 * (Math.min(5, i) + 1); },   // как в spawnPipe (hud.js)
+        coinOnPath(i) { return typeof COIN_PATH_VALUES !== 'undefined' ? COIN_PATH_VALUES[Math.max(0, Math.min(5, i))] : 5; },   // как в spawnPipe (hud.js)
         // монеты за рубежи вопросов в полёте — как в checkAttemptMilestone (game-core.js)
-        milestoneCoins(k) { return (k % 4) * 50; },
+        milestoneCoins(k) { return typeof coinsForMilestone === 'function' ? coinsForMilestone(k) : 15; },
         quizLevels() { return has(() => (typeof qzLevelsOn === 'function' ? qzLevelsOn() : QZ_LEVELS)) || []; },
         quizPerDay() { return typeof QUIZ_PER_DAY !== 'undefined' ? QUIZ_PER_DAY : 10; },
         quizRead() { return typeof QZ_READ !== 'undefined' ? QZ_READ : 5; },
@@ -150,8 +150,8 @@
                 + row('fa-chart-line', '#FB923C', 'Выше уровень', 'темы попадаются реже.'))
             + sec('fa-circle-question', '#FE7600', 'Значки на пути',
                 row('fa-circle-question', '#FE7600', 'Вопрос', 'самый частый значок: +1 к счёту вопросов (вверху экрана).')
-                + row('fa-coins', '#FFC53D', 'Каждые 50 вопросов в полёте', `монеты по кругу: ${ms}. Каждые ${Q} — <b style="color:#FE7600">+1 попытка</b>.`)
-                + row('fa-coins', '#FFD66B', 'Монеты', `редкий значок: от ${c0} до ${c1} монет — чем выше уровень, тем больше; не больше 2 раз за каждые два уровня.`)
+                + row('fa-coins', '#FFC53D', 'Каждые 50 вопросов в полёте', `${coinsW(V.milestoneCoins(1))}. Каждые ${Q} — <b style="color:#FE7600">+1 попытка</b> вместо монет.`)
+                + row('fa-coins', '#FFD66B', 'Монеты', `значок: от ${c0} до ${c1} монет — чем выше уровень, тем больше; не больше 4 раз за каждые два уровня.`)
                 + row('fa-heart-circle-plus', '#EF4444', 'Сердца и еда', 'появляются, только пока сердца не полные.')
                 + row('fa-battery-quarter', '#67E8F9', 'Сил меньше 30%', 'на пути только то, что их восстанавливает: перья, мороженое и напитки.'))
             + sec('fa-star', '#FFD700', 'Секретная звезда',
@@ -254,16 +254,16 @@
                 + row('fa-door-open', '#C4A1FF', 'Выйти', 'можно между вопросами. Закрыл окно посреди вопроса — он засчитан как неотвеченный.'))
             + sec('fa-coins', '#FFC53D', 'Где взять монеты',
                 row('fa-circle-question', '#38BDF8', 'Вопросы дня', 'за верные ответы.')
-                + row('fa-circle-question', '#FE7600', 'В полёте', `каждые 50 вопросов — ${ms} монет по кругу.`)
+                + row('fa-circle-question', '#FE7600', 'В полёте', `каждые 50 вопросов — ${coinsW(V.milestoneCoins(1))}; каждые ${V.qpa()} — попытка вместо монет.`)
                 + row('fa-coins', '#FFD66B', 'Значок монет', `на пути: ${c0}–${c1} монет.`)
-                + (big ? row('fa-dice', '#F472B6', 'Рулетка', `приз ${coinsW(big.coins || 500)}.`) : '')
+                + (big ? row('fa-dice', '#F472B6', 'Рулетка', `приз ${coinsW(big.coins || 300)}.`) : '')
                 + row('fa-piggy-bank', '#22C55E', 'Не сгорают', 'монеты остаются и на следующий день. Тратятся в лавке.'));
     }
 
     function buildShop() {
         const items = typeof SHOP_ITEMS !== 'undefined' ? SHOP_ITEMS : [];
         const NOTE = { life: 'Только если сердца не полные.', hearts: 'До конца дня.', stamina: 'До конца дня, максимум — 200%.', refill: 'Только если силы не полные.' };
-        const shopRows = items.map(it => row(it.icon, it.col, it.name, `${it.desc}.${it.pend ? ' Сработает в начале следующего полёта.' : ''}${NOTE[it.key] ? ' ' + NOTE[it.key] : ''}`, coin(it.price))).join('');
+        const shopRows = items.map(it => row(it.icon, it.col, it.name, `${it.inv ? 'Эффект в запас: до 3 штук, включается кнопкой сбоку экрана, когда нужно (сторону выбираешь в настройках).' : it.desc + '.'}${NOTE[it.key] ? ' ' + NOTE[it.key] : ''}`, coin(it.price))).join('');
         const P = V.prizes(), keys = Object.keys(P), tw = keys.reduce((a, k) => a + (P[k].w || 0), 0) || 1;
         const prizeRows = keys.slice().sort((a, b) => P[b].w - P[a].w).map(k => row(P[k].icon, P[k].col, capFirst(P[k].title), '', `<span class="ru-pct">${pct(P[k].w / tw * 100)}</span>`)).join('');
         const sp = V.price('spin');

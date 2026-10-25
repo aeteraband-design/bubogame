@@ -38,7 +38,7 @@ const ADMIN_DEFAULTS = {
     stormTest: 0,                        // проверка погоды: 0 — случайные грозы, 10–100 — сила грозы вручную
     shazamEvery: 4,                      // какое по счёту взятое ускорение включает ШАЗАМ
     feathersForMax: 6,                   // волшебных перьев до роста максимума сил
-    attempts: 2, questionsPerAttempt: 200,   // попытки на сутки; +1 попытка за каждые 200 вопросов, между ними — 50/100/150 монет
+    attempts: 2, questionsPerAttempt: 300,   // попытки на сутки; +1 попытка за каждые 300 вопросов, между ними — по 15 монет за каждые 50
     maxLives: 5                          // максимум сердечек: 5 или 6
 };
 const ADMIN_SPEC = {   // [минимум, максимум, шаг]
@@ -51,8 +51,8 @@ function normalizeAdminCfg(raw) {
     raw = (raw && typeof raw === 'object') ? raw : {};
     const cl = (v, sp, d) => { v = Math.round(Number(v)); return isFinite(v) ? Math.max(sp[0], Math.min(sp[1], v)) : d; };
     for (const k in ADMIN_SPEC) if (k !== 'theme' && k in raw) out[k] = cl(raw[k], ADMIN_SPEC[k], out[k]);
-    if (raw.qpaV !== 4) out.questionsPerAttempt = ADMIN_DEFAULTS.questionsPerAttempt;   // один раз переходим на «попытка за 200 вопросов»
-    out.qpaV = 4;
+    if (raw.qpaV !== 5) out.questionsPerAttempt = ADMIN_DEFAULTS.questionsPerAttempt;   // один раз переходим на «попытка за 300 вопросов» (новая экономика)
+    out.qpaV = 5;
     // темы: старые сохранённые значения (до перехода на «по 20») не берём — один раз сбрасываем на новые стандартные
     if (raw.themesV === 2 && raw.themes && typeof raw.themes === 'object') for (const k in out.themes) if (k in raw.themes) out.themes[k] = cl(raw.themes[k], ADMIN_SPEC.theme, out.themes[k]);
     out.themesV = 2;
@@ -131,6 +131,9 @@ function updateLivesHUD() { scheduleHud('heart'); }
 // ===== Каждые 100 вопросов — +1 попытка =====
 let QUESTIONS_PER_ATTEMPT = ADMIN_CFG.questionsPerAttempt;
 let attemptMilestone = -1, coinMilestone = -1;
+// экономика: монеты за каждые 50 вопросов в полёте (на каждом рубеже попытки — попытка вместо монет)
+const COINS_PER_50 = 15;
+function coinsForMilestone(k) { return (k * 50) % QUESTIONS_PER_ATTEMPT === 0 ? 0 : COINS_PER_50; }
 function checkAttemptMilestone() {
     let active = false;
     try { active = gameActive; } catch (e) {}
@@ -140,7 +143,7 @@ function checkAttemptMilestone() {
     if (coinMilestone < 0 || !active) coinMilestone = Math.max(coinMilestone, c);
     else if (c > coinMilestone) {
         let add = 0;
-        for (let k = coinMilestone + 1; k <= c; k++) add += (k % 4) * 50;   // по кругу: 50 → 50, 100 → 100, 150 → 150, 200 → попытка (0 монет), 250 → 50…   // 50, 100, 150… монет на рубеже (кроме рубежа попытки)
+        for (let k = coinMilestone + 1; k <= c; k++) add += coinsForMilestone(k);   // 15 монет за каждые 50 вопросов; на рубеже попытки — попытка вместо монет
         coinMilestone = c;
         if (add > 0 && typeof coinsAdd === 'function') {
             coinsAdd(add);

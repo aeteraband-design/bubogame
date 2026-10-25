@@ -1,3 +1,5 @@
+// монеты на пути по уровням сложности — мелкие, но попадаются чаще (экономика: монеты копят)
+const COIN_PATH_VALUES = [5, 8, 12, 18, 24, 30];
 let pipes = [];
 let items = [];
 let particles = [];
@@ -1078,21 +1080,21 @@ function spawnPipe(startX) {
         if (itemType === 'icecream') pipesSinceIceCream = 0;
     }
     // монеты на пути: редко и случайно — за пару уровней сложности (Суперлайт+Лайт, Медиум+Медиум+, Хард+Хард+) от 0 до 2 раз.
-    // Номинал растёт с уровнем: 50, 100, 150, 200, 250, 300
+    // Номинал растёт с уровнем: 5, 8, 12, 18, 24, 30 (COIN_PATH_VALUES); до 4 раз за каждые два уровня
     {
         const isThemeItem = !!(CATEGORIES[itemType] && CATEGORIES[itemType].count);
         let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {}
         const tier = Math.min(2, Math.floor(lv / 2));
         if (!coinSpawns.st || (typeof getTotalCollectedThemes === 'function' && getTotalCollectedThemes() === 0 && coinSpawns.lastThemes > 0)) coinSpawns.st = [0, 0, 0];
         try { coinSpawns.lastThemes = getTotalCollectedThemes(); } catch (e) {}
-        if (!isThemeItem && itemType !== 'secret' && coinSpawns.st[tier] < 2 && Math.random() < 0.014) { itemType = 'coin'; coinSpawns.st[tier]++; }
+        if (!isThemeItem && itemType !== 'secret' && coinSpawns.st[tier] < 4 && Math.random() < 0.03) { itemType = 'coin'; coinSpawns.st[tier]++; }
     }
     // редкий значок — «Опасные трубы» или «Водонапор» (что именно, решает случай): выпадает на месте обычного значка (не темы и не секретной звезды), когда набралось достаточно тем
     if (crystalPending && crystalTime <= 0 && !(typeof waterTime !== 'undefined' && waterTime > 0) && itemType !== 'secret' && !(CATEGORIES[itemType] && CATEGORIES[itemType].count)) { itemType = (typeof registerWater === 'function' && (crystalPending === 'water' || (crystalPending === true && Math.random() < 0.5))) ? 'water' : 'crystal'; crystalPending = false; }   // «Опасные трубы» или «Водонапор» — по плану
     if (typeof shazamBlockedType === 'function' && shazamBlockedType(itemType)) itemType = 'question';   // в ШАЗАМе щит, заморозка и т.п. на пути не появляются
     lastSpawnedItemType = itemType;
     const tokenRadius = 26;
-    let coinVal = 0; if (itemType === 'coin') { let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {} coinVal = 50 * (Math.min(5, lv) + 1); }
+    let coinVal = 0; if (itemType === 'coin') { let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {} coinVal = COIN_PATH_VALUES[Math.max(0, Math.min(5, lv))]; }
 
     if (itemType === 'stamina' || itemType === 'infinite') {
         items.push({

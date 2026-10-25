@@ -351,7 +351,7 @@
     const cfg = (k, d) => { try { return (typeof ADMIN_CFG !== 'undefined' && ADMIN_CFG[k]) || d; } catch (e) { return d; } };
     const qpa = () => cfg('questionsPerAttempt', 200);
     const HINTS = window.LOGO_HINTS = window.LOGO_HINTS || [
-        { id: 'shop', text: 'В лавке за монеты можно купить бонус к началу полёта.' },
+        { id: 'shop', text: 'Купи в лавке щит или ШАЗАМ про запас — включишь кнопкой в полёте.' },
         { id: 'shz1', text: () => { const n = cfg('shazamEvery', 4); return `Собери ${n} ${plN(n, ['ускорение', 'ускорения', 'ускорений'])} — включится ШАЗАМ!`; } },
         { id: 'shz2', text: 'В ШАЗАМе сова летит сквозь трубы и сама притягивает значки.' },
         { id: 'shz3', text: 'Конец ШАЗАМа — успей вылететь из трубы, пока идёт отсчёт!' },
