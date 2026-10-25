@@ -353,7 +353,7 @@ function stormLitOverlay(k) {
 // slot — свой холст (0 или 1); noBlit — не класть на сцену сразу (два слоя туч складываются вместе и кладутся одним разом)
 function stormLitLayer(k, drawFn, slot, noBlit) {
     const main = ctx, cv = main.canvas;
-    const dpr = cv.width / Math.max(1, width), q = dpr > 1.6 ? 1.5 / dpr : 1;
+    const dpr = cv.width / Math.max(1, width), q = dpr > 1.25 ? 1.15 / dpr : 1;   // тучи мягкие (размытые края): ~1 пиксель на точку хватает, на вид то же
     const W = Math.max(1, Math.round(cv.width * q)), H = Math.max(1, Math.round(cv.height * q));
     const LS = STORM.litCvs || (STORM.litCvs = []);
     let L = LS[slot || 0];
@@ -381,6 +381,15 @@ function stormDrawBack() {
         const lk = stormSmooth(0, 0.85, cv);   // освещение луной и тень нарастают вместе с грозой
         // без вспышки дальний и ближний слои туч складываются на своём холсте и кладутся на сцену одним разом (меньше работы в дождь)
         const merge = !(STORM.flash > 0.01);
+        // тучи плывут медленно (меньше пикселя за кадр), поэтому слой туч пересобирается через кадр, а в промежуточном кадре
+        // на сцену кладётся готовый — вдвое меньше работы в дождь (движение не теряется: время копится до следующей пересборки)
+        const LS0 = STORM.litCvs && STORM.litCvs[0];
+        if (merge && !first && STORM.cldMerged && LS0 && (STORM.cldSkip = !STORM.cldSkip)) {
+            STORM.cldAcc = (STORM.cldAcc || 0) + dtMult;
+            stormLitBlit(LS0);
+        } else {
+        const dm0 = dtMult; dtMult = dm0 + (STORM.cldAcc || 0); STORM.cldAcc = 0; STORM.cldMerged = merge;
+        try {
         const LA = stormLitLayer(0.85 * lk, () => {
             stormDrawCloudLayer(L.low, spr.far, (r) => height * (0.34 + r * 0.17), cv, si, 0.9, 0, first, null);   // за домами, у горизонта
             stormDrawCloudLayer(L.far, spr.far, (r) => 20 + r * Math.max(10, yb - 70), cv, si, 0.9, 0, first, null);
@@ -393,6 +402,8 @@ function stormDrawBack() {
         } else {
             stormDrawFlashBack(yb);   // зарница внутри туч и сам разряд — между дальним и ближним слоем туч
             stormLitLayer(lk, nearFn, 1);
+        }
+        } finally { dtMult = dm0; }
         }
         // луна сквозь плотные тучи лишь иногда проглядывает: то чуть видна, то почти скрыта
         const mp = window.__moonPos;
@@ -560,35 +571,48 @@ function stormDrawHotFx(k, cz) {
     ctx.save();
     if (Math.abs(cz - 1) > 0.0005) { ctx.translate(width / 2, height / 2); ctx.scale(cz, cz); ctx.translate(-width / 2, -height / 2); }
     let sq = 0; try { sq = crystalSqueeze(); } catch (e) {}
-    // обрезка: весь экран, кроме тел труб (чтобы шары и вода не легли поверх труб)
-    ctx.beginPath(); ctx.rect(-50, -50, width + 100, height + 100);
-    for (const p of pipes) {
-        if (p.x + p.width < -40 || p.x > width + 40) continue;
-        ctx.rect(p.x - 5, -50, p.width + 10, p.top + sq + 50);
-        ctx.rect(p.x - 5, height - (p.bottom + sq), p.width + 10, p.bottom + sq + 50);
-    }
-    ctx.clip('evenodd');
-    try {
-        if (hot) { ctx.globalAlpha = 0.5 * k; drawCrystals(); ctx.globalAlpha = 1; }   // огоньки — в своём цвете, чуть светятся
-        if (wet) {   // вода — в своих цветах и чуть светится, будто сзади луна
-            // в дождь вода рисуется только здесь (в основном проходе её больше нет) — в полную яркость; пар над трубой уже нарисован
-            ctx.globalAlpha = 1;
-            __steamOn = false; __steamBack = true;
-            if (typeof drawWater === 'function') drawWater();
-            ctx.globalAlpha = Math.min(1, 0.75 * k);
-            if (typeof drawWaterFront === 'function') drawWaterFront();
-            __steamOn = true;
-            ctx.globalCompositeOperation = 'lighter';
-            for (const st of waterStreams) {
-                const p = st.pipe; if (!p || !st.on) continue;
-                const x = p.x + p.width * st.fx, w = st.w || p.width * 0.8, y0 = p.top + sq, yb = height - (p.bottom + sq);
-                const g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
-                g.addColorStop(0, 'rgba(170, 220, 255, 0)'); g.addColorStop(0.5, `rgba(190, 230, 255, ${(0.07 * k).toFixed(3)})`); g.addColorStop(1, 'rgba(170, 220, 255, 0)');
-                ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(x - w / 2 - 6, y0, w + 12, yb - y0);
-            }
-            ctx.globalCompositeOperation = 'source-over';
+    if (hot) {
+        // обрезка для огоньков: весь экран, кроме тел труб (чтобы шары не легли поверх труб)
+        ctx.save();
+        ctx.beginPath(); ctx.rect(-50, -50, width + 100, height + 100);
+        for (const p of pipes) {
+            if (p.x + p.width < -40 || p.x > width + 40) continue;
+            ctx.rect(p.x - 5, -50, p.width + 10, p.top + sq + 50);
+            ctx.rect(p.x - 5, height - (p.bottom + sq), p.width + 10, p.bottom + sq + 50);
         }
-    } catch (e) {}
+        ctx.clip('evenodd');
+        try { ctx.globalAlpha = 0.5 * k; drawCrystals(); ctx.globalAlpha = 1; } catch (e) {}   // огоньки — в своём цвете, чуть светятся
+        ctx.restore();
+    }
+    if (wet) {
+        // вода — в своих цветах и чуть светится, будто сзади луна. В дождь вода рисуется только здесь (в основном проходе её нет), в полную яркость.
+        // Каждый поток обрезается простым прямоугольником — щелью между своими трубами (это почти бесплатно, в отличие от сложной
+        // обрезки «весь экран без труб», под которой раньше рисовались сотни капель и тормозил дождь)
+        const all = waterStreams;
+        try {
+            for (const st of all) {
+                const p = st.pipe; if (!p || p.x + p.width < -80 || p.x > width + 80) continue;
+                const y0 = p.top + sq, yb = height - (p.bottom + sq);
+                ctx.save(); ctx.beginPath(); ctx.rect(p.x - 70, y0, p.width + 140, Math.max(0, yb - y0)); ctx.clip();
+                waterStreams = [st];
+                ctx.globalAlpha = 1;
+                __steamOn = false; __steamBack = true;
+                if (typeof drawWater === 'function') drawWater();
+                ctx.globalAlpha = Math.min(1, 0.75 * k);
+                if (typeof drawWaterFront === 'function') drawWaterFront();
+                __steamOn = true;
+                if (st.on) {
+                    const x = p.x + p.width * st.fx, w = st.w || p.width * 0.8;
+                    ctx.globalCompositeOperation = 'lighter';
+                    const g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
+                    g.addColorStop(0, 'rgba(170, 220, 255, 0)'); g.addColorStop(0.5, `rgba(190, 230, 255, ${(0.07 * k).toFixed(3)})`); g.addColorStop(1, 'rgba(170, 220, 255, 0)');
+                    ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(x - w / 2 - 6, y0, w + 12, yb - y0);
+                    ctx.globalCompositeOperation = 'source-over';
+                }
+                ctx.restore();
+            }
+        } catch (e) {} finally { waterStreams = all; __steamOn = true; }
+    }
     ctx.restore();
     // жар труб — поверх и на самих трубах: в дождь ярче
     if (hot && typeof crystalDrawHeat === 'function') {

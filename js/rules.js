@@ -245,15 +245,18 @@
     function buildProf() {
         if (typeof PF_SK === 'undefined') return '';
         const need = [1, 2, 3, 4, 9].map(l => `<span class="ru-chip" style="--c:#C084FC">${l} → ${l + 1} <em>${pfNeed(l)}</em></span>`).join('');
-        const cost = PF_SK_PTS.map((p, i) => `<span class="ru-chip" style="--c:#FFC53D">${i + 1}-я <em><i class="fa-solid fa-graduation-cap"></i>${p} · <i class="fa-solid fa-coins"></i>${PF_SK_COINS[i]}</em></span>`).join('');
+        const costs = (t, col) => PF_SK_COST[t].pts.map((p, i) => `<span class="ru-chip" style="--c:${col}">${i + 1}-я <em><i class="fa-solid fa-graduation-cap"></i>${p} · <i class="fa-solid fa-coins"></i>${PF_SK_COST[t].coins[i]}</em></span>`).join('');
+        const names = (t) => PF_SK.filter(s => s.tier === t).map(s => s.name).join(', ');
         return sec('fa-star', '#C084FC', 'Уровень совы',
                 row('fa-user', '#C084FC', 'Профиль', 'плашка вверху главного меню: аватар, ник и уровень. Нажми — откроется окно совы.')
-                + row('fa-arrow-trend-up', '#FFB25C', 'Опыт', `${PF_XP.q} за вопрос в полёте, ${PF_XP.theme} за тему, ${PF_XP.win} за победу; вопрос дня — монеты за ответ ×2 (неверный — ${PF_XP.qzBad}).`)
+                + row('fa-arrow-trend-up', '#FFB25C', 'Опыт', `${PF_XP.q} за вопрос в полёте, ${PF_XP.theme} за тему, ${PF_XP.win} за победу; верный ответ в вопросах дня — столько же опыта, сколько монет.`)
                 + row('fa-infinity', '#5EEAD4', 'Не сгорает', 'уровень копится всегда — новый день его не сбрасывает.')
-                + row('fa-stairs', '#C084FC', 'Каждый уровень дольше', 'опыта до следующего уровня:') + `<div class="ru-chips">${need}</div>`
+                + row('fa-stairs', '#C084FC', 'Уровни копятся долго', 'каждый следующий требует больше опыта:') + `<div class="ru-chips">${need}</div>`
                 + row('fa-gift', '#FFC53D', 'Награда за уровень', `очко обучения и ${coinsW(pfCoinsFor(2))} на 2-м (+5 с каждым уровнем); на каждом 5-м — 2 очка и попытка.`))
             + sec('fa-graduation-cap', '#4ADE80', 'Навыки',
-                row('fa-graduation-cap', '#C084FC', 'Очки обучения', 'тратятся во вкладке «Навыки». У навыка 5 ступеней, каждая следующая дороже:') + `<div class="ru-chips">${cost}</div>`
+                row('fa-graduation-cap', '#C084FC', 'Очки обучения', 'тратятся во вкладке «Навыки» вместе с монетами. У навыка 5 ступеней, каждая следующая дороже.')
+                + row('fa-seedling', '#7DD3FC', 'Простые навыки', `${names('minor')}:`) + `<div class="ru-chips">${costs('minor', '#7DD3FC')}</div>`
+                + row('fa-gem', '#FFC53D', 'Сильные навыки', `${names('major')} — на них надо копить:`) + `<div class="ru-chips">${costs('major', '#FFC53D')}</div>`
                 + PF_SK.map(s => row(s.icon, s.col, s.name, (s.step + (s.top ? ' ' + s.top : '')).replace(/\.$/, '').replace(/^./, c => c.toLowerCase()) + '.')).join('')
                 + row('fa-scale-balanced', '#94A3B8', 'Баланс', 'навыки облегчают полёт понемногу — сложность игры остаётся.'));
     }

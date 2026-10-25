@@ -118,13 +118,13 @@ function update() {
 
     if (compressionTime > 0) {
         compressionTime -= dtMult;
-        currentCompressionFactor = Math.min(1.0, currentCompressionFactor + 0.04 * dtMult);
+        currentCompressionFactor = Math.min(1.0, currentCompressionFactor + COMPRESS_STEP * dtMult);   // трубы съезжаются ≈0,7 с — столько же звучит сжатие
         if (compressionTime <= 0) {
-            AudioFX.playCompressEnd();
+            AudioFX.playCompressEnd(currentCompressionFactor / COMPRESS_STEP / 60);
             Haptics.powerup();
         }
     } else {
-        currentCompressionFactor = Math.max(0.0, currentCompressionFactor - 0.04 * dtMult);
+        currentCompressionFactor = Math.max(0.0, currentCompressionFactor - COMPRESS_STEP * dtMult);
     }
 
     const diffInfo = getDifficultyMultipliers();
@@ -432,7 +432,7 @@ function update() {
                 Haptics.powerup();
                 it.pendingFX = { target: 'other', text: `Щит ${shieldSecs()}с`, color: '#22C55E', icon: 'fa-shield-halved' };
             } else if (it.type === 'compress') {
-                AudioFX.playCompressStart();
+                AudioFX.playCompressStart((1 - currentCompressionFactor) / COMPRESS_STEP / 60);
                 compressionTime = ADMIN_CFG.compressSec * 60;
                 Haptics.powerup();
                 it.pendingFX = { target: 'other', text: `Сжатие ${ADMIN_CFG.compressSec}с`, color: '#D946EF', icon: 'svg-compress' };
@@ -883,7 +883,7 @@ function handleSecretRoulette(originX, originY) {
                 return { label: `Штраф: -1 ${CATEGORIES[lostKey].name}`, color: '#F43F5E', icon: 'fa-triangle-exclamation', isScoreAdd: false };
             } },
             { w: 13, kind: 'compress', run() {
-                AudioFX.playCompressStart();
+                AudioFX.playCompressStart((1 - currentCompressionFactor) / COMPRESS_STEP / 60);
                 compressionTime = ADMIN_CFG.compressSec * 60;
                 Haptics.powerup();
                 return { label: `Сжатие ${ADMIN_CFG.compressSec}с`, color: '#D946EF', icon: 'svg-compress', isScoreAdd: false };

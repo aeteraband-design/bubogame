@@ -91,3 +91,12 @@
     box-shadow: 0 0 10px rgba(255, 197, 61, 0.9), 0 0 22px rgba(255, 165, 0, 0.7), inset 0 0 8px rgba(255, 197, 61, 0.6);
     animation: attemptsGlowPulse 1.25s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 @keyframes attemptsGlowPulse { 0% { opacity: 0; transform: scale(0.85); } 18% { opacity: 1; transform: scale(1.12); } 45% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.18); } }
+/* три кнопки сброса: прогресс игры / настройки админки / всё (с выходом из профиля) */
+#adminModal .adm-resets { flex: 0 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+#adminModal .adm-resets > b { grid-column: 1 / -1; margin: 0 2px -2px; font: 800 10.5px/1 Onest, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #C4A1FF; }
+#adminModal .adm-resets button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 11px 4px; border-radius: 14px; cursor: pointer;
+    font: 900 11.5px/1 Onest, sans-serif; letter-spacing: .05em; color: var(--c); background: rgba(20, 3, 38, .6); border: 2px solid var(--c); transition: background .2s, color .2s; }
+#adminModal .adm-resets button i { font-size: 15px; }
+#adminModal .adm-resets button:active { transform: scale(.96); }
+#adminModal .adm-resets button.sure { color: #fff; background: var(--c); }
+#adminModal #admReset { display: none; }   /* настройки админки сбрасывает кнопка «Админка» в блоке «Сбросить» */

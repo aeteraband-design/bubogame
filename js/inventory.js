@@ -68,7 +68,7 @@ function invBuild() {
     if (invEl) return invEl;
     const host = document.getElementById('gameContainer'); if (!host) return null;
     const st = document.createElement('style');
-    st.textContent = '#invBar{position:absolute;top:50%;z-index:21;display:flex;flex-direction:column;gap:8px;zoom:var(--tophud-zoom,1.1);transform:translateY(-50%);pointer-events:none}'
+    st.textContent = '#invBar{position:absolute;top:auto;bottom:200px;z-index:21;display:flex;flex-direction:column;gap:8px;zoom:var(--tophud-zoom,1.1);pointer-events:none}'
         + '#invBar.l{left:14px}#invBar.r{right:14px}#invBar.hidden{display:none}'
         + '#invBar .inv-b{pointer-events:auto;position:relative;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;'
         + 'color:var(--c);background:rgba(29,9,54,.85);border:1px solid color-mix(in srgb,var(--c) 60%,transparent);box-shadow:0 0 10px color-mix(in srgb,var(--c) 30%,transparent),0 6px 14px rgba(0,0,0,.3);transition:opacity .2s,transform .12s;-webkit-tap-highlight-color:transparent}'
@@ -89,7 +89,19 @@ function invRender() {
     el.className = (invSideLeft() ? 'l' : 'r') + (show ? '' : ' hidden');
     const html = INV_TYPES.filter((t) => invCount(t.key) > 0).map((t) => `<button type="button" class="inv-b${invCanUse(t.key) ? '' : ' off'}" data-k="${t.key}" style="--c:${t.col}" aria-label="${t.key}"><i class="fa-solid ${t.icon}"></i><span class="inv-n">${invCount(t.key)}</span></button>`).join('');
     if (el.__h !== html) { el.__h = html; el.innerHTML = html; }
+    if (show) invPlace();
 }
+// столбик кнопок — внизу, сразу над панелью прогресса (сложность и коллекция тем)
+function invPlace() {
+    const el = invEl, host = document.getElementById('gameContainer'), bh = document.getElementById('bottomHud'); if (!el || !host) return;
+    const hr = host.getBoundingClientRect(); let gap;
+    if (bh && bh.offsetParent) gap = hr.bottom - bh.getBoundingClientRect().top + 10;
+    else gap = hr.height * 0.25;
+    const z = parseFloat(getComputedStyle(el).zoom) || 1;
+    const v = (gap / z).toFixed(1) + 'px';
+    if (el.style.bottom !== v) el.style.bottom = v;
+}
+window.addEventListener('resize', () => { try { if (invVisible()) invPlace(); } catch (e) {} });
 // кнопки появляются вместе с верхней панелью игры; «можно / нельзя сейчас» обновляется раз в полсекунды
 (function () {
     const t = document.getElementById('topHud');

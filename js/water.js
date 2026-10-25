@@ -53,7 +53,28 @@ function waterDrawDrop(x, y, r, ang, st) {
 }
 function waterDrawBubble(x, y, r) { const s2 = r * 2.4; ctx.drawImage(waterBubbleSprite(), x - s2 / 2, y - s2 / 2, s2, s2); }
 // брызги и пузырьки в общем списке частиц (рисуются поверх совы) — вызывается из drawParticleList
-// живая капля, как бусинки дождя на трубах: неровный комочек воды, который в полёте тянется, сплющивается и покачивается
+// живая капля, как бусинки дождя на трубах: неровный комочек воды, который в полёте тянется, сплющивается и покачивается.
+// Сама капля (заливка, тень снизу, блик) — готовая картинка: раньше каждая капля каждый кадр рисовалась тремя кривыми,
+// а их в потоке больше сотни (в дождь ещё и под обрезкой вокруг труб) — это и давало тормоза. Вид тот же.
+let __wBlob = null;
+function waterBlobSprite() {
+    if (__wBlob) return __wBlob;
+    const c = document.createElement('canvas'); c.width = c.height = 80; const g = c.getContext('2d');
+    g.translate(40, 40); g.scale(2, 2);   // радиус 16 → 32 пикселя картинки, по краям запас
+    const rx = 16, ry = 16;
+    g.beginPath(); g.moveTo(0, -ry);
+    g.bezierCurveTo(rx * 0.55, -ry, rx * 0.95, -ry * 0.25, rx, ry * 0.2);
+    g.bezierCurveTo(rx * 1.02, ry * 0.75, rx * 0.55, ry * 0.95, 0, ry * 0.95);
+    g.bezierCurveTo(-rx * 0.55, ry * 0.95, -rx * 1.02, ry * 0.75, -rx, ry * 0.2);
+    g.bezierCurveTo(-rx * 0.95, -ry * 0.25, -rx * 0.55, -ry, 0, -ry);
+    g.closePath();
+    g.globalAlpha = 0.84; g.fillStyle = 'rgb(172, 208, 245)'; g.fill();
+    g.globalAlpha = 0.32; g.fillStyle = 'rgb(80, 140, 215)';
+    g.beginPath(); g.ellipse(rx * 0.18, ry * 0.4, rx * 0.6, ry * 0.45, 0, 0, Math.PI * 2); g.fill();   // тень внизу справа
+    g.globalAlpha = 0.95; g.fillStyle = '#F2FAFF';
+    g.fillRect(-rx * 0.5, -ry * 0.15, rx * 0.38, ry * 0.32);   // блик
+    return (__wBlob = c);
+}
 function waterDrawBlob(x, y, r, d, t) {
     // падающая капля: смотрит туда, куда летит; снизу круглая и толще, кверху сужается; на скорости вытягивается;
     // после слияния или разрыва дрожит, потом успокаивается
@@ -61,24 +82,9 @@ function waterDrawBlob(x, y, r, d, t) {
     const sp = Math.hypot(d.vx || 0, d.vy || 0), st = Math.min(0.95, sp * 0.075);   // на скорости вытягивается, как капля, срывающаяся с трубы
     const rx = r * (d.sx || 1) * (1 + w - st * 0.32), ry = r * (1 - w * 0.8 + st);
     const rot = sp > 0.3 ? Math.atan2(-(d.vx || 0), d.vy || 1) : 0;
-    const A = ctx.globalAlpha;
-    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
-    const shape = () => {
-        ctx.beginPath();
-        // яйцо: широкий круглый низ плавно переходит в более узкий верх
-        ctx.moveTo(0, -ry);
-        ctx.bezierCurveTo(rx * 0.55, -ry, rx * 0.95, -ry * 0.25, rx, ry * 0.2);
-        ctx.bezierCurveTo(rx * 1.02, ry * 0.75, rx * 0.55, ry * 0.95, 0, ry * 0.95);
-        ctx.bezierCurveTo(-rx * 0.55, ry * 0.95, -rx * 1.02, ry * 0.75, -rx, ry * 0.2);
-        ctx.bezierCurveTo(-rx * 0.95, -ry * 0.25, -rx * 0.55, -ry, 0, -ry);
-        ctx.closePath();
-    };
-    ctx.globalAlpha = A * 0.84; ctx.fillStyle = 'rgb(172, 208, 245)'; shape(); ctx.fill();
-    ctx.globalAlpha = A * 0.32; ctx.fillStyle = 'rgb(80, 140, 215)';
-    ctx.beginPath(); ctx.ellipse(rx * 0.18, ry * 0.4, rx * 0.6, ry * 0.45, 0, 0, Math.PI * 2); ctx.fill();   // тень внизу справа
-    ctx.globalAlpha = A * 0.95; ctx.fillStyle = '#F2FAFF';
-    ctx.fillRect(-rx * 0.5, -ry * 0.15, Math.max(0.6, rx * 0.38), Math.max(0.6, ry * 0.32));   // блик
-    ctx.restore();
+    const hw = rx * 1.25, hh = ry * 1.25, spr = waterBlobSprite();   // картинка: радиус 16 из 20 по полуширине
+    if (rot) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.drawImage(spr, -hw, -hh, hw * 2, hh * 2); ctx.restore(); }
+    else ctx.drawImage(spr, x - hw, y - hh, hw * 2, hh * 2);
 }
 // «перемычка» между каплями, которые сливаются или только что разорвались: вода тянется ниточкой
 function waterDrawNeck(ax, ay, bx, by, w, A) {

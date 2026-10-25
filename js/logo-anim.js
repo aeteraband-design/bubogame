@@ -162,7 +162,14 @@
     }
     window.__owlCenter = (id) => owlCenter(STATES.find(x => x.id === id));
     // портрет совы для аватара профиля (js/profile.js): сова в нужном состоянии, по центру и одного размера
-    window.__owlPortrait = (gc, px, x, y, size, id, wing) => { const s = STATES.find(t => t.id === id) || STATES[0]; drawOwlState(x, y, size, Object.assign({}, s, { _ice: 0.5 }), 0, wing, 0, 0, gc, px, false); };
+    window.__owlPortrait = (gc, px, x, y, size, id, wing, fx, now, rot, spin) => {
+        const s = STATES.find(t => t.id === id) || STATES[0];
+        if (id === 'wet' && !LS.wb.length) {   // мокрая сова в аватаре — сразу в капельках (как в логотипе)
+            const P = typeof OWL_BODY_PTS !== 'undefined' ? OWL_BODY_PTS.p : null;
+            if (P) for (let i = 0; i < 9; i++) { let t = 0, n = 0; do { t = Math.random() * P.length; n++; } while (P[Math.floor(t)][1] > 3 && n < 12); LS.wb.push({ t, r: 0.8 + Math.random() * 1.1, age: 30, v: 0, own: 1 }); }
+        }
+        drawOwlState(x, y, size, Object.assign({}, s, { _ice: 0.5 }), rot || 0, wing, now || 0, spin || 0, gc, px, !!fx);
+    };
     function owlSize(state, size) {
         const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : ((state.id === 'dizzy' || state.id === 'wet') ? STATES.find(t => t.id === 'normal') : state));
         return state.id === 'fat' ? size : size * 0.56 / Math.max(0.3, c.w, c.h);   // одинаково крупно во всех состояниях; «полная» — по своему размеру
@@ -192,7 +199,7 @@
         const cs = getComputedStyle(ss);
         if (cs.visibility === 'hidden' || +cs.opacity < 0.5) return false;
         // открыто окно поверх меню — не отвлекаем
-        return !['#quizModal', '#shopModal', '#rouletteModal', '#settingsModal', '#rulesModal', '#adminModal'].some(s => { const m = document.querySelector(s); return m && !m.classList.contains('hidden') && m.offsetParent !== null; });
+        return !['#quizModal', '#shopModal', '#rouletteModal', '#settingsModal', '#rulesModal', '#adminModal', '#authModal', '#profModal'].some(s => { const m = document.querySelector(s); return m && !m.classList.contains('hidden') && m.offsetParent !== null; });
     }
     // холст свечения — ровно во всю ширину экрана меню: свечение не обрезается у логотипа и не создаёт прокрутку вбок
     function spanCanvas() {
@@ -377,7 +384,7 @@
         { id: 'hit', text: 'Удар о трубу — минус сердце и 2 секунды неуязвимости.' },
         { id: 'save', text: 'Прогресс сохраняется: вернёшься завтра — продолжишь с того же уровня.' }
     ];
-    const GREET = { id: 'hello', text: 'Привет!' };
+    const GREET = { id: 'hello', text: () => { try { const p = typeof pfGet === 'function' && pfGet(); if (p) return `Привет, ${p.nick}!`; } catch (e) {} return 'Привет!'; } };
     // подсказка про кнопку внизу — с тем же названием, что сейчас на кнопке
     const btnName = () => { const el = document.getElementById('startBtnLabel'); const t = ((el && el.textContent) || 'Начать полёт').trim().toLowerCase(); return (t.charAt(0).toUpperCase() + t.slice(1)).replace(/полет/g, 'полёт'); };
     const START = { id: 'start', text: () => `Жми «${btnName()}» внизу экрана!` };
@@ -435,6 +442,7 @@
     const sayClear = () => { saySteps.forEach(clearTimeout); saySteps = []; };
     function pickSay() {   // какую реплику скажет сова при этом появлении (или промолчит)
         seenN++;
+        if (window.__owlSayNext) { const s = window.__owlSayNext; window.__owlSayNext = null; greetPending = false; lastShown = true; return s; }   // сказать сразу (приветствие после регистрации)
         if (greetPending) { greetPending = false; LS_SET('bubo_hello_day', dayKey()); lastShown = true; return GREET; }
         const back = window.__saySoon; window.__saySoon = false;
         if (!back) { lastShown = !lastShown; if (!lastShown) return null; }   // через раз — без реплики (после полёта — сразу)

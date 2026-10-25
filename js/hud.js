@@ -155,7 +155,8 @@ function triggerDiffLevelUp(info) {
     AudioFX.playLevelUp(); AudioFX.playLevelShift();
     // если на новом уровне трубы сжимаются — вместе со звуком уровня играет и звук сжатия труб
     if (info.idx > 0 && DIFF_LEVELS[info.idx].targetSqueeze > DIFF_LEVELS[info.idx - 1].targetSqueeze) {
-        AudioFX.playCompressStart();
+        let d = 0.8; try { d = Math.abs(DIFF_LEVELS[info.idx].targetSqueeze - currentDifficultySqueeze) / 0.4 / 60; } catch (e) {}   // звук — на всё время, пока трубы съезжаются
+        AudioFX.playCompressStart(d);
     }
     Haptics.powerup();
     ['', 'menu'].forEach(prefix => {

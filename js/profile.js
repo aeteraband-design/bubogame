@@ -15,8 +15,9 @@ if (!PG.sk || typeof PG.sk !== 'object') PG.sk = {};
 
 // ---- уровень: каждый следующий требует больше опыта ----
 const PF_LV_MAX = 99;
-const PF_XP = { q: 1, theme: 5, win: 100, qzBad: 1 };   // за вопрос в полёте, за тему, за победу; вопрос дня: верно — монеты ×2, неверно — 1
-function pfNeed(L) { return Math.round(80 * Math.pow(L, 1.45) / 5) * 5; }   // 80, 220, 395, 595, 825 … 2255 на 10-м
+// уровни копятся долго: первый — за первый полёт, 5-й — примерно за неделю игры, 10-й — за пару месяцев
+const PF_XP = { q: 1, theme: 2, win: 150, qzBad: 0 };   // за вопрос в полёте, за тему, за победу; вопрос дня: верно — столько же, сколько монет за него
+function pfNeed(L) { return Math.round(250 * Math.pow(L, 1.5) / 10) * 10; }   // 250, 710, 1300, 2000, 2800 … 7910 на 10-м
 function pfLvInfo(xp) {
     let L = 1, r = Math.max(0, Math.floor(xp || 0));
     while (L < PF_LV_MAX && r >= pfNeed(L)) { r -= pfNeed(L); L++; }
@@ -27,15 +28,32 @@ function pfPtsFor(L) { return L % 5 === 0 ? 2 : 1; }
 function pfCoinsFor(L) { return 20 + 5 * L; }
 
 // ---- навыки ----
-const PF_SK_PTS = [1, 1, 2, 2, 3], PF_SK_COINS = [50, 100, 200, 350, 500], PF_SK_MAX = 5;
+// у каждого навыка 5 ступеней; простые (холод, хмель, еда) дешевле, сильные (силы, щит, монеты) — дороже: на них надо копить
+const PF_SK_MAX = 5;
+const PF_SK_COST = {
+    minor: { pts: [2, 3, 3, 4, 5], coins: [60, 120, 200, 300, 450] },
+    major: { pts: [4, 4, 5, 6, 7], coins: [120, 220, 350, 500, 700] }
+};
 const PF_SK = [
-    { k: 'cold', name: 'Морозостойкость', icon: 'fa-snowflake', col: '#7DD3FC', step: 'Сова быстрее оттаивает: заморозка короче на 6% за ступень.', top: 'На 5-й ступени — на 1 мороженое больше до заморозки.', fx: r => `заморозка −${r * 6}%` },
-    { k: 'drunk', name: 'Крепкая голова', icon: 'fa-martini-glass-citrus', col: '#2DD4BF', step: 'Сова быстрее трезвеет: опьянение короче на 6% за ступень.', top: 'На 5-й ступени — на 1 коктейль больше до опьянения.', fx: r => `опьянение −${r * 6}%` },
-    { k: 'food', name: 'Крепкий желудок', icon: 'fa-burger', col: '#FB923C', step: 'Переедание проходит быстрее: короче на 6% за ступень.', top: 'На 5-й ступени — на 1 кусочек больше до переедания.', fx: r => `переедание −${r * 6}%` },
-    { k: 'stam', name: 'Выносливость', icon: 'fa-feather-pointed', col: '#22D3EE', step: 'Силы в полёте тратятся на 4% медленнее за ступень.', fx: r => `расход сил −${r * 4}%` },
-    { k: 'shield', name: 'Крепкий щит', icon: 'fa-shield-halved', col: '#4ADE80', step: 'Щит держится на 1 секунду дольше за ступень.', fx: r => `щит +${r} с` },
-    { k: 'coins', name: 'Монетный нюх', icon: 'fa-coins', col: '#FFC53D', step: 'Монет в полёте на 6% больше за ступень: значки монет и монеты за каждые 50 вопросов.', fx: r => `монеты +${r * 6}%` }
+    { k: 'cold', tier: 'minor', name: 'Морозостойкость', icon: 'fa-snowflake', col: '#7DD3FC', short: 'Быстрее оттаивает', step: 'Сова быстрее оттаивает: заморозка короче на 6% за ступень.', top: 'На 5-й ступени — на 1 мороженое больше до заморозки.', topS: '+1 мороженое', fx: r => `заморозка −${r * 6}%`, v: r => `−${r * 6}%` },
+    { k: 'drunk', tier: 'minor', name: 'Крепкая голова', icon: 'fa-martini-glass-citrus', col: '#2DD4BF', short: 'Быстрее трезвеет', step: 'Сова быстрее трезвеет: опьянение короче на 6% за ступень.', top: 'На 5-й ступени — на 1 коктейль больше до опьянения.', topS: '+1 коктейль', fx: r => `опьянение −${r * 6}%`, v: r => `−${r * 6}%` },
+    { k: 'food', tier: 'minor', name: 'Крепкий желудок', icon: 'fa-burger', col: '#FB923C', short: 'Быстрее приходит в себя после переедания', step: 'Переедание проходит быстрее: короче на 6% за ступень.', top: 'На 5-й ступени — на 1 кусочек больше до переедания.', topS: '+1 кусочек', fx: r => `переедание −${r * 6}%`, v: r => `−${r * 6}%` },
+    { k: 'stam', tier: 'major', name: 'Выносливость', icon: 'fa-feather-pointed', col: '#22D3EE', short: 'Силы тратятся медленнее', step: 'Силы в полёте тратятся на 4% медленнее за ступень.', fx: r => `расход сил −${r * 4}%`, v: r => `−${r * 4}%` },
+    { k: 'shield', tier: 'major', name: 'Крепкий щит', icon: 'fa-shield-halved', col: '#4ADE80', short: 'Щит держится дольше', step: 'Щит держится на 1 секунду дольше за ступень.', fx: r => `щит +${r} с`, v: r => `+${r} с` },
+    { k: 'coins', tier: 'major', name: 'Монетный нюх', icon: 'fa-coins', col: '#FFC53D', short: 'Больше монет в полёте', step: 'Монет в полёте на 6% больше за ступень: значки монет и монеты за каждые 50 вопросов.', fx: r => `монеты +${r * 6}%`, v: r => `+${r * 6}%` }
 ];
+function pfSkCost(s, r) { const c = PF_SK_COST[s.tier]; return { pts: c.pts[r], coins: c.coins[r] }; }
+// переход на новые цены: уровень пересчитывается по новой шкале, очки — заново за все уровни, изученные навыки и потраченные на них монеты возвращаются
+(function () {
+    if (PG.v === 2) return;
+    const OLD = [50, 100, 200, 350, 500];
+    let back = 0; Object.keys(PG.sk || {}).forEach(k => { for (let i = 0; i < (PG.sk[k] | 0); i++) back += OLD[i] || 0; });
+    const L = (function () { let L = 1, r = Math.max(0, Math.floor(PG.xp || 0)); while (L < 99 && r >= Math.round(250 * Math.pow(L, 1.5) / 10) * 10) { r -= Math.round(250 * Math.pow(L, 1.5) / 10) * 10; L++; } return L; })();
+    let pts = 0; for (let l = 2; l <= L; l++) pts += (l % 5 === 0 ? 2 : 1);
+    PG.lvl = L; PG.pts = pts; PG.sk = {}; PG.v = 2;
+    pfStore(PG_KEY, PG);
+    if (back > 0) { try { localStorage.setItem('bubo_coins', String((parseInt(localStorage.getItem('bubo_coins'), 10) || 0) + back)); } catch (e) {} }
+})();
 function skRank(k) { const r = PG.sk && PG.sk[k]; return Math.max(0, Math.min(PF_SK_MAX, r | 0)); }
 function skDur(k) { return 1 - 0.06 * skRank(k); }                 // длительность заморозки / опьянения / переедания
 function skTrig(k) { return skRank(k) >= PF_SK_MAX ? 1 : 0; }      // +1 порция до состояния на последней ступени
@@ -43,7 +61,7 @@ function skStamMul() { return 1 - 0.04 * skRank('stam'); }
 function skCoinMul() { return 1 + 0.06 * skRank('coins'); }
 function shieldSecs() { return ADMIN_CFG.shieldSec + skRank('shield'); }
 
-function pfSaveProg() { pfStore(PG_KEY, PG); }
+function pfSaveProg() { PG.v = 2; pfStore(PG_KEY, PG); }
 let pfStatsDirty = false;
 function pfStat(k, n) { PS[k] = (PS[k] || 0) + n; pfStatsDirty = true; }
 
@@ -92,7 +110,7 @@ function pfEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
 // вопросы дня: опыт за ответ
 function profOnQuiz(ok, coins) {
     pfStat('qzAll', 1); if (ok) pfStat('qzOk', 1);
-    pfXpAdd(ok ? (coins || 2) * 2 : PF_XP.qzBad);
+    pfXpAdd(ok ? (coins || 2) : PF_XP.qzBad);
 }
 
 // монеты, заработанные за всё время (для статистики)
@@ -126,30 +144,69 @@ function profOnQuiz(ok, coins) {
     document.addEventListener('visibilitychange', () => { if (document.hidden && pfStatsDirty) { pfStatsDirty = false; pfStore(PS_KEY, PS); } });
 })();
 
-// ---- аватары: сова игры в одном из своих состояний ----
+// ---- аватары: сова игры в одном из своих состояний — у каждой свой цвет и своё живое движение ----
+// g — цвет фона аватара; c, l, s — оформление окон и плашки под аватар: основной, светлый (заголовок, звёздочки, блик кольца) и второй (свечение снизу)
 const PF_AV = [
-    { id: 'normal', g: '168,85,247' }, { id: 'wet', g: '125,190,252' }, { id: 'freeze', g: '125,211,252' }, { id: 'drunk', g: '45,212,191' },
-    { id: 'fat', g: '244,114,182' }, { id: 'shazam', g: '254,118,0' }, { id: 'speed', g: '250,204,21' }, { id: 'dizzy', g: '196,167,255' }
+    { id: 'normal', g: '168,85,247', c: '#A855F7', l: '#E9D5FF', s: '#5EEAD4' },   // классика — машет крыльями
+    { id: 'wet', g: '59,130,246', c: '#3B82F6', l: '#DBEAFE', s: '#22D3EE' },      // мокрая — в капельках, капли стекают
+    { id: 'freeze', g: '103,232,249', c: '#67E8F9', l: '#ECFEFF', s: '#A5B4FC' },  // ледяная — кувыркается во льду, как в игре
+    { id: 'drunk', g: '34,197,94', c: '#22C55E', l: '#DCFCE7', s: '#FACC15' },     // весёлая — покачивается, глаза кружатся
+    { id: 'fat', g: '244,114,182', c: '#F472B6', l: '#FCE7F3', s: '#FB923C' },     // сытая — пузатая, неспешно машет
+    { id: 'shazam', g: '254,118,0', c: '#FE7600', l: '#FFE0B8', s: '#FACC15' },    // ШАЗАМ — молнии вокруг
+    { id: 'speed', g: '250,204,21', c: '#FACC15', l: '#FEF9C3', s: '#FE7600' },    // шустрая — наклонилась вперёд, быстро машет
+    { id: 'dizzy', g: '244,63,94', c: '#F43F5E', l: '#FFE4E6', s: '#C084FC' }      // оглушённая — звёздочки кружатся над головой
 ];
 function pfAv(id) { return PF_AV.find(a => a.id === id) || PF_AV[0]; }
+function pfTheme(el, id) { if (!el) return; const a = pfAv(id); el.style.setProperty('--pfC', a.c); el.style.setProperty('--pfL', a.l); el.style.setProperty('--pfS', a.s); }
 function pfAvHTML(id, cls, extra) { const a = pfAv(id); return `<span class="pf-av ${cls || ''}" data-av="${a.id}" style="--g:${a.g}" ${extra || ''}><canvas></canvas></span>`; }
-function pfPaintAv(el, wing) {
+// движение каждой совы во времени t (мс): взмах крыльев, наклон, кувырок
+function pfMotion(id, t) {
+    const sn = Math.sin;
+    switch (id) {
+        case 'freeze': return { wing: 0, rot: 0, spin: t / 1000 * 2.4 };
+        case 'drunk': return { wing: 0.5 + 0.5 * sn(t / 260), rot: sn(t / 420) * 0.2, spin: 0 };
+        case 'fat': return { wing: 0.5 + 0.5 * sn(t / 330), rot: 0, spin: 0 };
+        case 'shazam': return { wing: Math.max(0, sn(t / 90)), rot: 0, spin: 0 };
+        case 'speed': return { wing: Math.max(0, sn(t / 75)), rot: 0, spin: 0 };
+        default: return { wing: 0.5 + 0.5 * sn(t / 190), rot: 0, spin: 0 };
+    }
+}
+function pfPaintAv(el, t) {
     const cv = el && el.querySelector('canvas'); if (!cv || typeof window.__owlPortrait !== 'function') return;
     const w = el.clientWidth, h = el.clientHeight; if (!w || !h) return;
-    const dpr = Math.min(3, window.devicePixelRatio || 1), z = (el.getBoundingClientRect().width / w) || 1, px = dpr * z;
+    const dpr = Math.min(2.5, window.devicePixelRatio || 1), z = (el.getBoundingClientRect().width / w) || 1, px = dpr * z;
     const W = Math.round(w * px), H = Math.round(h * px);
     if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
     const g = cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
-    try { window.__owlPortrait(g, px, w / 2, h / 2, Math.min(w, h) * 1.2, el.dataset.av, wing == null ? 0.35 : wing); } catch (e) {}
+    const now = t == null ? performance.now() : t, m = pfMotion(el.dataset.av, now);
+    try { window.__owlPortrait(g, px, w / 2, h / 2, Math.min(w, h) * (+el.dataset.k || 1.2), el.dataset.av, m.wing, false, now, m.rot, m.spin); } catch (e) {}
 }
 function pfPaintAll(root) { (root || document).querySelectorAll('.pf-av').forEach(el => pfPaintAv(el)); }
+// все аватары на экране живут постоянно: один общий цикл (крупные — 30 кадров в секунду, мелкие в выборе — 15).
+// Ушёл в другое окно и вернулся — цикл сам продолжается; спрятанные аватары не рисуются.
+(function () {
+    let last = 0, odd = false, list = [], listT = 0;
+    const visible = (el) => {
+        if (!el.offsetParent || !el.clientWidth) return false;
+        if (el.closest('#profPlate')) { const ss = document.getElementById('startScreen'); if (!ss || ss.classList.contains('menu-under-pop') || document.documentElement.classList.contains('booting')) return false; }
+        return true;
+    };
+    const tick = (t) => {
+        requestAnimationFrame(tick);
+        if (document.hidden || t - last < 32) return;
+        last = t; odd = !odd;
+        if (t - listT > 400) { listT = t; list = [...document.querySelectorAll('.pf-av')].filter(visible); }
+        list.forEach(el => { if (el.closest('.pf-avs') && odd) return; if (el.isConnected) pfPaintAv(el, t); });
+    };
+    requestAnimationFrame(tick);
+})();
 
 // ---- плашка игрока в главном меню ----
 let pfPlate = null;
 function pfPlateBuild() {
     const ss = document.getElementById('startScreen'); if (!ss || pfPlate) return;
     pfPlate = document.createElement('button'); pfPlate.type = 'button'; pfPlate.id = 'profPlate'; pfPlate.className = 'hidden'; pfPlate.title = 'Профиль';
-    pfPlate.innerHTML = `<span class="pp-av"><b class="pp-pts hidden">+1</b></span><span class="pp-mid"><span class="pp-nick"></span><span class="pp-row"><span class="pp-lv"></span><span class="pp-bar"><i></i></span><span class="pp-pct"></span></span></span><i class="fa-solid fa-chevron-down pp-ch"></i>`;
+    pfPlate.innerHTML = `<span class="pp-av"><b class="pp-pts hidden">+1</b></span><span class="pp-mid"><span class="pp-nick"></span><span class="pp-row"><span class="pp-lv"></span><span class="pp-bar"><i></i></span><span class="pp-pct"></span><span class="pp-coins"><i class="fa-solid fa-coins"></i><b>0</b></span></span></span>`;
     pfPlate.addEventListener('click', (e) => { e.stopPropagation(); openProfile(PG.pts > 0 ? 'skills' : 'owl'); });
     ss.insertBefore(pfPlate, ss.firstChild);
 }
@@ -158,7 +215,9 @@ function pfPlateSync() {
     pfPlateBuild(); if (!pfPlate) return;
     const p = pfGet(), ss = document.getElementById('startScreen');
     pfPlate.classList.toggle('hidden', !p); if (ss) ss.classList.toggle('has-prof', !!p);
-    if (!p) { const mc = document.getElementById('menuCoins'); if (mc) { mc.style.top = ''; mc.style.left = ''; } return; }
+    if (!p) return;
+    pfTheme(pfPlate, p.av);
+    pfPlateCoins();
     const info = pfLvInfo(PG.xp);
     pfPlate.querySelector('.pp-nick').textContent = p.nick;
     pfPlate.querySelector('.pp-lv').textContent = info.L + ' УР';
@@ -166,7 +225,7 @@ function pfPlateSync() {
     pfPlate.querySelector('.pp-pct').textContent = info.pct + '%';
     const b = pfPlate.querySelector('.pp-pts'); b.classList.toggle('hidden', !(PG.pts > 0)); b.textContent = '+' + PG.pts;
     const box = pfPlate.querySelector('.pp-av');
-    if (pfPlateAv !== p.av) { const old = box.querySelector('.pf-av'); if (old) old.remove(); box.insertAdjacentHTML('afterbegin', pfAvHTML(p.av)); pfPlateAv = p.av; }
+    if (pfPlateAv !== p.av) { const old = box.querySelector('.pf-av'); if (old) old.remove(); box.insertAdjacentHTML('afterbegin', pfAvHTML(p.av, '', 'data-k="1.5"')); pfPlateAv = p.av; }
     pfPlateFit();
     pfPaintAv(box.querySelector('.pf-av'));
 }
@@ -177,14 +236,18 @@ function pfPlateFit() {
     const r = pfPlate.getBoundingClientRect(), z = (r.width / pfPlate.offsetWidth) || 1, br = sh.getBoundingClientRect();
     const w = Math.max(150, Math.min(250, (br.left - r.left) / z - 12));
     pfPlate.style.width = w.toFixed(1) + 'px';
-    // монеты — под плашкой, ровно по её левому краю (у монет свой масштаб, поэтому считаем в экранных пикселях)
-    const mc = document.getElementById('menuCoins'), ss = document.getElementById('startScreen');
-    if (mc && ss) {
-        const sr = ss.getBoundingClientRect(), pr = pfPlate.getBoundingClientRect(), mz = (mc.getBoundingClientRect().width / mc.offsetWidth) || 1;
-        mc.style.top = ((pr.bottom - sr.top + 8 * z) / mz).toFixed(1) + 'px';
-        mc.style.left = ((pr.left - sr.left) / mz).toFixed(1) + 'px';
-    }
 }
+// монеты — прямо в плашке, рядом с ником (отдельная плашка монет в меню при профиле спрятана); прибавились — число подпрыгивает
+let pfCoinsShown = -1;
+function pfPlateCoins() {
+    if (!pfPlate) return;
+    const c = coinsGet(); if (c === pfCoinsShown) return;
+    const el = pfPlate.querySelector('.pp-coins'); if (!el) return;
+    el.querySelector('b').textContent = pfFmt(c);
+    if (pfCoinsShown >= 0 && c > pfCoinsShown) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+    pfCoinsShown = c;
+}
+setInterval(pfPlateCoins, 400);
 window.addEventListener('resize', () => { pfPlateFit(); setTimeout(() => { pfPlateFit(); if (pfPlate) pfPaintAll(pfPlate); }, 120); });
 
 // ---- окно регистрации ----
@@ -198,7 +261,7 @@ function auBuild() {
     auRoot.addEventListener('click', (e) => {
         const b = e.target.closest('[data-au]'); if (!b) return;
         const a = b.dataset.au;
-        if (a === 'av') { auAv = b.dataset.av; auRoot.querySelectorAll('.pf-avs .pf-av').forEach(x => x.classList.toggle('on', x === b)); const em = auRoot.querySelector('.au-emb .pf-av'); if (em) { em.dataset.av = auAv; em.style.setProperty('--g', pfAv(auAv).g); pfPaintAv(em); } try { Haptics.flap(); } catch (er) {} }
+        if (a === 'av') { auAv = b.dataset.av; auRoot.querySelectorAll('.pf-avs .pf-av').forEach(x => x.classList.toggle('on', x === b)); const em = auRoot.querySelector('.au-emb .pf-av'); if (em) { em.dataset.av = auAv; em.style.setProperty('--g', pfAv(auAv).g); pfPaintAv(em); } pfTheme(document.getElementById('authWin'), auAv); try { Haptics.flap(); } catch (er) {} }
         else if (a === 'eye') { const inp = b.parentNode.querySelector('input'); const on = inp.type === 'password'; inp.type = on ? 'text' : 'password'; b.innerHTML = `<i class="fa-solid ${on ? 'fa-eye-slash' : 'fa-eye'}"></i>`; }
         else if (a === 'go') auSubmit();
         else if (a === 'vk') pfToast(auRoot.querySelector('#authWin'), 'Вход через ВКонтакте появится вместе с сервером игры', 'info');
@@ -211,10 +274,10 @@ function auBuild() {
 function auRender() {
     const reg = auMode === 'reg';
     const tw = [[-44, -30, 8, 0], [46, -10, 7, .9], [38, 34, 6, 1.7]].map(([x, y, s, d]) => `<i class="pf-tw" style="left:calc(50% + ${x}px - ${s / 2}px);top:calc(50% + ${y}px - ${s / 2}px);--s:${s}px;--d:${d}s">✦</i>`).join('');
-    auRoot.innerHTML = `<div id="authWin">
-        <div class="au-emb">${pfAvHTML(reg ? auAv : 'normal')}<div class="pf-ring"></div>${tw}</div>
+    auRoot.innerHTML = `<div id="authWin" style="--pfC:${pfAv(reg ? auAv : 'normal').c};--pfL:${pfAv(reg ? auAv : 'normal').l};--pfS:${pfAv(reg ? auAv : 'normal').s}">
+        <div class="au-emb">${pfAvHTML(reg ? auAv : 'normal', 'round')}<div class="pf-ring"></div>${tw}</div>
         <div class="pf-title"><b>${reg ? 'НОВЫЙ ИГРОК' : 'ВХОД'}</b><span>${reg ? 'Создай профиль совы: уровень, навыки и статистика будут копиться с каждым полётом' : 'Войди в свой профиль совы'}</span></div>
-        ${reg ? `<div class="pf-lbl">Выбери сову</div><div class="pf-avs">${PF_AV.map(a => pfAvHTML(a.id, a.id === auAv ? 'on' : '', 'data-au="av"')).join('')}</div>` : ''}
+        ${reg ? `<div class="pf-lbl">Выбери аватар</div><div class="pf-avs">${PF_AV.map(a => pfAvHTML(a.id, a.id === auAv ? 'on' : '', 'data-au="av"')).join('')}</div>` : ''}
         <div class="pf-fields">
             ${reg ? `<label class="pf-f" data-f="nick" style="--c:#C084FC"><i class="fa-solid fa-user"></i><input id="auNick" type="text" maxlength="16" placeholder="Никнейм" autocomplete="nickname" autocapitalize="off" spellcheck="false"></label>` : ''}
             <label class="pf-f" data-f="mail" style="--c:#5EEAD4"><i class="fa-solid fa-envelope"></i><input id="auMail" type="email" maxlength="60" placeholder="${reg ? 'Почта' : 'Почта или никнейм'}" autocomplete="email" autocapitalize="off" spellcheck="false" inputmode="email"></label>
@@ -262,12 +325,10 @@ async function auSubmit() {
     closeAuth();
     pfWelcome(nick);
 }
+// приветствие говорит сова в логотипе — в своём облачке (одна подсказка, а не несколько поверх друг друга)
 function pfWelcome(nick) {
-    const host = document.getElementById('gameContainer') || document.body;
-    const el = document.createElement('div'); el.id = 'pfLvUp';
-    el.innerHTML = `${pfAvHTML(pfGet().av, 'lv-av')}<div><b>ПРИВЕТ, ${pfEsc(nick).toUpperCase()}!</b><span>Летай, копи опыт и прокачивай сову</span></div>`;
-    host.appendChild(el); pfPaintAll(el);
-    setTimeout(() => { if (el.parentNode) el.remove(); }, 3700);
+    window.__owlSayNext = { id: 'welcome', text: `Привет, ${nick}! Летай, копи опыт и прокачивай сову` };
+    try { localStorage.setItem('bubo_hello_day', (() => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); })()); } catch (e) {}
 }
 function openAuth(mode) {
     auBuild(); auMode = mode || 'reg';
@@ -278,7 +339,8 @@ function openAuth(mode) {
 function closeAuth() { if (auRoot) auRoot.classList.add('hidden'); try { updateMenuVisibility(); } catch (e) {} }
 
 // ---- окно профиля ----
-let pfRoot = null, pfTab = 'owl', pfSure = null, pfSureT = 0, pfAnim = 0;
+let pfRoot = null, pfTab = 'owl', pfSure = null, pfSureT = 0, pfPendAv = null;
+function pfAvCur() { const p = pfGet(); return pfPendAv || (p && p.av) || 'normal'; }
 const PF_TABS = [
     { id: 'owl', name: 'Сова', icon: 'fa-feather', c: '#FE7600' },
     { id: 'skills', name: 'Навыки', icon: 'fa-graduation-cap', c: '#C084FC' },
@@ -308,7 +370,9 @@ function pfBuild() {
         else if (a === 'shop') { closeProfile(); try { openShop(); } catch (er) {} }
         else if (a === 'quiz') { closeProfile(); try { openQuiz(); } catch (er) {} }
         else if (a.startsWith('sk:')) pfSkTap(a.slice(3));
-        else if (a === 'av') { const p = pfGet(); if (!p) return; p.av = b.dataset.av; pfSet(p); pfRenderHero(); pfRenderPane(); try { Haptics.flap(); } catch (er) {} }
+        else if (a === 'av') { const p = pfGet(); if (!p) return; pfPendAv = b.dataset.av === p.av ? null : b.dataset.av; pfRenderHero(); pfRenderPane(); try { Haptics.flap(); } catch (er) {} }   // пока не сохранили — только примерка
+        else if (a === 'avok') { const p = pfGet(); if (!p || !pfPendAv) return; p.av = pfPendAv; pfPendAv = null; pfSet(p); pfRenderHero(); pfRenderPane(); pfToast(document.getElementById('pfWin'), 'Аватар сохранён'); try { Haptics.powerup(); } catch (er) {} }
+        else if (a === 'avno') { pfPendAv = null; pfRenderHero(); pfRenderPane(); }
         else if (a === 'eye') { const inp = b.parentNode.querySelector('input'); const on = inp.type === 'password'; inp.type = on ? 'text' : 'password'; b.innerHTML = `<i class="fa-solid ${on ? 'fa-eye-slash' : 'fa-eye'}"></i>`; }
         else if (a === 'nick') pfSaveNick();
         else if (a === 'mail') pfSaveMail();
@@ -316,6 +380,7 @@ function pfBuild() {
         else if (a === 'vk') pfToast(document.getElementById('pfWin'), 'Привязка ВКонтакте появится вместе с сервером игры', 'info');
     });
     pfRoot.addEventListener('input', (e) => { const f = e.target.closest('.pf-f'); if (f) f.classList.remove('bad'); });
+    pfRoot.querySelector('#pfTabs').addEventListener('scroll', pfTabsEdge, { passive: true });
     pfRoot.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
         e.preventDefault(); const id = e.target.id;
@@ -325,9 +390,10 @@ function pfBuild() {
 }
 function pfRenderHero() {
     const h = document.getElementById('pfHero'); const p = pfGet(); if (!h || !p) return;
+    pfTheme(document.getElementById('pfWin'), pfAvCur());
     const info = pfLvInfo(PG.xp), max = info.L >= PF_LV_MAX;
     const tw = [[-40, -32, 7, 0], [42, -22, 6, 1.1], [36, 34, 5, .5]].map(([x, y, s, d]) => `<i class="pf-tw" style="left:calc(50% + ${x}px - ${s / 2}px);top:calc(50% + ${y}px - ${s / 2}px);--s:${s}px;--d:${d}s">✦</i>`).join('');
-    h.innerHTML = `<div class="pf-hav" data-pf="tab:prof" title="Сменить аватар">${pfAvHTML(p.av)}<div class="pf-ring"></div>${tw}</div>
+    h.innerHTML = `<div class="pf-hav" data-pf="tab:prof" title="Сменить аватар">${pfAvHTML(pfAvCur(), 'round')}<div class="pf-ring"></div>${tw}</div>
         <div class="pf-hinfo"><div class="pf-nick">${pfEsc(p.nick)}</div>
             <div class="pf-lvrow"><span class="pf-lvl">УРОВЕНЬ ${info.L}</span><span class="pf-xpn">${max ? 'максимум' : `${info.cur} / ${info.need} опыта`}</span></div>
             <div class="pf-xpbar"><i style="width:${info.pct}%"></i></div>
@@ -337,14 +403,30 @@ function pfRenderHero() {
 }
 function pfRenderTabs() {
     const t = document.getElementById('pfTabs'); if (!t) return;
+    const sl = t.scrollLeft;
     t.innerHTML = PF_TABS.map(x => `<button type="button" class="pf-tab${x.id === pfTab ? ' on' : ''}" data-pf="tab:${x.id}" style="--c:${x.c}"><i class="fa-solid ${x.icon}"></i><span>${x.name}</span>${x.id === 'skills' && PG.pts > 0 ? `<b class="pf-dot">${PG.pts}</b>` : ''}</button>`).join('');
+    t.scrollLeft = sl;
+    pfTabsEdge();
+}
+// лента вкладок листается пальцем (как в правилах): у краёв, за которыми есть ещё вкладки, — мягкое затенение
+function pfTabsEdge() {
+    const t = document.getElementById('pfTabs'); if (!t) return;
+    t.classList.toggle('fl', t.scrollLeft > 2);
+    t.classList.toggle('fr', t.scrollLeft < t.scrollWidth - t.clientWidth - 2);
+}
+// выбранная вкладка целиком в ленте
+function pfTabReveal() {
+    const t = document.getElementById('pfTabs'), b = t && t.querySelector('.pf-tab.on'); if (!b) return;
+    const pad = 16, l = b.offsetLeft - pad, r = b.offsetLeft + b.offsetWidth + pad - t.clientWidth;
+    if (t.scrollLeft > l) t.scrollTo({ left: Math.max(0, l), behavior: 'smooth' });
+    else if (t.scrollLeft < r) t.scrollTo({ left: r, behavior: 'smooth' });
 }
 function pfShowTab(id) {
     if (!PF_TABS.some(x => x.id === id)) id = 'owl';
-    pfTab = id; pfSure = null; pfRenderTabs(); pfRenderPane();
+    pfTab = id; pfSure = null; pfRenderTabs(); pfRenderPane(); pfTabReveal();
     const pn = document.getElementById('pfPane'); if (pn) pn.scrollTop = 0;
 }
-const pfFmt = (n) => String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+function pfFmt(n) { return String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
 function pfCard(icon, c, val, lbl, plus) { return `<div class="pf-card" style="--c:${c}"><i class="fa-solid ${icon}"></i><div class="pf-cv"><b>${val}</b><span>${lbl}</span></div>${plus ? `<button type="button" class="pf-plus" data-pf="${plus}" aria-label="Пополнить"><i class="fa-solid fa-plus"></i></button>` : ''}</div>`; }
 function pfStatTile(icon, c, lbl, val) { return `<div class="pf-st" style="--c:${c}"><span><i class="fa-solid ${icon}"></i>${lbl}</span><b>${val}</b></div>`; }
 function pfRenderPane() {
@@ -372,29 +454,32 @@ function pfRenderPane() {
             + (bon ? `<div class="pf-bon">${bon}</div>` : `<div class="pf-empty">Пока ничего не изучено. За каждый уровень сова получает очко обучения — трать его во вкладке «Навыки».</div>`);
     } else if (pfTab === 'skills') {
         const c = coinsGet();
-        h += `<div class="pf-ptsbox"><div class="pf-pn">${PG.pts}</div><div class="pf-pt"><b>${PG.pts} ${pfPl(PG.pts, ['очко', 'очка', 'очков'])} обучения</b>За каждый уровень — 1 очко, за каждый 5-й — 2. Ступень навыка стоит очки и монеты, каждая следующая — дороже.</div></div>`;
-        h += PF_SK.map(s => {
+        h += `<div class="sk-head"><div class="sk-badge"><svg viewBox="0 0 54 54"><defs><linearGradient id="skBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C084FC"/><stop offset="1" stop-color="#6D28D9"/></linearGradient></defs><path d="M27 2 49 14.5v25L27 52 5 39.5v-25Z" fill="url(#skBg)" stroke="#E9D5FF" stroke-opacity=".7" stroke-width="1.5"/></svg><b>${PG.pts}</b></div>`
+            + `<div class="sk-ht"><b>${pfPl(PG.pts, ['Очко', 'Очка', 'Очков'])} обучения</b><span>1 за уровень, 2 — за каждый 5-й. Ступень стоит очки и монеты.</span></div>`
+            + `<div class="sk-wallet"><i class="fa-solid fa-coins"></i>${pfFmt(c)}</div></div>`;
+        h += `<div class="sk-grid">` + PF_SK.map(s => {
             const r = skRank(s.k), max = r >= PF_SK_MAX;
-            const pips = Array.from({ length: PF_SK_MAX }, (_, i) => `<i class="${i < r ? 'on' : ''}"></i>`).join('');
+            // кольцо из 5 делений вокруг значка: изученные ступени горят цветом навыка
+            const R = 29, C = 2 * Math.PI * R, seg = C / PF_SK_MAX, gap = 5;
+            const arcs = Array.from({ length: PF_SK_MAX }, (_, i) => `<circle cx="33" cy="33" r="${R}" fill="none" stroke="${i < r ? s.col : 'rgba(255,255,255,.13)'}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(seg - gap).toFixed(2)} ${(C - seg + gap).toFixed(2)}" transform="rotate(${-90 + i * 72 + gap / C * 180} 33 33)"${i < r ? ` style="filter:drop-shadow(0 0 3px ${s.col})"` : ''}/>`).join('');
             let btn;
-            if (max) btn = `<div class="pf-skb done"><i class="fa-solid fa-check"></i>ИЗУЧЕНО ПОЛНОСТЬЮ</div>`;
+            if (max) btn = `<div class="sk-b done"><i class="fa-solid fa-crown"></i>МАКСИМУМ</div>`;
             else {
-                const np = PF_SK_PTS[r], nc = PF_SK_COINS[r];
-                const cost = `<span class="pf-cost"><i class="fa-solid fa-graduation-cap"></i>${np}</span><span class="pf-cost"><i class="fa-solid fa-coins"></i>${nc}</span>`;
-                if (PG.pts < np) btn = `<div class="pf-skb no">Нужно ${np} ${pfPl(np, ['очко', 'очка', 'очков'])} ${cost}</div>`;
-                else if (c < nc) btn = `<div class="pf-skb no">Не хватает монет ${cost}</div>`;
-                else if (pfSure === s.k) btn = `<button type="button" class="pf-skb sure" data-pf="sk:${s.k}">ИЗУЧИТЬ? ${cost}</button>`;
-                else btn = `<button type="button" class="pf-skb" data-pf="sk:${s.k}">${r ? 'СЛЕДУЮЩАЯ СТУПЕНЬ' : 'ИЗУЧИТЬ'} ${cost}</button>`;
+                const k = pfSkCost(s, r);
+                const cost = `<span class="c"><i class="fa-solid fa-graduation-cap"></i>${k.pts}</span><span class="c"><i class="fa-solid fa-coins"></i>${k.coins}</span>`;
+                if (PG.pts < k.pts || c < k.coins) btn = `<div class="sk-b no"><i class="fa-solid fa-lock"></i>${cost}</div>`;
+                else if (pfSure === s.k) btn = `<button type="button" class="sk-b sure" data-pf="sk:${s.k}">ИЗУЧИТЬ?</button>`;
+                else btn = `<button type="button" class="sk-b" data-pf="sk:${s.k}"><i class="fa-solid fa-arrow-up"></i>${cost}</button>`;
             }
-            const now = r ? `Сейчас: <b>${s.fx(r)}</b>${skTrig(s.k) && s.top ? ' и +1 порция' : ''}.` : 'Ещё не изучено.';
-            return `<div class="pf-sk${max ? ' max' : ''}" data-sk="${s.k}" style="--c:${s.col}"><div class="pf-skh"><div class="pf-ski"><i class="fa-solid ${s.icon}"></i></div><div class="pf-skn">${s.name}<small>Ступень ${r} из ${PF_SK_MAX}</small></div><div class="pf-pips">${pips}</div></div>
-                <div class="pf-skd">${s.step}${s.top ? ' ' + s.top : ''} ${now}</div>${btn}</div>`;
-        }).join('');
+            const fx = max ? `<div class="sk-fx">${s.v(r)}</div>` : r ? `<div class="sk-fx">${s.v(r)}<span class="nx"><i class="fa-solid fa-arrow-right"></i>${s.v(r + 1)}</span></div>` : `<div class="sk-fx"><span class="nx">1-я ступень:</span>${s.v(1)}</div>`;
+            const top = s.topS ? `<div class="sk-top${r >= PF_SK_MAX ? ' got' : ''}"><i class="fa-solid fa-star"></i> 5-я ступень: ${s.topS}</div>` : '';
+            return `<div class="sk-t${max ? ' max' : ''}${r ? ' has' : ''}" data-sk="${s.k}" style="--c:${s.col}"><div class="sk-ring"><svg viewBox="0 0 66 66">${arcs}</svg><div class="sk-ic"><i class="fa-solid ${s.icon}"></i></div><span class="sk-rk">${r} / ${PF_SK_MAX}</span></div>`
+                + `<div class="sk-n">${s.name}</div><div class="sk-d">${s.short}</div>${fx}${top}${btn}</div>`;
+        }).join('') + `</div><div class="sk-note">Навыки помогают понемногу — полёт остаётся непростым. Подробнее — в «Правилах».</div>`;
     } else if (pfTab === 'stats') {
         const info = pfLvInfo(PG.xp), t = Math.round(PS.time || 0), hh = Math.floor(t / 3600), mm = Math.floor(t % 3600 / 60);
         const since = p.created ? new Date(p.created).toLocaleDateString('ru-RU') : '—';
         h += `<div class="pf-stats">`
-            + pfStatTile('fa-star', '#FFB25C', 'Уровень', info.L)
             + pfStatTile('fa-bolt', '#C084FC', 'Опыта всего', pfFmt(PG.xp))
             + pfStatTile('fa-circle-question', '#FE7600', 'Вопросов собрано', pfFmt(PS.q))
             + pfStatTile('fa-trophy', '#FACC15', 'Рекорд за день', pfFmt(PS.best))
@@ -408,7 +493,9 @@ function pfRenderPane() {
             + pfStatTile('fa-feather', '#E9D5FF', 'В игре с', since)
             + `</div>`;
     } else {
-        h += `<div class="pf-sec" style="--c:#C084FC"><i class="fa-solid fa-image-portrait"></i>Аватар</div><div class="pf-avs">${PF_AV.map(a => pfAvHTML(a.id, a.id === p.av ? 'on' : '', 'data-pf="av"')).join('')}</div>`
+        const cur = pfAvCur(), dirty = cur !== p.av;
+        h += `<div class="pf-sec" style="--c:#C084FC"><i class="fa-solid fa-circle-user"></i>Аватар</div><div class="pf-avs">${PF_AV.map(a => pfAvHTML(a.id, a.id === cur ? 'on' : '', 'data-pf="av"')).join('')}</div>`
+            + `<div class="pf-avsave${dirty ? '' : ' hidden'}"><button type="button" class="no" data-pf="avno">Отмена</button><button type="button" class="ok" data-pf="avok"><i class="fa-solid fa-check"></i>СОХРАНИТЬ АВАТАР</button></div>`
             + `<div class="pf-sec" style="--c:#C084FC"><i class="fa-solid fa-user"></i>Никнейм</div>`
             + `<div class="pf-row"><label class="pf-f" data-f="nick" style="--c:#C084FC"><i class="fa-solid fa-user"></i><input id="pfNick" type="text" maxlength="16" value="${pfEsc(p.nick)}" autocomplete="nickname" autocapitalize="off" spellcheck="false"></label><button type="button" class="pf-save" data-pf="nick" aria-label="Сохранить"><i class="fa-solid fa-check"></i></button></div>`
             + `<div class="pf-sec" style="--c:#5EEAD4"><i class="fa-solid fa-envelope"></i>Почта</div>`
@@ -452,7 +539,7 @@ async function pfSavePass() {
 function pfSkTap(k) {
     const s = PF_SK.find(x => x.k === k); if (!s) return;
     const r = skRank(k); if (r >= PF_SK_MAX) return;
-    const np = PF_SK_PTS[r], nc = PF_SK_COINS[r];
+    const kc = pfSkCost(s, r), np = kc.pts, nc = kc.coins;
     if (PG.pts < np || coinsGet() < nc) { pfRenderPane(); return; }
     if (pfSure !== k) { pfSure = k; clearTimeout(pfSureT); pfSureT = setTimeout(() => { pfSure = null; if (pfTab === 'skills') pfRenderPane(); }, 3000); pfRenderPane(); try { Haptics.flap(); } catch (e) {} return; }
     pfSure = null; clearTimeout(pfSureT);
@@ -460,7 +547,7 @@ function pfSkTap(k) {
     coinsSet(coinsGet() - nc);
     try { AudioFX.playAttemptBonus(); Haptics.powerup(); } catch (e) {}
     pfRenderHero(); pfRenderPane(); pfPlateSync();
-    const card = document.querySelector(`#pfPane .pf-sk[data-sk="${k}"]`); if (card) card.classList.add('up');
+    const card = document.querySelector(`#pfPane .sk-t[data-sk="${k}"]`); if (card) card.classList.add('up');
     pfToast(document.getElementById('pfWin'), `${s.name}: ступень ${r + 1}`);
 }
 function pfToast(win, msg, kind) {
@@ -470,40 +557,88 @@ function pfToast(win, msg, kind) {
     t.textContent = msg; t.style.top = (win.scrollTop + 96) + 'px';
     win.appendChild(t); setTimeout(() => t.remove(), 2500);
 }
-// сова в шапке окна чуть машет крыльями
-function pfAnimLoop() {
-    cancelAnimationFrame(pfAnim);
-    const tick = (t) => {
-        if (!pfRoot || pfRoot.classList.contains('hidden')) return;
-        const el = pfRoot.querySelector('.pf-hav .pf-av'); if (el) pfPaintAv(el, 0.5 + 0.5 * Math.sin(t / 260));
-        pfAnim = requestAnimationFrame(tick);
-    };
-    pfAnim = requestAnimationFrame(tick);
+// Окно совы разворачивается из плашки игрока: плашка растягивается до окна (быстро, ~0,35 с), затем по очереди
+// проявляются шапка, вкладки, содержимое и кнопки. Закрытие — обратно в плашку.
+let pfAnimating = null;
+function pfPlateRect() {
+    if (!pfPlate || pfPlate.classList.contains('hidden') || !pfPlate.offsetParent) return null;
+    const r = pfPlate.getBoundingClientRect(); return r.width > 10 ? r : null;
 }
+function pfClipFrom(win, pr) {
+    const wr = win.getBoundingClientRect(), z = (wr.width / win.offsetWidth) || 1;
+    const t = (pr.top - wr.top) / z, l = (pr.left - wr.left) / z, r = (wr.right - pr.right) / z, b = (wr.bottom - pr.bottom) / z;
+    return `inset(${t.toFixed(1)}px ${r.toFixed(1)}px ${b.toFixed(1)}px ${l.toFixed(1)}px round ${(13 / z * ((pfPlate.getBoundingClientRect().width / pfPlate.offsetWidth) || 1)).toFixed(1)}px)`;
+}
+function pfAnimOpen(pr) {
+    const win = document.getElementById('pfWin'); if (!win || !win.animate) return;
+    if (pfAnimating) pfAnimating.forEach(a => { try { a.cancel(); } catch (e) {} });
+    const parts = [...win.children].filter(el => !el.classList.contains('pf-toast'));
+    const list = [];
+    list.push(pfRoot.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' }));
+    if (pr) list.push(win.animate([{ clipPath: pfClipFrom(win, pr) }, { clipPath: 'inset(0px 0px 0px 0px round 28px)' }], { duration: 360, easing: 'cubic-bezier(.2,.85,.25,1)' }));
+    else list.push(win.animate([{ transform: 'scale(.92)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 260, easing: 'cubic-bezier(.2,.85,.25,1)' }));
+    parts.forEach((el, i) => list.push(el.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 260, delay: 110 + i * 45, easing: 'ease-out', fill: 'backwards' })));
+    pfAnimating = list;
+    Promise.all(list.map(a => a.finished.catch(() => {}))).then(() => { if (pfAnimating === list) pfAnimating = null; });
+}
+function pfAnimClose(done) {
+    const win = document.getElementById('pfWin'), pr = pfPlateRect();
+    if (!win || !win.animate) { done(); return; }
+    if (pfAnimating) pfAnimating.forEach(a => { try { a.cancel(); } catch (e) {} });
+    const parts = [...win.children].filter(el => !el.classList.contains('pf-toast'));
+    const list = [];
+    parts.forEach(el => list.push(el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: 'ease-in', fill: 'forwards' })));
+    if (pr) list.push(win.animate([{ clipPath: 'inset(0px 0px 0px 0px round 28px)' }, { clipPath: pfClipFrom(win, pr) }], { duration: 260, delay: 40, easing: 'cubic-bezier(.5,0,.75,.3)', fill: 'forwards' }));
+    else list.push(win.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(.94)', opacity: 0 }], { duration: 200, easing: 'ease-in', fill: 'forwards' }));
+    list.push(pfRoot.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, delay: 100, easing: 'ease-in', fill: 'forwards' }));
+    pfAnimating = list;
+    pfRoot.style.pointerEvents = 'none';
+    Promise.all(list.map(a => a.finished.catch(() => {}))).then(() => {
+        if (pfAnimating !== list) return;   // пока закрывалось, окно открыли снова
+        pfAnimating = null; done();
+        list.forEach(a => { try { a.cancel(); } catch (e) {} });
+        pfRoot.style.pointerEvents = '';
+    });
+}
+let pfClosing = false;
 function openProfile(tab) {
     if (!pfGet()) { openAuth('reg'); return; }
     try { AudioFX.resume(); } catch (e) {}
-    pfBuild(); pfTab = tab || 'owl'; pfSure = null;
+    const pr = pfPlateRect();
+    pfBuild(); pfTab = tab || 'owl'; pfSure = null; pfPendAv = null; pfClosing = false; pfRoot.classList.remove('closing');
+    pfRoot.style.pointerEvents = '';
     pfRoot.classList.remove('hidden');
     pfRenderHero(); pfRenderPane();
     const w = document.getElementById('pfPane'); if (w) w.scrollTop = 0;
-    pfAnimLoop();
+    const t = document.getElementById('pfTabs'); if (t) { t.scrollLeft = 0; pfTabReveal(); pfTabsEdge(); }
+    pfAnimOpen(pr);
 }
 function closeProfile() {
-    if (pfRoot) pfRoot.classList.add('hidden');
-    cancelAnimationFrame(pfAnim); pfSure = null;
+    if (!pfRoot || pfRoot.classList.contains('hidden') || pfClosing) return;
+    pfClosing = true; pfSure = null; pfPendAv = null;
+    pfRoot.classList.add('closing');   // меню проявляется сразу, пока окно сворачивается в плашку
     pfPlateSync();
-    try { updateHUDAll(); } catch (e) {}
+    pfAnimClose(() => {
+        pfClosing = false;
+        pfRoot.classList.add('hidden'); pfRoot.classList.remove('closing');
+        try { updateHUDAll(); } catch (e) {}
+    });
 }
 
-// админка: +1 уровень (для проверки) и полный сброс профиля вместе с игрой
+// админка: +1 уровень (для проверки); сброс прогресса совы (уровень, навыки, статистика, запас — профиль остаётся)
+// и полный сброс — ещё и профиль: снова регистрация
 function profAdminLevel() { const i = pfLvInfo(PG.xp); pfXpAdd(i.need - i.cur); }
-function profAdminReset() {
-    try { [PF_KEY, PG_KEY, PS_KEY, 'bubo_inv'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
+function profResetProgress() {
+    try { [PG_KEY, PS_KEY, 'bubo_inv'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
     PG = { xp: 0, lvl: 1, pts: 0, sk: {} };
     PS = { q: 0, best: 0, themes: 0, att: 0, wins: 0, coins: 0, qzOk: 0, qzAll: 0, time: 0, days: 0, lastDay: '' };
+    try { invRender(); } catch (e) {}
     pfPlateSync();
-    openAuth('reg');
+}
+function profResetAll() {
+    profResetProgress();
+    try { [PF_KEY, 'bubo_hello_day'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
+    pfPlateAv = ''; pfPlateSync();
 }
 
 // после экрана загрузки: нет профиля — сначала регистрация, есть — плашка игрока в меню

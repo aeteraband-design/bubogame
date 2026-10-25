@@ -199,7 +199,21 @@ function shopTap(key) {
     const tile = document.querySelector(`#shGrid [data-it="${key}"]`); if (tile) tile.classList.add('bought');
     const cn = document.getElementById('shCoins'); if (cn) { cn.classList.remove('bump'); void cn.offsetWidth; cn.classList.add('bump'); }
     const w = document.getElementById('shWin');
-    if (w) { const t = document.createElement('div'); t.className = 'sh-toast'; t.innerHTML = `<i class="fa-solid fa-check"></i> Куплено: ${it.name}`; w.appendChild(t); setTimeout(() => t.remove(), 1900); }
+    if (w) {
+        // подсказка «Куплено» — прямо над купленным товаром (окно могло быть пролистано вниз), в пределах окна
+        const t = document.createElement('div'); t.className = 'sh-toast'; t.innerHTML = `<i class="fa-solid fa-check"></i> Куплено: ${it.name}`; w.appendChild(t);
+        try {
+            const tl = document.querySelector(`#shGrid [data-it="${key}"]`);
+            if (tl) {
+                const wr = w.getBoundingClientRect(), z = (wr.width / w.offsetWidth) || 1, tr = tl.getBoundingClientRect();
+                const half = t.offsetWidth / 2, W = w.clientWidth;
+                const cx = Math.max(half + 8, Math.min(W - half - 8, (tr.left + tr.width / 2 - wr.left) / z));
+                t.style.left = cx.toFixed(1) + 'px';
+                t.style.top = ((tr.top + tr.height / 2 - wr.top) / z + w.scrollTop - t.offsetHeight / 2).toFixed(1) + 'px';
+            }
+        } catch (er) {}
+        setTimeout(() => t.remove(), 1900);
+    }
 }
 function openShop(e) {
     if (e) e.stopPropagation();
@@ -239,7 +253,7 @@ function shopSyncBtn() {
     const POPS = ['authModal', 'profModal', 'rouletteModal', 'quizModal', 'shopModal', 'rulesModal', 'settingsModal', 'adminModal', 'admLogin', 'resetConfirmModal', 'winModal'];
     const sync = () => {
         const ss = document.getElementById('startScreen'); if (!ss) return;
-        const any = POPS.some((id) => { const e = document.getElementById(id); return e && !e.classList.contains('hidden') && e.style.display !== 'none' && e.offsetParent !== null; });
+        const any = POPS.some((id) => { const e = document.getElementById(id); return e && !e.classList.contains('hidden') && e.style.display !== 'none' && !e.classList.contains('closing') && e.offsetParent !== null; });
         ss.classList.toggle('menu-under-pop', any);
     };
     // следим за всей страницей (окна лежат в разных местах), плюс страховка раз в полсекунды

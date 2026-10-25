@@ -164,7 +164,12 @@ function drawScene() {
 
     if (gameActive || waitingFirstTap || isStartMenuOpen || isGameOverOpen) {
         // в грозу обычные облака освещаются так же, как тучи (луна, тень, темнее книзу) — цвет у всех одинаковый
-        if (typeof stormCover !== 'undefined' && stormCover > 0.01) stormLitLayer(0.85 * stormSmooth(0, 0.85, stormCover), drawClouds); else drawClouds();
+        if (typeof stormCover !== 'undefined' && stormCover > 0.01) {
+            // слой облаков в грозу пересобирается через кадр (облака плывут медленно), в промежуточном кадре кладётся готовый
+            const L2 = STORM.litCvs && STORM.litCvs[2];
+            if (L2 && STORM.cl2Ok && (STORM.cl2Skip = !STORM.cl2Skip)) { STORM.cl2Acc = (STORM.cl2Acc || 0) + dtMult; stormLitBlit(L2); }
+            else { const dm0 = dtMult; dtMult = dm0 + (STORM.cl2Acc || 0); STORM.cl2Acc = 0; try { stormLitLayer(0.85 * stormSmooth(0, 0.85, stormCover), drawClouds, 2); } finally { dtMult = dm0; } STORM.cl2Ok = true; }
+        } else { drawClouds(); if (typeof STORM !== 'undefined') STORM.cl2Ok = false; }
     }
 
     // камера: при эффекте ускорения чуть отдаляется (видно больше), при замедлении чуть приближается; от уровня сложности не зависит

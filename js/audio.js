@@ -1441,36 +1441,46 @@ const AudioFX = {
             osc.stop(now + 0.34);
         } catch(e) {}
     },
-    // Трубы сжимаются: далёкая мягкая сирена «у-уи-у» (треугольник через фильтр, с лёгким дрожанием) и звук самого движения —
-    // низкий гул поднимается, пока трубы съезжаются, и шипит гидравлика. Негромко, в тональности игры (ре)
-    playCompressStart() {
+    // Трубы сжимаются — тяжёлый гидравлический пресс, ровно на время, пока трубы съезжаются (dur, сек):
+    // низкий гул механизма нарастает, шипит гидравлика, тикает храповик — и в конце металлический лязг фиксатора.
+    // В стиле звуков «Водонапора»: шумовые полосы и гул, без мультяшных тонов
+    playCompressStart(dur) {
         try {
             if (!this.ctx || this.ctx.state !== 'running') return;
-            const t = this.ctx.currentTime;
-            this._toneSweep(t, 0.55, 73.4, 146.8, 240, 760, 0.075, 'triangle', 0.15);   // движение: гул поднимается на октаву (ре — ре)
-            this._noiseBand(t, 0.5, 260, 1100, 1.3, 0.045, 0.2);                           // гидравлика: «пшш» по ходу сжатия
-            const ctx = this.ctx, o = ctx.createOscillator(), lfo = ctx.createOscillator(), lg = ctx.createGain(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
-            const s0 = t + 0.06, L = 1.15;
-            o.type = 'triangle';
-            o.frequency.setValueAtTime(293.66, s0);                         // ре
-            o.frequency.linearRampToValueAtTime(440, s0 + L * 0.45);        // плавно вверх к ля
-            o.frequency.linearRampToValueAtTime(293.66, s0 + L);            // и обратно
-            lfo.frequency.value = 6; lg.gain.value = 5; lfo.connect(lg); lg.connect(o.frequency);   // лёгкое дрожание, как у сирены
-            lp.type = 'lowpass'; lp.frequency.value = 1600; lp.Q.value = 0.6;
-            g.gain.setValueAtTime(0.0001, s0); g.gain.linearRampToValueAtTime(0.06, s0 + 0.18); g.gain.setValueAtTime(0.06, s0 + L * 0.6); g.gain.linearRampToValueAtTime(0.0001, s0 + L);
-            o.connect(lp); lp.connect(g); g.connect(this.sfxGain || ctx.destination);
-            o.start(s0); lfo.start(s0); o.stop(s0 + L + 0.05); lfo.stop(s0 + L + 0.05);
+            const D = Math.max(0.45, Math.min(2.6, dur || 0.72)), t = this.ctx.currentTime + 0.02;
+            this._toneSweep(t, D + 0.08, 46, 69, 220, 520, 0.07, 'sawtooth', 0.35);       // гул механизма поднимается
+            this._toneSweep(t, D + 0.08, 92, 138, 300, 700, 0.025, 'square', 0.4);         // обертон — «металл под нагрузкой»
+            this._noiseBand(t, D, 420, 1900, 1.1, 0.075, 0.25);                            // гидравлика: шипение растёт
+            const n = Math.max(3, Math.round(D / 0.16));                                   // храповик: щелчки по ходу сжатия
+            for (let i = 1; i < n; i++) this._noiseBand(t + D * i / n, 0.035, 3200, 2600, 4, 0.05, 0.2);
+            this._compressClank(t + D, 1);
         } catch (e) {}
     },
-    // Трубы расходятся: гул опускается, воздух с шипением выходит, сверху — мягкий спуск «отбой тревоги» (ля — ре)
-    playCompressEnd() {
+    // Трубы расходятся — фиксатор отщёлкивается, гидравлика стравливает давление, гул механизма уходит вниз (dur — время разжатия)
+    playCompressEnd(dur) {
         try {
             if (!this.ctx || this.ctx.state !== 'running') return;
-            const t = this.ctx.currentTime;
-            this._toneSweep(t, 0.6, 146.8, 73.4, 760, 240, 0.065, 'triangle', 0.1);
-            this._noiseBand(t, 0.65, 1100, 240, 1.1, 0.045, 0.08);
-            this._toneSweep(t + 0.05, 0.6, 440, 293.66, 1600, 1000, 0.045, 'triangle', 0.15);
+            const D = Math.max(0.45, Math.min(2.6, dur || 0.72)), t = this.ctx.currentTime + 0.02;
+            this._compressClank(t, 0.6);
+            this._noiseBand(t + 0.03, D, 2000, 380, 1.0, 0.08, 0.12);                      // сброс давления: «пшшш» вниз
+            this._toneSweep(t + 0.03, D + 0.05, 69, 41, 520, 200, 0.06, 'sawtooth', 0.15);  // гул опускается
+            this._toneSweep(t + 0.03, D + 0.05, 138, 82, 700, 280, 0.02, 'square', 0.15);
         } catch (e) {}
+    },
+    // металлический лязг фиксатора: глухой удар + короткий звон металла (k — сила)
+    _compressClank(t, k) {
+        const ctx = this.ctx, out = this.sfxGain || ctx.destination;
+        this._noiseBand(t, 0.09, 2600, 1400, 1.4, 0.09 * k, 0.05);
+        const th = ctx.createOscillator(), tg = ctx.createGain();
+        th.type = 'sine'; th.frequency.setValueAtTime(120, t); th.frequency.exponentialRampToValueAtTime(48, t + 0.18);
+        tg.gain.setValueAtTime(0.0001, t); tg.gain.linearRampToValueAtTime(0.16 * k, t + 0.008); tg.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+        th.connect(tg); tg.connect(out); th.start(t); th.stop(t + 0.25);
+        [[587, 0.02], [881, 0.014], [1318, 0.008]].forEach(([f, v]) => {   // звон — ре, ля, ми (в тональности игры)
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'triangle'; o.frequency.value = f;
+            g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v * k, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+            o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.5);
+        });
     },
     playSlowExit() {   // выход из замедления: тон «поднимается» обратно (раньше это был звук разжатия труб)
         try {

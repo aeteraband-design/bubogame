@@ -279,6 +279,7 @@ let speedBoostTime = 0;
 let slowMotionTime = 0;
 let compressionTime = 0;
 let currentCompressionFactor = 0.0;
+const COMPRESS_STEP = 0.024;   // скорость сжатия/разжатия труб за кадр: ≈0,7 с от начала до конца (под неё рассчитан звук)
 let currentDifficultySqueeze = 0.0;
 let lastBuffStateKey = '';
 

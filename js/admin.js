@@ -227,44 +227,56 @@
         });
     };
 
-    // большая кнопка внизу окна: сбросить игру, как будто начался новый день — попытки снова полные, прогресс с нуля,
-    // вопросы дня можно пройти заново, монеты и вращения обнуляются — как у нового игрока. Нажать дважды: первое нажатие — «Точно?»
-    { const ab = $('admAttBtn'); let sure = false, t = 0;
-      if (ab) ab.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const lbl = ab.querySelector('span');
-        if (!sure) { sure = true; lbl.textContent = 'ТОЧНО СБРОСИТЬ?'; clearTimeout(t); t = setTimeout(() => { sure = false; lbl.textContent = 'СБРОСИТЬ ИГРУ'; }, 3000); return; }
-        sure = false; clearTimeout(t);
-        // настройки админки — тоже к стандартным
-        try { window.applyAdminConfig(ADMIN_DEFAULTS); renderBody(); } catch (er) {}
+    // три кнопки сброса внизу окна (каждая — двумя нажатиями: первое — «Точно?»):
+    //  ПРОГРЕСС — игра с нуля, как в новый день у нового игрока: попытки, темы, вопросы дня, монеты, вращения, уровень совы, навыки, статистика, запас.
+    //             Профиль (ник, аватар) и настройки админки остаются;
+    //  АДМИНКА  — только настройки админки к стандартным;
+    //  ВСЁ      — и то и другое, и выход из профиля: снова регистрация, как при первом запуске.
+    function admResetProgress() {
         try { resetEntireGame({ attempts: MAX_ATTEMPTS }); playDay = todayKey(); zeroDay = ''; } catch (er) {}
         try { if (typeof quizResetDay === 'function') quizResetDay(); } catch (er) {}
         try { localStorage.removeItem('bubo_shop_earn_hidden'); } catch (er) {}   // подсказка в лавке снова покажется, как новичку
         try { localStorage.removeItem('bubo_goal_hidden'); } catch (er) {}   // «Цель полёта» тоже снова покажется
-        // полный сброс, как у нового игрока: монеты, покупки «на старт», вращения рулетки, пройденные вопросы и выбор темы
         try { if (typeof coinsSet === 'function') coinsSet(0); } catch (er) {}
         try { ['bubo_shop_pending', 'bubo_quiz_theme', 'bubo_quiz_lvl', 'bubo_last_prize', 'bubo_quiz_sub', 'bubo_quiz_prog', 'bubo_first_game_done', 'bubo_wx'].forEach(k => localStorage.removeItem(k)); } catch (er) {}
         try { if (typeof quizMenuBadge === 'function') quizMenuBadge(); } catch (er) {}
-        try { if (typeof profAdminReset === 'function') profAdminReset(); } catch (er) {}   // профиль, уровень, навыки, статистика и запас — тоже с нуля: снова регистрация
+        try { if (typeof profResetProgress === 'function') profResetProgress(); } catch (er) {}   // уровень совы, навыки, статистика и запас — с нуля
         try { if (typeof quizResetSeen === 'function') quizResetSeen(); } catch (er) {}
         try { rouletteSpins = 0; if (typeof rwUpdateUI === 'function') rwUpdateUI(); } catch (er) {}
-        try { updateMenuVisibility(); } catch (er) {}
         try { StorageManager.save(); updateHUDAll(); updateMenuVisibility(); } catch (er) {}
-        lbl.textContent = 'ИГРА СБРОШЕНА';
-        admResetSync();
-      }); }
+    }
+    function admResetCfg() { try { window.applyAdminConfig(ADMIN_DEFAULTS); renderBody(); } catch (er) {} }
+    function admTwoTap(id, label, run) {
+        const b = $(id); if (!b) return; let sure = false, t = 0;
+        b.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const lbl = b.querySelector('span');
+            if (!sure) { sure = true; b.classList.add('sure'); lbl.textContent = 'ТОЧНО?'; clearTimeout(t); t = setTimeout(() => { sure = false; b.classList.remove('sure'); lbl.textContent = label; }, 3000); return; }
+            sure = false; clearTimeout(t); b.classList.remove('sure');
+            run();
+            lbl.textContent = 'ГОТОВО'; setTimeout(() => { if (lbl.textContent === 'ГОТОВО') lbl.textContent = label; admResetSync(); }, 1500);
+            admResetSync();
+        });
+    }
+    admTwoTap('admAttBtn', 'ПРОГРЕСС', admResetProgress);
+    admTwoTap('admCfgBtn', 'АДМИНКА', admResetCfg);
+    admTwoTap('admAllBtn', 'ВСЁ', () => {
+        admResetCfg(); admResetProgress();
+        try { if (typeof profResetAll === 'function') profResetAll(); } catch (er) {}
+        try { localStorage.removeItem('bubo_inv_side'); } catch (er) {}
+        // окно админки закрываем — сразу регистрация, как при первом запуске
+        setTimeout(() => { try { close(); } catch (er) { modal.classList.add('hidden'); } try { if (typeof openAuth === 'function') openAuth('reg'); } catch (er) {} }, 600);
+    });
     // кнопка неактивна, пока сбрасывать нечего: игра как новая (попытки полные, прогресса и вопросов дня нет)
     function admResetSync() {
         const ab = $('admAttBtn'); if (!ab) return;
         let fresh = false;
         try {
             const d = typeof quizDay === 'function' ? quizDay() : { ids: [] };
-            fresh = attempts >= MAX_ATTEMPTS && !score && !hasStartedCampaign && getTotalCollectedThemes() === 0 && !d.ids.length && !d.cur && !(typeof coinsGet === 'function' && coinsGet()) && !rouletteSpins;
+            fresh = attempts >= MAX_ATTEMPTS && !score && !hasStartedCampaign && getTotalCollectedThemes() === 0 && !d.ids.length && !d.cur && !(typeof coinsGet === 'function' && coinsGet()) && !rouletteSpins && !(typeof PG !== 'undefined' && PG.xp);
         } catch (er) {}
         ab.disabled = fresh;
         ab.style.opacity = fresh ? '.4' : ''; ab.style.pointerEvents = fresh ? 'none' : ''; ab.style.filter = fresh ? 'saturate(.4)' : '';
-        const lbl = ab.querySelector('span'); if (lbl && !fresh && lbl.textContent === 'ИГРА СБРОШЕНА') lbl.textContent = 'СБРОСИТЬ ИГРУ';
-        if (lbl && fresh && lbl.textContent === 'СБРОСИТЬ ИГРУ') lbl.textContent = 'ИГРА СБРОШЕНА';
     }
     setInterval(() => { if (!modal.classList.contains('hidden')) admResetSync(); }, 1000);
     // вкладка «Игра»: вернуть дневные попытки, тестовые монеты, выход
