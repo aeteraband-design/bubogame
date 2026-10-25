@@ -11,8 +11,27 @@
     if (!tabsEl || !scrollEl || !paneEl) return;
     // шапка (крестик, эмблема, заголовок) листается вместе с текстом и уходит вверх, а вкладки прилипают к верху окна
     const headEl = win.querySelector('.ru-head'), xEl = document.getElementById('closeRulesBtn');
-    if (headEl) { scrollEl.insertBefore(headEl, paneEl); scrollEl.insertBefore(tabsEl, paneEl); if (xEl) headEl.appendChild(xEl); win.classList.add('ru-stick'); }
-    const headBottom = () => (headEl && headEl.parentNode === scrollEl ? headEl.offsetTop + headEl.offsetHeight : 0);
+    // вкладки — поверх ленты (вне её): пока шапка видна, едут под ней; шапка ушла — стоят у верхнего края, а текст под ними
+    // уходит в тень так же, как над кнопками снизу (маска ленты), без всякой плашки
+    let phEl = null;
+    if (headEl && bodyEl) {
+        scrollEl.insertBefore(headEl, paneEl);
+        phEl = document.createElement('div'); phEl.className = 'ru-tabsph'; scrollEl.insertBefore(phEl, paneEl);   // место под вкладками в ленте
+        bodyEl.insertBefore(tabsEl, bodyEl.firstChild);
+        if (xEl) headEl.appendChild(xEl);
+        win.classList.add('ru-stick');
+    }
+    const headBottom = () => (phEl ? phEl.offsetTop : 0);
+    function syncTabsPos() {
+        if (!phEl) return;
+        const th = tabsEl.offsetHeight;
+        if (phEl.style.height !== th + 'px') phEl.style.height = th + 'px';
+        const y = Math.max(0, phEl.offsetTop - scrollEl.scrollTop);
+        tabsEl.style.transform = y > 0.5 ? `translateY(${y}px)` : '';
+        win.classList.toggle('ru-stuck', y <= 0.5);
+        bodyEl.style.setProperty('--tabH', th + 'px');
+    }
+    window.addEventListener('resize', () => syncTabsPos());
 
     // ---------- помощники ----------
     const has = (fn) => { try { return fn(); } catch (e) { return undefined; } };
@@ -282,7 +301,7 @@
     }
     let sbT = 0;
     function syncScroll(active) {
-        win.classList.toggle('ru-stuck', !!headEl && headEl.parentNode === scrollEl && scrollEl.scrollTop >= headBottom() - 2);   // вкладки прилипли к верху
+        syncTabsPos();   // вкладки: под шапкой или у верхнего края
         const max = scrollEl.scrollHeight - scrollEl.clientHeight, can = max > 3;
         bodyEl.classList.toggle('ft', can && scrollEl.scrollTop > 2);
         bodyEl.classList.toggle('fb', can && scrollEl.scrollTop < max - 2);

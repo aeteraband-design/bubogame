@@ -171,13 +171,14 @@
 #rlWin .ru-row > .ru-ic { margin-top: 2.5px; }
 #rlWin .ru-tx { padding-top: 0 !important; min-height: 35px; display: flex; flex-direction: column; justify-content: center; }
 
-/* ---- шапка листается вместе с разделом и уходит вверх, вкладки прилипают к верху окна (rules.js переносит шапку и вкладки в ленту) ---- */
-/* лента начинается на 10 px выше (крестик стоит там же, где был, и не обрезается); прилипшие вкладки — в 16 px от верхнего края, как кнопки снизу */
+/* ---- шапка листается вместе с разделом и уходит вверх, вкладки остаются у верхнего края (rules.js) ---- */
+/* лента начинается на 10 px выше: крестик стоит там же, где был, и не обрезается; вкладки у края — в 16 px от верха, как кнопки снизу */
 #rlWin.ru-stick .ru-body { margin-top: -10px; }
 #rlWin.ru-stick .ru-head { position: relative; padding-top: 10px; }
 #rlWin.ru-stick .ru-head > .win-x { position: absolute !important; top: 4px !important; right: -4px !important; }
-#rlWin.ru-stick .ru-tabs { position: sticky; top: 0; z-index: 3; margin: 6px -4px -12px; padding: 10px 4px 22px; background: none; }
-/* прилипли — под вкладками текст мягко уходит в тень, как у кнопок снизу (без сплошной плашки) */
-#rlWin.ru-stick.ru-stuck .ru-tabs { background: linear-gradient(180deg, rgb(29, 9, 54) 0%, rgba(29, 9, 54, 0.97) 55%, rgba(29, 9, 54, 0) 100%); }
+#rlWin.ru-stick .ru-tabs { position: absolute; top: 0; left: -4px; right: -4px; z-index: 3; margin: 0; padding: 10px 4px 8px; }
+#rlWin.ru-stick .ru-tabsph { margin-top: 6px; }
+/* текст под вкладками прячется и мягко проявляется ниже них — та же маска, что у нижнего края над кнопками */
 #rlWin.ru-stick .ru-scroll { -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - var(--ruB)), transparent 100%); mask-image: linear-gradient(180deg, #000 calc(100% - var(--ruB)), transparent 100%); }
+#rlWin.ru-stick.ru-stuck .ru-scroll { -webkit-mask-image: linear-gradient(180deg, transparent 0, transparent var(--tabH), #000 calc(var(--tabH) + 34px), #000 calc(100% - var(--ruB)), transparent 100%); mask-image: linear-gradient(180deg, transparent 0, transparent var(--tabH), #000 calc(var(--tabH) + 34px), #000 calc(100% - var(--ruB)), transparent 100%); }
 #rlWin.ru-stick .ru-pane { padding-top: 4px; }
