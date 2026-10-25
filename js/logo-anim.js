@@ -161,6 +161,8 @@
         return (CENTER[state.id] = r);
     }
     window.__owlCenter = (id) => owlCenter(STATES.find(x => x.id === id));
+    // портрет совы для аватара профиля (js/profile.js): сова в нужном состоянии, по центру и одного размера
+    window.__owlPortrait = (gc, px, x, y, size, id, wing) => { const s = STATES.find(t => t.id === id) || STATES[0]; drawOwlState(x, y, size, Object.assign({}, s, { _ice: 0.5 }), 0, wing, 0, 0, gc, px, false); };
     function owlSize(state, size) {
         const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : ((state.id === 'dizzy' || state.id === 'wet') ? STATES.find(t => t.id === 'normal') : state));
         return state.id === 'fat' ? size : size * 0.56 / Math.max(0.3, c.w, c.h);   // одинаково крупно во всех состояниях; «полная» — по своему размеру
@@ -483,7 +485,7 @@
         // кнопки верхней панели не перекрываем: если мешают — облачко ниже не опускаем, а сдвигаем вправо от них (или ужимаем хвостик)
         try {
             const wr = wrap.getBoundingClientRect(), k = wrap.offsetWidth ? wr.width / wrap.offsetWidth : 1;
-            const btns = document.querySelectorAll('#menuCoins, #startScreen .rw-menu-btn');
+            const btns = document.querySelectorAll('#menuCoins, #profPlate, #startScreen .rw-menu-btn');
             let lim = -1e9;
             btns.forEach(b => { if (!b.offsetParent) return; const r = b.getBoundingClientRect(); const l = (r.left - wr.left) / k, rr = (r.right - wr.left) / k;
                 if (rr > ax + px - 2 && l < ax + px + pw + 2) lim = Math.max(lim, (r.bottom - wr.top) / k + 6); });

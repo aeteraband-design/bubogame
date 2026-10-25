@@ -1094,7 +1094,7 @@ function spawnPipe(startX) {
     if (typeof shazamBlockedType === 'function' && shazamBlockedType(itemType)) itemType = 'question';   // в ШАЗАМе щит, заморозка и т.п. на пути не появляются
     lastSpawnedItemType = itemType;
     const tokenRadius = 26;
-    let coinVal = 0; if (itemType === 'coin') { let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {} coinVal = COIN_PATH_VALUES[Math.max(0, Math.min(5, lv))]; }
+    let coinVal = 0; if (itemType === 'coin') { let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {} coinVal = Math.round(COIN_PATH_VALUES[Math.max(0, Math.min(5, lv))] * (window.skCoinMul ? skCoinMul() : 1)); }   // навык «Монетный нюх»
 
     if (itemType === 'stamina' || itemType === 'infinite') {
         items.push({

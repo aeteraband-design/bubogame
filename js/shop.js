@@ -16,7 +16,7 @@ function shopOnFlightStart() {
     shopSetPend({});
     setTimeout(() => {
         try {
-            if (p.shield) { shieldTime = Math.max(shieldTime, ADMIN_CFG.shieldSec * 60); shieldAppearAnim = 12; AudioFX.playShieldCollect(); }
+            if (p.shield) { shieldTime = Math.max(shieldTime, shieldSecs() * 60); shieldAppearAnim = 12; AudioFX.playShieldCollect(); }
             if (p.slow) { speedBoostTime = 0; slowMotionTime = ADMIN_CFG.slowSec * 60; AudioFX.onSpeedChanged(); }
             if (p.shazam && typeof shazamStart === 'function' && SHZ.state === 'idle') shazamStart();
             Haptics.powerup();
@@ -236,7 +236,7 @@ function shopSyncBtn() {
     const st = document.createElement('style');
     st.textContent = '#startScreen > *{transition:opacity .25s ease}#startScreen.menu-under-pop > *{opacity:0!important;pointer-events:none!important}';
     document.head.appendChild(st);
-    const POPS = ['rouletteModal', 'quizModal', 'shopModal', 'rulesModal', 'settingsModal', 'adminModal', 'admLogin', 'resetConfirmModal', 'winModal'];
+    const POPS = ['authModal', 'profModal', 'rouletteModal', 'quizModal', 'shopModal', 'rulesModal', 'settingsModal', 'adminModal', 'admLogin', 'resetConfirmModal', 'winModal'];
     const sync = () => {
         const ss = document.getElementById('startScreen'); if (!ss) return;
         const any = POPS.some((id) => { const e = document.getElementById(id); return e && !e.classList.contains('hidden') && e.style.display !== 'none' && e.offsetParent !== null; });

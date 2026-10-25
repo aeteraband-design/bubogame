@@ -159,7 +159,7 @@
         let h = '';
         if (tab === 'themes') h += `<div class="adm-sum"><span>Всего тем для победы</span><b id="admTotal">${themesTotal()}</b></div>`;
         h += rows.map(rowHtml).join('');
-        if (tab === 'game') h += `<div class="adq-acts"><button type="button" class="adq-btn" data-g="coins"><i class="fa-solid fa-coins"></i>+1000 монет</button></div>`
+        if (tab === 'game') h += `<div class="adq-acts"><button type="button" class="adq-btn" data-g="coins"><i class="fa-solid fa-coins"></i>+1000 монет</button><button type="button" class="adq-btn" data-g="lvl"><i class="fa-solid fa-star"></i>+1 уровень совы</button></div>`
             + `<div class="adq-acts"><button type="button" class="adq-btn" data-g="spin1"><i class="fa-solid fa-dice"></i>+1 вращение рулетки</button><button type="button" class="adq-btn" data-g="spin5"><i class="fa-solid fa-dice"></i>+5 вращений</button></div>`
             + `<div class="adq-acts"><button type="button" class="adq-btn" data-g="out"><i class="fa-solid fa-right-from-bracket"></i>Выйти из админки</button></div>`;
         body.innerHTML = h;
@@ -245,6 +245,7 @@
         try { if (typeof coinsSet === 'function') coinsSet(0); } catch (er) {}
         try { ['bubo_shop_pending', 'bubo_quiz_theme', 'bubo_quiz_lvl', 'bubo_last_prize', 'bubo_quiz_sub', 'bubo_quiz_prog', 'bubo_first_game_done', 'bubo_wx'].forEach(k => localStorage.removeItem(k)); } catch (er) {}
         try { if (typeof quizMenuBadge === 'function') quizMenuBadge(); } catch (er) {}
+        try { if (typeof profAdminReset === 'function') profAdminReset(); } catch (er) {}   // профиль, уровень, навыки, статистика и запас — тоже с нуля: снова регистрация
         try { if (typeof quizResetSeen === 'function') quizResetSeen(); } catch (er) {}
         try { rouletteSpins = 0; if (typeof rwUpdateUI === 'function') rwUpdateUI(); } catch (er) {}
         try { updateMenuVisibility(); } catch (er) {}
@@ -270,6 +271,7 @@
     body.addEventListener('click', (e) => {
         const b = e.target.closest('[data-g]'); if (!b || tab !== 'game') return;
         if (b.dataset.g === 'att') { attempts = Math.max(attempts, MAX_ATTEMPTS); zeroDay = ''; try { StorageManager.save(); updateHUDAll(); } catch (er) {} b.innerHTML = '<i class="fa-solid fa-check"></i>Попытки: ' + attempts; }
+        else if (b.dataset.g === 'lvl') { if (typeof profAdminLevel === 'function') profAdminLevel(); b.innerHTML = '<i class="fa-solid fa-check"></i>Уровень: ' + (typeof PG !== 'undefined' ? PG.lvl : ''); }
         else if (b.dataset.g === 'coins') { if (typeof coinsAdd === 'function') coinsAdd(1000); b.innerHTML = '<i class="fa-solid fa-check"></i>Монет: ' + (typeof coinsGet === 'function' ? coinsGet() : ''); }
         else if (b.dataset.g === 'spin1' || b.dataset.g === 'spin5') {   // попытки вращения рулетки себе
             rouletteSpins = Math.min(99, rouletteSpins + (b.dataset.g === 'spin5' ? 5 : 1));

@@ -145,6 +145,7 @@ function checkAttemptMilestone() {
         let add = 0;
         for (let k = coinMilestone + 1; k <= c; k++) add += coinsForMilestone(k);   // 15 монет за каждые 50 вопросов; на рубеже попытки — попытка вместо монет
         coinMilestone = c;
+        if (add > 0) add = Math.round(add * (window.skCoinMul ? skCoinMul() : 1));   // навык «Монетный нюх»
         if (add > 0 && typeof coinsAdd === 'function') {
             coinsAdd(add);
             try { const sb = document.getElementById('scoreBadge'); if (sb) { restartClass(sb, ['score-up'], 'score-up'); setTimeout(() => sb.classList.remove('score-up'), 1300); } } catch (e) {}
@@ -298,9 +299,9 @@ let currentFreezeFactor = 0.0;
 function registerIceCream() {
     if (typeof shazamBusy === 'function' && shazamBusy()) return null;   // в ШАЗАМе не мёрзнем
     iceCreamCount++;
-    if (iceCreamCount >= FREEZE_TRIGGER) {
+    if (iceCreamCount >= FREEZE_TRIGGER + (window.skTrig ? skTrig('cold') : 0)) {   // навык «Морозостойкость»: на 5-й ступени +1 мороженое
         iceCreamCount = 0;
-        freezeTime = ADMIN_CFG.freezeSec * 60;
+        freezeTime = ADMIN_CFG.freezeSec * 60 * (window.skDur ? skDur('cold') : 1);
         owl.spinVel = (Math.random() < 0.5 ? -1 : 1) * 0.07;
         AudioFX.playFreeze();
         spawnIceBurst('freeze');

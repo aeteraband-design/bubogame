@@ -1,0 +1,238 @@
+/* ===== ПРОФИЛЬ: плашка игрока в меню, регистрация, окно совы (уровень, навыки, статистика, профиль) ===== */
+
+/* ---- плашка игрока в главном меню: аватар, ник, уровень и полоска опыта ---- */
+#profPlate { position: absolute; z-index: 6; zoom: var(--ui-zoom, 1); top: 12px; left: 14px; height: 40px; width: 214px; box-sizing: border-box;
+    display: flex; align-items: center; gap: 8px; padding: 0 10px 0 3px; border-radius: 13px; cursor: pointer; font-family: Onest, sans-serif; color: #fff; text-align: left;
+    background: rgba(29, 9, 54, .78); border: 1px solid rgba(192, 132, 252, .55); box-shadow: 0 0 12px rgba(168, 85, 247, .22), 0 6px 14px rgba(0, 0, 0, .3);
+    -webkit-tap-highlight-color: transparent; transition: transform .12s; }
+#profPlate.hidden { display: none; }
+#profPlate:active { transform: scale(.97); }
+#profPlate .pp-av { position: relative; flex: 0 0 32px; width: 32px; height: 32px; border-radius: 10px; overflow: visible; }
+#profPlate .pp-av .pf-av { width: 32px; height: 32px; border-radius: 10px; }
+#profPlate .pp-pts { position: absolute; top: -5px; right: -6px; min-width: 15px; height: 15px; padding: 0 3px; box-sizing: border-box; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font: 900 9px/1 Onest, sans-serif; color: #fff;
+    background: #A855F7; border: 1.5px solid #1d0936; box-shadow: 0 0 8px rgba(168, 85, 247, .8); animation: ppPulse 1.6s ease-in-out infinite; }
+#profPlate .pp-pts.hidden { display: none; }
+@keyframes ppPulse { 50% { transform: scale(1.15); } }
+#profPlate .pp-mid { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+#profPlate .pp-nick { font-weight: 900; font-size: 12.5px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#profPlate .pp-row { display: flex; align-items: center; gap: 6px; }
+#profPlate .pp-lv { flex: 0 0 auto; font-weight: 900; font-size: 9px; line-height: 1; letter-spacing: .04em; color: #FFB25C; }
+#profPlate .pp-bar { flex: 1 1 auto; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+#profPlate .pp-bar > i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #FE7600, #A855F7); box-shadow: 0 0 6px rgba(254, 118, 0, .5); transition: width .5s ease; }
+#profPlate .pp-pct { flex: 0 0 auto; font-weight: 800; font-size: 9px; line-height: 1; color: #D8C4FF; min-width: 22px; text-align: right; }
+#profPlate .pp-ch { flex: 0 0 auto; font-size: 10px; color: #C4A1FF; }
+
+/* ---- аватар: сова игры в одном из состояний на цветном фоне ---- */
+.pf-av { position: relative; display: block; overflow: hidden; background: radial-gradient(circle at 50% 42%, rgba(var(--g), .55), rgba(var(--g), .12) 58%, rgba(20, 3, 38, .92) 100%);
+    box-shadow: inset 0 0 0 1px rgba(var(--g), .55); }
+.pf-av canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* ---- окна: регистрация и профиль ---- */
+#authModal, #profModal { position: absolute; inset: 0; z-index: 46; display: flex; align-items: center; justify-content: center; padding: 12px;
+    background: rgba(20, 3, 38, .25); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+#authModal.hidden, #profModal.hidden { display: none; }
+#authWin, #pfWin { position: relative; width: 100%; max-width: 380px; zoom: var(--menu-zoom, 1); max-height: calc((100dvh - 24px) / var(--menu-zoom, 1));
+    overflow-x: hidden; overflow-y: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    border-radius: 28px; padding: 18px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; font-family: Onest, sans-serif; color: #fff; text-align: left;
+    background: radial-gradient(110% 40% at 50% -8%, rgba(192, 132, 252, .24), transparent 62%), radial-gradient(80% 36% at 0% 106%, rgba(94, 234, 212, .13), transparent 60%), rgba(29, 9, 54, .97);
+    border: 1.5px solid rgba(192, 132, 252, .4); box-shadow: 0 10px 40px rgba(0, 0, 0, .5); }
+@supports not (height: 100dvh) { #authWin, #pfWin { max-height: calc((100vh - 24px) / var(--menu-zoom, 1)); } }
+#authWin::-webkit-scrollbar, #pfWin::-webkit-scrollbar { display: none; }
+#authWin > *, #pfWin > * { flex-shrink: 0; }
+#pfWin { max-width: 400px; overflow: hidden; height: min(calc((100dvh - 24px) / var(--menu-zoom, 1)), 860px); }
+@supports not (height: 100dvh) { #pfWin { height: min(calc((100vh - 24px) / var(--menu-zoom, 1)), 860px); } }
+/* шапка, вкладки и кнопки внизу стоят на месте, листается только содержимое вкладки (сверху и снизу мягкое затенение) */
+#pfWin > .pf-pane { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    margin: -8px -16px; padding: 10px 16px 12px;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 12px, #000 calc(100% - 14px), transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 12px, #000 calc(100% - 14px), transparent 100%); }
+#pfWin > .pf-pane::-webkit-scrollbar { display: none; }
+html.menu-pc #pfWin { max-width: calc(min(520px, 100vw - 48px) / var(--menu-zoom, 1)); }
+
+/* эмблема регистрации: выбранная сова в светящемся кольце */
+#authWin .au-emb { position: relative; width: 104px; height: 104px; margin: 0 auto -2px; }
+#authWin .au-emb .pf-av { position: absolute; inset: 12px; border-radius: 50%; }
+.pf-ring { position: absolute; inset: 4px; border-radius: 50%; padding: 1.5px; pointer-events: none;
+    background: conic-gradient(from var(--pfA), rgba(192, 132, 252, 0) 0deg, #E9D5FF 70deg, #5EEAD4 140deg, rgba(94, 234, 212, 0) 200deg, rgba(192, 132, 252, 0) 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+    animation: pfRing 3.6s linear infinite; }
+@property --pfA { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes pfRing { to { --pfA: 360deg; } }
+.pf-tw { position: absolute; color: #F3E8FF; font-style: normal; font-size: var(--s); text-shadow: 0 0 8px #C084FC; pointer-events: none; animation: pfTw 2.2s ease-in-out infinite; animation-delay: var(--d); }
+@keyframes pfTw { 0%, 100% { opacity: .15; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.1); } }
+
+.pf-title { text-align: center; }
+.pf-title b { display: block; font-weight: 900; font-size: 27px; letter-spacing: .02em; line-height: 1;
+    background: linear-gradient(90deg, #E9D5FF, #C084FC 45%, #5EEAD4); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pf-title span { display: block; margin-top: 7px; font-weight: 600; font-size: 12px; line-height: 1.35; color: #C4B5FD; }
+
+/* выбор аватара */
+.pf-lbl { font-weight: 800; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: #C4A1FF; margin: 0 2px -6px; }
+.pf-avs { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.pf-avs .pf-av { aspect-ratio: 1; border-radius: 12px; cursor: pointer; transition: transform .15s, box-shadow .15s; -webkit-tap-highlight-color: transparent; }
+.pf-avs .pf-av.on { box-shadow: inset 0 0 0 2px #E9D5FF, 0 0 10px rgba(var(--g), .8); transform: scale(1.06); }
+.pf-avs .pf-av:active { transform: scale(.94); }
+
+/* поля ввода */
+.pf-fields { display: flex; flex-direction: column; gap: 9px; }
+.pf-f { position: relative; display: flex; align-items: center; height: 46px; border-radius: 14px; background: rgba(20, 3, 38, .7); border: 1px solid rgba(168, 85, 247, .35); transition: border-color .2s, box-shadow .2s; }
+.pf-f:focus-within { border-color: #C084FC; box-shadow: 0 0 0 3px rgba(192, 132, 252, .18); }
+.pf-f.bad { border-color: #F43F5E; box-shadow: 0 0 0 3px rgba(244, 63, 94, .16); }
+.pf-f > i { flex: 0 0 40px; text-align: center; font-size: 14px; color: var(--c, #C084FC); }
+.pf-f input { flex: 1 1 auto; min-width: 0; height: 100%; padding: 0 12px 0 0; border: 0; outline: 0; background: transparent; color: #fff;
+    font: 600 16px/1 Onest, sans-serif; -webkit-appearance: none; appearance: none; }
+.pf-f input::placeholder { color: rgba(216, 196, 255, .45); font-weight: 600; }
+.pf-f input:-webkit-autofill { -webkit-text-fill-color: #fff; -webkit-box-shadow: 0 0 0 40px #1c0838 inset; caret-color: #fff; }
+.pf-f .pf-eye { flex: 0 0 42px; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(216, 196, 255, .6); font-size: 14px; cursor: pointer; background: none; border: 0; }
+.pf-err { min-height: 0; font-weight: 700; font-size: 12px; line-height: 1.3; color: #FDA4AF; text-align: center; margin: -4px 0 -4px; }
+.pf-err:empty { display: none; }
+
+/* кнопки */
+.pf-main { width: 100%; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 14px 10px; border-radius: 16px; cursor: pointer; border: 1px solid rgba(255, 214, 150, .7);
+    font: 900 14px/1 Onest, sans-serif; letter-spacing: .06em; color: #fff; background: linear-gradient(180deg, #FF9F1C, #FE7600); box-shadow: 0 0 16px rgba(254, 118, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .3); transition: transform .12s; }
+.pf-main:active { transform: scale(.97); }
+.pf-or { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 11px; color: rgba(216, 196, 255, .55); margin: -2px 0; }
+.pf-or::before, .pf-or::after { content: ""; flex: 1; height: 1px; background: rgba(168, 85, 247, .3); }
+.pf-vk { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 10px; border-radius: 16px; cursor: pointer;
+    font: 800 13px/1 Onest, sans-serif; color: #fff; background: #0077FF; border: 1px solid rgba(147, 197, 253, .6); box-shadow: 0 0 12px rgba(0, 119, 255, .35); transition: transform .12s; }
+.pf-vk:active { transform: scale(.97); }
+.pf-vk .vk-l { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 7px; background: #fff; color: #0077FF; font: 900 11px/1 Onest, sans-serif; letter-spacing: -.02em; }
+.pf-link { text-align: center; font-weight: 600; font-size: 12px; color: #C4B5FD; }
+.pf-link button { font: inherit; font-weight: 800; color: #5EEAD4; background: none; border: 0; padding: 4px; cursor: pointer; }
+.pf-note { display: flex; gap: 9px; align-items: flex-start; padding: 10px 12px; border-radius: 14px; background: rgba(20, 3, 38, .55); border: 1px solid rgba(94, 234, 212, .25);
+    font-weight: 600; font-size: 11.5px; line-height: 1.35; color: #DDD6FE; }
+.pf-note > i { color: #5EEAD4; font-size: 13px; margin-top: 1px; }
+
+.pf-x { position: absolute; top: 10px; right: 10px; z-index: 2; width: 32px; height: 32px; border-radius: 11px; display: flex; align-items: center; justify-content: center;
+    color: rgba(233, 213, 255, .8); background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .1); font-size: 14px; cursor: pointer; }
+.pf-x:active { transform: scale(.92); }
+.pf-toast { position: absolute; left: 50%; top: 96px; transform: translate(-50%, 0); max-width: calc(100% - 32px); padding: 9px 14px; border-radius: 14px; font-weight: 800; font-size: 12.5px; line-height: 1.3; text-align: center;
+    background: rgba(22, 101, 52, .96); border: 1px solid #4ADE80; box-shadow: 0 0 18px rgba(34, 197, 94, .5); pointer-events: none; animation: shToast 2.4s ease forwards; z-index: 5; }
+.pf-toast.info { background: rgba(30, 64, 120, .96); border-color: #60A5FA; box-shadow: 0 0 18px rgba(59, 130, 246, .5); }
+.pf-toast.bad { background: rgba(127, 29, 29, .96); border-color: #F87171; box-shadow: 0 0 18px rgba(239, 68, 68, .5); }
+
+/* ---- окно профиля: шапка ---- */
+#pfWin .pf-hero { display: flex; align-items: center; gap: 14px; padding-right: 34px; }
+#pfWin .pf-hav { position: relative; flex: 0 0 88px; width: 88px; height: 88px; cursor: pointer; }
+#pfWin .pf-hav .pf-av { position: absolute; inset: 9px; border-radius: 50%; }
+#pfWin .pf-hinfo { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+#pfWin .pf-nick { font-weight: 900; font-size: 21px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#pfWin .pf-lvrow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+#pfWin .pf-lvl { font-weight: 900; font-size: 12px; letter-spacing: .06em; color: #FFB25C; }
+#pfWin .pf-xpn { font-weight: 700; font-size: 10.5px; color: #C4B5FD; white-space: nowrap; }
+.pf-xpbar { position: relative; height: 10px; border-radius: 6px; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .08); overflow: hidden; }
+.pf-xpbar > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: linear-gradient(90deg, #FE7600, #C084FC); box-shadow: 0 0 10px rgba(254, 118, 0, .5); overflow: hidden; transition: width .6s ease; }
+.pf-xpbar > i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .45) 50%, transparent 70%); background-size: 220% 100%; animation: pfShine 2.6s linear infinite; }
+@keyframes pfShine { from { background-position: 160% 0; } to { background-position: -60% 0; } }
+#pfWin .pf-ptschip { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 10px; cursor: pointer;
+    font-weight: 800; font-size: 11px; color: #fff; background: rgba(168, 85, 247, .28); border: 1px solid rgba(192, 132, 252, .7); box-shadow: 0 0 10px rgba(168, 85, 247, .4); }
+#pfWin .pf-ptschip i { color: #E9D5FF; }
+#pfWin .pf-ptschip.hidden { display: none; }
+
+/* вкладки — как в правилах: активная оранжевая */
+#pfWin .pf-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+#pfWin .pf-tab { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 8px 2px 7px; border-radius: 12px; cursor: pointer;
+    border: 1px solid rgba(120, 44, 233, .5); background: rgba(120, 44, 233, .2); color: #d8c4ff; font: 800 10.5px/1.1 Onest, sans-serif; white-space: nowrap;
+    transition: background .2s, color .2s, box-shadow .2s, border-color .2s; -webkit-tap-highlight-color: transparent; }
+#pfWin .pf-tab i { font-size: 14px; color: var(--c); transition: color .2s; }
+#pfWin .pf-tab:active { transform: scale(.96); }
+#pfWin .pf-tab.on { background: linear-gradient(180deg, #FF9F1C, #FE7600); border-color: rgba(255, 214, 150, .85); color: #fff;
+    box-shadow: 0 0 0 1px rgba(255, 190, 110, .35), 0 0 9px rgba(254, 118, 0, .7); text-shadow: 0 0 6px rgba(255, 200, 120, .6); }
+#pfWin .pf-tab.on i { color: #fff; }
+#pfWin .pf-tab .pf-dot { position: absolute; top: -5px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font: 900 9.5px/1 Onest, sans-serif; color: #fff; background: #A855F7; border: 1.5px solid #1d0936; box-shadow: 0 0 8px rgba(168, 85, 247, .8); }
+
+#pfWin .pf-pane { display: flex; flex-direction: column; gap: 10px; }
+#pfWin .pf-pane > * { flex-shrink: 0; }
+.pf-sec { font-weight: 900; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #C4A1FF; margin: 4px 2px -2px; display: flex; align-items: center; gap: 7px; }
+.pf-sec i { color: var(--c, #C084FC); }
+
+/* сова: карточки характеристик */
+.pf-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.pf-card { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 11px; border-radius: 14px; min-width: 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--c) 13%, transparent), rgba(20, 3, 38, .6) 80%); border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); }
+.pf-card > i { flex: 0 0 auto; font-size: 17px; color: var(--c); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--c) 60%, transparent)); }
+.pf-card .pf-cv { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pf-card .pf-cv b { font-weight: 900; font-size: 15px; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-card .pf-cv span { font-weight: 700; font-size: 10px; line-height: 1.1; color: rgba(221, 214, 254, .72); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-card .pf-plus { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 9px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+    font-size: 11px; color: #fff; background: color-mix(in srgb, var(--c) 35%, rgba(20, 3, 38, .6)); border: 1px solid color-mix(in srgb, var(--c) 70%, transparent); }
+.pf-card .pf-plus:active { transform: scale(.9); }
+.pf-inv { display: flex; gap: 8px; }
+.pf-inv .pf-ii { flex: 1 1 0; display: flex; align-items: center; justify-content: center; gap: 6px; height: 40px; border-radius: 12px; font-weight: 900; font-size: 13px;
+    color: #fff; background: rgba(20, 3, 38, .6); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); }
+.pf-inv .pf-ii i { color: var(--c); font-size: 14px; }
+.pf-inv .pf-ii.zero { opacity: .45; }
+.pf-bon { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf-bon span { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border-radius: 10px; font-weight: 800; font-size: 11px; color: #fff;
+    background: color-mix(in srgb, var(--c) 18%, rgba(20, 3, 38, .6)); border: 1px solid color-mix(in srgb, var(--c) 50%, transparent); }
+.pf-bon span i { color: var(--c); }
+.pf-empty { font-weight: 600; font-size: 12px; line-height: 1.35; color: rgba(221, 214, 254, .7); padding: 2px 2px; }
+
+/* навыки */
+.pf-ptsbox { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 16px; background: rgba(168, 85, 247, .16); border: 1px solid rgba(192, 132, 252, .5); }
+.pf-ptsbox .pf-pn { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 22px;
+    color: #fff; background: linear-gradient(160deg, #C084FC, #7C3AED); box-shadow: 0 0 14px rgba(168, 85, 247, .55); }
+.pf-ptsbox .pf-pt { font-weight: 600; font-size: 11.5px; line-height: 1.35; color: #DDD6FE; }
+.pf-ptsbox .pf-pt b { display: block; font-weight: 900; font-size: 13px; color: #fff; margin-bottom: 2px; }
+.pf-sk { display: flex; flex-direction: column; gap: 8px; padding: 11px; border-radius: 16px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--c) 12%, transparent), rgba(20, 3, 38, .6) 75%); border: 1px solid color-mix(in srgb, var(--c) 38%, transparent); }
+.pf-sk.max { border-color: color-mix(in srgb, var(--c) 70%, transparent); }
+.pf-sk .pf-skh { display: flex; align-items: center; gap: 10px; }
+.pf-sk .pf-ski { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #fff;
+    background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 55%, #fff), var(--c) 60%, color-mix(in srgb, var(--c) 70%, #000)); box-shadow: 0 0 12px color-mix(in srgb, var(--c) 55%, transparent), inset 0 -3px 0 rgba(0, 0, 0, .2); }
+.pf-sk .pf-skn { flex: 1 1 auto; min-width: 0; font-weight: 900; font-size: 13.5px; line-height: 1.15; }
+.pf-sk .pf-skn small { display: block; margin-top: 3px; font-weight: 700; font-size: 10.5px; color: color-mix(in srgb, var(--c) 70%, #fff); }
+.pf-sk .pf-pips { flex: 0 0 auto; display: flex; gap: 4px; }
+.pf-sk .pf-pips i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .15); }
+.pf-sk .pf-pips i.on { background: var(--c); border-color: color-mix(in srgb, var(--c) 60%, #fff); box-shadow: 0 0 6px var(--c); }
+.pf-sk .pf-skd { font-weight: 600; font-size: 11.5px; line-height: 1.35; color: rgba(221, 214, 254, .8); }
+.pf-sk .pf-skd b { color: #fff; font-weight: 800; }
+.pf-sk .pf-skb { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 8px; border-radius: 12px; cursor: pointer;
+    font: 900 12px/1 Onest, sans-serif; letter-spacing: .03em; color: #fff; background: color-mix(in srgb, var(--c) 30%, rgba(20, 3, 38, .7)); border: 1px solid color-mix(in srgb, var(--c) 75%, transparent); transition: transform .12s; }
+.pf-sk .pf-skb:active { transform: scale(.97); }
+.pf-sk .pf-skb .pf-cost { display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px; border-radius: 8px; background: rgba(0, 0, 0, .25); font-weight: 800; font-size: 11px; }
+.pf-sk .pf-skb .pf-cost .fa-coins { color: #FFC53D; }
+.pf-sk .pf-skb .pf-cost .fa-graduation-cap { color: #E9D5FF; }
+.pf-sk .pf-skb.sure { background: linear-gradient(180deg, #4ADE80, #16A34A); border-color: #BBF7D0; box-shadow: 0 0 12px rgba(34, 197, 94, .55); }
+.pf-sk .pf-skb.no { cursor: default; color: rgba(255, 255, 255, .55); background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .14); font-size: 11px; }
+.pf-sk .pf-skb.no .pf-cost { opacity: .7; }
+.pf-sk .pf-skb.done { cursor: default; color: color-mix(in srgb, var(--c) 60%, #fff); background: color-mix(in srgb, var(--c) 14%, transparent); border-color: color-mix(in srgb, var(--c) 50%, transparent); }
+.pf-sk.up { animation: pfUp .7s ease; }
+@keyframes pfUp { 30% { transform: scale(1.03); box-shadow: 0 0 22px var(--c); } }
+
+/* статистика */
+.pf-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.pf-st { display: flex; flex-direction: column; gap: 5px; padding: 10px 11px; border-radius: 14px; background: rgba(20, 3, 38, .6); border: 1px solid rgba(120, 44, 233, .35); min-width: 0; }
+.pf-st span { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 10.5px; line-height: 1.15; color: rgba(221, 214, 254, .72); }
+.pf-st span i { color: var(--c); font-size: 11px; }
+.pf-st b { font-weight: 900; font-size: 17px; line-height: 1; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* профиль: поля с кнопкой сохранения */
+.pf-row { display: flex; gap: 8px; }
+.pf-row .pf-f { flex: 1 1 auto; min-width: 0; }
+.pf-save { flex: 0 0 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; color: #fff;
+    background: rgba(94, 234, 212, .2); border: 1px solid rgba(94, 234, 212, .6); }
+.pf-save:active { transform: scale(.94); }
+.pf-sub { font-weight: 800; font-size: 12px; color: #fff; padding: 11px 12px; border-radius: 14px; background: rgba(45, 14, 82, .9); border: 1px solid rgba(168, 85, 247, .5); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.pf-sub i { color: #5EEAD4; }
+.pf-meta { font-weight: 600; font-size: 11px; color: rgba(221, 214, 254, .6); text-align: center; }
+
+/* нижние кнопки окна профиля */
+#pfWin .pf-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 2px; }
+#pfWin .pf-fb { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 8px; border-radius: 16px; cursor: pointer;
+    font: 900 11.5px/1 Onest, sans-serif; letter-spacing: .05em; color: #fff; background: rgba(45, 14, 82, .9); border: 1px solid rgba(168, 85, 247, .5); }
+#pfWin .pf-fb i { color: #FE7600; }
+#pfWin .pf-fb.st i { color: #A855F7; }
+#pfWin .pf-fb:active { transform: scale(.97); }
+
+/* ---- новый уровень в главном меню: карточка сверху ---- */
+#pfLvUp { position: absolute; left: 50%; top: 112px; z-index: 60; zoom: var(--menu-zoom, 1); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 16px 10px 10px; border-radius: 18px; cursor: pointer;
+    font-family: Onest, sans-serif; color: #fff; white-space: nowrap; background: rgba(36, 10, 66, .97); border: 1.5px solid rgba(192, 132, 252, .75); box-shadow: 0 0 24px rgba(168, 85, 247, .55), 0 10px 30px rgba(0, 0, 0, .45);
+    animation: pfLvIn 3.6s ease forwards; }
+#pfLvUp .lv-n { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 21px;
+    background: linear-gradient(160deg, #FF9F1C, #A855F7); box-shadow: 0 0 14px rgba(254, 118, 0, .5); }
+#pfLvUp .lv-av { width: 44px; height: 44px; border-radius: 14px; }
+#pfLvUp b { display: block; font-weight: 900; font-size: 15px; letter-spacing: .03em; background: linear-gradient(90deg, #FFD66B, #E9D5FF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#pfLvUp span { display: block; margin-top: 4px; font-weight: 700; font-size: 11.5px; color: #DDD6FE; }
+@keyframes pfLvIn { 0% { opacity: 0; transform: translate(-50%, -20px) scale(.9); } 10% { opacity: 1; transform: translate(-50%, 0) scale(1.04); } 16% { transform: translate(-50%, 0) scale(1); } 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -14px); } }

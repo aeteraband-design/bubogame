@@ -87,6 +87,8 @@
     const call = (fn, fb) => () => { try { if (typeof window[fn] === 'function') { window[fn](); return; } } catch (e) {} if (fb) fb(); };
     const hide = (id) => () => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); };
     const WINDOWS = [
+        ['authModal', () => {}],   // регистрация обязательна — «назад» её не закрывает
+        ['profModal', call('closeProfile', hide('profModal'))],
         ['resetConfirmModal', click('resetNoBtn')],
         ['admLogin', hide('admLogin')],
         ['adminModal', click('admClose')],

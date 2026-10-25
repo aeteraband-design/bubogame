@@ -37,8 +37,8 @@ function invUse(k, btn) {
     let label = null;
     try {
         if (k === 'shield') {
-            AudioFX.playShieldCollect(); shieldTime = Math.max(shieldTime, ADMIN_CFG.shieldSec * 60); shieldAppearAnim = 12;
-            label = [`Щит ${ADMIN_CFG.shieldSec}с`, '#22C55E', 'fa-shield-halved'];
+            AudioFX.playShieldCollect(); shieldTime = Math.max(shieldTime, shieldSecs() * 60); shieldAppearAnim = 12;
+            label = [`Щит ${shieldSecs()}с`, '#22C55E', 'fa-shield-halved'];
         } else if (k === 'speed') {
             AudioFX.playStarCollect(); slowMotionTime = 0;
             speedBoostTime = ADMIN_CFG.speedSec * 60; const shz = shazamOnSpeedup(); AudioFX.onSpeedChanged();

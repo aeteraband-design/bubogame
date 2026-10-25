@@ -36,7 +36,7 @@ function update() {
         stamina = maxStamina;
         updateStaminaHUD();
     } else {
-        stamina = Math.max(0, stamina - 0.0462 * staminaDrainMult() * dtMult);   // +5% к расходу   // в покое силы уходят чуть быстрее (было 0,04)
+        stamina = Math.max(0, stamina - 0.0462 * staminaDrainMult() * (window.skStamMul ? skStamMul() : 1) * dtMult);   // +5% к расходу   // в покое силы уходят чуть быстрее (было 0,04)
         updateStaminaHUD();
     }
 
@@ -427,10 +427,10 @@ function update() {
                 it.extraFX = registerJunkFood();
             } else if (it.type === 'shield') {
                 AudioFX.playShieldCollect();
-                shieldTime = Math.max(shieldTime, ADMIN_CFG.shieldSec * 60);
+                shieldTime = Math.max(shieldTime, shieldSecs() * 60);
                 shieldAppearAnim = 12;
                 Haptics.powerup();
-                it.pendingFX = { target: 'other', text: `Щит ${ADMIN_CFG.shieldSec}с`, color: '#22C55E', icon: 'fa-shield-halved' };
+                it.pendingFX = { target: 'other', text: `Щит ${shieldSecs()}с`, color: '#22C55E', icon: 'fa-shield-halved' };
             } else if (it.type === 'compress') {
                 AudioFX.playCompressStart();
                 compressionTime = ADMIN_CFG.compressSec * 60;
@@ -759,9 +759,9 @@ function renderBuffBar(bar, list) {
 function registerJunkFood() {
     if (shazamBusy()) return null;   // в ШАЗАМе не считается
     junkFoodCount++;
-    if (junkFoodCount >= OVEREAT_TRIGGER) {
+    if (junkFoodCount >= OVEREAT_TRIGGER + (window.skTrig ? skTrig('food') : 0)) {   // навык «Крепкий желудок»
         junkFoodCount = 0;
-        overeatTime = ADMIN_CFG.overeatSec * 60;
+        overeatTime = ADMIN_CFG.overeatSec * 60 * (window.skDur ? skDur('food') : 1);
         AudioFX.playOverEat();
         Haptics.powerup();
         return { target: 'other', text: 'Вы переели!', color: '#FB923C', icon: 'fa-burger' };
@@ -772,9 +772,9 @@ function registerJunkFood() {
 function registerDrink() {
     if (shazamBusy()) return null;   // в ШАЗАМе не пьянеем и не считаем
     drinkCount++;
-    if (drinkCount >= DRUNK_TRIGGER) {
+    if (drinkCount >= DRUNK_TRIGGER + (window.skTrig ? skTrig('drunk') : 0)) {   // навык «Крепкая голова»
         drinkCount = 0;
-        drunkTime = ADMIN_CFG.drunkSec * 60;
+        drunkTime = ADMIN_CFG.drunkSec * 60 * (window.skDur ? skDur('drunk') : 1);
         AudioFX.playDrunk();
         Haptics.powerup();
         return { target: 'other', text: 'Вы опьянели!', color: '#2DD4BF', icon: 'fa-martini-glass-citrus' };
@@ -927,11 +927,11 @@ function handleSecretRoulette(originX, originY) {
             return { label: 'Бонус: +0.5 Жизни', color: '#F97316', icon: 'fa-pizza-slice', isScoreAdd: false, target: 'heart' };
         } },
         { w: 18, run() {
-            shieldTime = Math.max(shieldTime, ADMIN_CFG.shieldSec * 60);
+            shieldTime = Math.max(shieldTime, shieldSecs() * 60);
             shieldAppearAnim = 12;
             AudioFX.playShieldCollect();
             Haptics.powerup();
-            return { label: `Щит ${ADMIN_CFG.shieldSec}с`, color: '#22C55E', icon: 'fa-shield-halved', isScoreAdd: false };
+            return { label: `Щит ${shieldSecs()}с`, color: '#22C55E', icon: 'fa-shield-halved', isScoreAdd: false };
         } },
         { w: 17, run() {
             speedBoostTime = 0;

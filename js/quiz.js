@@ -698,6 +698,7 @@ function qzAnswer(L) {
     const di = qzLevel(q.lvl);
     d.ids.push(q.id); d.res.push(ok ? 1 : 0);
     if (ok) { d.earned += di.coins; if (typeof coinsAdd === 'function') coinsAdd(di.coins); }
+    if (typeof profOnQuiz === 'function') profOnQuiz(ok, di.coins);   // опыт совы за ответ
     quizMarkSeen(q.id);
     d.shown = false; quizSaveDay(d);
     QS.phase = 'reveal'; QS.pick = L;
