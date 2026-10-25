@@ -353,7 +353,7 @@ function stormLitOverlay(k) {
 // slot — свой холст (0 или 1); noBlit — не класть на сцену сразу (два слоя туч складываются вместе и кладутся одним разом)
 function stormLitLayer(k, drawFn, slot, noBlit) {
     const main = ctx, cv = main.canvas;
-    const dpr = cv.width / Math.max(1, width), q = dpr > 1.25 ? 1.15 / dpr : 1;   // тучи мягкие (размытые края): ~1 пиксель на точку хватает, на вид то же
+    const dpr = cv.width / Math.max(1, width), q = dpr > 1.1 ? 1 / dpr : 1;   // тучи мягкие (размытые края): 1 пиксель на точку хватает, на вид то же
     const W = Math.max(1, Math.round(cv.width * q)), H = Math.max(1, Math.round(cv.height * q));
     const LS = STORM.litCvs || (STORM.litCvs = []);
     let L = LS[slot || 0];

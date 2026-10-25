@@ -71,11 +71,20 @@ function pfXpAdd(n) {
     PG.xp += n;
     const L = pfLvInfo(PG.xp).L, ups = [];
     while (PG.lvl < L) { PG.lvl++; ups.push(PG.lvl); }
-    pfSaveProg();
+    // в полёте опыт капает с каждым вопросом: сохраняем и обновляем плашку меню не сразу, а при выходе в меню (без лишней работы в полёте)
+    if (ups.length || !pfFlying()) { pfSaveProg(); pfProgDirty = false; } else pfProgDirty = true;
     ups.forEach((lv, i) => pfLevelUp(lv, i));
-    pfPlateSync();
+    if (pfFlying()) pfPlateDirty = true; else pfPlateSync();
     if (pfRoot && !pfRoot.classList.contains('hidden')) pfRenderHero();
 }
+let pfProgDirty = false, pfPlateDirty = false;
+function pfFlying() { try { return !!gameActive; } catch (e) { return false; } }
+setInterval(() => {
+    if (pfProgDirty && !pfFlying()) { pfProgDirty = false; pfSaveProg(); }
+    if (pfPlateDirty && !pfFlying()) { pfPlateDirty = false; pfPlateSync(); }
+}, 500);
+window.addEventListener('pagehide', () => { if (pfProgDirty) pfSaveProg(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && pfProgDirty) { pfProgDirty = false; pfSaveProg(); } });
 function pfLevelUp(L, i) {
     const pts = pfPtsFor(L), c = pfCoinsFor(L), att = L % 5 === 0;
     PG.pts += pts; pfSaveProg();
@@ -159,33 +168,72 @@ const PF_AV = [
 function pfAv(id) { return PF_AV.find(a => a.id === id) || PF_AV[0]; }
 function pfTheme(el, id) { if (!el) return; const a = pfAv(id); el.style.setProperty('--pfC', a.c); el.style.setProperty('--pfL', a.l); el.style.setProperty('--pfS', a.s); }
 function pfAvHTML(id, cls, extra) { const a = pfAv(id); return `<span class="pf-av ${cls || ''}" data-av="${a.id}" style="--g:${a.g}" ${extra || ''}><canvas></canvas></span>`; }
-// движение каждой совы во времени t (мс): взмах крыльев, наклон, кувырок
-function pfMotion(id, t) {
-    const sn = Math.sin;
+// Анимация аватаров без тормозов: каждая сова один раз рисуется в готовые кадры (короткая петля ~1–2,5 с, 24 кадра в секунду),
+// дальше на экране просто показываются готовые картинки. Кадры дорисовываются понемногу (не больше ~4 мс за кадр игры),
+// пока они не готовы — показывается ближайший готовый. Мелкие аватары в выборе стоят на месте, оживает только выбранный.
+const PF_LOOP = { normal: 1200, wet: 1200, fat: 1500, shazam: 1200, speed: 1200, freeze: 2400, drunk: 2400, dizzy: 1396 };   // у оглушённой — ровно треть оборота звёздочек
+const PF_FPS = 24;
+function pfMotionP(id, ph) {   // движение по фазе петли 0..1: взмах крыльев, наклон, кувырок
+    const s = (x) => Math.sin(Math.PI * 2 * x);
     switch (id) {
-        case 'freeze': return { wing: 0, rot: 0, spin: t / 1000 * 2.4 };
-        case 'drunk': return { wing: 0.5 + 0.5 * sn(t / 260), rot: sn(t / 420) * 0.2, spin: 0 };
-        case 'fat': return { wing: 0.5 + 0.5 * sn(t / 330), rot: 0, spin: 0 };
-        case 'shazam': return { wing: Math.max(0, sn(t / 90)), rot: 0, spin: 0 };
-        case 'speed': return { wing: Math.max(0, sn(t / 75)), rot: 0, spin: 0 };
-        default: return { wing: 0.5 + 0.5 * sn(t / 190), rot: 0, spin: 0 };
+        case 'freeze': return { wing: 0, rot: 0, spin: Math.PI * 2 * ph };
+        case 'drunk': return { wing: 0.5 + 0.5 * s(ph * 2), rot: s(ph) * 0.2, spin: 0 };
+        case 'shazam': return { wing: Math.max(0, s(ph * 2)), rot: 0, spin: 0 };
+        case 'speed': return { wing: Math.max(0, s(ph * 3)), rot: 0, spin: 0 };
+        default: return { wing: 0.5 + 0.5 * s(ph), rot: 0, spin: 0 };
     }
 }
-function pfPaintAv(el, t) {
-    const cv = el && el.querySelector('canvas'); if (!cv || typeof window.__owlPortrait !== 'function') return;
-    const w = el.clientWidth, h = el.clientHeight; if (!w || !h) return;
-    const dpr = Math.min(2.5, window.devicePixelRatio || 1), z = (el.getBoundingClientRect().width / w) || 1, px = dpr * z;
-    const W = Math.round(w * px), H = Math.round(h * px);
-    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-    const g = cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
-    const now = t == null ? performance.now() : t, m = pfMotion(el.dataset.av, now);
-    try { window.__owlPortrait(g, px, w / 2, h / 2, Math.min(w, h) * (+el.dataset.k || 1.2), el.dataset.av, m.wing, false, now, m.rot, m.spin); } catch (e) {}
+const PF_FR = new Map();   // кадры: ключ «сова|ширина|высота|масштаб» → { n, L, f: [холсты], next }
+const PF_Q = [];           // очередь дорисовки
+function pfFrames(id, W, H, k, px) {
+    const key = id + '|' + W + '|' + H + '|' + k;
+    let e = PF_FR.get(key);
+    if (!e) {
+        if (PF_FR.size >= 20) { const old = PF_FR.keys().next().value; PF_FR.delete(old); }
+        const L = PF_LOOP[id] || 1200;
+        e = { id, W, H, k, px, L, n: Math.max(8, Math.round(L / 1000 * PF_FPS)), f: [], next: 0, key };
+        PF_FR.set(key, e);
+        pfFrameMake(e);   // первый кадр — сразу
+        PF_Q.push(e);
+    }
+    return e;
 }
-function pfPaintAll(root) { (root || document).querySelectorAll('.pf-av').forEach(el => pfPaintAv(el)); }
-// все аватары на экране живут постоянно: один общий цикл (крупные — 30 кадров в секунду, мелкие в выборе — 15).
-// Ушёл в другое окно и вернулся — цикл сам продолжается; спрятанные аватары не рисуются.
+function pfFrameMake(e) {
+    if (e.next >= e.n || typeof window.__owlPortrait !== 'function') return false;
+    const i = e.next++, c = document.createElement('canvas'); c.width = e.W; c.height = e.H;
+    const g = c.getContext('2d'), w = e.W / e.px, h = e.H / e.px, ph = i / e.n, m = pfMotionP(e.id, ph);
+    try { window.__owlPortrait(g, e.px, w / 2, h / 2, Math.min(w, h) * e.k, e.id, m.wing, false, ph * e.L, m.rot, m.spin); } catch (er) {}
+    e.f[i] = c;
+    return true;
+}
+function pfFrameWork() {   // дорисовка кадров с ограничением по времени
+    const t0 = performance.now();
+    while (PF_Q.length && performance.now() - t0 < 4) {
+        const e = PF_Q[0];
+        if (!PF_FR.has(e.key) || !pfFrameMake(e)) PF_Q.shift();
+    }
+}
+function pfPaintAv(el, t, still) {
+    const cv = el && el.querySelector('canvas'); if (!cv) return;
+    const now = performance.now();
+    if (!el.__sz || now - el.__szT > 600) {   // размеры элемента меряем не чаще пары раз в секунду (замер заставляет браузер пересчитывать вёрстку)
+        const w = el.clientWidth, h = el.clientHeight; if (!w || !h) return;
+        const dpr = Math.min(2, window.devicePixelRatio || 1), z = (el.getBoundingClientRect().width / w) || 1, px = Math.round(dpr * z * 100) / 100;
+        el.__sz = { w, h, px, W: Math.round(w * px), H: Math.round(h * px) }; el.__szT = now;
+    }
+    const { W, H, px } = el.__sz;
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; el.__fi = -1; }
+    const e = pfFrames(el.dataset.av, W, H, +el.dataset.k || 1.2, px);
+    let i = still ? 0 : Math.floor(((t == null ? performance.now() : t) % e.L) / e.L * e.n);
+    while (i > 0 && !e.f[i]) i--;
+    const fr = e.f[i]; if (!fr || (el.__fi === i && el.__fk === e.key)) return;   // тот же кадр — не перерисовываем
+    el.__fi = i; el.__fk = e.key;
+    const g = cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.drawImage(fr, 0, 0);
+}
+function pfPaintAll(root) { (root || document).querySelectorAll('.pf-av').forEach(el => pfPaintAv(el, null, el.closest('.pf-avs') && !el.classList.contains('on'))); }
+// один общий цикл для всех аватаров на экране (24 кадра в секунду); в полёте и в фоне не работает
 (function () {
-    let last = 0, odd = false, list = [], listT = 0;
+    let last = 0, list = [], listT = 0;
     const visible = (el) => {
         if (!el.offsetParent || !el.clientWidth) return false;
         if (el.closest('#profPlate')) { const ss = document.getElementById('startScreen'); if (!ss || ss.classList.contains('menu-under-pop') || document.documentElement.classList.contains('booting')) return false; }
@@ -193,10 +241,14 @@ function pfPaintAll(root) { (root || document).querySelectorAll('.pf-av').forEac
     };
     const tick = (t) => {
         requestAnimationFrame(tick);
-        if (document.hidden || t - last < 32) return;
-        last = t; odd = !odd;
+        if (document.hidden) return;
+        let fly = false; try { fly = gameActive; } catch (e) {}
+        if (fly) { list = []; return; }
+        if (PF_Q.length) pfFrameWork();
+        if (t - last < 1000 / PF_FPS - 2) return;
+        last = t;
         if (t - listT > 400) { listT = t; list = [...document.querySelectorAll('.pf-av')].filter(visible); }
-        list.forEach(el => { if (el.closest('.pf-avs') && odd) return; if (el.isConnected) pfPaintAv(el, t); });
+        for (const el of list) { if (!el.isConnected) continue; const still = el.closest('.pf-avs') && !el.classList.contains('on'); pfPaintAv(el, t, still); }
     };
     requestAnimationFrame(tick);
 })();
@@ -206,7 +258,7 @@ let pfPlate = null;
 function pfPlateBuild() {
     const ss = document.getElementById('startScreen'); if (!ss || pfPlate) return;
     pfPlate = document.createElement('button'); pfPlate.type = 'button'; pfPlate.id = 'profPlate'; pfPlate.className = 'hidden'; pfPlate.title = 'Профиль';
-    pfPlate.innerHTML = `<span class="pp-av"><b class="pp-pts hidden">+1</b></span><span class="pp-mid"><span class="pp-nick"></span><span class="pp-row"><span class="pp-lv"></span><span class="pp-bar"><i></i></span><span class="pp-pct"></span><span class="pp-coins"><i class="fa-solid fa-coins"></i><b>0</b></span></span></span>`;
+    pfPlate.innerHTML = `<span class="pp-av"><b class="pp-pts hidden">+1</b></span><span class="pp-mid"><span class="pp-top"><span class="pp-nick"></span><span class="pp-coins"><i class="fa-solid fa-coins"></i><b>0</b></span></span><span class="pp-row"><span class="pp-lv"></span><span class="pp-bar"><i></i></span><span class="pp-pct"></span></span></span>`;
     pfPlate.addEventListener('click', (e) => { e.stopPropagation(); openProfile(PG.pts > 0 ? 'skills' : 'owl'); });
     ss.insertBefore(pfPlate, ss.firstChild);
 }
@@ -225,9 +277,10 @@ function pfPlateSync() {
     pfPlate.querySelector('.pp-pct').textContent = info.pct + '%';
     const b = pfPlate.querySelector('.pp-pts'); b.classList.toggle('hidden', !(PG.pts > 0)); b.textContent = '+' + PG.pts;
     const box = pfPlate.querySelector('.pp-av');
-    if (pfPlateAv !== p.av) { const old = box.querySelector('.pf-av'); if (old) old.remove(); box.insertAdjacentHTML('afterbegin', pfAvHTML(p.av, '', 'data-k="1.5"')); pfPlateAv = p.av; }
+    if (pfPlateAv !== p.av) { const old = box.querySelector('.pf-av'); if (old) old.remove(); box.insertAdjacentHTML('afterbegin', pfAvHTML(p.av, '', 'data-k="1.35"')); pfPlateAv = p.av; }
     pfPlateFit();
     pfPaintAv(box.querySelector('.pf-av'));
+    pfNickFade();
 }
 // ширина плашки — до кнопок справа (лавка, вопросы, рулетка), на ПК не шире 250
 function pfPlateFit() {
@@ -237,13 +290,19 @@ function pfPlateFit() {
     const w = Math.max(150, Math.min(250, (br.left - r.left) / z - 12));
     pfPlate.style.width = w.toFixed(1) + 'px';
 }
+// длинный ник плавно тает у монет (монеты всегда видны целиком)
+function pfNickFade() {
+    const n = pfPlate && pfPlate.querySelector('.pp-nick'); if (!n) return;
+    n.classList.toggle('ov', n.scrollWidth > n.clientWidth + 1);
+}
 // монеты — прямо в плашке, рядом с ником (отдельная плашка монет в меню при профиле спрятана); прибавились — число подпрыгивает
 let pfCoinsShown = -1;
 function pfPlateCoins() {
-    if (!pfPlate) return;
+    if (!pfPlate || pfFlying()) return;
     const c = coinsGet(); if (c === pfCoinsShown) return;
     const el = pfPlate.querySelector('.pp-coins'); if (!el) return;
     el.querySelector('b').textContent = pfFmt(c);
+    pfNickFade();
     if (pfCoinsShown >= 0 && c > pfCoinsShown) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
     pfCoinsShown = c;
 }

@@ -8,32 +8,34 @@
 
 /* ---- плашка игрока в главном меню: крупный аватар слева (без своей рамки, отделён линией), ник, уровень, полоска опыта и монеты ---- */
 #profPlate { position: absolute; z-index: 6; zoom: var(--ui-zoom, 1); top: 12px; left: 14px; height: 40px; width: 214px; box-sizing: border-box;
-    display: flex; align-items: stretch; gap: 8px; padding: 0 9px 0 0; border-radius: 13px; cursor: pointer; font-family: Onest, sans-serif; color: #fff; text-align: left;
+    display: flex; align-items: center; gap: 8px; padding: 0 9px 0 4px; border-radius: 13px; cursor: pointer; font-family: Onest, sans-serif; color: #fff; text-align: left;
     background: rgba(29, 9, 54, .78); border: 1px solid rgba(192, 132, 252, .45); box-shadow: 0 6px 14px rgba(0, 0, 0, .3);
     border-color: color-mix(in srgb, var(--pfC) 42%, rgba(120, 44, 233, .35)); box-shadow: 0 0 10px color-mix(in srgb, var(--pfC) 16%, transparent), 0 6px 14px rgba(0, 0, 0, .3);
     -webkit-tap-highlight-color: transparent; transition: transform .12s; }
 #profPlate.hidden { display: none; }
 #profPlate:active { transform: scale(.97); }
-#profPlate .pp-av { position: relative; flex: 0 0 38px; width: 38px; border-radius: 12px 0 0 12px;
-    border-right: 1px solid rgba(192, 132, 252, .4); border-right-color: color-mix(in srgb, var(--pfC) 42%, rgba(120, 44, 233, .35)); }
-#profPlate .pp-av .pf-av { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 12px 0 0 12px; box-shadow: none; }
+/* аватар — такая же скруглённая плитка, как в выборе аватара */
+#profPlate .pp-av { position: relative; flex: 0 0 32px; width: 32px; height: 32px; }
+#profPlate .pp-av .pf-av { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 10px; }
 #profPlate .pp-pts { position: absolute; z-index: 2; top: -6px; right: -7px; min-width: 15px; height: 15px; padding: 0 3px; box-sizing: border-box; border-radius: 8px;
     display: flex; align-items: center; justify-content: center; font: 900 9px/1 Onest, sans-serif; color: #fff;
     background: #A855F7; border: 1.5px solid #1d0936; box-shadow: 0 0 8px rgba(168, 85, 247, .8); animation: ppPulse 1.6s ease-in-out infinite; }
 #profPlate .pp-pts.hidden { display: none; }
 @keyframes ppPulse { 50% { transform: scale(1.15); } }
 #profPlate .pp-mid { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
-#profPlate .pp-nick { font-weight: 900; font-size: 12.5px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* верхняя строка: ник и напротив — монеты; длинный ник плавно тает у монет */
+#profPlate .pp-top { display: flex; align-items: center; gap: 6px; min-width: 0; }
+#profPlate .pp-nick { flex: 1 1 auto; min-width: 0; font-weight: 900; font-size: 12.5px; line-height: 1.1; white-space: nowrap; overflow: hidden; }
+#profPlate .pp-nick.ov { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); }
+#profPlate .pp-coins { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; font-weight: 900; font-size: 12px; line-height: 1; color: #FFD66B; text-shadow: 0 0 6px rgba(255, 197, 61, .35); }
+#profPlate .pp-coins i { font-size: 12px; background: linear-gradient(160deg, #FFF3B0 0%, #FFC53D 45%, #E08A00 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 3px rgba(255, 197, 61, .6)); }
+#profPlate .pp-coins.bump { animation: ppBump .5s ease; }
+@keyframes ppBump { 40% { transform: scale(1.18); } }
 #profPlate .pp-row { display: flex; align-items: center; gap: 5px; }
 #profPlate .pp-lv { flex: 0 0 auto; font-weight: 900; font-size: 9px; line-height: 1; letter-spacing: .04em; color: #FFB25C; }
 #profPlate .pp-bar { flex: 1 1 auto; min-width: 20px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; }
 #profPlate .pp-bar > i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #FE7600, #A855F7); box-shadow: 0 0 6px rgba(254, 118, 0, .5); transition: width .5s ease; }
 #profPlate .pp-pct { flex: 0 0 auto; font-weight: 800; font-size: 9px; line-height: 1; color: #D8C4FF; }
-/* монеты — после полоски уровня, без рамки: значок и число (растут вправо, уровень не сдвигается) */
-#profPlate .pp-coins { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px; margin-left: 2px; font-weight: 900; font-size: 10.5px; line-height: 1; color: #FFD66B; text-shadow: 0 0 6px rgba(255, 197, 61, .35); }
-#profPlate .pp-coins i { font-size: 10px; background: linear-gradient(160deg, #FFF3B0 0%, #FFC53D 45%, #E08A00 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 3px rgba(255, 197, 61, .6)); }
-#profPlate .pp-coins.bump { animation: ppBump .5s ease; }
-@keyframes ppBump { 40% { transform: scale(1.18); } }
 /* монеты показаны в плашке игрока — отдельная плашка монет в меню не нужна */
 #startScreen.has-prof #menuCoins { display: none !important; }
 
