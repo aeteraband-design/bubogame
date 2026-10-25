@@ -11,26 +11,26 @@
     <link rel="icon" type="image/png" href="icons/icon-192.png?v=7">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=7">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BUBOGAME v0.14.20</title>
+    <title>BUBOGAME v0.14.21</title>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.14.20">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.14.21">
     <!-- Onest: локальные файлы -->
-    <link rel="stylesheet" href="css/fonts.css?v=0.14.20">
+    <link rel="stylesheet" href="css/fonts.css?v=0.14.21">
 
-    <script src="js/music-hold.js?v=0.14.20"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.14.20">
+    <script src="js/music-hold.js?v=0.14.21"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.14.21">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.14.20" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.14.21" id="adminStyle">
     <!-- Tailwind: готовый файл стилей вместо онлайн-компилятора (тот следил за каждым изменением страницы и пересобирал стили прямо во время игры) -->
-    <link rel="stylesheet" href="css/tailwind.css?v=0.14.20">
+    <link rel="stylesheet" href="css/tailwind.css?v=0.14.21">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.14.20">
-    <link rel="stylesheet" href="css/features.css?v=0.14.20">
-    <link rel="stylesheet" href="css/rules.css?v=0.14.20">
-    <link rel="stylesheet" href="css/settings.css?v=0.14.20">
+    <link rel="stylesheet" href="css/boot.css?v=0.14.21">
+    <link rel="stylesheet" href="css/features.css?v=0.14.21">
+    <link rel="stylesheet" href="css/rules.css?v=0.14.21">
+    <link rel="stylesheet" href="css/settings.css?v=0.14.21">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -46,10 +46,10 @@
             </div>
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
-        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.14.20</div>
+        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.14.21</div>
     </div>
     <div id="menuHalo"><div class="mh"></div></div>   <!-- свечение совы с экрана загрузки остаётся и в главном меню -->
-    <script src="js/boot.js?v=0.14.20"></script>
+    <script src="js/boot.js?v=0.14.21"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 overflow-y-auto custom-scroll">
@@ -554,50 +554,50 @@
         </div>
     </div>
 
-    <script src="js/audio.js?v=0.14.20"></script>
-    <script src="js/game-core.js?v=0.14.20"></script>
-    <script src="js/owl.js?v=0.14.20"></script>
-    <script src="js/hud.js?v=0.14.20"></script>
-    <script src="js/scenery.js?v=0.14.20"></script>
-    <script src="js/items.js?v=0.14.20"></script>
-    <script src="js/shazam.js?v=0.14.20"></script>
-    <script src="js/crystals.js?v=0.14.20"></script>
-    <script src="js/water.js?v=0.14.20"></script>
-    <script src="js/menu-fx.js?v=0.14.20"></script>
-    <script src="js/quiz.js?v=0.14.20"></script>
-    <script src="js/quiz-bank.js?v=0.14.20"></script>
-    <script src="quiz-new/music.js?v=0.14.20"></script>
-    <script src="quiz-new/kino.js?v=0.14.20"></script>
-    <script src="quiz-new/series.js?v=0.14.20"></script>
-    <script src="quiz-new/cartoons.js?v=0.14.20"></script>
-    <script src="quiz-new/games.js?v=0.14.20"></script>
-    <script src="quiz-new/memes.js?v=0.14.20"></script>
-    <script src="quiz-new/hp.js?v=0.14.20"></script>
-    <script src="quiz-new/lit.js?v=0.14.20"></script>
-    <script src="quiz-new/history.js?v=0.14.20"></script>
-    <script src="quiz-new/geo.js?v=0.14.20"></script>
-    <script src="quiz-new/chem.js?v=0.14.20"></script>
-    <script src="quiz-new/phys.js?v=0.14.20"></script>
-    <script src="quiz-new/space.js?v=0.14.20"></script>
-    <script src="quiz-new/nature.js?v=0.14.20"></script>
-    <script src="quiz-new/sport.js?v=0.14.20"></script>
-    <script src="quiz-new/food.js?v=0.14.20"></script>
-    <script src="quiz-new/art.js?v=0.14.20"></script>
-    <script src="quiz-new/humor.js?v=0.14.20"></script>
-    <script src="js/quiz-bank-build.js?v=0.14.20"></script>
-    <script src="js/shop.js?v=0.14.20"></script>
-    <script src="js/weather.js?v=0.14.20"></script>
-    <script src="js/update.js?v=0.14.20"></script>
-    <script src="js/render.js?v=0.14.20"></script>
-    <script src="js/wheel.js?v=0.14.20"></script>
-    <script src="js/ui.js?v=0.14.20"></script>
-    <script src="js/rules.js?v=0.14.20"></script>
-<script src="js/admin.js?v=0.14.20"></script>
-<script src="js/text-measure.js?v=0.14.20"></script>
-<script src="js/fullscreen.js?v=0.14.20"></script>
-<script src="js/settings-ui.js?v=0.14.20"></script>
-<script src="js/exit-confirm.js?v=0.14.20"></script>
-<script src="js/logo-anim.js?v=0.14.20"></script>
-<script src="js/scrollbars.js?v=0.14.20"></script>
+    <script src="js/audio.js?v=0.14.21"></script>
+    <script src="js/game-core.js?v=0.14.21"></script>
+    <script src="js/owl.js?v=0.14.21"></script>
+    <script src="js/hud.js?v=0.14.21"></script>
+    <script src="js/scenery.js?v=0.14.21"></script>
+    <script src="js/items.js?v=0.14.21"></script>
+    <script src="js/shazam.js?v=0.14.21"></script>
+    <script src="js/crystals.js?v=0.14.21"></script>
+    <script src="js/water.js?v=0.14.21"></script>
+    <script src="js/menu-fx.js?v=0.14.21"></script>
+    <script src="js/quiz.js?v=0.14.21"></script>
+    <script src="js/quiz-bank.js?v=0.14.21"></script>
+    <script src="quiz-new/music.js?v=0.14.21"></script>
+    <script src="quiz-new/kino.js?v=0.14.21"></script>
+    <script src="quiz-new/series.js?v=0.14.21"></script>
+    <script src="quiz-new/cartoons.js?v=0.14.21"></script>
+    <script src="quiz-new/games.js?v=0.14.21"></script>
+    <script src="quiz-new/memes.js?v=0.14.21"></script>
+    <script src="quiz-new/hp.js?v=0.14.21"></script>
+    <script src="quiz-new/lit.js?v=0.14.21"></script>
+    <script src="quiz-new/history.js?v=0.14.21"></script>
+    <script src="quiz-new/geo.js?v=0.14.21"></script>
+    <script src="quiz-new/chem.js?v=0.14.21"></script>
+    <script src="quiz-new/phys.js?v=0.14.21"></script>
+    <script src="quiz-new/space.js?v=0.14.21"></script>
+    <script src="quiz-new/nature.js?v=0.14.21"></script>
+    <script src="quiz-new/sport.js?v=0.14.21"></script>
+    <script src="quiz-new/food.js?v=0.14.21"></script>
+    <script src="quiz-new/art.js?v=0.14.21"></script>
+    <script src="quiz-new/humor.js?v=0.14.21"></script>
+    <script src="js/quiz-bank-build.js?v=0.14.21"></script>
+    <script src="js/shop.js?v=0.14.21"></script>
+    <script src="js/weather.js?v=0.14.21"></script>
+    <script src="js/update.js?v=0.14.21"></script>
+    <script src="js/render.js?v=0.14.21"></script>
+    <script src="js/wheel.js?v=0.14.21"></script>
+    <script src="js/ui.js?v=0.14.21"></script>
+    <script src="js/rules.js?v=0.14.21"></script>
+<script src="js/admin.js?v=0.14.21"></script>
+<script src="js/text-measure.js?v=0.14.21"></script>
+<script src="js/fullscreen.js?v=0.14.21"></script>
+<script src="js/settings-ui.js?v=0.14.21"></script>
+<script src="js/exit-confirm.js?v=0.14.21"></script>
+<script src="js/logo-anim.js?v=0.14.21"></script>
+<script src="js/scrollbars.js?v=0.14.21"></script>
 </body>
 </html>

@@ -282,6 +282,7 @@
     }
     let sbT = 0;
     function syncScroll(active) {
+        win.classList.toggle('ru-stuck', !!headEl && headEl.parentNode === scrollEl && scrollEl.scrollTop >= headBottom() - 2);   // вкладки прилипли к верху
         const max = scrollEl.scrollHeight - scrollEl.clientHeight, can = max > 3;
         bodyEl.classList.toggle('ft', can && scrollEl.scrollTop > 2);
         bodyEl.classList.toggle('fb', can && scrollEl.scrollTop < max - 2);
