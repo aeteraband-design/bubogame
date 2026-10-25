@@ -25,7 +25,7 @@
 #gameOverModal .go-info.go-warn > i { color: #FE7600; }
 
 /* ===== Окно «Победа» — в стиле окна рулетки ===== */
-#winModal > #winWindow { zoom: var(--menu-zoom, 1); height: calc((100dvh - 24px) / var(--menu-zoom, 1)); max-height: calc((100dvh - 24px) / var(--menu-zoom, 1)); overflow: hidden; position: relative; justify-content: flex-start;
+#winModal > #winWindow { zoom: var(--menu-zoom, 1); height: auto; max-height: calc((100dvh - 24px) / var(--menu-zoom, 1)); overflow: hidden; position: relative; justify-content: flex-start;
     padding: 24px 20px 24px; gap: 14px; border: 1.5px solid rgba(168, 120, 245, 0.38) !important; background: rgba(29, 9, 54, 0.96); }
 #winWindow > *:not(.win-deco) { position: relative; z-index: 1; }
 #winWindow .win-deco { position: absolute; inset: 0; z-index: 0; pointer-events: none; border-radius: inherit; overflow: hidden; }
@@ -36,7 +36,7 @@
     background: repeating-conic-gradient(rgba(255, 197, 61, 0.10) 0deg 9deg, transparent 9deg 24deg);
     -webkit-mask-image: radial-gradient(circle, #000 0, rgba(0,0,0,0.5) 120px, transparent 250px); mask-image: radial-gradient(circle, #000 0, rgba(0,0,0,0.5) 120px, transparent 250px);
     animation: vicSpin 40s linear infinite; }
-#winWindow .win-emblem { position: relative; width: 86px; height: 86px; margin: auto auto 0; flex: 0 0 auto; }
+#winWindow .win-emblem { position: relative; width: 86px; height: 86px; margin: 14px auto 0; flex: 0 0 auto; }   /* окно по содержимому, с воздухом сверху */
 #winWindow .win-emblem .win-rays { top: 50%; z-index: -1; }   /* лучи — внутри эмблемы, крутятся ровно вокруг кубка */
 #winWindow .win-emblem-glow { position: absolute; inset: -22px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 197, 61, 0.45) 0%, rgba(254, 118, 0, 0.18) 45%, rgba(168, 85, 247, 0) 70%); animation: rwpGlow 3.2s ease-in-out infinite; }
 #winWindow .win-cup { position: relative; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center;
@@ -61,7 +61,7 @@
 #winWindow .win-pill-t { display: flex; flex-direction: column; text-align: left; line-height: 1.2; }
 #winWindow .win-pill-t span { font-size: 11.5px; font-weight: 700; color: #EDE5F8; }
 #winWindow .win-pill-t b { font-size: 15px; font-weight: 900; color: #FFC53D; }
-#winWindow .win-btns { display: flex; flex-direction: column; gap: 8px; margin-top: auto; padding-top: 10px; }
+#winWindow .win-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; padding-top: 10px; }
 #winWindow .win-spin { position: relative; overflow: hidden; isolation: isolate;
     background: linear-gradient(110deg, #FE7600 0%, #FF8C1A 35%, #FFB054 50%, #FF8C1A 65%, #FE7600 100%) 0 0 / 220% 100%;
     animation: btnFlow 3.2s ease-in-out infinite, btnBreath 2.4s ease-in-out infinite; }
@@ -252,11 +252,14 @@
 /* бегущий светлый блик по рамке таймера */
 .buff-shazam::before { inset: -1.5px; padding: 2px; background: conic-gradient(from var(--shz-a), transparent 0deg 160deg, #FFE2B8 220deg, #FF8A1F 270deg, transparent 320deg 360deg); animation-duration: 0.9s; }
 /* надпись и молния — одного цвета и переливаются вместе: по ним пробегает светлый блик */
-.buff-shazam i, .buff-shazam .buff-txt { color: #FF8A1F !important;
+.buff-shazam i, .buff-shazam .bt-l, .buff-shazam .bt-s { color: #FF8A1F !important;
     background: linear-gradient(100deg, #FF8A1F 0 38%, #FFF0D8 48%, #FFC27A 54%, #FF8A1F 64% 100%); background-size: 300% 100%;
     -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     animation: shzShine 1.8s linear infinite; }
 .buff-shazam i { animation-delay: -0.12s; }
+/* цифры Шазама — сплошным цветом: перелив (текст с градиентной заливкой) не дружит со «съезжающими» цифрами — они пропадали и мигали */
+.buff-shazam .buff-txt { color: #FF8A1F !important; -webkit-text-fill-color: currentColor; background: none !important; }
+.buff-shazam .bt-c > b { color: #FFB25C; -webkit-text-fill-color: #FFB25C; text-shadow: 0 0 4px rgba(255, 138, 31, 0.7); }
 @keyframes shzShine { 0% { background-position: 100% 0; } 60%, 100% { background-position: 0% 0; } }
 /* молнии по краям таймера: короткие разряды вспыхивают в разных местах */
 .shz-zap { position: absolute !important; width: 16px; height: 9px; pointer-events: none; opacity: 0; filter: drop-shadow(0 0 2px #FF8A1F) drop-shadow(0 0 4px rgba(255, 138, 31, 0.8)); animation: shzZap 1.5s steps(1) infinite; }
@@ -724,3 +727,12 @@ html body #shWin .sh-core i { background-image: linear-gradient(90deg, #FFC53D 0
 /* числа в плашках экрана поражения — помещаются и трёхзначные (120/120) */
 #goWin .go-st > b { font-size: 14.5px !important; letter-spacing: -0.01em; white-space: nowrap; }
 #goWin .go-st { column-gap: 6px !important; padding-left: 8px !important; padding-right: 7px !important; min-width: 0; }
+
+/* рулетка: подсказка под лентой — на телефоне в две строки, на ПК в одну (через точку); счётчик попыток — подальше от кнопок */
+#rwWindow .rw-sep { display: none; }
+html.menu-pc #rwWindow .rw-hint br { display: none; }
+html.menu-pc #rwWindow .rw-hint .rw-sep { display: inline; }
+html.menu-pc #rouletteModal #rwWindow .rw-btns { padding-top: 26px !important; }
+/* рулетка в меню: когда есть вращения — цвет как у надписи GAME в логотипе; кружок со счётчиком того же цвета и чуть ближе к центру кнопки */
+#startScreen #openRouletteBtn.rw-menu-btn.has-spins { color: #B979FF !important; border-color: #A855F7 !important; box-shadow: 0 0 12px rgba(168, 85, 247, 0.55) !important; }
+#openRouletteBtn .rw-badge { background: #A855F7; top: -5px; right: -5px; box-shadow: 0 0 8px rgba(168, 85, 247, 0.6); }

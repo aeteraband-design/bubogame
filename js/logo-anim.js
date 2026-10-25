@@ -69,6 +69,7 @@
     // состояния совы и цвет подсветки за ней
     const STATES = [
         { id: 'normal', glow: '168,85,247', line: '#C4A1FF' },
+        { id: 'wet', glow: '125,190,252', line: '#93C5FD' },   // мокрая: летит как обычно, вся в капельках, капли стекают
         { id: 'freeze', glow: '125,211,252', line: '#7DD3FC' },
         { id: 'drunk', glow: '45,212,191', line: '#5EEAD4' },
         { id: 'fat', glow: '244,114,182', line: '#F9A8D4' },
@@ -89,7 +90,7 @@
     }
 
     // рисуем сову игры прямо в холст логотипа в нужном состоянии; все значения игры сразу возвращаем на место
-    const LS = { stars: [], acc: 0 };   // звёздочки ускорения — те же, что в игре
+    const LS = { stars: [], acc: 0, wb: [], wbb: [] };   // + капли мокрой совы (свои, не игровые)   // звёздочки ускорения — те же, что в игре
     function drawOwlRaw(gc, px, x, y, size, state, rot, wing, now, fx, spin) {
         if (typeof owl === 'undefined' || !owl.draw || typeof ctx === 'undefined') return;
         const keys = ['x', 'y', 'rotation', 'visible', 'wing', 'lean', 'boostK', 'spinAngle'];
@@ -97,7 +98,7 @@
         const main = ctx, ga = gameActive, wft = waitingFirstTap, dm = dtMult, fr = frame,
             d = currentDrunkFactor, fz = currentFreezeFactor, ov = currentOvereatFactor, vs = viewScale, rs = renderScale;
         const hasShz = typeof SHZ !== 'undefined', shk = hasShz ? SHZ.k : 0, inv0 = invulnerableTime;
-        const stW = typeof STORM !== 'undefined' ? [STORM.wet, STORM.ice] : null, wfT = typeof WATERFX !== 'undefined' ? WATERFX.wetT : 0, owW = owl._wWet;
+        const stW = typeof STORM !== 'undefined' ? [STORM.wet, STORM.ice] : null, wfT = typeof WATERFX !== 'undefined' ? WATERFX.wetT : 0, owW = owl._wWet, wb0 = owl._wb, wbb0 = owl._wbb;
         // игровые эффекты (щит, перо, ускорение, смещения ШАЗАМа) в логотипе не рисуем — после полёта они могут остаться ненулевыми
         const fx0 = [shieldTime, shieldAppearAnim, infiniteStaminaTime, speedBoostTime, slowMotionTime];
         const SZ = ['dx', 'depthBack', 'depthFront', 'shieldK'], sz0 = {};
@@ -111,7 +112,8 @@
             currentDrunkFactor = state.id === 'drunk' ? 1 : 0;
             currentFreezeFactor = state.id === 'freeze' ? 1 : 0;
             if (typeof STORM !== 'undefined') { STORM.wet = 0; STORM.ice = state.id === 'freeze' ? (state._ice || 0) : 0; }   // в логотипе — не погода игры: замёрзшая сова со своим случайным количеством льдинок
-            if (typeof WATERFX !== 'undefined') WATERFX.wetT = 0; owl._wWet = 0;
+            if (typeof WATERFX !== 'undefined') WATERFX.wetT = 0; owl._wWet = state.id === 'wet' ? 1 : 0;
+            owl._wb = state.id === 'wet' ? LS.wb : []; owl._wbb = state.id === 'wet' ? LS.wbb : [];   // капли логотипа — отдельно от игровой совы
             currentOvereatFactor = state.id === 'fat' ? 1 : 0;
             if (hasShz) SHZ.k = state.id === 'shazam' ? 1 : 0;
             owl.x = 0; owl.y = 0; owl.rotation = rot; owl.visible = true; owl.wing = state.id === 'freeze' ? 0 : wing; owl.lean = (state.id === 'speed' || state.id === 'shazam') ? 0.3 : 0;   // ускорение и ШАЗАМ — сова наклонена вперёд
@@ -132,7 +134,7 @@
             ctx = main; window.__noBlink = false; invulnerableTime = inv0; gameActive = ga; waitingFirstTap = wft; dtMult = dm; frame = fr;
             currentDrunkFactor = d; currentFreezeFactor = fz; currentOvereatFactor = ov; viewScale = vs; renderScale = rs;
             if (hasShz) SHZ.k = shk;
-            if (stW) { STORM.wet = stW[0]; STORM.ice = stW[1]; } if (typeof WATERFX !== 'undefined') WATERFX.wetT = wfT; owl._wWet = owW;
+            if (stW) { STORM.wet = stW[0]; STORM.ice = stW[1]; } if (typeof WATERFX !== 'undefined') WATERFX.wetT = wfT; owl._wWet = owW; owl._wb = wb0; owl._wbb = wbb0;
             [shieldTime, shieldAppearAnim, infiniteStaminaTime, speedBoostTime, slowMotionTime] = fx0;
             if (hasShz) SZ.forEach(n => { if (n in sz0) SHZ[n] = sz0[n]; });
             keys.forEach(k => owl[k] = save[k]);
@@ -160,12 +162,12 @@
     }
     window.__owlCenter = (id) => owlCenter(STATES.find(x => x.id === id));
     function owlSize(state, size) {
-        const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : (state.id === 'dizzy' ? STATES.find(t => t.id === 'normal') : state));
+        const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : ((state.id === 'dizzy' || state.id === 'wet') ? STATES.find(t => t.id === 'normal') : state));
         return state.id === 'fat' ? size : size * 0.56 / Math.max(0.3, c.w, c.h);   // одинаково крупно во всех состояниях; «полная» — по своему размеру
     }
     function drawOwlState(x, y, size, state, rot, wing, now, spin, gc, px, fx) {
         // ШАЗАМ: молнии вокруг совы не считаем — центр и размер как у наклонённой совы (ускорение)
-        const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : (state.id === 'dizzy' ? STATES.find(t => t.id === 'normal') : state));
+        const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : ((state.id === 'dizzy' || state.id === 'wet') ? STATES.find(t => t.id === 'normal') : state));
         size = owlSize(state, size);
         const a = spin || 0, cs = Math.cos(a), sn = Math.sin(a), dx = c.dx * size, dy = c.dy * size;
         // крутим вокруг видимого центра совы: она остаётся ровно посередине плитки
@@ -245,7 +247,7 @@
         icon.style.opacity = op == null ? '' : String(op);
     }
     function resetIcon() { icon.style.transform = ''; icon.style.opacity = ''; }
-    const sparkCol = (s) => s.id === 'speed' ? '#FDE047' : s.id === 'freeze' ? '#BAE6FD' : s.id === 'drunk' ? '#5EEAD4' : s.id === 'fat' ? '#F9A8D4' : s.id === 'shazam' ? '#FFB45C' : '#C4A1FF';
+    const sparkCol = (s) => s.id === 'speed' ? '#FDE047' : s.id === 'freeze' ? '#BAE6FD' : s.id === 'drunk' ? '#5EEAD4' : s.id === 'fat' ? '#F9A8D4' : s.id === 'shazam' ? '#FFB45C' : s.id === 'wet' ? '#93C5FD' : '#C4A1FF';
 
     // главный логотип — крупная сова в плитке (картинка, нарисованная той же функцией, что и в игре); джойстик появляется только в анимации
     const NORMAL = STATES.find(t => t.id === 'normal');
@@ -277,6 +279,11 @@
             if (!canRun()) { const h = window.__logoAnimHold || 0; nextAt = now < h ? h : now + 2000; return; }   // после загрузки — ровно к концу паузы
             state = nextState(); t0 = now; flags = {}; sparks = [];
             if (state.id === 'freeze') state._ice = Math.random() < 0.3 ? 0 : 0.25 + Math.random() * 0.75;   // льдинок то больше, то меньше, а то и нет
+            if (state.id === 'wet') {   // мокрая сова сразу в капельках на голове и спине; дальше капли сами стекают и появляются новые
+                LS.wb = []; LS.wbb = [];
+                const P = typeof OWL_BODY_PTS !== 'undefined' ? OWL_BODY_PTS.p : null;
+                if (P) for (let i = 0; i < 9; i++) { let t = 0, n = 0; do { t = Math.random() * P.length; n++; } while (P[Math.floor(t)][1] > 3 && n < 12); LS.wb.push({ t, r: 0.8 + Math.random() * 1.1, age: 30, v: 0, own: 1 }); }
+            }
             flags.say = pickSay();   // реплика этого появления (или null)
             tile.style.setProperty('--lc', state.line);
         }
@@ -514,7 +521,7 @@
         state = null; sparks = []; LS.stars = []; LS.acc = 0; lgOn(false); txtK(0);
         if (home) { setHome(1); setIcon(0, 0, 0); } else resetIcon();
         g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height);
-        nextAt = performance.now() + 1700;   // джойстик ≈2 с (с переходами), потом снова сова
+        nextAt = performance.now() + 1200;   // джойстик ≈1,5 с (с переходами), потом снова сова
     }
     function schedule() { if (!raf) raf = requestAnimationFrame(tick); }
     setInterval(() => { if (!state && !raf) schedule(); }, 1000);

@@ -170,3 +170,10 @@
 #rlWin .ru-row { align-items: flex-start; }
 #rlWin .ru-row > .ru-ic { margin-top: 2.5px; }
 #rlWin .ru-tx { padding-top: 0 !important; min-height: 35px; display: flex; flex-direction: column; justify-content: center; }
+
+/* ---- шапка листается вместе с разделом и уходит вверх, вкладки прилипают к верху окна (rules.js переносит шапку и вкладки в ленту) ---- */
+#rlWin.ru-stick .ru-head { position: relative; padding-top: 2px; }
+#rlWin.ru-stick .ru-head > .win-x { position: absolute !important; top: -6px !important; right: -4px !important; }
+#rlWin.ru-stick .ru-tabs { position: sticky; top: 0; z-index: 3; margin: 6px -4px 0; padding: 8px 4px 10px; background: rgb(30, 10, 55); }
+#rlWin.ru-stick .ru-scroll { -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - var(--ruB)), transparent 100%); mask-image: linear-gradient(180deg, #000 calc(100% - var(--ruB)), transparent 100%); }
+#rlWin.ru-stick .ru-pane { padding-top: 4px; }

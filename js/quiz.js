@@ -213,7 +213,7 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-o.ok{background:rgba(34,197,94,.2);border-color:#22C55E}
 #qzWin .qz-o.bad{background:rgba(239,68,68,.2);border-color:#EF4444}
 #qzWin .qz-o.dim{opacity:.45}
-#qzWin .qz-abcd{display:flex;justify-content:space-between;gap:8px;padding:4px 6px 2px}
+#qzWin .qz-abcd{display:flex;justify-content:center;gap:clamp(8px,calc((100% - 232px) / 3),44px);padding:4px 6px 2px}
 #qzWin .qz-ball{flex:0 0 auto;width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;color:#fff;cursor:pointer;border:2px solid rgba(255,255,255,.55);
  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.55),rgba(255,255,255,0) 42%),var(--c);box-shadow:0 0 14px var(--c),inset 0 -5px 0 rgba(0,0,0,.22);text-shadow:0 2px 3px rgba(0,0,0,.3);transition:transform .15s,opacity .25s,filter .25s}
 #qzWin .qz-ball:active{transform:scale(.92)}
@@ -632,7 +632,7 @@ function qzRenderQ(reveal) {
         btns = `<div class="qz-btns">${qzNavRow(false)}</div>`;
     }
     { const w = document.getElementById('qzWin'); if (w) w.classList.toggle('busy', !reveal); }
-    const tcc = qzTheme(d.theme || q.theme).col;
+    const tcc = di.col || qzTheme(d.theme || q.theme).col;   // окно вопроса — в цвет выбранной сложности (Суперлайт зелёный … Сложно красный)
     body.innerHTML = qzHead() + (d.theme ? qzCurPlate(d, reveal) : '') + qzProg(d, idx)
         + `<div class="qz-card" style="--tc:${tcc}">${reveal ? '' : ring}`
         + `<div class="qz-q">${q.question}</div><div class="qz-rew">${QZ_COIN}<span>За верный ответ: <b>+${di.coins}</b></span></div><div class="qz-opts">${opts}</div></div>`

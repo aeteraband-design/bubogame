@@ -9,6 +9,10 @@
     const tabsEl = document.getElementById('ruTabs'), scrollEl = document.getElementById('ruScroll'), paneEl = document.getElementById('ruPane');
     const bodyEl = win.querySelector('.ru-body'), sbEl = win.querySelector('.ru-sb');
     if (!tabsEl || !scrollEl || !paneEl) return;
+    // шапка (крестик, эмблема, заголовок) листается вместе с текстом и уходит вверх, а вкладки прилипают к верху окна
+    const headEl = win.querySelector('.ru-head'), xEl = document.getElementById('closeRulesBtn');
+    if (headEl) { scrollEl.insertBefore(headEl, paneEl); scrollEl.insertBefore(tabsEl, paneEl); if (xEl) headEl.appendChild(xEl); win.classList.add('ru-stick'); }
+    const headBottom = () => (headEl && headEl.parentNode === scrollEl ? headEl.offsetTop + headEl.offsetHeight : 0);
 
     // ---------- помощники ----------
     const has = (fn) => { try { return fn(); } catch (e) { return undefined; } };
@@ -318,8 +322,10 @@
         cur = id;
         tabsEl.querySelectorAll('.ru-tab').forEach(b => { const on = b.dataset.ruTab === id; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
         centerTab(smooth);
-        if (same) { scrollEl.scrollTo({ top: 0, behavior: 'smooth' }); return; }
-        const run = () => { renderPane(); scrollEl.scrollTop = 0; };
+        // шапка уже уехала — вкладки остаются прилипшими, новый раздел начинается сразу под ними
+        if (same) { scrollEl.scrollTo({ top: Math.min(scrollEl.scrollTop, headBottom()), behavior: 'smooth' }); return; }
+        const keepTop = Math.min(scrollEl.scrollTop, headBottom());
+        const run = () => { renderPane(); scrollEl.scrollTop = keepTop; };
         if (smooth) animateHeight(run); else { win.style.height = ''; run(); syncScroll(false); }
         try { Haptics.flap(); } catch (e) {}
     }
