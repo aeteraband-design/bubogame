@@ -7,7 +7,10 @@ function qzHash(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h <<
         QZ_BANK[t].forEach((r) => {
             const [lv, q, ok, w1, w2, w3] = r, opts = {}, arr = [ok, w1, w2, w3];
             arr.forEach((v, i) => { opts[L[i]] = v; });
-            const id = qzHash(t + '|' + q);
+            // Уточнённая формулировка сохраняет прежний идентификатор и прогресс.
+            const stem = t === 'geo' && q === 'В какой стране статистическое ведомство насчитало 267 570 островов в 2013 году?'
+                ? 'В какой стране насчитали больше всего островов — свыше 200 тысяч?' : q;
+            const id = qzHash(t + '|' + stem);
             if (seenIds[id]) return;   // одинаковый вопрос дважды не добавляем
             seenIds[id] = 1;
             QUIZ_QUESTIONS.push({ id, theme: t, lvl: lv, question: q, options: opts, correct: 'A' });

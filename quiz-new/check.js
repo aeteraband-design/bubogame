@@ -1,7 +1,7 @@
 // Проверка новых тем «Вопросов дня»: node quiz-new/check.js [тема ...]
 // Файл темы: quiz-new/<тема>.js с вызовом QZ_SET('<тема>', [ [уровень, вопрос, ВЕРНЫЙ, неверный, неверный, неверный], ... ]);
 const fs = require('fs'), path = require('path'), vm = require('vm');
-const DIR = __dirname, LV = ['s', 'l', 'm', 'x'], NEED = +(process.env.NEED || 20);
+const DIR = __dirname, LV = ['s', 'l', 'm', 'x'], NEED = +(process.env.NEED || 30);
 const STUB = /(^|\s)(нет такого|не выбирать|все ответы|ни один из|ничего из|все варианты|todo|xxx|\?\?\?|заглушка|вариант [a-dа-г])($|\s|[.,!])/i;
 const MAXQ = 140, MAXO = 34;
 function qzHash(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return 100000 + (Math.abs(h) % 899999999); }

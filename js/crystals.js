@@ -137,12 +137,13 @@ function crystalDrawHeat(boost) {
     const rk = typeof crystalRedK === 'number' ? crystalRedK : 0;
     if (rk < 0.02 && !crystalMist.length) return;
     const sq = crystalSqueeze(), hs = crystalHeatSprite(), ms = crystalMistSprite();
+    const campaign = window.BuboCampaign?.isActive();
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     if (rk > 0.02) {
         const t = (typeof frame === 'number' ? frame : 0);
         for (const p of pipes) {
-            if (p.x + p.width < -40 || p.x > width + 40) continue;
+            if ((campaign && p.campaign?.hazard !== 'fire') || p.x + p.width < -40 || p.x > width + 40) continue;
             const w = p.width, cx = p.x + w / 2, flick = 0.88 + 0.12 * Math.sin(t * 0.13 + p.x * 0.05);
             const yT = p.top + sq, yB = height - (p.bottom + sq);
             // раскалённая труба: красный отсвет по телу, сильнее у устья
@@ -161,9 +162,10 @@ function crystalDrawHeat(boost) {
 }
 function crystalMistUpdate(speed, squeeze) {
     const dt = dtMult, rk = typeof crystalRedK === 'number' ? crystalRedK : 0;
+    const campaign = window.BuboCampaign?.isActive();
     if (rk > 0.1 && gfxQuality !== 'low') {
         for (const p of pipes) {
-            if (p.x + p.width < -30 || p.x > width + 30) continue;
+            if ((campaign && p.campaign?.hazard !== 'fire') || p.x + p.width < -30 || p.x > width + 30) continue;
             if (Math.random() < 0.12 * rk * dt && crystalMist.length < 36) {
                 const top = Math.random() < 0.5, y0 = top ? p.top + squeeze : height - (p.bottom + squeeze);
                 crystalMist.push({ x: p.x + 6 + Math.random() * (p.width - 12), y: y0 + (top ? 4 : -4), vy: (top ? 1 : -1) * (0.12 + Math.random() * 0.3), vx: (Math.random() - 0.5) * 0.2, r: 14 + Math.random() * 12, a: 0.2 + 0.14 * rk });
@@ -178,11 +180,26 @@ function crystalMistUpdate(speed, squeeze) {
 }
 function crystalUpdate(speed, squeeze) {
     const dt = dtMult, shz = typeof shazamBusy === 'function' && shazamBusy();
+    const campaign = window.BuboCampaign?.isActive();
+    const fireGates = campaign ? pipes.filter(p => p.campaign?.hazard === 'fire' && p.x < width && p.x + p.width >= owl.x) : [];
     // новая игра (тем снова 0): план выпадения — заново
     if (CRYSTAL.plan && CRYSTAL.plan.some((q) => q.done) && getTotalCollectedThemes() === 0) { CRYSTAL.plan = null; crystalPending = false; }
-    crystalRedK = Math.max(0, Math.min(1, crystalRedK + (crystalTime > 0 ? 1 : -1) * dt / 50));   // трубы краснеют и остывают ~0,8 с
+    const hot = campaign ? fireGates.length > 0 : crystalTime > 0;
+    crystalRedK = Math.max(0, Math.min(1, crystalRedK + (hot ? 1 : -1) * dt / 50));   // трубы краснеют и остывают ~0,8 с
     crystalMistUpdate(speed, squeeze);
-    if (crystalTime > 0) {
+    if (campaign && gameActive) {
+        for (const p of fireGates) {
+            // Один огненный шар на ворота. Сторона и момент выстрела привязаны к маршруту.
+            const x = p.x + p.width / 2;
+            if (p.campaignFired || x < owl.x || x - owl.x > Math.max(1, speed) * 44) continue;
+            p.campaignFired = true;
+            const d = p.campaign.index % 2 === 0 ? 1 : -1;
+            const y = d > 0 ? p.top + squeeze - 20 : height - (p.bottom + squeeze) + 20;
+            crystals.push({ pipe: p, lane: 0, x, y, d, vy: d * 1.8, age: 0, ph: p.campaign.index });
+            window.BuboCampaignCombat?.shot(p);
+            try { AudioFX.playPipesHeat(); } catch (e) {}
+        }
+    } else if (!campaign && crystalTime > 0) {
         crystalTime -= dt;
         if (crystalTime <= 0 && !shz) { try { AudioFX.playPipesCool(); } catch (e) {} }   // трубы остывают
         let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {}
@@ -248,8 +265,11 @@ function crystalUpdate(speed, squeeze) {
             if (shieldTime > 0) {
                 if (d < owl.radius * 1.45 + rr * 0.5) { try { shieldBump(Math.atan2(c.y - owl.y, c.x - owl.x), 0.45); } catch (e) {} knock(5); }
             } else if (invulnerableTime <= 0 && d < owl.radius * 0.85 + rr) {
-                crystalBurst(c.x, c.y, 9); gone = true;
-                crystalHit();
+                if (window.BuboCampaignCombat?.blockFireball(c.pipe)) knock(5);
+                else {
+                    crystalBurst(c.x, c.y, 9); gone = true;
+                    crystalHit();
+                }
             }
         }
         if (!gone && !gameActive && window.MENU_OBST) {   // главное меню: огненный шар отскакивает от логотипа
@@ -266,6 +286,10 @@ function crystalUpdate(speed, squeeze) {
 }
 // попадание: огонь обжигает сову — минус пол-жизни
 function crystalHit() {
+    if (window.BuboCampaign?.consumeGuard?.()) {
+        invulnerableTime = 70;
+        return;
+    }
     try { AudioFX.playHit(); Haptics.hit(); } catch (e) {}
     if (lives <= 1.0 + 1e-6) {
         lives = 0; updateLivesHUD();

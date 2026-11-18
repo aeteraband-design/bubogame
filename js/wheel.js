@@ -5,15 +5,15 @@ const RL_SPIN_T = 15, RL_FAST_T = 2.5;     // вращение ≈15 с: 2,5 с 
 // w — вес выпадения (на 100 000 условных шансов): командные призы выпадают совсем редко
 const RL_PRIZES = {
     stamina: { icon: 'fa-feather-pointed', col: '#67E8F9', w: 16000, card: '+20%', cardSub: 'к силе',
-               title: '+20% К СИЛЕ', sub: 'Бонус', desc: 'Максимальный запас сил увеличен на 20%. Бонус сохраняется до сброса прогресса.' },
+               title: '+20% К СИЛЕ', sub: 'Бонус', desc: 'Увеличивает максимальный запас сил на 20%. Бонус сохраняется до сброса прогресса.' },
     hearts:  { icon: 'fa-heart', col: '#F43F5E', w: 14000, card: '6 ЖИЗНЕЙ', cardSub: 'макс. запас<br>сердец',
                title: '6 ЖИЗНЕЙ', sub: 'Максимальный запас сердец', desc: 'Максимум сердец — 6. Полёт начинается с 4 из 6 сердец, остальные можно добрать в полёте.' },
     life:    { icon: 'fa-heart-circle-plus', col: '#EC4899', w: 22000, card: '+1', cardSub: 'жизнь',
-               title: '+1 ЖИЗНЬ', sub: 'Бонус', desc: 'Дополнительное сердце уже добавлено к твоим жизням.' },
+               title: '+1 ЖИЗНЬ', sub: 'Бонус', desc: 'Добавляет одно сердце к текущим жизням.' },
     coins:   { icon: 'fa-coins', col: '#FFC53D', w: 5000, card: '300', cardSub: 'монет', coins: 300,
-               title: '300 МОНЕТ', sub: 'Редкий приз', desc: '300 монет уже в твоём кошельке — потрать их в лавке на попытки и бонусы.' },
+               title: '300 МОНЕТ', sub: 'Редкий приз', desc: 'Нажми «Забрать приз», чтобы получить 300 монет для лавки.' },
     a1:      { icon: 'fa-rotate-right', col: '#FE7600', w: 30000, card: '+1', cardSub: 'попытка', attempts: 1,
-               title: '+1 ПОПЫТКА', sub: 'Бонус', desc: 'Ещё одна попытка уже добавлена к твоим попыткам.' },
+               title: '+1 ПОПЫТКА', sub: 'Бонус', desc: 'Добавляет одну попытку к твоему запасу.' },
     bar:     { icon: 'fa-martini-glass-citrus', col: '#E056FD', w: 1000, card: '1 000 ₽', cardSub: 'сертификат<br>в бар',
                title: 'СЕРТИФИКАТ В БАР', sub: 'Редкий приз · 1 000 ₽', desc: 'Сертификат в бар на 1 000 рублей! Скоро здесь появится переход в чат, где ты сможешь его забрать.' },
     pass:    { icon: 'fa-ticket', col: '#FFC53D', w: 250, card: 'ПРОХОДКА', cardSub: 'на 1<br>человека',
@@ -29,9 +29,9 @@ const RL_PRIZES = {
 const RL_BACK = {
     stamina: 'Максимум силы +20%. Бонус сохранится до сброса прогресса.',
     hearts: 'Максимум жизней становится 6. Полёт начинается с 4 из 6 сердец.',
-    life: 'Плюс 1 жизнь: дополнительное сердце уже добавлено к твоим жизням.',
-    a1: 'Плюс 1 попытка: она уже добавлена к твоим попыткам.',
-    coins: '300 монет уже в кошельке — загляни в лавку.',
+    life: 'При получении добавляет одно сердце к текущим жизням.',
+    a1: 'При получении добавляет одну попытку к твоему запасу.',
+    coins: 'Даёт 300 монет, которые можно потратить в лавке.',
     bar: 'Сертификат в бар на 1 000 ₽. Скоро здесь появится чат, где его забрать.',
     pass: 'Проходка на игру для одного человека. Скоро здесь появится чат, где её забрать.',
     pass4: 'Проходки на игру для 4 человек из твоей команды. Скоро здесь появится чат.',
@@ -40,19 +40,35 @@ const RL_BACK = {
 };
 const RL_PATTERN = ['a1', 'hearts', 'bar', 'life', 'coins', 'pass', 'stamina', 'a1', 'pass4', 'life', 'discTeam', 'hearts', 'coins', 'a1', 'stamina', 'passTeam', 'life', 'bar'];
 const RW_GAP = 14;     // промежуток между карточками
-let rouletteSpins = 0;   // попытки вращения рулетки: даются за победу и как приз «ещё одно вращение»
 const rw = { spinning: false, prize: null, pos: 0, pitch: 130, cw: 120, pool: [], N: 0, vw: 300, drag: null, vel: 0, resumeAt: 0, idleRAF: 0, lastT: 0 };
 const rwEl = (id) => document.getElementById(id);
+
+function rwHasPending() {
+    return !!roulettePending && typeof roulettePending.id === 'string'
+        && Object.hasOwn(RL_PRIZES, roulettePending.key);
+}
+
+function rwSavedProgress() {
+    try { return JSON.parse(localStorage.getItem(StorageManager.LOCAL_KEY)); }
+    catch (e) { return null; }
+}
 
 function rwUpdateUI() {
     const n = rouletteSpins;
     const badge = rwEl('rwMenuBadge'), btn = rwEl('openRouletteBtn');
-    if (badge) { badge.innerText = String(n); badge.classList.toggle('hidden', n <= 0); }
-    if (btn) btn.classList.toggle('has-spins', n > 0);
+    const pending = rwHasPending();
+    if (badge) {
+        badge.innerText = n > 0 ? String(n) : '!';
+        badge.classList.toggle('hidden', n <= 0 && !pending);
+    }
+    if (btn) {
+        btn.classList.toggle('has-spins', n > 0 || pending);
+        btn.setAttribute('aria-label', pending ? 'Рулетка, приз ждёт' : 'Рулетка');
+    }
     const sp = rwEl('rwSpins'); if (sp) sp.innerText = String(n);
     const pill = rwEl('rwSpinsPill'); if (pill) pill.classList.toggle('has', n > 0);
     const spin = rwEl('rwSpinBtn'), lbl = rwEl('rwSpinLabel'), sub = rwEl('rwSpinSub');
-    if (spin && lbl && !rw.spinning) { spin.disabled = n <= 0; spin.classList.toggle('no-spins', n <= 0); lbl.innerText = 'КРУТИТЬ РУЛЕТКУ'; if (sub) sub.innerText = n > 0 ? 'ОСТАЛОСЬ ВРАЩЕНИЙ: ' + n : 'НЕТ ПОПЫТОК ВРАЩЕНИЯ'; }
+    if (spin && lbl && !rw.spinning) { spin.disabled = n <= 0 || pending; spin.classList.toggle('no-spins', n <= 0); lbl.innerText = 'КРУТИТЬ РУЛЕТКУ'; if (sub) sub.innerText = n > 0 ? 'ОСТАЛОСЬ ВРАЩЕНИЙ: ' + n : 'НЕТ ПОПЫТОК ВРАЩЕНИЯ'; }
     const later = rwEl('rwLaterLabel'); if (later) later.innerText = 'В ГЛАВНОЕ МЕНЮ';
 }
 function rwPickPrize() {
@@ -201,7 +217,22 @@ function openRoulette(opts) {
     rwUpdateUI();
     rw.wave = null; rw.nextWave = performance.now() + 2500;
     if (!rw.pos) rw.pos = Math.random() * RL_PATTERN.length * rw.pitch;
-    requestAnimationFrame(() => { rwLayout(); rwStartIdle(); });
+    requestAnimationFrame(() => {
+        if (m.classList.contains('hidden')) return;
+        rwLayout();
+        if (rwHasPending()) rwRestorePendingPrize();
+        else rwStartIdle();
+    });
+}
+function rwRestorePendingPrize() {
+    const key = roulettePending.key;
+    const target = RL_PATTERN.indexOf(key);
+    rw.pos = target * rw.pitch + rw.pitch / 2 - rw.vw / 2;
+    rwRender(rw.pos);
+    rwCenterSlot(rw.pos)?.classList.add('rw-win');
+    rwEl('rwReel')?.classList.add('rw-done');
+    rw.prize = key;
+    rwShowResult(key);
 }
 function closeRoulette() {
     if (rw.spinning) return;
@@ -210,10 +241,31 @@ function closeRoulette() {
     if (AudioFX.mode === 'victory' || AudioFX._pendMode === 'victory') AudioFX.setMode('menu', { fade: true });
 }
 function spinRoulette() {
-    if (rw.spinning || rw.prize || rouletteSpins <= 0) return;
+    if (rw.spinning || rw.prize || rwHasPending() || rouletteSpins <= 0) return;
     const viewport = rwEl('rwReel'); if (!viewport) return;
+    const saved = rwSavedProgress();
+    if (saved?.roulettePending) {
+        roulettePending = saved.roulettePending;
+        if (Number.isInteger(saved.rouletteSpins)) rouletteSpins = saved.rouletteSpins;
+        if (rwHasPending()) { rwUpdateUI(); rwRestorePendingPrize(); return; }
+    }
     AudioFX.resume();
-    rouletteSpins--; StorageManager.save();
+    const prizeKey = rwPickPrize();
+    const pending = {
+        id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2),
+        key: prizeKey
+    };
+    roulettePending = pending;
+    rouletteSpins--;
+    if (!StorageManager.saveLocal()) {
+        roulettePending = null;
+        rouletteSpins++;
+        const sub = rwEl('rwSpinSub');
+        if (sub) sub.innerText = 'НЕ УДАЛОСЬ СОХРАНИТЬ. ПОПРОБУЙ ЕЩЁ РАЗ';
+        return;
+    }
+    window.BuboCampaign?.settleRewards();
+    void StorageManager.saveRemote();
     rw.spinning = true; rw.drag = null; rw.vel = 0;
     { const w = rwEl('rwWindow'); if (w) w.classList.add('rw-is-spinning'); }
     const spin = rwEl('rwSpinBtn'), lbl = rwEl('rwSpinLabel'), sub2 = rwEl('rwSpinSub');
@@ -224,7 +276,6 @@ function spinRoulette() {
     const pill = rwEl('rwSpinsPill'); if (pill) pill.classList.toggle('has', rouletteSpins > 0);
     const badge = rwEl('rwMenuBadge'); if (badge) { badge.innerText = String(rouletteSpins); badge.classList.toggle('hidden', rouletteSpins <= 0); }
     rwLayout();
-    const prizeKey = rwPickPrize();
     const idxs = RL_PATTERN.map((k, i) => k === prizeKey ? i : -1).filter(i => i >= 0);
     const target = idxs[Math.floor(Math.random() * idxs.length)];
     const pitch = rw.pitch, patW = RL_PATTERN.length * pitch, vw = rw.vw;
@@ -243,6 +294,7 @@ function spinRoulette() {
         if (el !== focusEl) { if (focusEl) focusEl.classList.remove('rw-focus'); if (el) el.classList.add('rw-focus'); focusEl = el; }
     };
     const frame = (now) => {
+        if (roulettePending?.id !== pending.id) return;
         const t = (now - startT) / 1000;
         let dist;
         if (t <= t1) dist = v0 * t;
@@ -264,7 +316,7 @@ function spinRoulette() {
         rw.spinning = false; rw.prize = prizeKey;
         { const w = rwEl('rwWindow'); if (w) w.classList.remove('rw-is-spinning'); }
         AudioFX.playRouletteWin();
-        setTimeout(() => rwShowResult(prizeKey), 1000);
+        setTimeout(() => { if (roulettePending?.id === pending.id) rwShowResult(prizeKey); }, 1000);
     };
     requestAnimationFrame(frame);
 }
@@ -322,17 +374,44 @@ function rwShowResult(key) {
     Haptics.powerup();
 }
 function claimRoulettePrize() {
-    const key = rw.prize;
-    if (!key) return;
-    const p = RL_PRIZES[key];
-    if (p.attempts) { attempts += p.attempts; updateAttemptsHUD(); }
+    const pending = roulettePending;
+    if (!rwHasPending() || rw.prize !== pending.key) return;
+    const saved = rwSavedProgress();
+    if (!saved) {
+        rwEl('rwResDesc').innerText = 'Не удалось прочитать сохранение. Попробуй забрать приз ещё раз.';
+        return;
+    }
+    if (saved.roulettePending?.id !== pending.id) {
+        roulettePending = saved?.roulettePending || null;
+        if (Number.isInteger(saved?.rouletteSpins)) rouletteSpins = saved.rouletteSpins;
+        rwFinishClaim();
+        if (rwHasPending()) rwRestorePendingPrize();
+        return;
+    }
+    const key = pending.key, p = RL_PRIZES[key];
+    if (p.coins && !coinsAddOnce(p.coins, 'roulette:' + pending.id)) {
+        rwEl('rwResDesc').innerText = 'Не удалось сохранить монеты. Попробуй забрать приз ещё раз.';
+        return;
+    }
+    const previous = [attempts, rouletteSpins, startLives, maxLives, lives, maxStamina, stamina];
+    if (p.attempts) attempts += p.attempts;
     if (p.extraSpin) rouletteSpins += p.extraSpin;
-    if (p.coins && typeof coinsAdd === 'function') coinsAdd(p.coins);
-    if (key === 'hearts') { startLives = Math.max(startLives, 4.0); maxLives = Math.max(maxLives, 6.0); updateLivesHUD(); }
-    if (key === 'life') { const base = lives <= 0.5 ? startLives : lives; lives = Math.min(maxLives, base + 1); updateLivesHUD(); }
-    if (key === 'stamina') { maxStamina += 20; stamina = maxStamina; updateStaminaHUD(); }
-    try { localStorage.setItem('bubo_last_prize', key + ':' + Date.now()); } catch (e) {}   // пригодится для будущего перехода в чат
-    StorageManager.save();
+    if (key === 'hearts') { startLives = Math.max(startLives, 4.0); maxLives = Math.max(maxLives, 6.0); }
+    if (key === 'life') { const base = lives <= 0.5 ? startLives : lives; lives = Math.min(maxLives, base + 1); }
+    if (key === 'stamina') { maxStamina += 20; stamina = maxStamina; }
+    roulettePending = null;
+    if (!StorageManager.saveLocal()) {
+        [attempts, rouletteSpins, startLives, maxLives, lives, maxStamina, stamina] = previous;
+        roulettePending = pending;
+        rwEl('rwResDesc').innerText = 'Не удалось сохранить приз. Попробуй ещё раз.';
+        return;
+    }
+    try { localStorage.setItem('bubo_last_prize', key + ':' + Date.now()); } catch (e) {}
+    updateAttemptsHUD(); updateLivesHUD(); updateStaminaHUD(); updateMenuVisibility();
+    void StorageManager.saveRemote();
+    rwFinishClaim();
+}
+function rwFinishClaim() {
     rwEl('rwResult').classList.add('hidden'); rwEl('rwResult').classList.remove('rw-res-in');
     { const st = rwEl('rwResStage'); if (st) st.innerHTML = ''; }
     const reel = rwEl('rwReel'); if (reel) reel.classList.remove('rw-done');
@@ -406,6 +485,8 @@ function rwBuildWheel() {
 function triggerVictory() {
     gameActive = false; waitingFirstTap = false;
     rouletteSpins++;
+    if (typeof profFlightWon === 'function') profFlightWon();
+    if (typeof FlightQuizBonus !== 'undefined') FlightQuizBonus.endFlight(score, 'victory');
     StorageManager.save();
     Haptics.powerup();
     returnToHome();
@@ -418,7 +499,7 @@ function vicUpdate() {
     const n = rouletteSpins, btn = rwEl('vicSpinBtn');
     if (rwEl('vicSpinsText')) rwEl('vicSpinsText').innerText = String(n);
     if (rwEl('vicSpinLabel')) rwEl('vicSpinLabel').innerText = 'ВРАЩАТЬ РУЛЕТКУ (ДОСТУПНО: ' + n + ')';
-    if (btn) { btn.disabled = n <= 0; btn.classList.toggle('opacity-50', n <= 0); }
+    if (btn) { const dis = n <= 0 && !rwHasPending(); btn.disabled = dis; btn.classList.toggle('opacity-50', dis); }
 }
 function vicConfetti(on) {
     const layer = rwEl('vicConfetti'); if (!layer) return;
@@ -450,7 +531,7 @@ function closeVictoryModal() {
 }
 (function initVictoryUI() {
     const on = (id, fn) => { const el = rwEl(id); if (el) el.addEventListener('click', (e) => { e.stopPropagation(); const m = rwEl('winModal'); if (m && m.__lockUntil && performance.now() < m.__lockUntil) return; fn(); }); };
-    on('vicSpinBtn', () => { if (rouletteSpins <= 0) return; closeVictoryModal(); openRoulette({}); });
+    on('vicSpinBtn', () => { if (rouletteSpins <= 0 && !rwHasPending()) return; closeVictoryModal(); openRoulette({}); });
     on('vicNewGameBtn', () => { closeVictoryModal(); startOrResumeFlight(); });
     on('vicHomeBtn', () => { closeVictoryModal(); if (AudioFX.mode === 'victory') AudioFX.setMode('menu'); updateMenuVisibility(); });
 })();

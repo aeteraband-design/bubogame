@@ -1,0 +1,68 @@
+#campaignActions[hidden], #campaignActions [hidden], #campaignResult[hidden], #campaignResult [hidden], #campaignHUD[hidden],
+#campaignHUD [hidden], #goQuizBtn[hidden], #goAttemptDetail[hidden], #goCampaignHelpBtn[hidden] {
+    display: none !important;
+}
+#campaignActions { display: grid; gap: 6px; }
+.camp-start {
+    display: grid; grid-template-columns: 34px 1fr 15px; gap: 10px;
+    width: 100%; min-height: 54px; padding: 8px 13px; text-align: left; align-items: center; border-radius: 16px;
+}
+.camp-start > i:first-child { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:#6d2b173d; }
+.camp-start strong, .camp-start small { display: block; color:#fff; }
+.camp-start strong { font-size: 14px; font-weight: 900; line-height:1.12; text-transform:uppercase; }
+.camp-start small { margin-top:2px; font: 700 11px Onest,sans-serif; }
+.camp-replay { min-height: 34px; width:100%; border-radius:12px; font-size:11px; color:#e5d6ff; }
+.camp-replay i { margin-right:6px; color:#ffb56d; }
+#startBtn.camp-free { border-radius:14px; }
+#startBtn.camp-free #startBtnLabel { font-size:12px; }
+.camp-active #scoreBadge, .camp-active #bottomHud { display:none !important; }
+#campaignHUD {
+    position:absolute; bottom:12px; left:14px; right:14px; z-index:21; pointer-events:none;
+    display:grid; gap:7px; padding:10px 12px; border:1px solid #8c67d8; border-radius:14px;
+    background:rgba(23,9,48,.9); box-shadow:0 3px 16px #14032670; color:#f5ebff;
+    font-family:Onest,sans-serif;
+}
+.camp-hud-row { display:flex; align-items:center; justify-content:space-between; gap:7px; }
+.camp-hud-row strong { font-size:12px; line-height:1.2; }
+.camp-hud-row b { flex:none; font-size:11px; color:#ffc173; }
+.camp-meter { height:5px; border-radius:8px; overflow:hidden; background:#c3a7ff24; }
+.camp-meter span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#8be6e8,#c9a1ff,#ffc173); transition:width .2s ease; }
+.camp-hud-detail { align-items:flex-start; color:#d8cbfa; font-size:10.5px; line-height:1.25; }
+#campaignHudTopics { flex:none; color:#f5d9ff; font-weight:850; white-space:nowrap; }
+.camp-day #campaignHUD { background:#132b3beF; color:#fff; border-color:#bad8dd; }
+.camp-day .camp-hud-detail { color:#e6f2f7; }
+.camp-day #campaignHudTopics { color:#ffe0a4; }
+#campaignHudPower { flex:none; padding:2px 4px; border-radius:5px; background:#63cfee22; color:#a0efff; font-weight:800; }
+#campaignResult {
+    position:absolute; inset:0; z-index:42; padding:13px; display:flex; align-items:center; justify-content:center;
+    background:#160a2e83; backdrop-filter:blur(7px);
+}
+#campaignResultCard {
+    display:grid; gap:12px; width:100%; max-width:376px; max-height:100%; overflow:auto; padding:18px 16px 15px;
+    background:radial-gradient(130% 85% at 50% 0,#442560,#21113c 56%,#1b0d34);
+    color:#fff; border:1px solid #9a70dc; border-radius:24px; box-shadow:0 9px 34px #10091e9c;
+    font-family:Onest,sans-serif; text-align:center;
+}
+.camp-result-icon { display:grid; place-items:center; margin:auto; width:54px; height:54px; color:#ffcb8c; border:1px solid #f7bb764f; border-radius:18px; background:#f19b2e20; font-size:25px; }
+#campaignResult[data-result="victory"] .camp-result-icon { color:#fbdb86; border-color:#ffcf689d; box-shadow:0 0 20px #ffc16346; }
+.camp-result-copy h2 { margin:0; color:#fff; font-size:20px; font-weight:900; line-height:1.13; }
+.camp-result-copy p { color:#dacaf6; margin:7px 0 0; font-size:12px; line-height:1.35; }
+.camp-rewards { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }
+.camp-rewards span { display:flex; align-items:center; gap:5px; padding:6px 8px; color:#ffe0a4; border:1px solid #ffcb6b42; background:#fdb95117; border-radius:9px; font-size:11px; font-weight:800; }
+.camp-topic-summary { margin:0; color:#dcd0ff; font:700 12px/1.4 Onest,sans-serif; }
+.camp-attempt-detail { color:#dacaf6; margin:0; padding:6px 9px; font:600 11px/1.35 Onest,sans-serif; }
+#campaignAttemptDetail:not([hidden]) { padding:9px 12px; color:#f3e6ff; border:1px solid #9168c566; border-radius:12px; background:#1a0b32a8; font-size:12px; }
+.camp-result-actions { display:grid; gap:7px; }
+.camp-main, .camp-alt { display:flex; align-items:center; justify-content:center; gap:7px; min-height:42px; width:100%; border-radius:13px; font:850 12px Onest,sans-serif; }
+.camp-main { min-height:46px; color:#fff; }
+#campaignSecondWindConfirm, #goCampaignHelpBtn { min-height:44px; }
+.camp-alt { color:#f1e6ff; border:1px solid #9c6df87d; background:#34194f; }
+.camp-skill { color:#ead6ff; border-color:#b78eebad; background:#502e6f; }
+.camp-question { color:#d5f3ff; border-color:#63c8ee9e; background:#202e59; }
+.camp-alt:active { transform:scale(.98); }
+.camp-main:focus-visible, .camp-alt:focus-visible, .camp-start:focus-visible { outline:2px solid #fff5d2; outline-offset:2px; }
+#startScreen #startBtn.camp-free {
+    background:#251641; color:#e8d6ff; border:1px solid #9b6bdd8c;
+    box-shadow:0 3px 10px #10042170;
+}
+#startScreen.camp-intro #menuGoalCard { display:none !important; }

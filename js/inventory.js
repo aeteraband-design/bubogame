@@ -3,55 +3,89 @@
 // С какой стороны столбик — выбирается в настройках.
 const INV_KEY = 'bubo_inv', INV_MAX = 3, INV_SIDE_KEY = 'bubo_inv_side';
 const INV_TYPES = [
-    { key: 'shield', icon: 'fa-shield-halved', col: '#22C55E' },
-    { key: 'speed', icon: 'fa-bolt', col: '#FACC15' },
-    { key: 'slow', icon: 'fa-hourglass-half', col: '#38BDF8' },
-    { key: 'shazam', icon: 'fa-bolt-lightning', col: '#FF7A00' }
+    { key: 'shield', name: 'Щит', icon: 'fa-shield-halved', col: '#22C55E' },
+    { key: 'speed', name: 'Ускорение', icon: 'fa-bolt', col: '#FACC15' },
+    { key: 'slow', name: 'Замедление', icon: 'fa-hourglass-half', col: '#38BDF8' },
+    { key: 'shazam', name: 'ШАЗАМ', icon: 'fa-bolt-lightning', col: '#FF7A00' }
 ];
-function invGet() { try { const o = JSON.parse(localStorage.getItem(INV_KEY)); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
-function invCount(k) { return Math.max(0, Math.min(INV_MAX, invGet()[k] | 0)); }
-function invSetCount(k, n) { const o = invGet(); o[k] = Math.max(0, Math.min(INV_MAX, n | 0)); try { localStorage.setItem(INV_KEY, JSON.stringify(o)); } catch (e) {} invRender(); }
-function invAdd(k) { invSetCount(k, invCount(k) + 1); }
+function invGet() { try { const o = JSON.parse(localStorage.getItem(INV_KEY)); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } }
+function invCount(k, stock = invGet()) { return Math.max(0, Math.min(INV_MAX, stock[k] | 0)); }
+function invWrite(stock) {
+    try { localStorage.setItem(INV_KEY, JSON.stringify(stock)); return true; } catch (e) { return false; }
+}
+function invChange(k, delta) {
+    const stock = invGet();
+    const count = invCount(k, stock) + delta;
+    if (count < 0 || count > INV_MAX) return false;
+    stock[k] = count;
+    return invWrite(stock);
+}
+function invAdd(k) { return invChange(k, 1); }
 function invSideLeft() { try { return localStorage.getItem(INV_SIDE_KEY) !== '0'; } catch (e) { return true; } }   // по умолчанию — слева
-// старые покупки «на старт полёта» переходят в запас, чтобы ничего не пропало
+// Старые покупки «на старт полёта» переносим одним сохранением.
 (function () {
-    try {
-        if (typeof shopPend !== 'function') return;
-        const p = shopPend(); let ch = false;
-        ['shield', 'slow', 'shazam'].forEach((k) => { if (p[k]) { const o = invGet(); o[k] = Math.min(INV_MAX, (o[k] | 0) + 1); localStorage.setItem(INV_KEY, JSON.stringify(o)); ch = true; } });
-        if (ch) shopSetPend({});
-    } catch (e) {}
+    if (typeof shopPend !== 'function') return;
+    const pending = shopPend();
+    const effects = ['shield', 'slow', 'shazam'].filter(k => pending[k]);
+    if (!effects.length) return;
+    const stock = invGet();
+    if (!stock.movedLegacyPending) {
+        for (const k of effects) stock[k] = Math.min(INV_MAX, invCount(k, stock) + 1);
+        stock.movedLegacyPending = true;
+        if (!invWrite(stock)) return;
+    }
+    shopSetPend({});
 })();
 
-// можно ли включить эффект прямо сейчас
-function invCanUse(k) {
-    let fly = false; try { fly = gameActive && !waitingFirstTap; } catch (e) {}
-    if (!fly) return false;
-    const busy = typeof shazamBusy === 'function' && shazamBusy();
-    if (k === 'shazam') return typeof SHZ !== 'undefined' && SHZ.state === 'idle';
-    if (k === 'speed' || k === 'slow') return !busy;
-    return true;
+function invBlockReason(k, scene = window.BuboCampaign?.scene()) {
+    if (window.BuboCampaign?.isTestRun()) return 'Запас не расходуется в предпросмотре';
+    if (!gameActive || waitingFirstTap || scene === 'training') return 'Доступно в полёте';
+    if (k === 'shazam' && scene) {
+        const combat = window.BuboCampaignCombat?.status();
+        if (scene !== 'boss' || combat?.wave !== 'shazam') return 'В Походе доступен у Смотрителя в последней волне';
+        if (combat.shazamStarts > 0 || combat.finalGateApproached) return 'В этой волне ШАЗАМ уже недоступен';
+    }
+    if (shazamBusy() || (k === 'shazam' && SHZ.state !== 'idle')) return 'Дождись окончания ШАЗАМа';
+    return '';
 }
+
+function invCanUse(k, scene) { return !invBlockReason(k, scene); }
+
 function invUse(k, btn) {
-    if (invCount(k) <= 0 || !invCanUse(k)) return;
-    let label = null;
+    const scene = window.BuboCampaign?.scene();
+    if (!INV_TYPES.some(item => item.key === k) || !invCanUse(k, scene) || !invChange(k, -1)) return;
+    let label = null, play = null, applied = false;
     try {
         if (k === 'shield') {
-            AudioFX.playShieldCollect(); shieldTime = Math.max(shieldTime, shieldSecs() * 60); shieldAppearAnim = 12;
-            label = [`Щит ${shieldSecs()}с`, '#22C55E', 'fa-shield-halved'];
+            const seconds = shieldSecs();
+            shieldTime = Math.max(shieldTime, seconds * 60); shieldAppearAnim = 12;
+            label = ['Щит ' + seconds + 'с', '#22C55E', 'fa-shield-halved'];
+            play = () => AudioFX.playShieldCollect();
+            applied = true;
         } else if (k === 'speed') {
-            AudioFX.playStarCollect(); slowMotionTime = 0;
-            speedBoostTime = ADMIN_CFG.speedSec * 60; const shz = shazamOnSpeedup(); AudioFX.onSpeedChanged();
-            label = shz ? [`ШАЗАМ ${Math.round((SHZ.DUR + SHZ.FADE) / 60)}с`, '#FF7A00', 'fa-bolt-lightning'] : [`Ускорение ${ADMIN_CFG.speedSec}с`, '#FACC15', 'fa-bolt'];
+            slowMotionTime = 0;
+            speedBoostTime = ADMIN_CFG.speedSec * 60;
+            const shz = !scene && shazamOnSpeedup();
+            label = shz ? ['ШАЗАМ ' + Math.round((SHZ.DUR + SHZ.FADE) / 60) + 'с', '#FF7A00', 'fa-bolt-lightning']
+                        : ['Ускорение ' + ADMIN_CFG.speedSec + 'с', '#FACC15', 'fa-bolt'];
+            play = () => { AudioFX.playStarCollect(); AudioFX.onSpeedChanged(); };
+            applied = true;
         } else if (k === 'slow') {
-            AudioFX.playStarCollect(); speedBoostTime = 0; slowMotionTime = ADMIN_CFG.slowSec * 60; AudioFX.onSpeedChanged();
-            label = [`Замедление ${ADMIN_CFG.slowSec}с`, '#38BDF8', 'fa-hourglass-half'];
-        } else if (k === 'shazam') {
+            speedBoostTime = 0; slowMotionTime = ADMIN_CFG.slowSec * 60;
+            label = ['Замедление ' + ADMIN_CFG.slowSec + 'с', '#38BDF8', 'fa-hourglass-half'];
+            play = () => { AudioFX.playStarCollect(); AudioFX.onSpeedChanged(); };
+            applied = true;
+        } else if (scene === 'boss') {
+            applied = Boolean(window.BuboCampaignCombat?.launchShazam());
+        } else {
             shazamStart();
+            applied = true;
         }
-        Haptics.powerup();
-    } catch (e) { return; }
-    invSetCount(k, invCount(k) - 1);
+    } catch (e) {}
+    if (!applied) invAdd(k);
+    try { invRender(); } catch (e) {}
+    if (!applied) return;
+    try { play?.(); Haptics.powerup(); } catch (e) {}
     // подсказка вылетает из кнопки и улетает в таймер — как при подборе значка
     if (label && btn && typeof spawnFlyingArrivalFX === 'function') {
         try {
@@ -85,9 +119,16 @@ function invBuild() {
 function invVisible() { const t = document.getElementById('topHud'); return !!t && !t.classList.contains('hidden'); }
 function invRender() {
     const el = invBuild(); if (!el) return;
-    const show = invVisible();
+    const show = invVisible() && window.BuboCampaign?.scene() !== 'training';
     el.className = (invSideLeft() ? 'l' : 'r') + (show ? '' : ' hidden');
-    const html = INV_TYPES.filter((t) => invCount(t.key) > 0).map((t) => `<button type="button" class="inv-b${invCanUse(t.key) ? '' : ' off'}" data-k="${t.key}" style="--c:${t.col}" aria-label="${t.key}"><i class="fa-solid ${t.icon}"></i><span class="inv-n">${invCount(t.key)}</span></button>`).join('');
+    const stock = invGet(), scene = window.BuboCampaign?.scene();
+    const html = INV_TYPES.filter(t => invCount(t.key, stock) > 0).map(t => {
+        const count = invCount(t.key, stock), reason = invBlockReason(t.key, scene);
+        const label = t.name + ', в запасе: ' + count + (reason ? '. ' + reason : '');
+        return '<button type="button" class="inv-b' + (reason ? ' off' : '') + '" data-k="' + t.key
+            + '" style="--c:' + t.col + '" aria-label="' + label + '" aria-disabled="' + Boolean(reason) + '">'
+            + '<i class="fa-solid ' + t.icon + '" aria-hidden="true"></i><span class="inv-n" aria-hidden="true">' + count + '</span></button>';
+    }).join('');
     if (el.__h !== html) { el.__h = html; el.innerHTML = html; }
     if (show) invPlace();
 }
@@ -124,3 +165,5 @@ window.addEventListener('resize', () => { try { if (invVisible()) invPlace(); } 
     if (sl) sl.addEventListener('click', (e) => { e.stopPropagation(); setSide(true); });
     if (sr) sr.addEventListener('click', (e) => { e.stopPropagation(); setSide(false); });
 }
+
+window.addEventListener('bubo:campaign-combat', invRender);

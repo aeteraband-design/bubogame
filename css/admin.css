@@ -100,3 +100,5 @@
 #adminModal .adm-resets button:active { transform: scale(.96); }
 #adminModal .adm-resets button.sure { color: #fff; background: var(--c); }
 #adminModal #admReset { display: none; }   /* настройки админки сбрасывает кнопка «Админка» в блоке «Сбросить» */
+
+#admPlaytestExport{display:block;width:100%;min-height:7em;margin:0 0 9px;padding:8px;box-sizing:border-box;background:#1d0936;color:#f4eaff;border:1px solid #782ce9;border-radius:8px;font:12px monospace}

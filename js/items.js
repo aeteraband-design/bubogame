@@ -114,9 +114,10 @@ function drawToken(item) {
     // ускорение, которое включит ШАЗАМ, выглядит как значок ШАЗАМа (оранжевая молния, как в правилах)
     // взятый значок доигрывает анимацию тем же видом, что был до подбора (иначе на миг мелькала обычная иконка ускорения)
     const shzCharged = item.type === 'speedup' && (item.__forceShz || (item.collected ? !!item.__shzLatch : (item.__shzLatch = typeof shazamNextCharged === 'function' && shazamNextCharged())));
-    const cat = shzCharged ? SHZ_TOKEN : (CATEGORIES[item.type] || CATEGORIES.question);
+    const campaignTopic = item.campaignTopic && window.BuboCampaignTopics?.visual(item.campaignTopic.id);
+    const cat = campaignTopic || (shzCharged ? SHZ_TOKEN : CATEGORIES[item.type] || CATEGORIES.question);
     const col = cat.color;
-    const isThematic = TOKEN_THEMATIC.has(item.type);
+    const isThematic = Boolean(campaignTopic) || TOKEN_THEMATIC.has(item.type);
 
     {
         const R = item.radius * (isThematic ? 1.5 : 1.43);   // свечение выходит за кольцо вдвое меньше

@@ -245,19 +245,33 @@ function waterDripOwl(hx, hy) {
     const B = owl._wb || (owl._wb = []);
     if (B.length < 18) B.push({ t: bi + Math.random() * 0.5, r: 0.9 + Math.random() * 0.7, age: 0, v: 0, own: 1 });
 }
+function addWaterStream(pipe, squeeze, scripted) {
+    waterStreams.push({ pipe, scripted, fx: 0.5, on: true, ph: Math.random() * 6.28, sq: squeeze,
+        drops: [], streaks: [], mist: [], foam: [], rip: [], hitK: 0, acc: 0, sacc: 0 });
+}
+
 function waterUpdate(speed, squeeze) {
     const dt = dtMult, shz = typeof shazamBusy === 'function' && shazamBusy();
+    const campaign = window.BuboCampaign?.isActive();
     let lv0 = 0; try { lv0 = getDifficultyIndex(); } catch (e) {}
     // сила по ступеням: Суперлайт/Лайт — слабый напор, Медиум/Медиум+ — средний, Хард/Хард+ — сильный (внутри ступени чуть растёт)
-    const lv = [0, 0.8, 1.8, 2.8, 4, 5][Math.max(0, Math.min(5, lv0))];
-    if (waterTime > 0) {
+    const lv = campaign ? 2.4 : [0, 0.8, 1.8, 2.8, 4, 5][Math.max(0, Math.min(5, lv0))];
+    if (campaign && gameActive) {
+        for (const p of pipes) {
+            if (p.campaign?.hazard !== 'water' || p.campaignJet || p.passed || p.x > width + 20) continue;
+            p.campaignJet = true;
+            addWaterStream(p, squeeze, true);
+            window.BuboCampaignCombat?.jet();
+            try { AudioFX.playWaterStart(); } catch (e) {}
+        }
+    } else if (!campaign && waterTime > 0) {
         waterTime -= dt;
         if (waterTime <= 0) { WATERFX.wetT = 900; if (!shz) { try { AudioFX.playWaterEnd(); } catch (e) {} } }   // после «Водонапора» трубы ещё ~15 с мокрые, как после дождя
         for (const p of pipes) {
             if (p.x + p.width < -40 || p.x > width + 40) continue;
             if (p._wId !== WATERFX.id) {
                 p._wId = WATERFX.id;
-                waterStreams.push({ pipe: p, fx: 0.5, on: true, ph: Math.random() * 6.28, sq: squeeze, drops: [], streaks: [], mist: [], foam: [], rip: [], hitK: 0, acc: 0, sacc: 0 });
+                addWaterStream(p, squeeze, false);
             }
         }
     }
@@ -270,7 +284,7 @@ function waterUpdate(speed, squeeze) {
         const s = waterStreams[i], p = s.pipe;
         const W = p.width * WK, RATE = DENS * W, IMP = PUSH / (RATE * Math.min(1, 2 * R / W) * 1.8);
         s.sq = squeeze; s.w = W;
-        if (s.on && waterTime <= 0) s.on = false;
+        if (s.on && (s.scripted ? (!campaign || p.passed) : waterTime <= 0)) s.on = false;
         const cx = p.width * s.fx, y0 = p.top + squeeze, yb = height - (p.bottom + squeeze);
         // пар: плавно набирается, пока льётся вода (~2 с), и так же плавно сходит на нет, когда вода кончилась
         s.ramp = Math.max(0, Math.min(1, (s.ramp || 0) + (s.on ? 0.009 : -0.012) * dt));

@@ -72,6 +72,8 @@ function getTotalCollectedThemes() {
 }
 
 function getDifficultyIndex() {
+    const campaign = window.BuboCampaign;
+    if (campaign?.isActive()) return campaign.difficultyIndex();
     const total = getTotalCollectedThemes();
     return Math.max(0, Math.min(DIFF_LEVELS.length - 1, Math.floor(total * DIFF_LEVELS.length / TOTAL_THEMES)));
 }
@@ -117,7 +119,7 @@ function triggerMaxStaminaUp() {
 }
 
 // Золотая плашка с билетиком и надписью в одну строку: вспыхивает, разлетаются звёздочки, и она тает
-function showGoldBanner(text, icon, color) {
+function showGoldBanner(text, icon, color, duration = 2700, campaignTopic = false) {
     if (!fxLayer) return;
     const c = color || '#FFC53D';
     // уведомление о бонусе — в верхнем углу напротив таймеров (там, где пауза): жизни слева — справа, и наоборот
@@ -126,9 +128,13 @@ function showGoldBanner(text, icon, color) {
     // у каждого вида бонуса свой лёгкий эффект: монеты — блеск и искорки, попытка — оборот стрелки, сила — мягкая пульсация
     const kind = icon === 'fa-coins' ? 'bt-coin' : icon === 'fa-rotate-right' ? 'bt-att' : (icon === 'fa-feather-pointed' ? 'bt-stam' : 'bt-gen');
     el.className = 'bonus-tag ' + kind + ' ' + (right ? 'on-right' : 'on-left');
+    if (campaignTopic) {
+        fxLayer.querySelector('.campaign-topic-tag')?.remove();
+        el.classList.add('campaign-topic-tag');
+    }
     el.style.setProperty('--c', c);
     el.style.setProperty('--bx', (right ? 18 : -18) + 'px');
-    el.innerHTML = `<i class="fa-solid ${icon} bt-ic"></i><span class="bt-tx">${/^[+\d]/.test(text) ? text.toLowerCase() : sentenceCase(text)}</span>`
+    el.innerHTML = `<i class="fa-solid ${icon} bt-ic"></i><span class="bt-tx">${campaignTopic ? text : /^[+\d]/.test(text) ? text.toLowerCase() : sentenceCase(text)}</span>`
         + '<b class="bt-sp" style="left:5px;top:2px;--d:.3s">✦</b><b class="bt-sp" style="left:22px;top:20px;--d:.8s">✦</b>'
         + (kind === 'bt-coin' ? '<b class="bt-sp" style="left:70%;top:8%;--d:1.1s">✦</b>' : '');   // звёздочки поблёскивают у иконки, как у монет в меню
     try {
@@ -141,9 +147,25 @@ function showGoldBanner(text, icon, color) {
         el.style.top = (top + prev * 34 * uz) + 'px';
         el.style[right ? 'right' : 'left'] = (14 * uz) + 'px';
     } catch (e) {}
+    if (duration !== 2700) el.style.animationDuration = duration + 'ms';
     fxLayer.appendChild(el);
-    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 2700);
+    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, duration);
 }
+function collectCampaignTopic({ id, slot, test }) {
+    const topics = window.BuboCampaignTopics;
+    const stamp = topics?.collect(id, slot, test);
+    if (!stamp) {
+        showGoldBanner('Отметка не сохранена', 'fa-circle-exclamation', '#FCA5A5', 1700, true);
+        return false;
+    }
+    if (!stamp.changed) return false;
+    const topic = topics.visual(id) || CATEGORIES.question;
+    const label = test ? 'Тест · ' + topic.name + ' · ' + stamp.progress + '/2'
+        : topic.name + (stamp.unlocked ? ' · тема открыта' : ' · ' + stamp.progress + '/2');
+    showGoldBanner(label, topic.faClass, topic.color, stamp.unlocked && !test ? 1800 : 1200, true);
+    return true;
+}
+
 function showAttemptBanner(n) {
     AudioFX.playAttemptBonus();
     Haptics.powerup();
@@ -876,7 +898,8 @@ function checkVictoryCondition() {
 
 function updateMenuVisibility() {
     try { rwUpdateUI(); } catch (e) {}
-    try { const sb = document.getElementById('startBtnSub'); if (sb) sb.innerText = attempts > 0 ? 'ОСТАЛОСЬ ПОПЫТОК: ' + attempts : 'КУПИТЕ В ЛАВКЕ ИЛИ ЖДИТЕ ЗАВТРА'; } catch (e) {}
+    window.refreshFlightBonusUI?.();
+    try { const sb = document.getElementById('startBtnSub'); if (sb) sb.innerText = attempts > 0 ? 'ОСТАЛОСЬ ПОПЫТОК: ' + attempts : 'ПОПЫТКИ ОБНОВЯТСЯ ЗАВТРА'; } catch (e) {}
     try { const sbt = document.getElementById('startBtn'); if (sbt) sbt.classList.toggle('no-attempts', attempts <= 0); } catch (e) {}
     const statsCard = document.getElementById('statsCard');
     const menuDiffCard = document.getElementById('menuDiffCard');
@@ -969,22 +992,51 @@ function pipeVerticalBounds(gap) {
     return { min: Math.round(lo), max: Math.round(hi) };
 }
 function spawnPipe(startX) {
+    const campaign = window.BuboCampaign;
+    const gate = campaign?.isActive() ? campaign.nextPipe() : undefined;
+    if (gate === null) return false;
     const px = (startX !== undefined) ? startX : width + 25 + Math.ceil(width * 0.03);
-    const baseGap = pipeGapForLevel();   // просвет между верхней и нижней трубой: на старте чуть меньше, к Хард+ — как сейчас (234)
+    const baseGap = gate ? Math.round(pipeGapForLevel() * gate.gapScale) : pipeGapForLevel();   // просвет между верхней и нижней трубой: на старте чуть меньше, к Хард+ — как сейчас (234)
     const pipeWidth = 86;   // трубы примерно на 5% у́же (было 90) 
     // Проём выбирается так, чтобы шапки труб никогда не заходили под верхнюю и нижнюю панели (см. pipeVerticalBounds)
     const vb = pipeVerticalBounds(baseGap);
-    const topHeight = vb.min + Math.floor(Math.random() * Math.max(1, vb.max - vb.min + 1));
+    const topHeight = gate
+        ? Math.round(vb.min + (vb.max - vb.min) * gate.center)
+        : vb.min + Math.floor(Math.random() * Math.max(1, vb.max - vb.min + 1));
     const bottomHeight = height - (topHeight + baseGap);
 
-    pipes.push({
+    const pipe = {
         x: px,
         width: pipeWidth,
         top: topHeight,
         gap: baseGap,
         bottom: bottomHeight,
         passed: false
-    });
+    };
+    if (gate) pipe.campaign = gate;
+    pipes.push(pipe);
+
+    if (gate) {
+        const y = topHeight + baseGap / 2;
+        const topic = window.BuboCampaignTopics?.forGate(gate);
+        for (const slot of topic?.slots || []) {
+            items.push({
+                x: px + pipeWidth / 2 + (slot === 0 ? -50 : 50), y, baseY: y, radius: 23,
+                type: 'campaign-topic', campaignTopic: { id: topic.id, slot, test: gate.test }, campaignPipe: pipe,
+                isMoving: false, collected: false, floatOffset: slot * Math.PI
+            });
+        }
+        if (gate.item) {
+            const launcher = gate.item === 'shazam';
+            items.push({
+                x: px + pipeWidth / 2, y, baseY: y, radius: 26,
+                type: launcher ? 'speedup' : gate.item,
+                __forceShz: launcher, campaignPipe: pipe,
+                isMoving: false, collected: false, floatOffset: 0
+            });
+        }
+        return true;
+    }
 
     let itemType = 'question';
     const canSpawnFood = lives < maxLives;
@@ -1109,6 +1161,7 @@ function spawnPipe(startX) {
             radius: tokenRadius, type: itemType, isMoving: false, collected: false, floatOffset: Math.random() * Math.PI * 2, coins: coinVal
         });
     }
+    return true;
 }
 
 // Стартовые трубы: на том же расстоянии от совы, что и на телефоне, с обычным шагом
@@ -1117,7 +1170,7 @@ function spawnInitialPipes() {
     const spawnLine = width + 25 + Math.ceil(width * 0.03);
     const firstX = Math.min(spawnLine, owl.x + 383);
     let px = firstX, last = firstX;
-    while (px <= spawnLine) { spawnPipe(px); last = px; px += 262; }
+    while (px <= spawnLine && spawnPipe(px)) { last = px; px += 262; }
     pipeDistanceTracker = Math.max(0, spawnLine - last);
 }
 
@@ -1146,6 +1199,11 @@ function handleTap(e) {
     }
 
     if (waitingFirstTap) {
+        const campaignFlight = window.BuboCampaign?.isActive();
+        if (!campaignFlight) {
+            try { checkDailyReset(); } catch (e) {}
+            window.FlightQuizBonus?.beginFlight(playDay || todayKey(), score);
+        }
         waitingFirstTap = false;
         gameActive = true;
         lastTime = 0; 
@@ -1153,7 +1211,7 @@ function handleTap(e) {
         if (tapMsg) tapMsg.classList.add('hidden');
         
         if (pipes.length === 0) spawnInitialPipes();
-        if (typeof shopOnFlightStart === 'function') shopOnFlightStart();   // бонусы, купленные в лавке «на старт»
+        if (!campaignFlight && typeof shopOnFlightStart === 'function') shopOnFlightStart();   // бонусы, купленные в лавке «на старт»
 
         owl.flap();
         return;

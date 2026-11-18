@@ -49,6 +49,7 @@
         ]
     };
     let tab = 'themes';
+    let quizPreviewLevel = '';
 
     function themeRows() {
         return Object.keys(ADMIN_DEFAULTS.themes).map((k) => {
@@ -150,10 +151,25 @@
             owl.x = sv.x; owl.y = sv.y; owl.rotation = sv.rotation; owl.visible = sv.visible; owl.lean = sv.lean; owl.boostK = sv.boostK; owl.spinAngle = sv.spinAngle; owl.wing = sv.wing; owl.radius = sv.radius;
         }
     }
+    function bonusPlaytestHtml() {
+        if (typeof FlightQuizBonus === 'undefined') return '';
+        const status = FlightQuizBonus.status();
+        const enabled = status.enabled ? 'ВКЛ' : 'ВЫКЛ';
+        const thematic = status.thematicEnabled ? 'ВКЛ' : 'ВЫКЛ';
+        return '<div class="adq-acts">'
+            + '<button type="button" class="adq-btn" data-playtest="enabled" aria-pressed="' + status.enabled + '">Бонусы за полёт · ' + enabled + '</button>'
+            + '<button type="button" class="adq-btn" data-playtest="thematic" aria-pressed="' + !!status.thematicEnabled + '">Пробные темы · ' + thematic + '</button>'
+            + '</div><div class="adq-acts"><button type="button" class="adq-btn" data-playtest="copy">Скопировать замеры</button></div>'
+            + '<div class="adm-sum"><span>Тестовый доступ до перезагрузки</span><b id="admQuizPreview" role="status">'
+            + (quizPreviewLevel ? qzLevel(quizPreviewLevel).name : 'Выключен') + '</b></div>'
+            + '<div class="adq-acts"><button type="button" class="adq-btn" data-playtest="preview-m">Средне</button>'
+            + '<button type="button" class="adq-btn" data-playtest="preview-x">Сложно</button>'
+            + '<button type="button" class="adq-btn" data-playtest="preview-off">Закрыть доступ</button></div>';
+    }
     function renderBody() {
         const rb = $('admReset'); if (rb) rb.style.display = (tab === 'test' || tab === 'quiz') ? 'none' : '';
         if (tab === 'test') { renderTest(); return; }
-        if (tab === 'quiz') { prevStop(); body.innerHTML = ROWS.quiz.map(rowHtml).join('') + (typeof quizAdminHtml === 'function' ? quizAdminHtml() : ''); body.scrollTop = 0; if (typeof quizAdminMount === 'function') quizAdminMount(body); return; }
+        if (tab === 'quiz') { prevStop(); body.innerHTML = bonusPlaytestHtml() + ROWS.quiz.map(rowHtml).join('') + (typeof quizAdminHtml === 'function' ? quizAdminHtml() : ''); body.scrollTop = 0; if (typeof quizAdminMount === 'function') quizAdminMount(body); return; }
         prevStop();
         const rows = tab === 'themes' ? themeRows() : ROWS[tab];
         let h = '';
@@ -161,6 +177,10 @@
         h += rows.map(rowHtml).join('');
         if (tab === 'game') h += `<div class="adq-acts"><button type="button" class="adq-btn" data-g="coins"><i class="fa-solid fa-coins"></i>+1000 монет</button><button type="button" class="adq-btn" data-g="lvl"><i class="fa-solid fa-star"></i>+1 уровень совы</button></div>`
             + `<div class="adq-acts"><button type="button" class="adq-btn" data-g="spin1"><i class="fa-solid fa-dice"></i>+1 вращение рулетки</button><button type="button" class="adq-btn" data-g="spin5"><i class="fa-solid fa-dice"></i>+5 вращений</button></div>`
+            + `<div class="adm-sum"><span>Предпросмотр Похода</span></div>
+                <div class="adq-acts"><button type="button" class="adq-btn" data-g="stage-night">Ночной город</button>
+                <button type="button" class="adq-btn" data-g="stage-dawn">Дневной город</button>
+                <button type="button" class="adq-btn" data-g="stage-boss">Смотритель</button></div>`
             + `<div class="adq-acts"><button type="button" class="adq-btn" data-g="out"><i class="fa-solid fa-right-from-bracket"></i>Выйти из админки</button></div>`;
         body.innerHTML = h;
         body.scrollTop = 0;
@@ -233,6 +253,9 @@
     //  АДМИНКА  — только настройки админки к стандартным;
     //  ВСЁ      — и то и другое, и выход из профиля: снова регистрация, как при первом запуске.
     function admResetProgress() {
+        window.BuboCampaign?.reset();
+        if (typeof qzSetAdminPreview === 'function') qzSetAdminPreview('');
+        quizPreviewLevel = '';
         try { resetEntireGame({ attempts: MAX_ATTEMPTS }); playDay = todayKey(); zeroDay = ''; } catch (er) {}
         try { if (typeof quizResetDay === 'function') quizResetDay(); } catch (er) {}
         try { localStorage.removeItem('bubo_shop_earn_hidden'); } catch (er) {}   // подсказка в лавке снова покажется, как новичку
@@ -242,7 +265,9 @@
         try { if (typeof quizMenuBadge === 'function') quizMenuBadge(); } catch (er) {}
         try { if (typeof profResetProgress === 'function') profResetProgress(); } catch (er) {}   // уровень совы, навыки, статистика и запас — с нуля
         try { if (typeof quizResetSeen === 'function') quizResetSeen(); } catch (er) {}
-        try { rouletteSpins = 0; if (typeof rwUpdateUI === 'function') rwUpdateUI(); } catch (er) {}
+        try { rouletteSpins = 0; roulettePending = null; campaignSpinReceipts = []; if (typeof rwUpdateUI === 'function') rwUpdateUI(); } catch (er) {}
+        try { if (typeof qzSaveAttempt === 'function') qzSaveAttempt(null); } catch (er) {}
+        try { if (typeof FlightQuizBonus !== 'undefined') FlightQuizBonus.reset(); } catch (er) {}
         try { StorageManager.save(); updateHUDAll(); updateMenuVisibility(); } catch (er) {}
     }
     function admResetCfg() { try { window.applyAdminConfig(ADMIN_DEFAULTS); renderBody(); } catch (er) {} }
@@ -264,8 +289,8 @@
         admResetCfg(); admResetProgress();
         try { if (typeof profResetAll === 'function') profResetAll(); } catch (er) {}
         try { localStorage.removeItem('bubo_inv_side'); } catch (er) {}
-        // окно админки закрываем — сразу регистрация, как при первом запуске
-        setTimeout(() => { try { close(); } catch (er) { modal.classList.add('hidden'); } try { if (typeof openAuth === 'function') openAuth('reg'); } catch (er) {} }, 600);
+        // После сброса возвращаемся к гостевому профилю в меню.
+        setTimeout(() => { try { close(); } catch (er) { modal.classList.add('hidden'); } }, 600);
     });
     // кнопка неактивна, пока сбрасывать нечего: игра как новая (попытки полные, прогресса и вопросов дня нет)
     function admResetSync() {
@@ -273,7 +298,12 @@
         let fresh = false;
         try {
             const d = typeof quizDay === 'function' ? quizDay() : { ids: [] };
-            fresh = attempts >= MAX_ATTEMPTS && !score && !hasStartedCampaign && getTotalCollectedThemes() === 0 && !d.ids.length && !d.cur && !(typeof coinsGet === 'function' && coinsGet()) && !rouletteSpins && !(typeof PG !== 'undefined' && PG.xp);
+            const pendingQuestion = typeof qzReadAttempt === 'function' && qzReadAttempt();
+            const bonusQuestions = typeof FlightQuizBonus !== 'undefined' && FlightQuizBonus.status().available;
+            fresh = attempts >= MAX_ATTEMPTS && !score && !hasStartedCampaign && getTotalCollectedThemes() === 0
+                && !d.ids.length && !d.cur && !pendingQuestion && !bonusQuestions
+                && !(typeof coinsGet === 'function' && coinsGet()) && !rouletteSpins && !roulettePending
+                && !(typeof PG !== 'undefined' && PG.xp);
         } catch (er) {}
         ab.disabled = fresh;
         ab.style.opacity = fresh ? '.4' : ''; ab.style.pointerEvents = fresh ? 'none' : ''; ab.style.filter = fresh ? 'saturate(.4)' : '';
@@ -290,9 +320,53 @@
             try { rwUpdateUI(); StorageManager.save(); } catch (er) {}
             b.innerHTML = '<i class="fa-solid fa-check"></i>Вращений: ' + rouletteSpins;
         }
+        else if (b.dataset.g.startsWith('stage-')) {
+            close();
+            if (!window.BuboCampaign?.setStageForTest(b.dataset.g.slice(6))) openReal();
+        }
         else if (b.dataset.g === 'out') { try { localStorage.removeItem(AUTH); } catch (er) {} close(); }
     });
-    // вкладка «Вопросы»: сброс показанных и портал прямо сейчас (для проверки)
+    body.addEventListener('click', async (e) => {
+        const b = e.target.closest('[data-playtest]'); if (!b || tab !== 'quiz') return;
+        const action = b.dataset.playtest;
+        if (action.startsWith('preview-')) {
+            if (typeof qzSetAdminPreview !== 'function') return;
+            const level = action.slice(8);
+            if (qzSetAdminPreview(level === 'off' ? '' : level)) {
+                quizPreviewLevel = level === 'off' ? '' : level;
+                $('admQuizPreview').textContent = level === 'off' ? 'Выключен' : qzLevel(level).name;
+            }
+            return;
+        }
+        if (action === 'copy') {
+            const json = window.BuboPlaytest.export();
+            try {
+                await navigator.clipboard.writeText(json);
+                b.textContent = 'Замеры скопированы';
+            } catch (er) {
+                let field = body.querySelector('#admPlaytestExport');
+                if (!field) {
+                    field = document.createElement('textarea');
+                    field.id = 'admPlaytestExport';
+                    field.readOnly = true;
+                    field.setAttribute('aria-label', 'Данные замеров');
+                    b.parentElement.insertAdjacentElement('afterend', field);
+                }
+                field.value = json;
+                field.focus();
+                field.select();
+            }
+            return;
+        }
+        const status = FlightQuizBonus.status();
+        if (action === 'enabled') FlightQuizBonus.configure({ enabled: !status.enabled });
+        if (action === 'thematic') FlightQuizBonus.configure({ thematic: !status.thematicEnabled });
+        const next = FlightQuizBonus.status();
+        window.BuboPlaytest.record('experiment', { enabled: next.enabled, thematic: next.thematicEnabled });
+        renderBody();
+        body.querySelector('[data-playtest="' + action + '"]')?.focus();
+    });
+    // вкладка «Вопросы»: сброс показанных и дневного лимита
     body.addEventListener('click', (e) => {
         const b = e.target.closest('[data-q]'); if (!b || tab !== 'quiz') return;
         if (b.dataset.q === 'reset') { quizResetSeen(); renderBody(); }

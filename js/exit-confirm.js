@@ -98,6 +98,7 @@
         ['shopModal', call('closeShop', hide('shopModal'))],
         ['rulesModal', click('closeRulesBtn')],
         ['settingsModal', click('closeSettingsBtn')],
+        ['campaignResult', click('campaignResultHome')],
         ['gameOverModal', () => { try { returnToHome(); } catch (e) { hide('gameOverModal')(); } }]
     ];
     const quizTrap = () => { try { return typeof QS !== 'undefined' && (QS.phase === 'read' || QS.phase === 'answer' || QS.phase === 'pick'); } catch (e) { return false; } };

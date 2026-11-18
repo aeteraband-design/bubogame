@@ -112,29 +112,52 @@ function drawParticleList(list) {
     });
 }
 
-function drawScene() {
-    ctx.clearRect(0, 0, width, height);
-    
-    stormUpdate();
-    ctx.fillStyle = stormSkyGrad(); ctx.fillRect(0, 0, width, height);   // ночное небо; в грозу плавно уходит в сине-серые тона
-
-    if (!window.__starGlow) {
-        const c = document.createElement('canvas'); c.width = c.height = 32;
-        const g = c.getContext('2d');
-        const rg = g.createRadialGradient(16, 16, 0, 16, 16, 16);
-        rg.addColorStop(0, 'rgba(255,255,255,0.75)'); rg.addColorStop(0.35, 'rgba(255,255,255,0.28)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
-        g.fillStyle = rg; g.fillRect(0, 0, 32, 32);
-        window.__starGlow = c;
+const campaignSkyCache = { height: 0, palettes: {} };
+const campaignSkyPalettes = {
+    training: ['#111936', '#364668', '#665981'],
+    night: ['#090f2a', '#272144', '#52445e'],
+    boss: ['#181331', '#472244', '#71384f']
+};
+function campaignSky(scene) {
+    if (campaignSkyCache.height !== height) {
+        campaignSkyCache.height = height;
+        campaignSkyCache.palettes = {};
     }
-    ctx.fillStyle = '#FFFFFF';
-    const starK = stormStarK();   // в грозу звёзды почти скрыты тучами
-    for (const st of stars) {
-        st.alpha += (Math.random() - 0.5) * 0.05 * dtMult;
-        st.alpha = Math.max(0.2, Math.min(0.95, st.alpha));
-        ctx.globalAlpha = st.alpha * starK;
-        if (starK < 0.05) continue;
-        if (st.size > 1.2 / WORLD_K && gfxQuality !== 'low') ctx.drawImage(window.__starGlow, st.x - 6 / WORLD_K, st.y - 6 / WORLD_K, 12 / WORLD_K, 12 / WORLD_K);   // свечение крупных звёзд — как на загрузке
-        ctx.beginPath(); ctx.arc(st.x, st.y, st.size, 0, Math.PI * 2); ctx.fill();
+    if (!campaignSkyCache.palettes[scene]) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        campaignSkyPalettes[scene].forEach((color, index) => gradient.addColorStop(index * .50, color));
+        campaignSkyCache.palettes[scene] = gradient;
+    }
+    return campaignSkyCache.palettes[scene];
+}
+function drawScene() {
+    const campaignScene = window.BuboCampaign?.scene();
+    const dayArt = campaignScene === 'dawn' ? window.BuboCampaignDayArt : null;
+    const dayScale = dayArt ? Math.max(1, Math.min(1.5, viewScale * renderScale * WORLD_K)) : 1;
+    if (!campaignScene) stormUpdate();
+
+    if (!dayArt) {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = campaignScene ? campaignSky(campaignScene === 'dawn' ? 'night' : campaignScene) : stormSkyGrad();
+        ctx.fillRect(0, 0, width, height);
+        if (!window.__starGlow) {
+            const c = document.createElement('canvas'); c.width = c.height = 32;
+            const g = c.getContext('2d');
+            const rg = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+            rg.addColorStop(0, 'rgba(255,255,255,0.75)'); rg.addColorStop(0.35, 'rgba(255,255,255,0.28)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+            g.fillStyle = rg; g.fillRect(0, 0, 32, 32);
+            window.__starGlow = c;
+        }
+        ctx.fillStyle = '#FFFFFF';
+        const starK = campaignScene ? .63 : stormStarK();
+        for (const st of stars) {
+            st.alpha += (Math.random() - 0.5) * 0.05 * dtMult;
+            st.alpha = Math.max(0.2, Math.min(0.95, st.alpha));
+            ctx.globalAlpha = st.alpha * starK;
+            if (starK < 0.05) continue;
+            if (st.size > 1.2 / WORLD_K && gfxQuality !== 'low') ctx.drawImage(window.__starGlow, st.x - 6 / WORLD_K, st.y - 6 / WORLD_K, 12 / WORLD_K, 12 / WORLD_K);   // свечение крупных звёзд — как на загрузке
+            ctx.beginPath(); ctx.arc(st.x, st.y, st.size, 0, Math.PI * 2); ctx.fill();
+        }
     }
     ctx.globalAlpha = 1;
 
@@ -152,19 +175,21 @@ function drawScene() {
         const mr = dsEl.h.firstElementChild && dsEl.h.firstElementChild.getBoundingClientRect();   // base — центр свечения без сдвига (с учётом зума)
         if (cr.height && mr && mr.height) { const base = mr.top + mr.height / 2 - (dsEl.h.__dy || 0), dy = Math.round((cr.top + MENU_PIPE.cy / height * cr.height - base) * 2) / 2; if (dsEl.h.__dy !== dy) { dsEl.h.__dy = dy; dsEl.h.style.transform = 'translateY(' + dy + 'px)'; } }
     }   // свечение совы — только в меню
-    drawMoon();
-    stormDrawBack();      // гроза: тучи, зарницы и разряды — позади домов
+    if (!dayArt) drawMoon();
+    if (campaignScene === 'boss') window.BuboCampaignGuardian?.draw(ctx, width, height, pipes, owl.x);
+    else if (!campaignScene) stormDrawBack();
     // фон на загрузке может ускоряться (сова в ускорении, рывок ШАЗАМа) — после загрузки плавно возвращается к обычному
     if (!window.__booting && (window.__bgSpeed || 1) > 1.001) window.__bgSpeed += (1 - window.__bgSpeed) * Math.min(1, 0.035 * dtMult);
     const bgK = window.__bgSpeed || 1;
     if (!gameActive) cityOffset += 0.5 * dtMult * bgK;   // в меню и на паузе город медленно плывёт
-    drawCity();
-    stormDrawCityLight(); // мокрые крыши и подсветка фасадов вспышкой
+    if (dayArt) dayArt.draw(ctx, width, height, cityOffset, dayScale, window.BuboCampaign.sceneProgress?.(), dtMult);
+    else drawCity();
+    if (!campaignScene) stormDrawCityLight();
     shazamDrawStreaks();
 
-    if (gameActive || waitingFirstTap || isStartMenuOpen || isGameOverOpen) {
+    if (!dayArt && (gameActive || waitingFirstTap || isStartMenuOpen || isGameOverOpen)) {
         // в грозу обычные облака освещаются так же, как тучи (луна, тень, темнее книзу) — цвет у всех одинаковый
-        if (typeof stormCover !== 'undefined' && stormCover > 0.01) {
+        if (!campaignScene && typeof stormCover !== 'undefined' && stormCover > 0.01) {
             // слой облаков в грозу пересобирается через кадр (облака плывут медленно), в промежуточном кадре кладётся готовый
             const L2 = STORM.litCvs && STORM.litCvs[2];
             if (L2 && STORM.cl2Ok && (STORM.cl2Skip = !STORM.cl2Skip)) { STORM.cl2Acc = (STORM.cl2Acc || 0) + dtMult; stormLitBlit(L2); }
@@ -189,8 +214,12 @@ function drawScene() {
     if (!booting) {
     drawCrystals();   // огненные шары «Опасных труб» — за трубами: выныривают из одной и скрываются в другой
     // потоки «Водонапора» — за трубами; в дождь вода рисуется один раз — поверх серой пелены (stormDrawHotFx), а не дважды
-    if (typeof drawWater === 'function' && !(typeof stormGradeK === 'function' && stormGradeK() >= 0.02)) drawWater();
-    if (isStartMenuOpen && typeof drawMenuPipes === 'function') drawMenuPipes(); else pipes.forEach(drawPipe);   // в меню — свои декоративные трубы вокруг логотипа
+    if (typeof drawWater === 'function' && (campaignScene || !(typeof stormGradeK === 'function' && stormGradeK() >= 0.02))) drawWater();
+    if (isStartMenuOpen && typeof drawMenuPipes === 'function') drawMenuPipes();   // в меню — свои декоративные трубы вокруг логотипа
+    else if (dayArt) {
+        const squeeze = currentDifficultySqueeze + currentCompressionFactor * compressionMaxForLevel();
+        pipes.forEach(pipe => dayArt.drawPipe(ctx, pipe, height, squeeze, camZoom, dayScale));
+    } else pipes.forEach(drawPipe);
     if (typeof quizDrawPortal2D === 'function') quizDrawPortal2D();   // портал в квиз-мир — в проёме между трубами
     if (typeof crystalDrawHeat === 'function') crystalDrawHeat(0.5);   // «Опасные трубы»: трубы калятся, из устьев — красный туман
     if (typeof drawWaterFront === 'function') drawWaterFront();   // пена и водяная пыль «Водонапора» — поверх труб
@@ -226,7 +255,7 @@ function drawScene() {
         }
     });
 
-    const litK = (typeof stormGradeK === 'function') ? stormGradeK() : 0;
+    const litK = !campaignScene && typeof stormGradeK === 'function' ? stormGradeK() : 0;
     if (litK < 0.02) items.forEach(drawToken);   // в дождь значки рисуются позже, поверх серой «пелены»
     }
 
@@ -240,9 +269,9 @@ function drawScene() {
     shazamDrawFx();
     drawIceShards();
     ctx.restore();   // конец слоя камеры
-    if (typeof stormGrade === 'function') stormGrade();   // в дождь — серее и мрачнее
-    if (!booting && typeof stormGradeK === 'function') { const lk = stormGradeK(); if (lk >= 0.02) { stormDrawHotFx(lk, camZoom); stormDrawLitTokens(lk, camZoom); if (typeof stormDrawLitOwl === 'function') stormDrawLitOwl(lk, camZoom); } }   // значки — яркие и светятся
-    stormDrawRain();        // дождь — поверх труб, значков и совы
+    if (!campaignScene && typeof stormGrade === 'function') stormGrade();   // в дождь — серее и мрачнее
+    if (!campaignScene && !booting && typeof stormGradeK === 'function') { const lk = stormGradeK(); if (lk >= 0.02) { stormDrawHotFx(lk, camZoom); stormDrawLitTokens(lk, camZoom); if (typeof stormDrawLitOwl === 'function') stormDrawLitOwl(lk, camZoom); } }   // значки — яркие и светятся
+    if (!campaignScene) stormDrawRain();
 }
 
 let perfAvgDt = 16.7, perfSlowFrames = 0, perfCooldown = 240;
@@ -279,7 +308,7 @@ function gameLoop(timestamp) {
 
     update(); 
     if (typeof updateShieldBubbles === 'function') updateShieldBubbles(dtMult);
-    checkAttemptMilestone();
+    if (!window.BuboCampaign?.isActive()) checkAttemptMilestone();
     flushHud();
     draw();
     requestAnimationFrame(gameLoop);
@@ -298,15 +327,43 @@ function initMenuScenery() {
     gameActive = false;
 }
 
-function startOrResumeFlight() {
+let restoreClassicPause = null;
+function rememberClassicPause() {
+    const snapshot = pausedSnapshot;
+    const buffs = { shieldTime, shieldAppearAnim, infiniteStaminaTime, compressionTime, currentCompressionFactor,
+        speedBoostTime, slowMotionTime, invulnerableTime, junkFoodCount, drinkCount, iceCreamCount, overeatTime, drunkTime,
+        freezeTime, currentOvereatFactor, currentDrunkFactor, currentFreezeFactor };
+    const weather = typeof STORM !== 'undefined' ? STORM.pausedWx : null;
+    return () => {
+        isFlightPaused = true;
+        pausedSnapshot = snapshot;
+        ({ shieldTime, shieldAppearAnim, infiniteStaminaTime, compressionTime, currentCompressionFactor, speedBoostTime,
+            slowMotionTime, invulnerableTime, junkFoodCount, drinkCount, iceCreamCount, overeatTime, drunkTime, freezeTime,
+            currentOvereatFactor, currentDrunkFactor, currentFreezeFactor } = buffs);
+        if (typeof STORM !== 'undefined') STORM.pausedWx = weather;
+    };
+}
+function startOrResumeFlight(options) {
+    const campaign = options?.campaign === true && window.BuboCampaign?.isActive();
     if (typeof menuFxLeave === 'function') menuFxLeave();   // эффекты меню убираем (фейерверки тоже), эффекты паузы возвращаем
     try { if (typeof window.logoAnimStop === 'function') window.logoAnimStop(); } catch (e) {}   // анимация логотипа и облачко-подсказка совы — сразу прочь
     window.__bootMoon = false;   // луна с экрана загрузки держится в меню до первого полёта, дальше — луна игры
     // попытки закончились — стартуем новую игру с полным набором попыток
-    try { checkDailyReset(); } catch (e) {}
-    if (attempts <= 0) { returnToHome(); try { openShop(); } catch (e) {} return; }   // попытки на сегодня кончились — в лавку
-    // после победы — новый поход с первого уровня (иначе несколько секунд играла бы музыка и светила луна прошлого прохождения)
-    if (hasWonGame) startNewQuestKeepScore();
+    if (campaign) {
+        restoreClassicPause = isFlightPaused ? rememberClassicPause() : null;
+        isFlightPaused = false;
+        lives = startLives = 3; maxLives = 5;
+        stamina = maxStamina = 100;
+        magicFeathersCaught = featherMaxBonus = heartOverflow = 0;
+    } else {
+        try { checkDailyReset(); } catch (e) {}
+        if (attempts <= 0) {
+            returnToHome();
+            showGameOverScreen('Сегодня попытки для Свободного полёта закончились.', 0, true);
+            return;
+        }
+        if (hasWonGame) startNewQuestKeepScore();
+    }
     snapProgressVisuals();
     AudioFX.resume();
     AudioFX.setMode('game');
@@ -327,7 +384,7 @@ function startOrResumeFlight() {
     if (topHud) topHud.classList.remove('hidden');
     if (bottomHud) bottomHud.classList.remove('hidden');
 
-    hasStartedCampaign = true;
+    if (!campaign) hasStartedCampaign = true;
     try { currentDifficultySqueeze = getDifficultyMultipliers().targetSqueeze || 0; } catch (e) {}   // трубы сразу такой ширины, как на текущем уровне (без сжатия на глазах)
     // после потери попытки полёт продолжается с того же уровня: вопросы, темы, перья, силы и прокачанные сердца сохраняются
     if (lives <= 0.5) { lives = startLives; stamina = maxStamina; }
@@ -336,6 +393,10 @@ function startOrResumeFlight() {
         // новый полёт (не продолжение паузы): сова сухая, без льда; вода и огонь прошлого полёта не продолжаются
         try { if (typeof waterReset === 'function') waterReset(); if (typeof crystalReset === 'function') crystalReset(); owl._wWet = 0; owl._wb = []; owl._wbb = []; if (typeof STORM !== 'undefined') STORM.ice = 0; } catch (e) {}
         invulnerableTime = 0; if (typeof shazamReset === 'function') shazamReset(); shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal';
+        if (campaign) {
+            window.BuboCampaignCombat?.reset();
+            window.BuboCampaignDayArt?.reset();
+        }
         lastBuffStateKey = '';
         resetOvereatDrunk();
         lowStaminaSoundTimer = 0;
@@ -377,7 +438,8 @@ function startOrResumeFlight() {
     }
 
     lastTime = 0;
-    updateHUDAll(); StorageManager.save();
+    updateHUDAll();
+    if (!campaign) StorageManager.save();
     gameActive = false;
     waitingFirstTap = true;
     if (typeof prewarmTokenSprites === 'function') prewarmTokenSprites();   // заготовки значков — заранее, пока сова ждёт первого касания
@@ -434,19 +496,19 @@ function resetEntireGame(opts) {
     updateHUDAll(); StorageManager.save();
 }
 
-// Попытки закончились — новая игра: прогресс сбрасывается, снова MAX_ATTEMPTS попыток (без ожидания до завтра)
-// Сутки: каждый новый день — 2 попытки и прогресс с нуля. В течение дня прогресс сохраняется; кончились попытки —
-// их можно купить в лавке (монеты — за вопросы дня), иначе ждать завтра.
+// В новый день обновляются обычные попытки и прогресс Свободного полёта.
 function checkDailyReset() {
+    if (window.BuboCampaign?.isActive()) return false;
     const t = todayKey();
-    if (playDay === t) return false;
+    if (playDay && playDay >= t) return false;
     const fresh = !playDay;
     playDay = t;
     if (!fresh) resetEntireGame({ attempts: MAX_ATTEMPTS });
     try { StorageManager.save(); updateHUDAll(); } catch (e) {}
+    if (!fresh) window.dispatchEvent(new Event('bubo:daily-reset'));
     return !fresh;
 }
-setInterval(() => { try { if (!gameActive && playDay && playDay !== todayKey()) { checkDailyReset(); updateMenuVisibility(); } } catch (e) {} }, 30000);
+setInterval(() => { try { if (!gameActive && playDay && playDay < todayKey()) { checkDailyReset(); updateMenuVisibility(); } } catch (e) {} }, 30000);
 
 // Пауза: запоминаем, где именно были сова, трубы и предметы (только до закрытия вкладки)
 let pausedSnapshot = null;
@@ -469,11 +531,12 @@ function cutGameSfx() {
     } catch (e) {}
 }
 function returnToHome() {
-    const pausing = !!gameActive;   // пауза посреди полёта; иначе игра закончилась (победа, поражение) — в следующую ничего не переносим
+    const leavingCampaign = window.BuboCampaign?.isActive();
+    const pausing = gameActive && !leavingCampaign;
     try { if (!pausing && typeof STORM !== 'undefined') STORM.pausedWx = null; } catch (e) {}
     // погода замирает вместе с игрой: запоминаем грозу как есть и вернём её при продолжении
     try { if (typeof WX !== 'undefined' && WX.left >= 0 && pausing) STORM.pausedWx = { on: WX.on, left: WX.left, peak: WX.peak, cover: stormCover, si: Math.max(0, stormIntensity), fade: STORM.fade || 0, wet: STORM.wet || 0, ice: STORM.ice || 0 }; } catch (e) {}
-    if (gameActive) {
+    if (pausing) {
         isFlightPaused = true;
         pausedSnapshot = {
             pipes: pipes, items: items,
@@ -483,11 +546,18 @@ function returnToHome() {
     } else {
         clearAllBuffs();
     }
+    if (leavingCampaign) {
+        window.BuboCampaignCombat?.reset();
+        window.BuboCampaign.leaveFlight();
+        if (restoreClassicPause) restoreClassicPause();
+        restoreClassicPause = null;
+    }
     const bar = document.getElementById('buffBar');
     if (bar) bar.innerHTML = '';
     lastBuffStateKey = '';
 
     gameActive = false; waitingFirstTap = true;
+    window.FlightQuizBonus?.endFlight(score, 'pause');
     cutGameSfx();   // длинные звуки эффектов игры (ускорение, замедление, ШАЗАМ, вода…) обрываем мягко, в меню их не слышно
     AudioFX.setMode('menu');
     StorageManager.save(); updateMenuVisibility();

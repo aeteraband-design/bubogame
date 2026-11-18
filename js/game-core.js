@@ -117,7 +117,13 @@ function flushHud() {
         if (g === 'heart') renderLivesHUD();
         else if (g === 'stamina') renderStaminaHUD();
         else if (g === 'theme') renderCollectionHUD();
-        else if (g === 'score') { const el = document.getElementById('scoreVal'); if (el) el.innerText = `${score}`; const sb = document.getElementById('scoreBadge'); if (sb) sb.classList.toggle('score-wide', String(score).length >= 3); }
+        else if (g === 'score') {
+            const value = document.getElementById('scoreVal');
+            if (value) value.innerText = String(score);
+            const badge = document.getElementById('scoreBadge');
+            if (badge) badge.classList.toggle('score-wide', String(score).length >= 3);
+            window.refreshFlightBonusHUD?.();
+        }
     }
 }
 function scheduleHud(g) {
@@ -128,11 +134,41 @@ function scheduleHud(g) {
 }
 function updateLivesHUD() { scheduleHud('heart'); }
 
-// ===== Каждые 100 вопросов — +1 попытка =====
+function addFlightScore(points) {
+    const previous = score;
+    score += points;
+    scheduleHud('score');
+    window.FlightQuizBonus?.observeScore(score, playDay);
+    if (typeof profFlightCollect === 'function') profFlightCollect('q', points);
+    if (gameActive && !window.BuboCampaign?.isActive() && previous < FLIGHT_STARTER_COINS.points
+        && score >= FLIGHT_STARTER_COINS.points && typeof coinsAddOnce === 'function') {
+        const day = playDay || todayKey();
+        const amount = FLIGHT_STARTER_COINS.amount;
+        coinsAddOnce(amount, 'flight:starter:' + day, () => {
+            window.FlightQuizBonus?.recordCoins('milestone', amount);
+            try { showGoldBanner('Первые ' + FLIGHT_STARTER_COINS.points + ' очков за день · +' + amount + ' монет', 'fa-coins', '#FFC53D'); } catch (e) {}
+        });
+    }
+}
+
+function checkFlightThemeBonus(key) {
+    if (collected[key] === CATEGORIES[key].count) {
+        window.FlightQuizBonus?.observeTheme(key, playDay);
+    }
+}
+
+function addFlightCoins(amount, source) {
+    if (typeof coinsAdd !== 'function' || !coinsAdd(amount)) return false;
+    window.FlightQuizBonus?.recordCoins(source, amount);
+    return true;
+}
+
+// ===== Рубежи монет и попыток =====
 let QUESTIONS_PER_ATTEMPT = ADMIN_CFG.questionsPerAttempt;
 let attemptMilestone = -1, coinMilestone = -1;
 // экономика: монеты за каждые 50 вопросов в полёте (на каждом рубеже попытки — попытка вместо монет)
 const COINS_PER_50 = 15;
+const FLIGHT_STARTER_COINS = { points: 25, amount: 10 };
 function coinsForMilestone(k) { return (k * 50) % QUESTIONS_PER_ATTEMPT === 0 ? 0 : COINS_PER_50; }
 function checkAttemptMilestone() {
     let active = false;
@@ -140,18 +176,35 @@ function checkAttemptMilestone() {
     const m = Math.floor(score / QUESTIONS_PER_ATTEMPT);
     // монеты за каждые 50 вопросов (рубеж попытки монет не даёт — там попытка)
     const c = Math.floor(score / 50);
+    let coinReward = 0;
     if (coinMilestone < 0 || !active) coinMilestone = Math.max(coinMilestone, c);
     else if (c > coinMilestone) {
         let add = 0;
         for (let k = coinMilestone + 1; k <= c; k++) add += coinsForMilestone(k);   // 15 монет за каждые 50 вопросов; на рубеже попытки — попытка вместо монет
         coinMilestone = c;
         if (add > 0) add = Math.round(add * (window.skCoinMul ? skCoinMul() : 1));   // навык «Монетный нюх»
-        if (add > 0 && typeof coinsAdd === 'function') {
-            coinsAdd(add);
+        if (add > 0 && addFlightCoins(add, 'milestone')) {
+            coinReward = add;
             try { const sb = document.getElementById('scoreBadge'); if (sb) { restartClass(sb, ['score-up'], 'score-up'); setTimeout(() => sb.classList.remove('score-up'), 1300); } } catch (e) {}
             try { AudioFX.playStarCollect(); Haptics.powerup(); } catch (e) {}
-            try { showGoldBanner(`+${add} монет`, 'fa-coins', '#FFC53D'); } catch (e) {}
         }
+    }
+    const bonusQuestions = window.FlightQuizBonus?.takeAward() || 0;
+    if (bonusQuestions || coinReward) {
+        const word = ruPlural(bonusQuestions, ['бонус-вопрос', 'бонус-вопроса', 'бонус-вопросов']);
+        const reward = bonusQuestions ? '+' + bonusQuestions + ' ' + word : '';
+        const coins = coinReward ? '+' + coinReward + ' монет' : '';
+        if (bonusQuestions && !coinReward) {
+            try { AudioFX.playStarCollect(); Haptics.powerup(); } catch (e) {}
+        }
+        try {
+            showGoldBanner(
+                [reward, coins].filter(Boolean).join(' · '),
+                bonusQuestions ? 'fa-circle-question' : 'fa-coins',
+                bonusQuestions ? '#CFB4FF' : '#FFC53D',
+                bonusQuestions ? 1500 : undefined
+            );
+        } catch (e) {}
     }
     if (attemptMilestone < 0 || !active) { attemptMilestone = Math.max(attemptMilestone, m); return; }
     if (m > attemptMilestone) {
@@ -261,6 +314,24 @@ let maxLives = ADMIN_CFG.maxLives;
 let startLives = 3.0;   // с сколькими сердцами начинается полёт (бонус рулетки: 4 из 6)
 let heartOverflow = 0;   // сердца, пойманные при полном запасе: каждые 2 → «Макс. жизнь +1»
 let zeroDay = '', playDay = '';   // playDay — день, к которому относится весь текущий прогресс (новый день — всё с начала)
+let rouletteSpins = 0, roulettePending = null;
+let campaignSpinReceipts = [];
+
+function awardCampaignSpinOnce(receipt) {
+    if (typeof receipt !== 'string' || !receipt) return false;
+    if (campaignSpinReceipts.includes(receipt)) return true;
+    if (rouletteSpins >= 99) return false;
+    const previous = rouletteSpins;
+    rouletteSpins++;
+    campaignSpinReceipts.push(receipt);
+    if (!StorageManager.saveLocal()) {
+        rouletteSpins = previous;
+        campaignSpinReceipts.pop();
+        return false;
+    }
+    if (typeof rwUpdateUI === 'function') rwUpdateUI();
+    return true;
+}
 function todayKey() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 let stamina = 100.0;
 // Запас сил: после FEATHERS_FOR_MAX_UP волшебных перьев за игру максимум растёт со 100 до 130%
@@ -470,6 +541,9 @@ const StorageManager = {
                 if (typeof data.zeroDay === 'string') zeroDay = data.zeroDay;
                 if (typeof data.playDay === 'string') playDay = data.playDay;
                 if (typeof data.rouletteSpins === 'number') rouletteSpins = Math.max(0, Math.min(99, data.rouletteSpins));
+                roulettePending = data.roulettePending || null;
+                campaignSpinReceipts = Array.isArray(data.campaignSpinReceipts)
+                    ? data.campaignSpinReceipts.filter(id => typeof id === 'string') : [];
                 if (typeof data.featherMaxBonus === 'number') featherMaxBonus = Math.max(0, data.featherMaxBonus);
                 if (data.collected) {
                     collected.music = data.collected.music || 0;
@@ -493,7 +567,7 @@ const StorageManager = {
     saveLocal() {
         try {
             const payload = {
-                attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins, heartOverflow, zeroDay, playDay,
+                attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins, roulettePending, campaignSpinReceipts, heartOverflow, zeroDay, playDay,
                 collected: { ...collected },
                 settings: {
                     musicVolume: AudioFX.musicVolume,
@@ -504,8 +578,11 @@ const StorageManager = {
                 },
                 updatedAt: Date.now()
             };
+            const classic = window.BuboCampaign?.classicResources?.();
+            if (classic) Object.assign(payload, classic);
             localStorage.setItem(this.LOCAL_KEY, JSON.stringify(payload));
-        } catch(e) {}
+            return true;
+        } catch (e) { return false; }
     },
 
     async init() {
@@ -587,7 +664,7 @@ const StorageManager = {
         return this.saveRemote();
     },
     async saveRemote() {
-        if (!this.db || !this.userId) return;
+        if (!this.db || !this.userId || window.BuboCampaign?.isActive?.()) return;
         try {
             const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
             const progressRef = doc(this.db, 'artifacts', this.appId, 'users', this.userId, 'progress', 'game_state');

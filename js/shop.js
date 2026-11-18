@@ -1,19 +1,53 @@
 // ===== МОНЕТЫ И ЛАВКА =====
-// Монеты — редкая валюта, их копят. Доход: в полёте 15 монет за каждые 50 вопросов (на каждом 300-м — попытка вместо монет),
+// Монеты — редкая валюта, их копят. В полёте: 10 за первые 25 очков дня, 15 за каждые 50 (на каждом 300-м — попытка вместо монет),
 // мелкие монеты на пути (5–30 по уровню), вопросы дня 2 / 4 / 8 / 15 за верный ответ, в рулетке — 300 монет.
-// Обычно выходит 120–180 монет в день, у активного игрока 250–350. Цены: разовый бонус — на день-два, попытка — на 3–4 дня,
-// вращение рулетки (там настоящие призы) — 2–3 недели активной игры. Монеты не сгорают при смене дня.
+// Монеты сохраняются при смене дня. Срок накопления зависит от того, как игрок летает и отвечает.
 const COINS_KEY = 'bubo_coins', SHOP_PEND_KEY = 'bubo_shop_pending';
+const SHOP_WEEKLY_DEBIT = 'shop:weekly-shazam:';
+const SHOP_WALLET_MARKERS = [SHOP_WEEKLY_DEBIT, 'wind:charge:', 'wind:refund:'];
 function coinsGet() { try { return Math.max(0, parseInt(localStorage.getItem(COINS_KEY), 10) || 0); } catch (e) { return 0; } }
-function coinsSet(n) { try { localStorage.setItem(COINS_KEY, String(Math.max(0, Math.round(n)))); } catch (e) {} shopSyncBtn(); }
-function coinsAdd(n) { coinsSet(coinsGet() + n); }
+function coinsWallet() {
+    const raw = localStorage.getItem(COINS_KEY) || '0';
+    const [amount, ...receipts] = raw.split('|');
+    return { amount: Math.max(0, parseInt(amount, 10) || 0), receipts };
+}
+function coinsSet(n) {
+    try {
+        const wallet = coinsWallet();
+        localStorage.setItem(COINS_KEY, [Math.max(0, Math.round(n)), ...wallet.receipts].join('|'));
+    } catch (e) { return false; }
+    try { shopSyncBtn(); } catch (e) {}
+    return true;
+}
+function coinsAdd(n) { return coinsSet(coinsGet() + n); }
+// Баланс и последние подтверждения сохраняются одной записью, включая старый формат с одним числом.
+function coinsAddOnce(n, receipt, onCredit) {
+    if (n <= 0) return true;
+    try {
+        const wallet = coinsWallet();
+        if (wallet.receipts.includes(receipt)) return true;
+        const prefix = 'flight:starter:';
+        const starter = wallet.receipts.find(value => value.startsWith(prefix));
+        const starterCredit = receipt.startsWith(prefix);
+        if (starterCredit && starter && starter >= receipt) return true;
+        const markers = SHOP_WALLET_MARKERS.map(key => wallet.receipts.findLast(value => value.startsWith(key))).filter(Boolean);
+        if (starter && !starterCredit) markers.unshift(starter);
+        const recent = wallet.receipts.filter(value => !value.startsWith(prefix)
+            && !SHOP_WALLET_MARKERS.some(key => value.startsWith(key))).slice(markers.length - 63);
+        localStorage.setItem(COINS_KEY, [wallet.amount + Math.round(n), ...markers, ...recent, receipt].join('|'));
+    } catch (e) { return false; }
+    try { shopSyncBtn(); } catch (e) {}
+    if (typeof pfStat === 'function') pfStat('coins', n);
+    onCredit?.();
+    return true;
+}
 
 // бонусы «на старт полёта»: купил — сработают, когда полетишь в следующий раз
 function shopPend() { try { return JSON.parse(localStorage.getItem(SHOP_PEND_KEY)) || {}; } catch (e) { return {}; } }
-function shopSetPend(p) { try { localStorage.setItem(SHOP_PEND_KEY, JSON.stringify(p)); } catch (e) {} }
+function shopSetPend(p) { try { localStorage.setItem(SHOP_PEND_KEY, JSON.stringify(p)); return true; } catch (e) { return false; } }
 function shopOnFlightStart() {
     const p = shopPend(); if (!p.shield && !p.slow && !p.shazam) return;
-    shopSetPend({});
+    if (!shopSetPend({}) || (typeof invGet === 'function' && invGet().movedLegacyPending)) return;
     setTimeout(() => {
         try {
             if (p.shield) { shieldTime = Math.max(shieldTime, shieldSecs() * 60); shieldAppearAnim = 12; AudioFX.playShieldCollect(); }
@@ -27,32 +61,125 @@ function shopOnFlightStart() {
 
 // товары. can() — можно ли купить сейчас (false → кнопка «нельзя» с пояснением why)
 const SHOP_ITEMS = [
-    { key: 'a1', name: '+1 попытка', desc: 'Ещё один полёт', icon: 'fa-rotate-right', col: '#FE7600', price: 600,
-      buy() { attempts = Math.min(99, attempts + 1); zeroDay = ''; } },
-    { key: 'spin', name: 'Вращение рулетки', desc: 'Крути и выигрывай призы', icon: 'fa-dice', col: '#A855F7', price: 5000,
-      buy() { rouletteSpins = Math.min(99, rouletteSpins + 1); try { rwUpdateUI(); } catch (e) {} } },
-    { key: 'life', name: '+1 жизнь', desc: 'Сердце прямо сейчас', icon: 'fa-heart-circle-plus', col: '#EC4899', price: 120,
+    { key: 'spin', name: 'Вращение рулетки', desc: 'Первое вращение можно заработать у Смотрителя', icon: 'fa-dice', col: '#A855F7', price: 750,
+      can() { return rouletteSpins >= 99 ? 'Максимум вращений' : ''; },
+      buy() { rouletteSpins = Math.min(99, rouletteSpins + 1); } },
+    { key: 'life', name: '+1 жизнь', desc: 'Сердце в Свободном полёте', icon: 'fa-heart-circle-plus', col: '#EC4899', price: 120,
       can() { return lives < maxLives ? '' : 'Сердца полные'; },
       buy() { lives = Math.min(maxLives, (lives <= 0.5 ? startLives : lives) + 1); } },
-    { key: 'hearts', name: '6 жизней', desc: 'Максимум 6, старт с 4', icon: 'fa-heart', col: '#F43F5E', price: 500,
+    { key: 'hearts', name: '6 жизней', desc: 'Свободный полёт: максимум 6, старт с 4', icon: 'fa-heart', col: '#F43F5E', price: 500,
       can() { return maxLives < 6 ? '' : 'Уже есть'; },
       buy() { startLives = Math.max(startLives, 4); maxLives = Math.max(maxLives, 6); } },
-    { key: 'stamina', name: '+20% к силе', desc: 'Максимум сил больше', icon: 'fa-bolt', col: '#00F0FF', price: 300,
+    { key: 'stamina', name: '+20% к силе', desc: 'Больше сил в Свободном полёте', icon: 'fa-bolt', col: '#00F0FF', price: 300,
       can() { return maxStamina < 200 ? '' : 'Максимум'; },
       buy() { maxStamina = Math.min(200, maxStamina + 20); stamina = maxStamina; } },
-    { key: 'refill', name: 'Полные силы', desc: 'Запас сил до краёв', icon: 'fa-battery-full', col: '#22C55E', price: 60,
+    { key: 'refill', name: 'Полные силы', desc: 'Пополнить силы в Свободном полёте', icon: 'fa-battery-full', col: '#22C55E', price: 60,
       can() { return stamina < maxStamina - 0.5 ? '' : 'Силы полные'; },
       buy() { stamina = maxStamina; } },
     // эффекты в запас (до 3 каждого): в полёте — кнопкой сбоку, когда нужно
-    { key: 'shield', name: 'Щит', desc: 'В запас — включишь в полёте', icon: 'fa-shield-halved', col: '#4ADE80', price: 150, inv: true,
+    { key: 'shield', name: 'Щит', desc: 'Защита от столкновений и огня', icon: 'fa-shield-halved', col: '#4ADE80', price: 150, inv: true,
       can() { return invCount('shield') >= INV_MAX ? 'Запас полон' : ''; } },
-    { key: 'speed', name: 'Ускорение', desc: 'В запас — включишь в полёте', icon: 'fa-bolt', col: '#FACC15', price: 120, inv: true,
+    { key: 'speed', name: 'Ускорение', desc: 'Ослабляет напор воды', icon: 'fa-bolt', col: '#FACC15', price: 120, inv: true,
       can() { return invCount('speed') >= INV_MAX ? 'Запас полон' : ''; } },
-    { key: 'slow', name: 'Замедление', desc: 'В запас — включишь в полёте', icon: 'fa-hourglass-half', col: '#38BDF8', price: 100, inv: true,
+    { key: 'slow', name: 'Замедление', desc: 'Даёт больше времени на манёвр', icon: 'fa-hourglass-half', col: '#38BDF8', price: 100, inv: true,
       can() { return invCount('slow') >= INV_MAX ? 'Запас полон' : ''; } },
-    { key: 'shazam', name: 'ШАЗАМ', desc: 'В запас — включишь в полёте', icon: 'fa-bolt-lightning', col: '#FF7A00', price: 350, inv: true,
+    { key: 'shazam', name: 'ШАЗАМ', desc: 'Запасной рывок на 4 с в последней волне Смотрителя', icon: 'fa-bolt-lightning', col: '#FF7A00', price: 350, inv: true,
       can() { return invCount('shazam') >= INV_MAX ? 'Запас полон' : ''; } }
 ];
+
+const SHOP_WEEKLY = { key: 'weekly-shazam', name: 'ШАЗАМ', price: 280, level: 3, inv: true };
+const SHOP_WEEKLY_STOCK_FIELD = 'weeklyShazamBought';
+const SHOP_WEEKLY_DATE = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' });
+
+function shopDateKey(date) {
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+}
+function shopWeek() {
+    const now = new Date();
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    monday.setDate(monday.getDate() - (monday.getDay() + 6) % 7);
+    const key = shopDateKey(monday);
+    monday.setDate(monday.getDate() + 7);
+    return { key, restock: shopDateKey(monday), label: SHOP_WEEKLY_DATE.format(monday) };
+}
+function shopWeeklyQuantity(stock, week) {
+    return typeof stock[SHOP_WEEKLY_STOCK_FIELD] === 'string' && stock[SHOP_WEEKLY_STOCK_FIELD] >= week.key ? 0 : 1;
+}
+function shopWeeklyBlock(stock, week) {
+    if (!shopWeeklyQuantity(stock, week)) return 'Распродано';
+    if (typeof PG === 'undefined' || PG.lvl < SHOP_WEEKLY.level) return 'С 3-го уровня';
+    if (invCount('shazam', stock) >= INV_MAX) return 'Запас полон';
+    return '';
+}
+function shopWeeklyCard(balance, week) {
+    const stock = invGet(), quantity = shopWeeklyQuantity(stock, week);
+    const reason = shopWeeklyBlock(stock, week);
+    const blocked = reason || balance < SHOP_WEEKLY.price;
+    const confirm = !blocked && shSure === SHOP_WEEKLY.key;
+    const price = SHOP_WEEKLY.price;
+    const label = reason || (confirm ? 'КУПИТЬ?' : '<i class="fa-solid fa-coins sh-cg" aria-hidden="true"></i>' + price);
+    const aria = reason ? 'ШАЗАМ из поставки. ' + reason : balance < price ? 'ШАЗАМ из поставки, цена ' + price + ' монет. Не хватает монет.'
+        : (confirm ? 'Подтвердить покупку ШАЗАМа за ' : 'Купить ШАЗАМ за ') + price + ' монет';
+    return `<article class="sh-it sh-week" data-it="${SHOP_WEEKLY.key}" aria-labelledby="shWeeklyName">
+        <div class="sh-ic" aria-hidden="true"><i class="fa-solid fa-bolt-lightning"></i></div>
+        <div class="sh-week-copy"><h3 id="shWeeklyName">ШАЗАМ</h3><div>Поставка недели · В наличии ${quantity}</div>
+        <div class="sh-week-date">Следующая поставка <time datetime="${week.restock}">${week.label}, 00:00</time></div></div>
+        <button type="button" class="sh-buy${blocked ? ' no' : confirm ? ' sure' : ''}" data-sh="${SHOP_WEEKLY.key}"
+            aria-label="${aria}"${blocked ? ' disabled' : ''}>${label}</button>
+    </article>`;
+}
+
+function shopPendingWeekly(wallet) {
+    return wallet.receipts.find(value => value.startsWith(SHOP_WEEKLY_DEBIT));
+}
+function shopFinishWeekly(wallet) {
+    const receipt = shopPendingWeekly(wallet);
+    if (!receipt) return '';
+    const week = { key: receipt.slice(SHOP_WEEKLY_DEBIT.length) };
+    const stock = invGet();
+    const current = invCount('shazam', stock);
+    // Метка недели и предмет выдаются одной записью. Незавершённое списание можно повторно открыть.
+    const granted = !shopWeeklyQuantity(stock, week) || current < INV_MAX
+        && invWrite({ ...stock, shazam: current + 1, [SHOP_WEEKLY_STOCK_FIELD]: week.key });
+    const balance = wallet.amount + (granted ? 0 : SHOP_WEEKLY.price);
+    try {
+        localStorage.setItem(COINS_KEY, [balance, ...wallet.receipts.filter(value => value !== receipt)].join('|'));
+    } catch (e) {
+        return granted ? '' : 'Не удалось вернуть монеты. Повторим при открытии лавки.';
+    }
+    return granted ? '' : 'Не удалось выдать товар. Монеты вернулись.';
+}
+function shopBuyWeekly() {
+    try {
+        const recovered = shopFinishWeekly(coinsWallet());
+        if (recovered) return recovered;
+        const wallet = coinsWallet();
+        if (shopPendingWeekly(wallet)) return 'Покупка уже сохранена. Открой лавку ещё раз.';
+        const week = shopWeek();
+        const reason = shopWeeklyBlock(invGet(), week);
+        if (reason) return reason;
+        if (wallet.amount < SHOP_WEEKLY.price) return 'На покупку не хватает монет.';
+        localStorage.setItem(COINS_KEY, [wallet.amount - SHOP_WEEKLY.price, ...wallet.receipts, SHOP_WEEKLY_DEBIT + week.key].join('|'));
+        return shopFinishWeekly(coinsWallet());
+    } catch (e) { return 'Не удалось сохранить покупку.'; }
+}
+function shopWithWeeklyLock(run) {
+    if (!navigator.locks) { run(); return; }
+    void navigator.locks.request(SHOP_WEEKLY_DEBIT, run).catch(() => shopPurchaseError('Не удалось завершить покупку.'));
+}
+function shopRecoverWeekly() {
+    try {
+        if (!shopPendingWeekly(coinsWallet())) return;
+    } catch (e) { return; }
+    shopWithWeeklyLock(() => {
+        try {
+            shopPurchaseError(shopFinishWeekly(coinsWallet()));
+            invRender();
+            shopSyncBtn();
+            if (shRoot && !shRoot.classList.contains('hidden')) shopRender();
+        } catch (e) {}
+    });
+}
 
 (function () {
     try {
@@ -115,6 +242,13 @@ const SHOP_ITEMS = [
 #shWin .sh-buy.no{cursor:default;font-size:10.5px;color:rgba(255,255,255,.6);background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.15);box-shadow:none}
 #shWin .sh-buy.no .sh-coin{filter:grayscale(1);opacity:.6}
 #shWin .sh-buy.own{cursor:default;color:#BBF7D0;background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.5);box-shadow:none;font-size:10.5px}
+#shWin .sh-week{grid-column:1/-1;display:grid;grid-template-columns:36px minmax(0,1fr) minmax(68px,23%);align-items:center;gap:8px;padding:9px;text-align:left;--c:#FE7600}
+#shWin .sh-week .sh-ic{width:36px;height:36px;font-size:16px}
+#shWin .sh-week-copy{min-width:0;font-size:10px;line-height:1.3;color:#E9D5FF;overflow-wrap:anywhere}
+#shWin .sh-week-copy h3{margin:0 0 2px;font-size:12px;font-weight:900;line-height:1.2;color:#FFF3CA}
+#shWin .sh-week-date{margin-top:2px;color:#C4B5FD}
+#shWin .sh-week .sh-buy{min-height:34px;margin:0}
+#shWin .sh-week .sh-buy:focus-visible{outline:2px solid #FFF3CA;outline-offset:2px}
 #shWin .sh-it.bought{animation:shBought .7s ease}
 @keyframes shBought{30%{transform:scale(1.07);box-shadow:0 0 22px var(--c)}}
 #shWin .sh-earn{position:relative;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px;border-radius:14px;background:rgba(20,3,38,.6);border:1px solid rgba(56,189,248,.35)}
@@ -123,6 +257,8 @@ const SHOP_ITEMS = [
 #shWin .sh-earn .sh-go{flex:0 0 auto;display:flex;align-items:center;padding:9px 12px;border-radius:11px;font-weight:900;font-size:11px;letter-spacing:.04em;color:#fff;background:rgba(56,189,248,.24);border:1px solid rgba(56,189,248,.65);cursor:pointer;white-space:nowrap}
 #shWin .sh-back{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 10px;border-radius:16px;font-weight:900;font-size:12px;letter-spacing:.06em;color:#fff;cursor:pointer;background:rgba(45,14,82,.9);border:1px solid rgba(168,85,247,.5)}
 #shWin .sh-back i{color:#FE7600}
+#shWin .sh-purchase-status{padding:8px 10px;border-radius:10px;color:#ffe1d1;background:#452435;font-size:12px}
+#shWin .sh-purchase-status[hidden]{display:none}
 #shWin .sh-toast{position:absolute;left:50%;top:132px;transform:translate(-50%,0);padding:9px 14px;border-radius:14px;font-weight:900;font-size:13px;white-space:nowrap;background:rgba(22,101,52,.95);border:1px solid #4ADE80;box-shadow:0 0 18px rgba(34,197,94,.5);pointer-events:none;animation:shToast 1.8s ease forwards;z-index:3}
 @keyframes shToast{0%{opacity:0;transform:translate(-50%,10px)}15%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-10px)}}
 `;
@@ -130,7 +266,7 @@ const SHOP_ITEMS = [
     } catch (e) {}
 })();
 
-let shRoot = null, shSure = null, shSureT = 0;
+let shRoot = null, shSure = null, shSureT = 0, shRenderedWeek = '';
 function shopBuild() {
     if (shRoot) return shRoot;
     const host = document.getElementById('gameContainer') || document.body;
@@ -141,10 +277,11 @@ function shopBuild() {
             <div class="sh-emb"><div class="sh-glow"></div><div class="sh-ring"></div><div class="sh-core"><i class="fa-solid fa-store"></i></div>${tw}</div>
             <div></div></div>
         <button type="button" class="sh-x" data-sh="close" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
-        <div class="sh-title"><b>ЛАВКА</b><span>Обменивай монеты на попытки и бонусы</span></div>
+        <div class="sh-title"><b>ЛАВКА</b><span>Бонусы за монеты</span></div>
         <div class="sh-grid" id="shGrid"></div>
         <div class="sh-foot">
-        <div class="sh-earn" id="shEarn"><i class="fa-solid fa-circle-question"></i><span>Получить монеты можно, отвечая на <b>вопросы</b></span><button type="button" class="sh-go" data-sh="quiz">ЗАРАБОТАТЬ<i class="fa-solid fa-arrow-right"></i></button><button type="button" class="sh-ex" data-sh="hideearn" aria-label="Скрыть"><i class="fa-solid fa-xmark"></i></button></div>
+        <p class="sh-purchase-status" id="shPurchaseStatus" role="alert" hidden></p>
+        <div class="sh-earn" id="shEarn"><i class="fa-solid fa-coins"></i><span>Собирай монеты в полёте или отвечай на вопросы</span><button type="button" class="sh-go" data-sh="quiz">К ВОПРОСАМ<i class="fa-solid fa-arrow-right"></i></button><button type="button" class="sh-ex" data-sh="hideearn" aria-label="Скрыть"><i class="fa-solid fa-xmark"></i></button></div>
         <button type="button" class="sh-back" data-sh="close"><i class="fa-solid fa-house"></i>В ГЛАВНОЕ МЕНЮ</button></div>
     </div>`;
     host.appendChild(shRoot);
@@ -165,11 +302,19 @@ function shopFit() {
     const w = document.getElementById('shWin'); if (!w || !shRoot) return;
     w.classList.remove('full');   // листается всё окно целиком (как в вопросах): эмблема, монеты и крестик уезжают вверх
 }
-function shopRender() {
+function shopItemDuration(key) {
+    if (key === 'shield') return typeof shieldSecs === 'function' ? shieldSecs() : ADMIN_CFG.shieldSec;
+    if (key === 'speed') return ADMIN_CFG.speedSec;
+    if (key === 'slow') return ADMIN_CFG.slowSec;
+    if (key === 'shazam') return Math.round((SHZ.DUR + SHZ.FADE) / 60);
+    return 0;
+}
+function shopRender(week = shopWeek()) {
     const g = document.getElementById('shGrid'); if (!g) return;
     const c = coinsGet(), pend = shopPend();
+    shRenderedWeek = week.key;
     document.getElementById('shCoinsN').textContent = String(c);
-    g.innerHTML = SHOP_ITEMS.map(it => {
+    g.innerHTML = shopWeeklyCard(c, week) + SHOP_ITEMS.map(it => {
         const why = it.can ? it.can() : (it.pend && pend[it.key] ? 'own' : '');
         let btn;
         if (why === 'own') btn = `<div class="sh-buy own"><i class="fa-solid fa-check"></i>Ждёт полёта</div>`;
@@ -177,23 +322,73 @@ function shopRender() {
         else if (c < it.price) btn = `<div class="sh-buy no"><i class="fa-solid fa-coins sh-cg"></i>${it.price}</div>`;
         else if (shSure === it.key) btn = `<button type="button" class="sh-buy sure" data-sh="${it.key}">КУПИТЬ?</button>`;
         else btn = `<button type="button" class="sh-buy" data-sh="${it.key}"><i class="fa-solid fa-coins sh-cg"></i>${it.price}</button>`;
-        const ds = it.inv ? `${it.desc}<br><b style="color:${it.col}">В запасе: ${invCount(it.key)} из ${INV_MAX}</b>` : it.desc;
+        const duration = it.inv ? shopItemDuration(it.key) : 0;
+        const detail = it.key === 'shazam' ? duration + ' с в Свободном полёте' : duration + ' с';
+        const stock = it.inv ? '<br><b style="color:' + it.col + '">' + detail + ' · В запасе: ' + invCount(it.key) + ' из ' + INV_MAX + '</b>' : '';
+        const ds = it.desc + stock;
         return `<div class="sh-it" data-it="${it.key}" style="--c:${it.col}"><div class="sh-ic"><i class="fa-solid ${it.icon}"></i></div><div class="sh-nm">${it.name}</div><div class="sh-ds">${ds}</div>${btn}</div>`;
     }).join('');
 }
-// первое нажатие — «Купить?», второе (в течение 3 с) — покупка
+function shopPurchaseError(message) {
+    const feedback = document.getElementById('shPurchaseStatus');
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.hidden = !message;
+}
+
+function shopCommitPurchase(item) {
+    const balance = coinsGet();
+    const blocked = item.can?.();
+    if (blocked) return blocked;
+    if (balance < item.price) return 'На покупку не хватает монет.';
+    if (!coinsSet(balance - item.price)) return 'Не удалось сохранить покупку.';
+    if (item.inv) {
+        if (invAdd(item.key)) return '';
+    } else {
+        const previous = [rouletteSpins, lives, startLives, maxLives, stamina, maxStamina];
+        let saved = false;
+        try { item.buy(); saved = StorageManager.saveLocal(); } catch (e) {}
+        if (saved) return '';
+        [rouletteSpins, lives, startLives, maxLives, stamina, maxStamina] = previous;
+    }
+    return coinsSet(balance)
+        ? 'Не удалось сохранить покупку. Монеты остались на месте.'
+        : 'Не удалось сохранить покупку и восстановить баланс.';
+}
+
+// Первое нажатие — «Купить?», второе (в течение 3 с) — покупка.
 function shopTap(key) {
-    const it = SHOP_ITEMS.find(x => x.key === key); if (!it) return;
+    const it = key === SHOP_WEEKLY.key ? SHOP_WEEKLY : SHOP_ITEMS.find(item => item.key === key); if (!it) return;
     try { AudioFX.resume(); } catch (e) {}
-    if (shSure !== key) { shSure = key; clearTimeout(shSureT); shSureT = setTimeout(() => { shSure = null; shopRender(); }, 3000); shopRender(); try { Haptics.flap(); } catch (e) {} return; }
+    if (shSure !== key) {
+        shSure = key;
+        clearTimeout(shSureT);
+        shSureT = setTimeout(() => { shSure = null; shopRender(); }, 3000);
+        shopRender();
+        if (it === SHOP_WEEKLY) shRoot?.querySelector('[data-sh="weekly-shazam"]:not(:disabled)')?.focus({ preventScroll: true });
+        try { Haptics.flap(); } catch (e) {}
+        return;
+    }
     shSure = null; clearTimeout(shSureT);
-    const c = coinsGet(); if (c < it.price) { shopRender(); return; }
-    if (it.can && it.can()) { shopRender(); return; }
-    coinsSet(c - it.price);
-    if (it.inv) invAdd(it.key);
-    else if (it.pend) { const p = shopPend(); p[it.key] = 1; shopSetPend(p); }
-    else try { it.buy(); } catch (e) {}
-    try { StorageManager.save(); updateHUDAll(); } catch (e) {}
+    shopPurchaseError('');
+    if (it === SHOP_WEEKLY) shopWithWeeklyLock(() => shopCompletePurchase(it));
+    else shopCompletePurchase(it);
+}
+
+function shopCompletePurchase(it) {
+    if (window.BuboCampaign?.isActive()) return;
+    if (typeof checkDailyReset === 'function') checkDailyReset();
+    const { key } = it;
+    const error = it === SHOP_WEEKLY ? shopBuyWeekly() : shopCommitPurchase(it);
+    shopSyncBtn();
+    if (error) { shopPurchaseError(error); shopRender(); return; }
+    try {
+        if (it.inv) invRender();
+        if (it.key === 'spin') rwUpdateUI();
+        updateHUDAll();
+        void StorageManager.saveRemote();
+    } catch (e) {}
+    try { window.BuboPlaytest?.record?.('shop:purchase', { item: it.key, price: it.price, balance: coinsGet() }); } catch (e) {}
     try { AudioFX.playAttemptBonus(); Haptics.powerup(); } catch (e) {}
     shopRender();
     const tile = document.querySelector(`#shGrid [data-it="${key}"]`); if (tile) tile.classList.add('bought');
@@ -218,7 +413,7 @@ function shopTap(key) {
 function openShop(e) {
     if (e) e.stopPropagation();
     try { AudioFX.resume(); } catch (er) {}
-    shopBuild(); shSure = null; shopRender();
+    shopBuild(); shSure = null; shopPurchaseError(''); shopRender(); shopRecoverWeekly();
     try { const el = document.getElementById('shEarn'); if (el) el.classList.toggle('gone', localStorage.getItem('bubo_shop_earn_hidden') === '1'); } catch (er) {}
     try { const w = document.getElementById('shWin'); if (w) w.scrollTop = 0; } catch (er) {}
     shRoot.classList.remove('hidden');
@@ -235,12 +430,31 @@ function closeShop(e) {
 function shopSyncBtn() {
     const mc = document.getElementById('menuCoinsN'); if (mc) mc.textContent = String(coinsGet());
     const b = document.getElementById('openShopBtn'); if (!b) return;
-    const c = coinsGet(); b.classList.toggle('has-c', c >= Math.min(...SHOP_ITEMS.map(i => i.price)));
+    const balance = coinsGet();
+    const pending = shopPend();
+    const week = shopWeek();
+    if (shRoot && !shRoot.classList.contains('hidden') && shRenderedWeek !== week.key) {
+        shSure = null;
+        clearTimeout(shSureT);
+        shopRender(week);
+    }
+    const weekly = balance >= SHOP_WEEKLY.price && typeof invCount === 'function' && !shopWeeklyBlock(invGet(), week);
+    const canBuy = weekly || SHOP_ITEMS.some(item => balance >= item.price
+        && (!item.inv || typeof invCount === 'function')
+        && !(item.pend && pending[item.key]) && !item.can?.());
+    b.classList.toggle('has-c', canBuy);
 }
 (function () {
     const b = document.getElementById('openShopBtn'); if (b) b.addEventListener('click', openShop);
-    const g = document.getElementById('earnAttemptBtn');   // попыток нет — в лавку (там можно купить попытку)
-    if (g) g.addEventListener('click', (e) => { e.stopPropagation(); try { returnToHome(); } catch (er) {} openShop(); });
+    document.addEventListener('DOMContentLoaded', shopRecoverWeekly, { once: true });
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && shRoot && !shRoot.classList.contains('hidden')) {
+            shSure = null;
+            clearTimeout(shSureT);
+            shopRender();
+            shopRecoverWeekly();
+        }
+    });
     shopSyncBtn();
 })();
 

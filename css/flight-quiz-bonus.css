@@ -1,0 +1,108 @@
+.bubo-flight-bonus-callout {
+    display: grid;
+    justify-items: center;
+    align-items: center;
+}
+.bubo-flight-bonus-callout[hidden],
+.bubo-flight-bonus-caption[hidden],
+.bubo-flight-bonus-button[hidden],
+.bubo-flight-bonus-count[hidden],
+.bubo-flight-bonus-ring[hidden] {
+    display: none !important;
+}
+.bubo-flight-bonus-caption {
+    color: #d7bbff;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+}
+.bubo-flight-bonus-button {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 58px;
+    padding: 8px 12px;
+    border: 1px solid #4ca8d4;
+    border-radius: 16px;
+    background: linear-gradient(100deg, #311852, #202e59);
+    box-shadow: 0 4px 12px rgba(8, 4, 27, .35), inset 0 1px rgba(163, 221, 255, .12);
+    color: #faf6ff;
+    cursor: pointer;
+    text-align: left;
+    transition: filter .18s ease, transform .18s ease;
+}
+.bubo-flight-bonus-button-icon {
+    display: grid;
+    place-items: center;
+    height: 32px;
+    border-radius: 10px;
+    background: rgba(103, 206, 250, .16);
+    color: #9be7ff;
+    font-size: 15px;
+}
+.bubo-flight-bonus-button-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1.15;
+}
+.bubo-flight-bonus-button-label {
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+.bubo-flight-bonus-button-available {
+    color: #a8e7ff;
+    font-size: 11px;
+    font-weight: 700;
+}
+.bubo-flight-bonus-button-arrow {
+    color: #a8e7ff;
+    font-size: 12px;
+    text-align: center;
+}
+@media (hover: hover) {
+    .bubo-flight-bonus-button:hover { filter: brightness(1.12); }
+}
+.bubo-flight-bonus-button:focus-visible {
+    outline: 2px solid #a8e7ff;
+    outline-offset: 2px;
+}
+.bubo-flight-bonus-button:active { transform: scale(.97); }
+.bubo-flight-bonus-count {
+    position: absolute;
+    right: -5px;
+    top: -5px;
+    height: 16px;
+    min-width: 16px;
+    padding: 0 3px;
+    box-sizing: border-box;
+    border: 1px solid #0c0521;
+    border-radius: 8px;
+    background: #bb9bff;
+    color: #210f46;
+    font-weight: 900;
+    font-size: 9px;
+    line-height: 14px;
+    text-align: center;
+}
+#scoreBadge.bubo-flight-bonus-score { position: relative; }
+.bubo-flight-bonus-ring {
+    position: absolute;
+    inset: -2px;
+    margin: 0 !important;
+    border-radius: inherit;
+    pointer-events: none;
+    background: conic-gradient(#bb9bff var(--fb-progress, 0%), transparent var(--fb-progress, 0%));
+    padding: 2px;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+}
+.bubo-flight-bonus-ring.is-complete {
+    background: #60d9a5;
+}

@@ -95,7 +95,7 @@ const QZ_DIFF_INFO = { e: { name: 'Легко', coins: 30, col: '#4ADE80' }, m: 
 QUIZ_QUESTIONS.forEach(q => { if (!q.diff) q.diff = QZ_DIFF.e.includes(q.id) ? 'e' : QZ_DIFF.h.includes(q.id) ? 'h' : 'm'; });
 
 const QUIZ_PER_DAY = 10, QZ_READ = 5, QZ_ANSWER = 10;   // вопросов в день; секунд на чтение и на ответ
-const QUIZ_SEEN_KEY = 'bubo_quiz_seen', QUIZ_DAY_KEY = 'bubo_quiz_day10';
+const QUIZ_SEEN_KEY = 'bubo_quiz_seen', QUIZ_DAY_KEY = 'bubo_quiz_day10', QUIZ_ATTEMPT_KEY = 'bubo_quiz_attempt_v1';
 const QZ_LETTERS = ['A', 'B', 'C', 'D'];
 // четыре разных цвета (без зелёного и красного — это «верно»/«неверно»), соседи по сетке не похожи: оранжевый, бирюзовый, синий, розовый; буквы белые
 const QZ_BALL_COL = { A: '#FF7A00', B: '#00BFC4', C: '#2F5BFF', D: '#FF4FA3' };
@@ -109,8 +109,19 @@ function quizUpdate() {} function quizUpdate2D() {} function quizDraw() {} funct
 function quizOnTheme() {} function quizResetProgress() {} function quizAbort() {} function quizUI() {} function quizForcePortal() {}
 
 // ---------- какие вопросы игрок уже видел ----------
-function quizSeen() { try { return JSON.parse(localStorage.getItem(QUIZ_SEEN_KEY)) || []; } catch (e) { return []; } }
-function quizMarkSeen(id) { try { const s = quizSeen(); if (s.indexOf(id) < 0) { s.push(id); localStorage.setItem(QUIZ_SEEN_KEY, JSON.stringify(s)); } } catch (e) {} }
+function quizSeen() {
+    try {
+        const seen = JSON.parse(localStorage.getItem(QUIZ_SEEN_KEY));
+        return Array.isArray(seen) ? seen : [];
+    } catch (e) { return []; }
+}
+function quizMarkSeen(id) {
+    try {
+        const seen = quizSeen();
+        if (!seen.includes(id)) { seen.push(id); localStorage.setItem(QUIZ_SEEN_KEY, JSON.stringify(seen)); }
+        return true;
+    } catch (e) { return false; }
+}
 function quizResetSeen() { try { localStorage.removeItem(QUIZ_SEEN_KEY); } catch (e) {} }
 // ---------- темы и уровни (QZ_THEMES, QZ_LEVELS — в quiz-bank.js) ----------
 function qzTheme(id) { return (typeof QZ_THEMES !== 'undefined' && QZ_THEMES.find(t => t.id === id)) || { id: 'misc', name: 'Обо всём', icon: 'fa-brain', col: '#4ADE80' }; }
@@ -134,14 +145,42 @@ function quizNextId(day) {
     const d = JSON.parse(localStorage.getItem(QUIZ_DAY_KEY) || 'null'); if (d && d.lvl && M[d.lvl]) { d.lvl = M[d.lvl]; localStorage.setItem(QUIZ_DAY_KEY, JSON.stringify(d)); }
     localStorage.setItem('bubo_quiz_lv5', '1'); } catch (e) {} })();
 function qzToday() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
-function quizDay() {
-    let d = null; try { d = JSON.parse(localStorage.getItem(QUIZ_DAY_KEY)); } catch (e) {}
-    if (!d || d.d !== qzToday()) d = { d: qzToday(), ids: [], res: [], earned: 0, cur: 0, ord: '', shown: false, theme: '', lvl: '' };
-    if (d.cur && !QUIZ_QUESTIONS.some(q => q.id === d.cur)) { d.cur = 0; d.ord = ''; d.shown = false; }   // вопроса больше нет в базе (база обновилась)
+function qzStoredDay() {
+    try { return JSON.parse(localStorage.getItem(QUIZ_DAY_KEY)); } catch (e) { return null; }
+}
+function quizDay(day = qzToday()) {
+    let d = qzStoredDay();
+    if (!d || d.d !== day || !Array.isArray(d.ids) || !Array.isArray(d.res)) {
+        d = { d: day, ids: [], res: [], earned: 0, cur: 0, ord: '', shown: false, theme: '', lvl: '' };
+    }
     return d;
 }
-function quizSaveDay(d) { try { localStorage.setItem(QUIZ_DAY_KEY, JSON.stringify(d)); } catch (e) {} }
-function quizResetDay() { try { localStorage.removeItem(QUIZ_DAY_KEY); } catch (e) {} quizMenuBadge(); }
+function quizSaveDay(d) {
+    try { localStorage.setItem(QUIZ_DAY_KEY, JSON.stringify(d)); return true; } catch (e) { return false; }
+}
+function qzReadAttempt() {
+    try {
+        const a = JSON.parse(localStorage.getItem(QUIZ_ATTEMPT_KEY));
+        if (!a) return null;
+        if (a.id && a.day && ['daily', 'bonus'].includes(a.mode) && Number.isFinite(a.startedAt)
+            && typeof a.ord === 'string' && a.ord.length === 4 && QUIZ_QUESTIONS.some(q => q.id === a.question)) return a;
+        if (a.mode === 'bonus' && typeof FlightQuizBonus !== 'undefined') FlightQuizBonus.release?.(a.id);
+        qzSaveAttempt(null);
+        return null;
+    } catch (e) { return null; }
+}
+function qzSaveAttempt(a) {
+    try {
+        if (a) localStorage.setItem(QUIZ_ATTEMPT_KEY, JSON.stringify(a));
+        else localStorage.removeItem(QUIZ_ATTEMPT_KEY);
+        return true;
+    } catch (e) { return false; }
+}
+function quizResetDay() {
+    try { localStorage.removeItem(QUIZ_DAY_KEY); } catch (e) {}
+    if (qzReadAttempt()?.mode === 'daily') qzSaveAttempt(null);
+    quizMenuBadge();
+}
 function quizDayLeft() { return quizDay().ids.length < QUIZ_PER_DAY; }
 function qzShuffleOrd() { const a = QZ_LETTERS.slice(); for (let i = 3; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.join(''); }
 function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0; }
@@ -206,7 +245,9 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-rew{display:flex;align-items:center;gap:6px;font-weight:800;font-size:11px;color:#C4B5FD}
 #qzWin .qz-rew b{color:#FFD66B;font-weight:900}
 #qzWin .qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-#qzWin .qz-o{display:flex;align-items:center;gap:7px;min-height:0;box-sizing:border-box;padding:7px;border-radius:12px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font-weight:700;font-size:11.5px;line-height:1.22;transition:all .25s;min-width:0}
+#qzWin .qz-o{display:flex;align-items:center;gap:7px;min-height:40px;box-sizing:border-box;padding:7px;border-radius:12px;background:rgba(20,3,38,.6);border:1px solid rgba(120,44,233,.32);font:700 11.5px/1.22 Onest,sans-serif;color:#fff;text-align:left;transition:all .25s;min-width:0;cursor:pointer}
+#qzWin .qz-o:disabled{cursor:default}
+#qzWin .qz-o:focus-visible{outline:2px solid var(--c);outline-offset:2px}
 #qzWin .qz-o span{display:block;min-width:0;overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
 #qzWin .qz-o b{flex:0 0 auto;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10.5px;color:#fff;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
 #qzWin .qz-o:not(.ok):not(.bad){border:1px solid color-mix(in srgb,var(--c,#A878F5) 38%,transparent);padding:7px;background:rgba(20,3,38,.6);box-shadow:none}
@@ -239,6 +280,12 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-abcd.lock .qz-ball.bad{opacity:1;filter:none;--c:#EF4444!important}
 #qzWin .qz-note{text-align:center;font-weight:800;font-size:12.5px;min-height:18px}
 #qzWin .qz-note.ok{color:#4ADE80} #qzWin .qz-note.bad{color:#F87171} #qzWin .qz-note.read{color:#7DD3FC}
+#qzWin .qz-bonus{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:9px 10px;border-radius:14px;background:rgba(255,197,61,.09);border:1px solid rgba(255,197,61,.3);color:#FFD66B;font:800 11px/1.28 Onest,sans-serif}
+#qzWin .qz-bonus>span{display:flex;align-items:center;gap:7px}
+#qzWin .qz-bonus button{border:0;border-radius:9px;padding:6px 8px;background:#FFD66B;color:#351952;font:900 10.5px Onest,sans-serif;cursor:pointer}
+#qzWin .qz-bonus button:disabled{opacity:.55;cursor:default}
+#qzWin .qz-trials{display:flex;flex-wrap:wrap;gap:7px}
+#qzWin .qz-trials .qz-chg{color:#FFE8A0;border-color:rgba(255,197,61,.4)}
 #qzWin .qz-res{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:6px 4px 2px}
 #qzWin .qz-big{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;margin:4px 0}
 #qzWin .qz-big.win{background:radial-gradient(circle at 35% 30%,#FFF3B0,#FFC53D 55%,#E08A00);color:#7C4A00;box-shadow:0 0 30px rgba(255,197,61,.6);animation:qzPop .6s cubic-bezier(.2,1.6,.4,1)}
@@ -287,6 +334,12 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #qzWin .qz-th:active{transform:scale(.96)}
 #qzWin .qz-th.on{border-color:var(--tc);box-shadow:0 0 14px var(--tcA),inset 0 0 12px var(--tcB);background:linear-gradient(135deg,var(--tcA),rgba(20,3,38,.65) 75%)}
 #qzWin .qz-th.empty{opacity:.4;cursor:default}
+#qzWin .qz-th.campaign-locked{cursor:default;transform:none}
+#qzWin .qz-themes:has(.on) .qz-th.campaign-locked{opacity:1;filter:none}
+#qzWin .qz-th.campaign-locked .qz-thi{opacity:.72;box-shadow:none}
+#qzWin .qz-th.campaign-locked .qz-thn{white-space:normal;padding-right:8px}
+#qzWin .qz-th.campaign-locked .qz-thc{white-space:normal;color:#DDD6FE}
+#qzWin .qz-th.campaign-locked .qz-thb i{min-width:0}
 #qzWin .qz-thi{flex:0 0 30px;width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;background:var(--tc);box-shadow:0 0 10px var(--tcA),inset 0 -3px 0 rgba(0,0,0,.2)}
 #qzWin .qz-thtx{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px;padding-right:0}
 #qzWin .qz-thn{font-weight:800;font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -354,23 +407,9 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 #pwWin .pw-perk{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font:900 11px/1 Onest,sans-serif;color:var(--lc);background:rgba(20,3,38,.6);border:1px solid color-mix(in srgb,var(--lc) 50%,transparent)}
 #pwWin .pw-perk em{font-style:normal;color:#FFD66B}
 #pwWin .pw-perk .qz-coin{font-size:11px}
-#pwWin .pw-plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding-top:8px}
-#pwWin .pw-pl{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 4px 10px;border-radius:16px;cursor:pointer;color:#fff;font-family:Onest,sans-serif;background:rgba(20,3,38,.65);border:1.5px solid rgba(196,161,255,.3);transition:all .2s}
-#pwWin .pw-pl:active{transform:scale(.96)}
-#pwWin .pw-pl .n{font-weight:800;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:#C4B5FD}
-#pwWin .pw-pl .p{font-weight:900;font-size:22px;line-height:1;white-space:nowrap}
-#pwWin .pw-pl .p small{font-size:14px;font-weight:900;margin-left:2px}
-#pwWin .pw-pl .d{font-weight:700;font-size:9.5px;color:rgba(221,214,254,.7);white-space:nowrap}
-#pwWin .pw-pl .t{position:absolute;top:-9px;left:50%;transform:translateX(-50%);padding:2px 7px;border-radius:999px;font:900 9.5px/1.3 Onest,sans-serif;color:#fff;white-space:nowrap;background:linear-gradient(180deg,#FF9F1C,#FE7600);border:1px solid rgba(255,214,150,.85);box-shadow:0 0 8px rgba(254,118,0,.5)}
-#pwWin .pw-pl .k{position:absolute;top:6px;right:7px;font-size:10px;color:#FFC53D;opacity:0;transform:scale(.4);transition:all .2s}
-#pwWin .pw-pl.on{border-color:#FFC53D;background:linear-gradient(180deg,rgba(255,197,61,.2),rgba(20,3,38,.6));box-shadow:0 0 16px rgba(255,197,61,.35),inset 0 0 12px rgba(255,197,61,.15)}
-#pwWin .pw-pl.on .n{color:#FFE08A}
-#pwWin .pw-pl.on .k{opacity:1;transform:scale(1)}
-#pwWin .pw-pl:not(.on)>:not(.t):not(.k){opacity:.7}
-#pwWin .pw-note{text-align:center;font-weight:700;font-size:11px;line-height:1.35;color:rgba(221,214,254,.75);margin-top:-4px}
-#pwWin .pw-note b{color:#fff}
 #pwWin .pw-btns{display:flex;flex-direction:column;gap:10px}
 #pwWin .pw-btn{width:100%;padding:13px 10px;border-radius:16px;font-weight:900;font-size:13px;letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+#pwWin .pw-btn:disabled{background:rgba(45,14,82,.7);border:1px solid rgba(168,85,247,.35);color:#DDD6FE;cursor:default}
 #pwWin .pw-btn.sec{background:rgba(45,14,82,.9);border:1px solid rgba(168,85,247,.5);color:#fff;font-size:11px;padding:11px 10px}
 #pwWin .pw-btn.sec i{color:#FE7600}
 #qzWin .qz-msg.ok{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.5);color:#BBF7D0}
@@ -380,8 +419,54 @@ function qzCoinsTotal() { return typeof coinsGet === 'function' ? coinsGet() : 0
 })();
 
 const QZ_COIN = '<i class="fa-solid fa-coins qz-coin"></i>';   // монетки — как на плашке монет в меню
-const QS = { phase: 'idle', t0: 0, raf: 0, pick: null, autoT: 0 };   // phase: ready / read / answer / reveal / done
-let qzRoot = null, qzPrevMusic = null;
+const QZ_BONUS_LEVELS = ['s', 'l'], QZ_TRIAL_LVL = 'l';
+const QZ_TRIAL_TOPICS = { music: ['music'], kino: ['kino'], series: ['series'], cartoons: ['cartoons'], fun: ['hp', 'games', 'memes'] };
+const QZ_NEARBY = { music: ['kino', 'art'], kino: ['series', 'cartoons'], series: ['kino', 'cartoons'], cartoons: ['kino', 'games'], games: ['memes', 'hp'], memes: ['humor', 'games'], hp: ['lit', 'kino'], lit: ['art', 'history'], history: ['geo', 'art'], geo: ['nature', 'history'], chem: ['phys', 'nature'], phys: ['chem', 'space'], space: ['phys', 'nature'], nature: ['geo', 'chem'], sport: ['games', 'history'], food: ['nature', 'geo'], art: ['lit', 'music'], humor: ['memes', 'kino'] };
+const QS = { mode: 'daily', phase: 'idle', raf: 0, revealT: 0, attempt: null };
+let qzRoot = null, qzPrevMusic = null, qzAdminPreview = '';
+
+function qzBonusStatus() {
+    return typeof FlightQuizBonus === 'undefined' ? { enabled: false, available: 0 } : FlightQuizBonus.status();
+}
+function qzReward(lvl, bonus = QS.mode === 'bonus') {
+    const coins = qzLevel(lvl).coins;
+    return bonus ? Math.ceil(coins / 2) : coins;
+}
+function qzBonusStock(includeButton = true) {
+    const { enabled, available } = qzBonusStatus();
+    if (!enabled) return '';
+    const label = available ? 'Бонусных вопросов: ' + available : 'Бонусы за значки «?» в полёте';
+    return '<div class="qz-bonus"><span><i class="fa-solid fa-gift" aria-hidden="true"></i>' + label + '</span>'
+        + (available && includeButton ? '<button type="button" data-qa="bonus">Сыграть бонус</button>' : '') + '</div>';
+}
+function qzThemeAllowed(theme, lvl) {
+    if (theme === 'all') return true;
+    if (QZ_PAID_LV.includes(lvl)) return QZ_THEMES.some(t => t.id === theme);
+    return QZ_BONUS_LEVELS.includes(lvl) && Boolean(window.BuboCampaignTopics?.isUnlocked(theme));
+}
+function qzTrialTopics(key) {
+    const playable = theme => qzThemeAllowed(theme, QZ_TRIAL_LVL) && qzLeft(theme, QZ_TRIAL_LVL) > 0;
+    const topics = QZ_TRIAL_TOPICS[key];
+    if (topics) return topics.filter(playable);
+    if (key !== 'logic') return [];
+    const choices = (window.BuboCampaignTopics?.list() || []).map(theme => theme.id).filter(playable);
+    const today = new Date();
+    const offset = (today.getFullYear() * 372 + today.getMonth() * 31 + today.getDate()) % Math.max(choices.length, 1);
+    return choices.slice(offset).concat(choices.slice(0, offset)).slice(0, 2);
+}
+function qzTrialChoices() {
+    if (!qzBonusStatus().thematicEnabled) return '';
+    const choices = FlightQuizBonus.themes().flatMap(token => qzTrialTopics(token).map(theme =>
+        '<button type="button" class="qz-chg" data-qa="trial" data-trial="' + token + '" data-trial-theme="' + theme + '">' + qzTheme(theme).name + '</button>'
+    ));
+    return choices.length
+        ? '<div class="qz-sec"><i class="fa-solid fa-unlock"></i>Дополнительный вопрос «Лайт» по открытой теме</div><div class="qz-trials">' + choices.join('') + '</div>'
+        : '';
+}
+function qzNearbyTheme(theme, lvl) {
+    return (QZ_NEARBY[theme] || []).concat('all').find(next => next !== theme && qzThemeAllowed(next, lvl) && qzLeft(next, lvl)) || '';
+}
+
 function qzBuild() {
     if (qzRoot) return qzRoot;
     const host = document.getElementById('gameContainer') || document.body;
@@ -395,9 +480,9 @@ function qzBuild() {
         if (e.target === qzRoot && qzRoot.classList.contains('pay')) { qzPayClose(); return; }
         if (e.target === qzRoot) { const w = document.getElementById('qzWin'); if (!(w && w.classList.contains('busy'))) closeQuiz(); return; }
         const pw = e.target.closest('[data-pw]');
-        if (pw) { const a = pw.dataset.pw; if (a === 'plan') { QS.plan = pw.dataset.pl; qzPayRender(); try { AudioFX.playRouletteTick(); } catch (er) {} } else if (a === 'pay') qzPayDo(); else qzPayClose(); return; }
+        if (pw) { if (pw.dataset.pw === 'back') qzPayClose(); return; }
         const tb = e.target.closest('[data-th]'), lb = e.target.closest('[data-lv]');
-        if (tb && !tb.classList.contains('empty')) { QS.selT = tb.dataset.th; qzPickSync(); try { AudioFX.playRouletteTick(); } catch (er) {} return; }
+        if (tb && !tb.disabled && qzThemeAllowed(tb.dataset.th, QS.selL)) { QS.selT = tb.dataset.th; qzPickSync(); try { AudioFX.playRouletteTick(); } catch (er) {} return; }
         if (lb) { QS.selL = lb.dataset.lv; qzPickSync(true); qzSubSync(); try { AudioFX.playRouletteTick(); } catch (er) {} return; }
         const b = e.target.closest('[data-qa]'); if (!b) return;
         const a = b.dataset.qa;
@@ -405,8 +490,12 @@ function qzBuild() {
         else if (a === 'close') closeQuiz();
         else if (a === 'shop') { closeQuiz(); if (typeof openShop === 'function') openShop(); }
         else if (a === 'pick') { QS.selT = undefined; QS.selL = undefined; qzRenderPick(); }
+        else if (a === 'bonus') openQuizBonus();
+        else if (a === 'daily') openQuiz();
+        else if (a === 'trial' && QS.mode === 'bonus') qzStartBonus(b.dataset.trial, b.dataset.trialTheme);
+        else if (a === 'retry') qzRetryAttempt();
         else if (a === 'pickgo') qzPickGo();
-        else if (a === 'unlock' || a === 'renew') { if (QS.phase !== 'read' && QS.phase !== 'answer') qzPayOpen(a === 'renew' ? QS.renewLv : QS.selL); }
+        else if (a === 'unlock') { if (QS.phase !== 'read' && QS.phase !== 'answer') qzPayOpen(QS.selL); }
         else if (a.length === 1) qzPick(a);
     });
     return qzRoot;
@@ -414,17 +503,13 @@ function qzBuild() {
 function qzHead() {
     return '<div class="qz-top"><div class="qz-emb2"><div class="qz-glow"></div><div class="qz-ring"></div><div class="qz-core"><i class="fa-solid fa-comments"></i></div>'
         + [[-50, -18, 8, 0], [52, 10, 7, .9], [36, -40, 6, 1.7]].map(([x, y, s, d]) => `<i class="qz-tw" style="left:calc(50% + ${x}px - ${s / 2}px);top:calc(50% + ${y}px - ${s / 2}px);--s:${s}px;--d:${d}s">✦</i>`).join('') + '</div>'
-        + '<div class="qz-title2"><b>ВОПРОСЫ ДНЯ</b>' + qzSubBadge() + '</div></div>';
+        + '<div class="qz-title2">' + (QS.mode === 'bonus'
+            ? '<b>БОНУС ЗА ПОЛЁТ</b><span>Дополнительно к десяти вопросам дня</span>'
+            : '<b>ВОПРОСЫ ДНЯ</b>' + qzSubBadge()) + '</div></div>';
 }
 
 // ---------- платный доступ: Суперлайт и Лайт бесплатно, Средне и Сложно — по подписке ----------
-const QZ_SUB_KEY = 'bubo_quiz_sub', QZ_PAID_LV = ['m', 'x'], QZ_DAY_MS = 86400000;
-// каждый платный уровень оплачивается отдельно; «Сложно» чуть дороже
-const QZ_PLANS_LV = {
-    m: [{ id: 'w', name: 'Неделя', days: 7, price: 50, note: '7 дней' }, { id: 'mo', name: 'Месяц', days: 30, price: 100, note: '30 дней' }, { id: 'h', name: 'Полгода', days: 182, price: 450, note: '75 ₽/мес', tag: '−25%' }],
-    x: [{ id: 'w', name: 'Неделя', days: 7, price: 70, note: '7 дней' }, { id: 'mo', name: 'Месяц', days: 30, price: 150, note: '30 дней' }, { id: 'h', name: 'Полгода', days: 182, price: 690, note: '115 ₽/мес', tag: '−23%' }]
-};
-let QZ_PLANS = QZ_PLANS_LV.m;
+const QZ_SUB_KEY = 'bubo_quiz_sub', QZ_PAID_LV = ['m', 'x'];
 function qzSubAll() {
     try {
         const s = JSON.parse(localStorage.getItem(QZ_SUB_KEY) || 'null') || {};
@@ -434,23 +519,32 @@ function qzSubAll() {
 }
 function qzSubUntil(lv) { const a = qzSubAll(); return lv ? (a[lv] || 0) : Math.max(a.m, a.x); }
 function qzSubOn(lv) { return qzSubUntil(lv) > Date.now(); }
-function qzLvLocked(id) { return QZ_PAID_LV.indexOf(id) >= 0 && !qzSubOn(id); }
-function qzFmtDate(t, y) { const d = new Date(t); return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + (y ? '.' + d.getFullYear() : ''); }
-// продление — от конца текущей подписки, новая — от сегодня
-function qzSubAdd(lv, days) { const a = qzSubAll(); const until = Math.max(Date.now(), a[lv] || 0) + days * QZ_DAY_MS; a[lv] = until; try { localStorage.setItem(QZ_SUB_KEY, JSON.stringify(a)); } catch (e) {} return until; }
-// плашка доступа — только у выбранного платного уровня (Средне/Сложно), если он оплачен; иначе обычная подпись
+function qzLvLocked(id) { return QZ_PAID_LV.includes(id) && id !== qzAdminPreview && !qzSubOn(id); }
+function qzSetAdminPreview(level) {
+    if (level !== '' && !QZ_PAID_LV.includes(level)) return false;
+    qzAdminPreview = level;
+    if (qzRoot && !qzRoot.classList.contains('hidden')) {
+        if (QS.phase === 'pick' && QS.mode === 'daily') {
+            QS.selL = level || undefined;
+            qzRenderPick();
+        } else qzSubSync();
+    }
+    return true;
+}
+function qzFmtDate(t) {
+    const d = new Date(t);
+    return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0');
+}
 function qzSubBadge() {
-    const lv = QS.selL; QS.renewLv = '';
-    if (QZ_PAID_LV.indexOf(lv) < 0 || !qzSubOn(lv)) return '<span>Отвечайте и зарабатывайте монеты для лавки</span>';
-    const soon = qzSubUntil(lv) - Date.now() <= 3 * QZ_DAY_MS; if (soon) QS.renewLv = lv;
-    return `<div class="qz-subst${soon ? ' soon' : ''}"><i class="fa-solid ${soon ? 'fa-hourglass-half' : 'fa-crown'}"></i>Доступ до ${qzFmtDate(qzSubUntil(lv))}${soon ? '<button type="button" data-qa="renew">Продлить</button>' : ''}</div>`;
+    const lv = QS.selL;
+    if (lv && lv === qzAdminPreview) return '<div class="qz-subst"><i class="fa-solid fa-flask"></i>Тестовый доступ</div>';
+    if (!QZ_PAID_LV.includes(lv) || !qzSubOn(lv)) return '<span>Отвечайте и зарабатывайте монеты для лавки</span>';
+    return '<div class="qz-subst"><i class="fa-solid fa-crown"></i>Доступ до ' + qzFmtDate(qzSubUntil(lv)) + '</div>';
 }
 function qzSubSync() { const st = document.querySelector('#qzWin .qz-title2'); if (st) { const o = st.querySelector('.qz-subst, span'); if (o) o.outerHTML = qzSubBadge(); } }
 function qzPayOpen(lv) {
     if (!qzRoot) return;
     QS.payLv = QZ_PAID_LV.indexOf(lv) >= 0 ? lv : (QZ_PAID_LV.find(l => qzLvLocked(l)) || 'm');
-    QZ_PLANS = QZ_PLANS_LV[QS.payLv];
-    if (!QS.plan) QS.plan = 'mo';
     qzPayRender();
     qzRoot.classList.add('pay');
     const w = document.getElementById('pwWin'); if (w) w.scrollTop = 0;
@@ -459,29 +553,14 @@ function qzPayOpen(lv) {
 function qzPayClose() { if (qzRoot) qzRoot.classList.remove('pay'); }
 function qzPayRender() {
     const w = document.getElementById('pwWin'); if (!w) return;
-    const pl = QZ_PLANS.find(p => p.id === QS.plan) || QZ_PLANS[1];
-    const lv = QS.payLv || 'm', until = Math.max(Date.now(), qzSubUntil(lv)) + pl.days * QZ_DAY_MS;
+    const lv = qzLevel(QS.payLv);
     const tw = [[-50, -18, 8, 0], [52, 10, 7, .9], [36, -40, 6, 1.7]].map(([x, y, s, d]) => `<i class="pw-tw" style="left:calc(50% + ${x}px - ${s / 2}px);top:calc(50% + ${y}px - ${s / 2}px);--s:${s}px;--d:${d}s">✦</i>`).join('');
-    const perks = QZ_LEVELS.filter(l => l.id === lv).map(l => `<span class="pw-perk" style="--lc:${l.col}">${l.name}<em>${QZ_COIN} +${l.coins}</em></span>`).join('');
-    const plans = QZ_PLANS.map(p => `<button type="button" class="pw-pl${p.id === pl.id ? ' on' : ''}" data-pw="plan" data-pl="${p.id}">${p.tag ? `<span class="t">${p.tag}</span>` : ''}<i class="fa-solid fa-circle-check k"></i><span class="n">${p.name}</span><span class="p">${p.price}<small>₽</small></span><span class="d">${p.note}</span></button>`).join('');
     w.innerHTML = `<button type="button" class="pw-x" data-pw="back" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>`
         + `<div class="pw-top"><div class="pw-emb"><div class="pw-glow"></div><div class="pw-ring"></div><div class="pw-core"><i class="fa-solid fa-crown"></i></div>${tw}</div></div>`
-        + `<div class="pw-title"><b>ДОСТУП: ${((QZ_LEVELS.find(l => l.id === lv) || {}).name || '').toUpperCase()}</b><span>Уровень открывается отдельно — больше монет за каждый ответ</span></div>`
-        + `<div class="pw-perks">${perks}</div><div class="pw-plans">${plans}</div>`
-        + `<div class="pw-note">${qzSubOn(lv) ? 'Продление: доступ' : 'Доступ'} до <b>${qzFmtDate(until, true)}</b>. Без автопродления</div>`
-        + `<div class="pw-btns"><button type="button" class="btn-bubo pw-btn" data-pw="pay"><i class="fa-solid fa-lock-open"></i>ОПЛАТИТЬ ${pl.price} ₽</button>`
+        + `<div class="pw-title"><b>Уровень «${lv.name}»</b><span>Монеты за верный ответ</span></div>`
+        + `<div class="pw-perks"><span class="pw-perk" style="--lc:${lv.col}">${QZ_COIN} +${lv.coins}</span></div>`
+        + `<div class="pw-btns"><button type="button" class="pw-btn" disabled><i class="fa-solid fa-lock"></i>Оплата пока недоступна</button>`
         + `<button type="button" class="pw-btn sec" data-pw="back"><i class="fa-solid fa-arrow-left"></i>ВЕРНУТЬСЯ</button></div>`;
-}
-// платёжки пока нет: «Оплатить» сразу включает доступ на выбранный срок
-function qzPayDo() {
-    const pl = QZ_PLANS.find(p => p.id === QS.plan) || QZ_PLANS[1];
-    const until = qzSubAdd(QS.payLv || 'm', pl.days);
-    qzPayClose();
-    try { AudioFX.playThemeCollect(); Haptics.collectTheme(); } catch (e) {}
-    if (QS.phase === 'pick') qzRenderPick();
-    else if (QS.phase === 'ready' || QS.phase === 'intro') qzRenderReady();
-    else if (QS.phase === 'done') qzRenderDone();
-    else qzSubSync();
 }
 function qzProg(d, curIdx) {
     let dots = '';
@@ -504,11 +583,14 @@ function qzRenderReady() {
     { const w = document.getElementById('qzWin'); if (w) w.classList.remove('busy'); }
     QS.phase = 'ready';
     if (d.ids.length >= QUIZ_PER_DAY) { qzRenderDone(); return; }
-    if (d.lvl && qzLvLocked(d.lvl)) { d.lvl = ''; if (!d.shown) { d.cur = 0; d.ord = ''; } quizSaveDay(d); }   // доступа нет — платный уровень снимаем
+    if (d.lvl && qzLvLocked(d.lvl)) { d.lvl = ''; quizSaveDay(d); }   // не начинать следующий вопрос с истёкшим доступом
     if (!d.theme || !d.lvl) { if (d.ids.length) { qzRenderPick(); return; } qzRenderIntro(d, body); return; }
-    const n = d.ids.length + 1, th = qzTheme(d.theme), lv = qzLevel(d.lvl);
+    if (!qzThemeAllowed(d.theme, d.lvl)) { d.theme = 'all'; quizSaveDay(d); }
+    QS.selT = d.theme;
+    QS.selL = d.lvl;
+    const n = d.ids.length + 1;
     const rules = d.ids.length ? '' : qzRulesHtml();
-    body.innerHTML = qzHead() + qzCurPlate(d, true) + qzProg(d, d.ids.length) + rules
+    body.innerHTML = qzHead() + qzCurPlate(d, true) + qzProg(d, d.ids.length) + rules + qzBonusStock()
         + `<div class="qz-ready"><div class="n">Вопрос ${n} из ${QUIZ_PER_DAY}</div><div class="t">Как будете готовы — нажмите кнопку.<br>Можно выйти и вернуться позже: продолжите с этого места.</div></div>`
         + `<div class="qz-btns"><button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid fa-play"></i>${n === 1 ? 'НАЧАТЬ' : 'К ВОПРОСУ'}</button>`
         + `<div class="qz-rd" style="text-align:center">Монет сейчас: <b style="color:#FFD66B">${qzCoinsTotal()}</b></div></div>`;
@@ -517,13 +599,13 @@ function qzRenderReady() {
 function qzRulesHtml() {
     return `<div class="qz-rules">`
         + `<div class="qz-rule"><i class="fa-solid fa-list-ol"></i><span>В день — ${QUIZ_PER_DAY} вопросов. ${QZ_READ} с на чтение, потом ${QZ_ANSWER} с на ответ</span></div>`
-        + `<div class="qz-rule"><i class="fa-solid fa-layer-group"></i><span>Выберите тему и сложность — вопросы не повторяются</span></div>`
+        + `<div class="qz-rule"><i class="fa-solid fa-layer-group"></i><span>«Обо всём» доступно сразу. Темы открывают парные отметки в Походе</span></div>`
         + `<div class="qz-rule"><i class="fa-solid fa-coins"></i><span>За верный ответ: ${qzLevelsOn().map(l => `<b style="color:${l.col}">${l.name.toLowerCase()}</b> — ${l.coins}`).join(', ')} ${ruPlural(qzLevelsOn().slice(-1)[0].coins, ['монета', 'монеты', 'монет'])}</span></div>`
         + `<div class="qz-rule"><i class="fa-solid fa-store"></i><span>Монеты тратятся в лавке на попытки, жизни и бонусы</span></div></div>`;
 }
 function qzRenderIntro(d, body) {
     QS.phase = 'intro';
-    body.innerHTML = qzHead() + qzProg(d, 0) + qzRulesHtml()
+    body.innerHTML = qzHead() + qzProg(d, 0) + qzRulesHtml() + qzBonusStock()
         + `<div class="qz-btns"><button type="button" class="btn-bubo qz-btn" data-qa="pick"><i class="fa-solid fa-play"></i>ИГРАТЬ</button>`
         + `<div class="qz-rd" style="text-align:center">Монет сейчас: <b style="color:#FFD66B">${qzCoinsTotal()}</b></div></div>`;
 }
@@ -535,49 +617,88 @@ function qzRenderPick(msg, ok) {
     const d = quizDay(), body = qzBody(); if (!body) return;
     { const w = document.getElementById('qzWin'); if (w) w.classList.remove('busy'); }
     QS.phase = 'pick';
+    const bonus = QS.mode === 'bonus';
+    const lvOn = qzLevelsOn().filter(l => !bonus || QZ_BONUS_LEVELS.includes(l.id));
     let sT = '', sL = '';
     try { sT = localStorage.getItem('bubo_quiz_theme') || ''; sL = localStorage.getItem('bubo_quiz_lvl') || ''; } catch (e) {}
-    if (QS.selT === undefined) QS.selT = d.theme || (qzTheme(sT).id === sT ? sT : '') || 'all';   // новичку — «Обо всём», иначе последняя выбранная
-    if (QS.selL === undefined) { const c = d.lvl || (QZ_LEVELS.some(l => l.id === sL) ? sL : ''); QS.selL = (c && !qzLvLocked(c) ? c : '') || 's'; }   // без доступа по умолчанию — бесплатный уровень
-    const lvOn = qzLevelsOn(); if (!lvOn.some(l => l.id === QS.selL)) QS.selL = lvOn[0].id;   // уровень без вопросов — берём первый доступный
-    if (QS.selT && !qzLeft(QS.selT, QS.selL)) QS.selT = '';   // по умолчанию — Суперлайт
+    if (QS.selT === undefined) QS.selT = d.theme || sT || 'all';
+    if (QS.selL === undefined) {
+        const last = (!bonus && qzAdminPreview) || d.lvl || sL;
+        QS.selL = lvOn.some(l => l.id === last) && !qzLvLocked(last) ? last : lvOn[0]?.id || '';
+    }
+    if (!lvOn.some(l => l.id === QS.selL)) QS.selL = lvOn[0]?.id || '';
+    if (!qzThemeAllowed(QS.selT, QS.selL)) QS.selT = 'all';
+    if (!qzLeft(QS.selT, QS.selL)) {
+        const exhausted = QS.selT;
+        QS.selT = qzNearbyTheme(exhausted, QS.selL);
+        if (!msg) msg = qzExhaustedMessage(exhausted, QS.selT);
+    }
     const themes = qzThemeCards(QS.selL);
-    const lvls = lvOn.map(l => `<button type="button" class="qz-lv${QS.selL === l.id ? ' on' : ''}" data-lv="${l.id}" style="--lc:${l.col};--lcA:${l.col}55"><b>${l.name}</b><span>${QZ_COIN}${l.coins}</span>${qzLvLocked(l.id) ? '<i class="fa-solid fa-lock qz-lk"></i>' : ''}</button>`).join('');
-    body.innerHTML = qzHead() + qzProg(d, d.ids.length)
+    const lvls = lvOn.map(l => `<button type="button" class="qz-lv${QS.selL === l.id ? ' on' : ''}" data-lv="${l.id}" style="--lc:${l.col};--lcA:${l.col}55"><b>${l.name}</b><span>${QZ_COIN}${qzReward(l.id, bonus)}</span>${qzLvLocked(l.id) ? '<i class="fa-solid fa-lock qz-lk"></i>' : ''}</button>`).join('');
+    body.innerHTML = qzHead() + (bonus ? qzBonusStock(false) : qzProg(d, d.ids.length) + qzBonusStock())
         + (msg ? `<div class="qz-msg${ok ? ' ok' : ''}">${msg}</div>` : '')
+        + (bonus && qzBonusStatus().available ? qzTrialChoices() : '')
         + `<div class="qz-sec"><i class="fa-solid fa-coins"></i>Выберите сложность</div><div class="qz-lvls n${lvOn.length}" style="grid-template-columns:repeat(${lvOn.length},minmax(0,1fr))">${lvls}</div>`
         + `<div class="qz-sec"><i class="fa-solid fa-layer-group"></i>Выберите тему</div><div class="qz-themes">${themes}</div>`
-        + `<div class="qz-btns qz-stick">${qzGoBtn(d)}</div>`;
+        + `<div class="qz-btns qz-stick">${qzGoBtn(d)}${bonus ? '<button type="button" class="qz-btn sec" data-qa="daily">ВОПРОСЫ ДНЯ</button>' : ''}</div>`;
+}
+function qzExhaustedMessage(theme, nearby) {
+    const label = qzTheme(theme).name;
+    return nearby
+        ? `В теме «${label}» вопросы этой сложности закончились. Можно попробовать «${qzTheme(nearby).name}».`
+        : `В теме «${label}» вопросы этой сложности закончились. Выберите другую сложность.`;
 }
 // нижняя кнопка выбора: «Начать» или, если уровень закрыт, «Разблокировать»
 function qzGoBtn(d) {
-    if (qzLvLocked(QS.selL)) return '<button type="button" class="qz-btn gold" data-qa="unlock"><i class="fa-solid fa-key"></i>РАЗБЛОКИРОВАТЬ</button>';
-    return `<button type="button" class="btn-bubo qz-btn" data-qa="pickgo"${QS.selT && QS.selL ? '' : ' disabled'}><i class="fa-solid fa-play"></i>${d.ids.length ? 'ПРОДОЛЖИТЬ' : 'НАЧАТЬ'}</button>`;
+    if (QS.mode === 'bonus') {
+        const { enabled, available } = qzBonusStatus();
+        const canStart = enabled && available > 0 && QZ_BONUS_LEVELS.includes(QS.selL) && qzThemeAllowed(QS.selT, QS.selL);
+        return `<button type="button" class="btn-bubo qz-btn" data-qa="pickgo"${canStart ? '' : ' disabled'}><i class="fa-solid fa-play"></i>ИГРАТЬ БОНУС</button>`;
+    }
+    if (qzLvLocked(QS.selL)) return '<button type="button" class="qz-btn gold" data-qa="unlock"><i class="fa-solid fa-key"></i>ОБ УРОВНЕ</button>';
+    return `<button type="button" class="btn-bubo qz-btn" data-qa="pickgo"${QS.selL && qzThemeAllowed(QS.selT, QS.selL) ? '' : ' disabled'}><i class="fa-solid fa-play"></i>${d.ids.length ? 'ПРОДОЛЖИТЬ' : 'НАЧАТЬ'}</button>`;
 }
 // карточки тем: сколько вопросов выбранной сложности пройдено из скольких
 function qzThemeCards(lv) {
-    const lk = qzLvLocked(lv);
-    return QZ_THEMES.map(t => {
-        const pool = qzPool(t.id).filter(q => !lv || q.lvl === lv), total = pool.length, left = qzLeft(t.id, lv), done = total - left, on = QS.selT === t.id;
-        return `<button type="button" class="qz-th${t.id === 'all' ? ' wide' : ''}${on ? ' on' : ''}${left ? '' : ' empty'}" data-th="${t.id}" style="--tc:${t.col};--tcA:${t.col}55;--tcB:${t.col}22">`
-            + `<span class="qz-thi"><i class="fa-solid ${t.icon}"></i></span><span class="qz-thtx"><span class="qz-thn">${t.name}</span><span class="qz-thc">${left ? 'Пройдено ' + done + '/' + total : (total ? 'Всё пройдено!' : 'Пока нет вопросов')}</span><span class="qz-thb"><i style="width:${total ? Math.round(done / total * 100) : 0}%"></i></span></span>${lk ? '<i class="fa-solid fa-lock qz-thl"></i>' : '<i class="fa-solid fa-check qz-thk"></i>'}</button>`;
+    const paid = QZ_PAID_LV.includes(lv);
+    const topics = window.BuboCampaignTopics;
+    const campaign = topics?.list() || [];
+    const list = paid ? QZ_THEMES : [qzTheme('all'), ...campaign.map(t => qzTheme(t.id))];
+    const levelLocked = qzLvLocked(lv);
+    const seen = new Set(quizSeen());
+    return list.map(t => {
+        const chapter = !paid && campaign.find(topic => topic.id === t.id);
+        const locked = chapter && !topics.isUnlocked(t.id);
+        const pool = qzPool(t.id).filter(q => !lv || q.lvl === lv);
+        const total = pool.length, done = pool.filter(q => seen.has(q.id)).length;
+        const empty = done === total;
+        const on = QS.selT === t.id && !locked && !empty;
+        const count = locked ? topics.progress(t.id) : done;
+        const chapterName = chapter?.phase === 'night' ? 'Ночной город' : 'Дневной город';
+        const note = locked ? chapterName + ' · ' + count + '/2'
+            : empty ? (total ? 'Всё пройдено!' : 'Пока нет вопросов') : 'Пройдено ' + done + '/' + total;
+        const progress = locked ? count * 50 : (total ? Math.round(done / total * 100) : 0);
+        const icon = locked || levelLocked ? 'fa-lock qz-thl' : 'fa-check qz-thk';
+        return `<button type="button" class="qz-th${t.id === 'all' ? ' wide' : ''}${on ? ' on' : ''}${locked ? ' campaign-locked' : ''}${empty && !locked ? ' empty' : ''}" data-th="${t.id}"${locked || empty ? ' disabled' : ''} style="--tc:${t.col};--tcA:${t.col}55;--tcB:${t.col}22">`
+            + `<span class="qz-thi"><i class="fa-solid ${t.icon}" aria-hidden="true"></i></span><span class="qz-thtx"><span class="qz-thn">${t.name}</span><span class="qz-thc">${note}</span><span class="qz-thb"><i style="width:${progress}%"></i></span></span><i class="fa-solid ${icon}" aria-hidden="true"></i></button>`;
     }).join('');
 }
 function qzPickSync(lvChanged) {
     const b = qzBody(); if (!b) return;
     if (lvChanged) {   // сменили сложность — пересчитываем карточки тем; выбранная тема без вопросов этой сложности снимается
+        if (!qzThemeAllowed(QS.selT, QS.selL) || !qzLeft(QS.selT, QS.selL)) { qzRenderPick(); return; }
         const box = b.querySelector('.qz-themes'); if (box) box.innerHTML = qzThemeCards(QS.selL);
-        if (QS.selT && !qzLeft(QS.selT, QS.selL)) QS.selT = '';
     }
     b.querySelectorAll('.qz-th').forEach(e => e.classList.toggle('on', e.dataset.th === QS.selT));
     b.querySelectorAll('.qz-lv').forEach(e => e.classList.toggle('on', e.dataset.lv === QS.selL));
-    const bx = b.querySelector('.qz-stick'); if (bx) bx.innerHTML = qzGoBtn(quizDay());
+    const current = b.querySelector('.qz-stick button'); if (current) current.outerHTML = qzGoBtn(quizDay());
 }
 function qzPickGo() {
-    if (!QS.selT || !QS.selL) return;
+    if (!qzLevelsOn().some(level => level.id === QS.selL)) return;
+    if (!qzThemeAllowed(QS.selT, QS.selL)) { qzRenderPick(); return; }
+    if (QS.mode === 'bonus') { qzStartBonus(); return; }
     if (qzLvLocked(QS.selL)) { qzPayOpen(QS.selL); return; }
     const d = quizDay();
-    if (d.theme !== QS.selT || d.lvl !== QS.selL) { if (!d.shown) { d.cur = 0; d.ord = ''; } }
     d.theme = QS.selT; d.lvl = QS.selL; quizSaveDay(d);
     try { localStorage.setItem('bubo_quiz_lvl', QS.selL); localStorage.setItem('bubo_quiz_theme', QS.selT); } catch (e) {}
     QS.phase = 'ready'; qzStartQuestion();
@@ -588,7 +709,7 @@ function qzRenderDone() {
     { const w = document.getElementById('qzWin'); if (w) w.classList.remove('busy'); }
     QS.phase = 'done';
     const ok = d.res.filter(r => r === 1).length;
-    body.innerHTML = qzHead() + qzProg(d, -1) + `<div class="qz-res"><div class="qz-big win"><i class="fa-solid fa-coins"></i></div>`
+    body.innerHTML = qzHead() + qzProg(d, -1) + qzBonusStock() + `<div class="qz-res"><div class="qz-big win"><i class="fa-solid fa-coins"></i></div>`
         + `<div class="qz-rt win">+${d.earned} ${ruPlural(d.earned, ['МОНЕТА', 'МОНЕТЫ', 'МОНЕТ'])}</div><div class="qz-rd">На сегодня всё! Верных ответов: <b>${ok} из ${QUIZ_PER_DAY}</b>.<br>Всего монет: <b style="color:#FFD66B">${qzCoinsTotal()}</b></div>`
         + `<div class="qz-timer"><i class="fa-regular fa-clock"></i> Новые вопросы через ${qzUntilTomorrow()}</div></div>`
         + `<div class="qz-btns"><button type="button" class="qz-btn gold" data-qa="shop"><i class="fa-solid fa-store"></i>В ЛАВКУ</button>`
@@ -598,7 +719,7 @@ function qzRenderDone() {
 // плашка выбранной темы и сложности (над кружками вопросов); во время вопроса сменить нельзя
 function qzCurPlate(d, canChange) {
     const th = qzTheme(d.theme), lv = qzLevel(d.lvl);
-    return `<div class="qz-cur" style="--tc:${th.col}"><span class="qz-thi"><i class="fa-solid ${th.icon}"></i></span><span class="qz-curt"><b>${th.name}</b><span><em style="color:${lv.col}">${lv.name}</em> · ${QZ_COIN} +${lv.coins}</span></span><button type="button" class="qz-chg" data-qa="pick"${canChange ? '' : ' disabled'}>Сменить</button></div>`;
+    return `<div class="qz-cur" style="--tc:${th.col}"><span class="qz-thi"><i class="fa-solid ${th.icon}"></i></span><span class="qz-curt"><b>${th.name}</b><span><em style="color:${lv.col}">${lv.name}</em> · ${QZ_COIN} +${qzReward(lv.id)}</span></span><button type="button" class="qz-chg" data-qa="pick"${canChange ? '' : ' disabled'}>Сменить</button></div>`;
 }
 // две кнопки в ряд: назад к выбору темы и в главное меню
 function qzNavRow(on) {
@@ -607,59 +728,69 @@ function qzNavRow(on) {
         + `<button type="button" class="qz-btn sec" data-qa="close"${dis}><i class="fa-solid fa-house"></i>В МЕНЮ</button></div>`;
 }
 function qzRenderQ(reveal) {
-    const d = quizDay(), body = qzBody(); if (!body) return;
-    const q = QUIZ_QUESTIONS.find(x => x.id === d.cur) || QUIZ_QUESTIONS[0];
-    const ord = (d.ord || 'ABCD').split('');   // ord[i] — какой исходный вариант стоит под буквой QZ_LETTERS[i]
-    const corL = QZ_LETTERS[ord.indexOf(q.correct)], pickL = QS.pick, di = qzLevel(q.lvl), th = qzTheme(q.theme);
+    const a = QS.attempt, body = qzBody();
+    if (!a || !body) return;
+    const d = reveal ? QS.dayResult : quizDay(a.day);
+    const q = QUIZ_QUESTIONS.find(x => x.id === a.question);
+    const ord = a.ord.split('');
+    const corL = QZ_LETTERS[ord.indexOf(q.correct)], pickL = a.outcome?.letter;
+    const reward = qzReward(q.lvl), bonus = a.mode === 'bonus';
     const idx = reveal ? d.ids.length - 1 : d.ids.length;
+    const disabled = reveal || QS.phase !== 'answer' ? ' disabled' : '';
     const opts = QZ_LETTERS.map((L, i) => {
         const cls = reveal ? (L === corL ? ' ok' : L === pickL ? ' bad' : ' dim') : '';
-        return `<div class="qz-o${cls}" style="--c:${QZ_BALL_COL[L]}"><b style="background:${QZ_BALL_COL[L]}${qzTxt(L)}">${L}</b><span>${q.options[ord[i]]}</span></div>`;
+        return `<button type="button" class="qz-o${cls}" data-qa="${L}"${disabled} style="--c:${QZ_BALL_COL[L]}"><b style="background:${QZ_BALL_COL[L]}${qzTxt(L)}">${L}</b><span>${q.options[ord[i]]}</span></button>`;
     }).join('');
-    const balls = QZ_LETTERS.map(L => `<button type="button" class="qz-ball${reveal ? (L === corL ? ' ok' : L === pickL ? ' bad' : '') + (L === pickL ? ' picked' : '') : ''}" data-qa="${L}" style="--c:${QZ_BALL_COL[L]}${qzTxt(L)}">${L}</button>`).join('');
+    const balls = QZ_LETTERS.map(L => `<button type="button" class="qz-ball${reveal ? (L === corL ? ' ok' : L === pickL ? ' bad' : '') + (L === pickL ? ' picked' : '') : ''}" data-qa="${L}"${disabled} style="--c:${QZ_BALL_COL[L]}${qzTxt(L)}">${L}</button>`).join('');
     const C = 2 * Math.PI * 15;
     const ring = `<div class="qz-tm" id="qzTm"><svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="15"/><circle class="fg" id="qzTmFg" cx="18" cy="18" r="15" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${C.toFixed(2)}"/></svg><i class="fa-solid fa-eye" id="qzTmI"></i><b id="qzTmN"></b></div>`;
     let note = '', btns = '';
     if (reveal) {
         const okA = pickL === corL;
-        note = okA ? `<div class="qz-note ok">Верно! +${di.coins} ${ruPlural(di.coins, ['монета', 'монеты', 'монет'])}</div>` : (pickL ? '<div class="qz-note bad">Неверно</div>' : '<div class="qz-note bad">Время вышло</div>');
+        note = okA ? `<div class="qz-note ok">Верно! +${reward} ${ruPlural(reward, ['монета', 'монеты', 'монет'])}</div>` : (pickL ? '<div class="qz-note bad">Неверно</div>' : '<div class="qz-note bad">Время вышло</div>');
         const last = d.ids.length >= QUIZ_PER_DAY;
-        btns = `<div class="qz-btns">${true ? `<button type="button" class="btn-bubo qz-btn" data-qa="go"><i class="fa-solid ${last ? 'fa-flag-checkered' : 'fa-forward'}"></i>${last ? 'ИТОГИ ДНЯ' : 'СЛЕДУЮЩИЙ ВОПРОС'}</button>` : ''}`
-            + qzNavRow(true) + `</div>`;
+        const { enabled, available } = qzBonusStatus();
+        const newDay = !bonus && a.day !== qzToday();
+        const action = bonus ? (enabled && available ? 'bonus' : 'daily') : 'go';
+        const label = bonus ? (action === 'bonus' ? 'СЛЕДУЮЩИЙ БОНУС' : 'К ВОПРОСАМ ДНЯ')
+            : newDay ? 'К ВОПРОСАМ НОВОГО ДНЯ' : last ? 'ИТОГИ ДНЯ' : 'СЛЕДУЮЩИЙ ВОПРОС';
+        btns = `<div class="qz-btns"><button type="button" class="btn-bubo qz-btn" data-qa="${action}"><i class="fa-solid fa-forward"></i>${label}</button>`
+            + qzNavRow(true) + '</div>';
     } else {
         note = `<div class="qz-note read" id="qzNote">${QS.phase === 'read' ? 'Читайте вопрос…' : 'Выбирайте ответ!'}</div>`;
         // пока идёт вопрос — выйти в меню нельзя: кнопка неактивна, включится, когда покажется ответ
         btns = `<div class="qz-btns">${qzNavRow(false)}</div>`;
     }
     { const w = document.getElementById('qzWin'); if (w) w.classList.toggle('busy', !reveal); }
-    const tcc = di.col || qzTheme(d.theme || q.theme).col;   // окно вопроса — в цвет выбранной сложности (Суперлайт зелёный … Сложно красный)
-    body.innerHTML = qzHead() + (d.theme ? qzCurPlate(d, reveal) : '') + qzProg(d, idx)
+    const tcc = qzLevel(q.lvl).col || qzTheme(a.theme).col;
+    body.innerHTML = qzHead() + qzCurPlate(a, reveal) + (bonus ? qzBonusStock(false) : qzProg(d, idx))
         + `<div class="qz-card" style="--tc:${tcc}">${reveal ? '' : ring}`
-        + `<div class="qz-q">${q.question}</div><div class="qz-rew">${QZ_COIN}<span>За верный ответ: <b>+${di.coins}</b></span></div><div class="qz-opts">${opts}</div></div>`
+        + `<div class="qz-q">${q.question}</div><div class="qz-rew">${QZ_COIN}<span>За верный ответ: <b>+${reward}</b></span></div><div class="qz-opts">${opts}</div></div>`
         + `<div class="qz-abcd${reveal ? ' lock' : (QS.phase === 'read' ? ' wait' : '')}" id="qzAbcd">${balls}</div>` + note + btns;
 }
 // таймер на обводке: при чтении кольцо заполняется голубым (5 с), потом убывает оранжевым — 10 с на ответ
 function qzTick() {
     cancelAnimationFrame(QS.raf);
     if (QS.phase !== 'read' && QS.phase !== 'answer') return;
-    const t = (Date.now() - QS.t0) / 1000, C = 2 * Math.PI * 15;   // по настоящим часам: свернул игру — время всё равно шло
+    const t = Math.max(0, (Date.now() - QS.attempt.startedAt) / 1000), C = 2 * Math.PI * 15;
+    if (t >= QZ_READ + QZ_ANSWER) { qzAnswer(null); return; }
     const fg = document.getElementById('qzTmFg'), tm = document.getElementById('qzTm'), nb = document.getElementById('qzTmN'), ic = document.getElementById('qzTmI');
+    if (QS.phase === 'read' && t >= QZ_READ) {
+        QS.phase = 'answer';
+        const ab = document.getElementById('qzAbcd'); if (ab) ab.classList.remove('wait');
+        const note = document.getElementById('qzNote'); if (note) { note.textContent = 'Выбирайте ответ!'; note.className = 'qz-note'; }
+        const body = qzBody(); if (body) body.querySelectorAll('.qz-o, .qz-ball').forEach(button => { button.disabled = false; });
+        if (tm) tm.classList.add('ans');
+        if (ic) ic.style.display = 'none';
+        try { AudioFX.playShazamArm && AudioFX.playShazamArm(); } catch (e) {}
+    }
     if (QS.phase === 'read') {
-        const k = Math.min(1, t / QZ_READ);
-        if (fg) fg.setAttribute('stroke-dashoffset', (C * (1 - k)).toFixed(2));
-        if (t >= QZ_READ) {
-            QS.phase = 'answer'; QS.t0 += QZ_READ * 1000;   // время идёт от начала вопроса, даже если игру сворачивали
-            const ab = document.getElementById('qzAbcd'); if (ab) ab.classList.remove('wait');
-            const nt = document.getElementById('qzNote'); if (nt) { nt.textContent = 'Выбирайте ответ!'; nt.className = 'qz-note'; }
-            if (tm) tm.classList.add('ans'); if (ic) ic.style.display = 'none';
-            try { AudioFX.playShazamArm && AudioFX.playShazamArm(); } catch (e) {}
-        }
+        if (fg) fg.setAttribute('stroke-dashoffset', (C * (1 - t / QZ_READ)).toFixed(2));
     } else {
-        const left = Math.max(0, QZ_ANSWER - t);
+        const left = QZ_READ + QZ_ANSWER - t;
         if (fg) fg.setAttribute('stroke-dashoffset', (C * (1 - left / QZ_ANSWER)).toFixed(2));
         if (nb) nb.textContent = String(Math.ceil(left));
         if (tm) tm.classList.toggle('low', left <= 3);
-        if (left <= 0) { qzAnswer(null); return; }
     }
     QS.raf = requestAnimationFrame(qzTick);
 }
@@ -667,51 +798,139 @@ function qzTick() {
 setInterval(() => { if (document.hidden && (QS.phase === 'read' || QS.phase === 'answer')) qzTick(); }, 500);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && (QS.phase === 'read' || QS.phase === 'answer')) qzTick(); });
 // во время вопроса кнопка/жест «назад» не уводит из игры
-function qzTrapBack() { try { history.pushState({ qz: 1 }, ''); } catch (e) {} }
-window.addEventListener('popstate', () => { if (QS.phase === 'read' || QS.phase === 'answer' || QS.phase === 'pick') qzTrapBack(); });
+function qzTrapBack() { try { if (!history.state?.qz) history.pushState({ qz: 1 }, ''); } catch (e) {} }
+window.addEventListener('popstate', () => { if (['read', 'answer', 'picking', 'pick'].includes(QS.phase)) qzTrapBack(); });
 function qzStartQuestion() {
+    const pending = qzReadAttempt();
+    if (pending) { qzResumeAttempt(pending); return; }
     const d = quizDay();
-    if (QS.phase === 'reveal' || QS.phase === 'ready' || QS.phase === 'idle') {
-        if (d.ids.length >= QUIZ_PER_DAY) { qzRenderDone(); return; }
-        if (!d.theme || !d.lvl) { qzRenderPick(); return; }
-        if (qzLvLocked(d.lvl)) {   // доступ закончился — вопросы Средне/Сложно не начинаются
-            d.lvl = ''; d.cur = 0; d.ord = ''; d.shown = false; quizSaveDay(d); QS.selL = undefined;
-            qzRenderPick('Доступ к уровням Средне и Сложно закончился — продлите его или выберите бесплатный уровень'); return;
-        }
-        if (!d.cur) { d.cur = quizNextId(d); d.ord = qzShuffleOrd(); }
-        if (!d.cur) { d.theme = ''; quizSaveDay(d); QS.selT = ''; qzRenderPick('В этой теме вопросы такой сложности закончились — выберите другую тему или сложность'); return; }
-        d.shown = true; quizSaveDay(d);
-        QS.phase = 'read'; QS.pick = null; QS.t0 = Date.now(); qzTrapBack();
-        try { AudioFX.thinkLv = d.lvl; if (AudioFX.mode !== 'think' && AudioFX._pendMode !== 'think') AudioFX.setMode('think', { fade: true }); } catch (e) {}   // своя музыка «на подумать» по уровню
-        clearTimeout(QS.autoT);
-        qzRenderQ(false); qzTick();
+    QS.mode = 'daily';
+    if (d.ids.length >= QUIZ_PER_DAY) { qzRenderDone(); return; }
+    if (!d.theme || !qzLevelsOn().some(level => level.id === d.lvl)) { qzRenderPick(); return; }
+    if (qzLvLocked(d.lvl)) {
+        d.lvl = ''; quizSaveDay(d); QS.selL = undefined;
+        qzRenderPick('Доступ к выбранной сложности закончился. Выберите открытый уровень.');
+        return;
     }
+    if (!qzThemeAllowed(d.theme, d.lvl)) { d.theme = 'all'; quizSaveDay(d); }
+    const question = quizNextId(d);
+    if (!question) {
+        QS.selT = d.theme; QS.selL = d.lvl;
+        qzRenderPick();
+        return;
+    }
+    qzBegin('daily', question, d.theme, d.lvl);
 }
-// ответ (L) или время вышло (null)
-function qzAnswer(L) {
-    if (QS.phase !== 'answer' && !(QS.phase === 'read' && L === null)) return;
-    cancelAnimationFrame(QS.raf);
-    const d = quizDay(); if (!d.cur) return;
-    const q = QUIZ_QUESTIONS.find(x => x.id === d.cur); if (!q) return;
-    const ord = (d.ord || 'ABCD').split('');
-    const ok = !!L && ord[QZ_LETTERS.indexOf(L)] === q.correct;
-    const di = qzLevel(q.lvl);
-    d.ids.push(q.id); d.res.push(ok ? 1 : 0);
-    if (ok) { d.earned += di.coins; if (typeof coinsAdd === 'function') coinsAdd(di.coins); }
-    if (typeof profOnQuiz === 'function') profOnQuiz(ok, di.coins);   // опыт совы за ответ
-    quizMarkSeen(q.id);
-    d.shown = false; quizSaveDay(d);
-    QS.phase = 'reveal'; QS.pick = L;
-    qzRenderQ(true);
-    d.cur = 0; d.ord = ''; quizSaveDay(d);
+function qzStartBonus(token = '', theme = QS.selT) {
+    const pending = qzReadAttempt();
+    if (pending) { qzResumeAttempt(pending); return; }
+    const { enabled, available, thematicEnabled } = qzBonusStatus();
+    if (!enabled || available < 1) { qzRenderPick('Заработайте ещё один бонусный вопрос в полёте.'); return; }
+    const lvl = token ? QZ_TRIAL_LVL : QS.selL;
+    if (token && (!thematicEnabled || !FlightQuizBonus.themes().includes(token) || !qzTrialTopics(token).includes(theme))) {
+        qzRenderPick('Этот тематический бонус уже недоступен. Выберите другой вопрос.');
+        return;
+    }
+    if (!QZ_BONUS_LEVELS.includes(lvl) || !qzThemeAllowed(theme, lvl)) { qzRenderPick(); return; }
+    const question = quizNextId({ theme, lvl, ids: [] });
+    if (!question) { qzRenderPick(); return; }
+    qzBegin('bonus', question, theme, lvl, token);
+}
+function qzBegin(mode, question, theme, lvl, token = '') {
+    const startedAt = Date.now();
+    const id = globalThis.crypto?.randomUUID?.() || startedAt + '-' + Math.random().toString(36).slice(2);
+    const a = { id, mode, question, theme, lvl, token, startedAt, day: qzToday(), ord: qzShuffleOrd() };
+    if (!qzSaveAttempt(a)) { qzRenderPick('Не удалось сохранить вопрос. Попробуйте начать ещё раз.'); return; }
+    qzResumeAttempt(a);
+}
+function qzResumeAttempt(a) {
+    clearTimeout(QS.revealT);
+    QS.attempt = a; QS.mode = a.mode;
+    QS.selT = a.theme; QS.selL = a.lvl;
+    if (a.outcome) { qzFinishAttempt(a); return; }
+    if (a.mode === 'bonus' && typeof FlightQuizBonus !== 'undefined' && typeof FlightQuizBonus.reserve === 'function'
+        && !FlightQuizBonus.reserve(a.id, a.token || '')) {
+        qzSaveAttempt(null);
+        QS.attempt = null;
+        qzRenderPick('Этот бонус недоступен. Вернитесь в полёт или к вопросам дня.');
+        return;
+    }
+    if (a.selected) { QS.phase = 'answer'; qzAnswer(a.selected.letter); return; }
+    QS.phase = 'read';
+    qzTrapBack();
     try {
-        if (ok) { AudioFX.playThemeCollect(); Haptics.collectTheme(); }
+        AudioFX.thinkLv = a.lvl;
+        if (AudioFX.mode !== 'think' && AudioFX._pendMode !== 'think') AudioFX.setMode('think', { fade: true });
+    } catch (e) {}
+    qzRenderQ(false);
+    qzTick();
+}
+function qzRetryAttempt() {
+    const a = qzReadAttempt();
+    if (a) qzResumeAttempt(a);
+    else qzOpen(QS.mode);
+}
+function qzSaveRetry() {
+    const body = qzBody();
+    if (!body) return;
+    document.getElementById('qzWin')?.classList.remove('busy');
+    QS.phase = 'retry';
+    body.innerHTML = qzHead() + '<div class="qz-msg">Сохранение ответа не завершилось. Попробуйте ещё раз.</div>'
+        + '<button type="button" class="btn-bubo qz-btn" data-qa="retry">ПОВТОРИТЬ СОХРАНЕНИЕ</button>';
+}
+function qzRecordDay(a, reward) {
+    const d = quizDay(a.day);
+    if (!d.ids.includes(a.question)) {
+        d.ids.push(a.question);
+        d.res.push(a.outcome.correct ? 1 : 0);
+        if (a.outcome.correct) d.earned += reward;
+    }
+    d.cur = 0; d.ord = ''; d.shown = false;
+    QS.dayResult = d;
+    const stored = qzStoredDay();
+    return (a.day !== qzToday() && stored && stored.d !== a.day) || quizSaveDay(d);
+}
+function qzFinishAttempt(a) {
+    if (qzReadAttempt()?.id !== a.id) { qzOpen(a.mode); return; }
+    const { correct, letter, elapsedMs } = a.outcome, bonus = a.mode === 'bonus';
+    const reward = qzReward(a.lvl, bonus), receipt = 'quiz:' + a.id;
+    if (bonus) {
+        const spent = typeof FlightQuizBonus !== 'undefined' && FlightQuizBonus.spend(a.id, a.token || '');
+        if (!spent) { qzSaveRetry(); return; }
+        QS.dayResult = quizDay(a.day);
+    } else if (!qzRecordDay(a, reward)) { qzSaveRetry(); return; }
+    if (!quizMarkSeen(a.question)) { qzSaveRetry(); return; }
+    if (correct && typeof coinsAddOnce === 'function' && !coinsAddOnce(reward, receipt)) { qzSaveRetry(); return; }
+    if (typeof profOnQuizOnce === 'function' && !profOnQuizOnce(correct, reward, receipt)) { qzSaveRetry(); return; }
+    if (!qzSaveAttempt(null)) { qzSaveRetry(); return; }
+    if (correct && typeof coinsAddOnce !== 'function' && typeof coinsAdd === 'function') coinsAdd(reward);
+    if (typeof profOnQuizOnce !== 'function' && typeof profOnQuiz === 'function') profOnQuiz(correct, reward);
+    QS.phase = 'reveal'; QS.attempt = a;
+    qzRenderQ(true);
+    window.BuboPlaytest?.record?.('quiz:answered', { mode: a.mode, correct, timedOut: letter === null, elapsedMs, level: a.lvl, coins: correct ? reward : 0 });
+    try {
+        if (correct) { AudioFX.playThemeCollect(); Haptics.collectTheme(); }
         else { (AudioFX.playThemeLose || AudioFX.playHit).call(AudioFX); Haptics.hit(); }
     } catch (e) {}
-    if (ok) qzGainFx(di.coins);
+    if (correct) qzGainFx(reward);
     quizMenuBadge();
-    // время вышло — следующий вопрос только по кнопке (сам не запускается)
-    if (false) QS.autoT = setTimeout(() => { if (qzRoot && !qzRoot.classList.contains('hidden') && QS.phase === 'reveal') { if (d.ids.length >= QUIZ_PER_DAY) qzRenderDone(); else qzStartQuestion(); } }, 1800);
+}
+// Ответ сохраняется вместе с идентификатором попытки до начисления наград.
+function qzAnswer(L) {
+    if (!['read', 'answer', 'picking'].includes(QS.phase)) return;
+    if (QS.phase === 'read' && L !== null) return;
+    cancelAnimationFrame(QS.raf);
+    const a = qzReadAttempt();
+    if (!a || a.id !== QS.attempt?.id) { qzOpen(QS.mode); return; }
+    if (!a.outcome) {
+        const q = QUIZ_QUESTIONS.find(x => x.id === a.question);
+        const selectedAt = a.selected?.at || Date.now();
+        const elapsedMs = Math.min(QZ_ANSWER * 1000, Math.max(0, selectedAt - a.startedAt - QZ_READ * 1000));
+        const letter = a.selected?.letter || (elapsedMs < QZ_ANSWER * 1000 && QZ_LETTERS.includes(L) ? L : null);
+        a.outcome = { letter, elapsedMs, correct: letter !== null && a.ord[QZ_LETTERS.indexOf(letter)] === q.correct };
+        if (!qzSaveAttempt(a)) { qzSaveRetry(); return; }
+    }
+    qzFinishAttempt(a);
 }
 // заработали монеты: у счётчика «+N» справа от кружков всплывает прибавка, счётчик вспыхивает золотом, разлетаются искорки
 function qzGainFx(n) {
@@ -736,10 +955,17 @@ function qzGainFx(n) {
 }
 function qzPick(L) {
     if (QS.phase !== 'answer') return;
+    const a = qzReadAttempt(), now = Date.now();
+    if (!a || a.id !== QS.attempt?.id) { qzOpen(QS.mode); return; }
+    if (a.outcome || a.selected) { qzResumeAttempt(a); return; }
+    if (now >= a.startedAt + (QZ_READ + QZ_ANSWER) * 1000) { qzAnswer(null); return; }
+    a.selected = { letter: L, at: now };
+    if (!qzSaveAttempt(a)) { qzSaveRetry(); return; }
     // кнопка проминается, от неё разлетаются звёздочки, и только потом показываем ответ
-    QS.phase = 'pick'; cancelAnimationFrame(QS.raf);
+    QS.phase = 'picking'; cancelAnimationFrame(QS.raf);
     const w = document.getElementById('qzWin'), ab = document.getElementById('qzAbcd'), b = ab && ab.querySelector(`[data-qa="${L}"]`);
     if (ab) ab.style.pointerEvents = 'none';
+    qzBody()?.querySelectorAll('.qz-o, .qz-ball').forEach(button => { button.disabled = true; });
     try { AudioFX.playRouletteTick(); Haptics.vibrate(18); } catch (e) {}
     if (w && b) {
         b.classList.add('press');
@@ -756,23 +982,43 @@ function qzPick(L) {
             w.appendChild(s); setTimeout(() => s.remove(), 650);
         }
     }
-    setTimeout(() => { if (QS.phase === 'pick') { QS.phase = 'answer'; qzAnswer(L); } }, 260);
+    QS.revealT = setTimeout(() => { if (QS.phase === 'picking') qzAnswer(L); }, 260);
 }
 function openQuiz(e) {
-    if (e) e.stopPropagation();
+    e?.stopPropagation?.();
+    qzOpen('daily');
+}
+function openQuizBonus(e) {
+    e?.stopPropagation?.();
+    qzOpen('bonus');
+}
+function qzOpen(mode) {
+    clearTimeout(QS.revealT);
+    cancelAnimationFrame(QS.raf);
+    QS.attempt = null;
+    QS.mode = mode === 'bonus' && qzBonusStatus().enabled ? 'bonus' : 'daily';
     QS.selT = undefined; QS.selL = undefined;
     try { AudioFX.resume(); } catch (er) {}
     qzBuild();
-    // вопрос был показан и окно закрыли, не ответив, — он засчитывается как неотвеченный
-    const d = quizDay();
-    if (d.cur && d.shown) { d.ids.push(d.cur); d.res.push(0); quizMarkSeen(d.cur); d.cur = 0; d.ord = ''; d.shown = false; quizSaveDay(d); }
-    qzRenderReady();
     qzRoot.classList.remove('hidden');
-    try { if (AudioFX.mode !== 'quiz') { qzPrevMusic = AudioFX.mode; AudioFX.setMode('quiz', { fade: true }); } } catch (er) {}
+    try { if (AudioFX.mode !== 'quiz' && AudioFX.mode !== 'think') { qzPrevMusic = AudioFX.mode; AudioFX.setMode('quiz', { fade: true }); } } catch (er) {}
+    const pending = qzReadAttempt();
+    if (pending) { qzResumeAttempt(pending); return; }
+    // Старое сохранение не содержит времени начала; закрытый вопрос уже считался неотвеченным.
+    const d = quizDay();
+    if (d.cur) {
+        if (d.shown && !d.ids.includes(d.cur) && QUIZ_QUESTIONS.some(q => q.id === d.cur)) {
+            d.ids.push(d.cur); d.res.push(0); quizMarkSeen(d.cur);
+        }
+        d.cur = 0; d.ord = ''; d.shown = false;
+        quizSaveDay(d);
+    }
+    if (QS.mode === 'bonus') qzRenderPick();
+    else qzRenderReady();
 }
 function closeQuiz(e) {
     if (e) e.stopPropagation();
-    cancelAnimationFrame(QS.raf); clearTimeout(QS.autoT);
+    cancelAnimationFrame(QS.raf); clearTimeout(QS.revealT);
     QS.phase = 'idle';
     if (qzRoot) { qzRoot.classList.add('hidden'); qzRoot.classList.remove('pay'); }
     quizMenuBadge();
@@ -781,13 +1027,20 @@ function closeQuiz(e) {
 }
 function quizMenuBadge() {
     const b = document.getElementById('openQuizBtn'); if (!b) return;
-    const on = quizDayLeft(); b.classList.toggle('has-q', on);
-    const dot = document.getElementById('qzMenuBadge'); if (dot) dot.classList.toggle('hidden', !on);
+    const { enabled, available } = qzBonusStatus(), count = enabled ? available : 0;
+    const on = quizDayLeft() || count > 0;
+    b.classList.toggle('has-q', on);
+    const dot = document.getElementById('qzMenuBadge');
+    if (dot) dot.classList.toggle('hidden', !on || count > 0);
 }
 (function () {
     const b = document.getElementById('openQuizBtn'); if (b) b.addEventListener('click', openQuiz);
     quizMenuBadge();
     setInterval(quizMenuBadge, 60000);   // наступил новый день — значок снова светится
+    window.addEventListener('bubo:flight-bonus-change', quizMenuBadge);
+    window.addEventListener('bubo:campaign-topics', () => {
+        if (QS.phase === 'pick' && qzRoot && !qzRoot.classList.contains('hidden')) qzRenderPick();
+    });
 })();
 
 // ---------- админка: список вопросов ----------

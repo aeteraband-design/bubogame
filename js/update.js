@@ -27,7 +27,9 @@ function update() {
     }
 
     shazamUpdate();
+    window.BuboCampaignCombat?.finishDash();
     if (!gameActive) return;
+    const campaign = window.BuboCampaign?.isActive() ? window.BuboCampaign : null;
     frame += dtMult;
     if (typeof quizActive === 'function' && quizActive()) { quizUpdate(); return; }   // квиз-мир: свой полёт, обычный мир стоит
 
@@ -158,6 +160,7 @@ function update() {
         }
     }
 
+    if (!gameActive && campaign) return;
     let baseSpeed = 2.24;
     baseSpeed *= diffInfo.speedMult;
 
@@ -186,6 +189,11 @@ function update() {
     prevDistMult = distMult;
     if (gameActive && Math.abs(dRatio - 1) > 1e-6 && Math.abs(dRatio - 1) < 0.05) {
         for (const it of items) {
+            if (it.campaignPipe) {
+                const p = it.campaignPipe;
+                if (p.x > owl.x) it.x += (p.x - owl.x) * (dRatio - 1);
+                continue;
+            }
             for (const p of pipes) {
                 if (p.x > owl.x && Math.abs(it.x - (p.x + p.width / 2)) < 60) { it.x += (p.x - owl.x) * (dRatio - 1); break; }
             }
@@ -217,6 +225,10 @@ function update() {
     for (let i = pipes.length - 1; i >= 0; i--) {
         const p = pipes[i];
         p.x -= currentSpeed * dtMult;
+        if (campaign && p.campaign) {
+            if (p.x - owl.x <= width * 0.53) window.BuboCampaignCombat?.approach(p);
+            window.BuboCampaignCombat?.beforeGate(p);
+        }
 
         if (shazamBusy()) {
             // ШАЗАМ: сова пролетает трубы насквозь (то за трубой, то перед ней)
@@ -254,6 +266,11 @@ function update() {
                 if (owl.x - r < 4) p.shieldPass = true;
             }
         }
+        if (!gameActive && campaign) return;
+        if (campaign && p.campaign && !p.passed && p.x + p.width < owl.x - owl.radius) {
+            p.passed = true;
+            if (campaign.onPipePassed(p)) return;
+        }
         if (p.x + p.width < -40 - width * 0.03) pipes.splice(i, 1);
     }
 
@@ -268,6 +285,7 @@ function update() {
     }
 
     crystalUpdate(currentSpeed, activeSqueeze);   // эффект «Опасные трубы»
+    if (!gameActive && campaign) return;
     if (typeof waterUpdate === 'function') waterUpdate(currentSpeed, activeSqueeze);
     if (typeof quizUpdate2D === 'function') quizUpdate2D(currentSpeed, activeSqueeze);   // портал в квиз-мир   // эффект «Вода из труб»
     for (let i = items.length - 1; i >= 0; i--) {
@@ -291,7 +309,8 @@ function update() {
             if (it.shrinkStep >= 7 || it.scale <= 0.02) {
                 const burstX = it.centerX;
                 const burstY = it.centerY;
-                const itemCat = CATEGORIES[it.type] || CATEGORIES.question;
+                const topic = it.campaignTopic && window.BuboCampaignTopics?.visual(it.campaignTopic.id);
+                const itemCat = topic || CATEGORIES[it.type] || CATEGORIES.question;
 
                 spawnCollectionStarBurst(burstX, burstY, itemCat.color);
 
@@ -328,12 +347,22 @@ function update() {
         }
         shazamMagnet(it);   // ШАЗАМ: значки притягиваются к сове
 
-        if (Math.hypot(owl.x - it.x, owl.y - it.y) < owl.radius + it.radius && !it.collected) {
+        const nearItem = Math.hypot(owl.x - it.x, owl.y - it.y) < owl.radius + it.radius;
+        const inLauncherGate = it.__forceShz && window.BuboCampaignCombat?.catchLauncher(it);
+        if (!it.collected && (nearItem || inLauncherGate)) {
+            if (it.campaignTopic && !collectCampaignTopic(it.campaignTopic)) {
+                items.splice(i, 1);
+                continue;
+            }
             it.collected = true;
             it.isCollecting = true;
             it.shrinkStep = 0;
             it.scale = 1.0;
             Haptics.collectTheme();
+            if (it.campaignTopic) {
+                AudioFX.playThemeCollect();
+                continue;
+            }
 
             const collectX = it.x;
             const collectY = it.y;
@@ -341,12 +370,14 @@ function update() {
             const oldDiffLevel = getDifficultyMultipliers().level;
 
             const shzBlock = shazamBusy() && ['shield', 'slowmo', 'compress', 'infinite'].includes(it.type);
-            if (shzBlock) {
+            if (campaign && it.__forceShz) {
+                window.BuboCampaignCombat?.launchShazam();
+            } else if (shzBlock) {
                 AudioFX.playCollect(true);   // в ШАЗАМе эффект не включается
                 if (it.type === 'infinite') { stamina = maxStamina; updateStaminaHUD(); it.pendingFX = { target: 'stamina', text: '+100% Сил', color: '#00F0FF', icon: 'fa-feather-pointed' }; }
             } else if (it.type === 'question') {
                 AudioFX.playCollect(false);
-                score++; scheduleHud('score');
+                addFlightScore(1);
                 StorageManager.save();
                 it.pendingFX = { target: 'score', text: '+1 Вопрос', color: '#FE7600', icon: 'fa-circle-question' };
                 if (attemptMilestone >= 0 && Math.floor(score / QUESTIONS_PER_ATTEMPT) > attemptMilestone) {   // этот вопрос даёт попытку: подсказки появятся и исчезнут вместе
@@ -387,9 +418,10 @@ function update() {
                 it.extraFX = registerDrink();
             } else if (it.type === 'coin') {
                 const n = it.coins || 50;
-                if (typeof coinsAdd === 'function') coinsAdd(n);
-                try { AudioFX.playStarCollect(); AudioFX.playCollect(true); Haptics.collectTheme(); } catch (e) {}
-                showGoldBanner(`+${n} монет`, 'fa-coins', '#FFC53D');   // в углу напротив таймеров
+                if (addFlightCoins(n, 'pickup')) {
+                    try { AudioFX.playStarCollect(); AudioFX.playCollect(true); Haptics.collectTheme(); } catch (e) {}
+                    showGoldBanner('+' + n + ' ' + ruPlural(n, ['монета', 'монеты', 'монет']), 'fa-coins', '#FFC53D');
+                }
             } else if (it.type === 'water') {
                 it.pendingFX = registerWater();   // 10 с: из труб льётся вода
             } else if (it.type === 'crystal') {
@@ -399,7 +431,11 @@ function update() {
                 stamina = Math.min(maxStamina, stamina + 20.0);   // мороженое
                 updateStaminaHUD(); StorageManager.save();
                 it.pendingFX = { target: 'stamina', text: '+20% Сил', color: '#B5E4FF', icon: 'fa-ice-cream' };
-                it.extraFX = registerIceCream();
+                if (campaign && it.campaignPipe?.campaign?.wave === 'fire') {
+                    window.BuboCampaignCombat?.iceCream();
+                } else {
+                    it.extraFX = registerIceCream();
+                }
             } else if (it.type === 'heart') {
                 AudioFX.playStarCollect();
                 // максимум сердец фиксирован (5); 6 — только из рулетки. Полный запас — сердце не копится
@@ -440,7 +476,8 @@ function update() {
                 AudioFX.playStarCollect();
                 slowMotionTime = 0;
                 const shzWas = shazamBusy();
-                speedBoostTime = ADMIN_CFG.speedSec * 60; const shz = shazamOnSpeedup();
+                speedBoostTime = ADMIN_CFG.speedSec * 60;
+                const shz = !campaign && shazamOnSpeedup();
                 AudioFX.onSpeedChanged();
                 Haptics.powerup();
                 if (!shzWas) it.pendingFX = shz ? { target: 'other', text: `ШАЗАМ ${Math.round((SHZ.DUR + SHZ.FADE) / 60)}с`, color: '#FF7A00', icon: 'fa-bolt-lightning' }
@@ -469,6 +506,8 @@ function update() {
                 const maxLimit = cat.count;
                 if (collected[it.type] < maxLimit) {
                     collected[it.type]++;
+                    if (typeof profFlightCollect === 'function') profFlightCollect('theme', 1);
+                    checkFlightThemeBonus(it.type);
                     if (typeof quizOnTheme === 'function') quizOnTheme();   // каждые 10% тем — портал в квиз-мир
                     crystalOnTheme();   // редкий значок «Опасные трубы»/«Водонапор»: считаем собранные темы
                     const labelText = collected[it.type] === maxLimit ? `+1 ${cat.name} (${maxLimit}/${maxLimit})` : `+1 ${cat.name}`;
@@ -946,6 +985,8 @@ function handleSecretRoulette(originX, originY) {
             if (open.length > 0) {
                 const key = open[Math.floor(Math.random() * open.length)];
                 collected[key]++;
+                if (typeof profFlightCollect === 'function') profFlightCollect('theme', 1);
+                checkFlightThemeBonus(key);
                 updateCollectionHUD();
                 AudioFX.playThemeCollect();
                 StorageManager.save();
@@ -955,16 +996,14 @@ function handleSecretRoulette(originX, originY) {
             return null;
         } },
         { w: 20, run() {
-            score += 3;
-            scheduleHud('score');
+            addFlightScore(3);
             triggerTopHUDPop('score');
             AudioFX.playCollect(false);
             StorageManager.save();
             return { label: 'Бонус: +3 Вопроса', color: '#FE7600', icon: 'fa-circle-question', isScoreAdd: true };
         } }
     ]).run() || (() => {
-        score += 3;
-        scheduleHud('score');
+        addFlightScore(3);
         triggerTopHUDPop('score');
         AudioFX.playCollect(false);
         StorageManager.save();
@@ -973,6 +1012,11 @@ function handleSecretRoulette(originX, originY) {
 }
 
 function handleHit(cause = 'Сова врезалась в трубу — это была последняя жизнь.') {
+    if (window.BuboCampaign?.consumeGuard?.()) {
+        invulnerableTime = 130;
+        owl.vy = -3.8;
+        return;
+    }
     AudioFX.playHit();
     Haptics.hit();
 
@@ -1044,7 +1088,9 @@ function triggerOwlFeatherExplosion() {
 }
 
 function handleRunFailure(reason, opts) {
+    if (window.BuboCampaign?.onFatal(reason)) return;
     gameActive = false;
+    const earnedCoins = window.FlightQuizBonus?.endFlight(score, 'loss') || 0;
     waitingFirstTap = false;
     isFlightPaused = false;
     clearAllBuffs();
@@ -1067,12 +1113,12 @@ function handleRunFailure(reason, opts) {
         }
 
         AudioFX.setMode('death');
-        showGameOverScreen(reason);
+        showGameOverScreen(reason, earnedCoins);
     }, delay);
 }
 
 // Экран смерти: понятная причина и что будет с попытками и прогрессом
-function showGameOverScreen(reason) {
+function showGameOverScreen(reason, earnedCoins = 0, checkingAttempts = false) {
     const $ = (id) => document.getElementById(id);
     const totalItems = getTotalCollectedThemes();
     if ($('finalScore')) $('finalScore').innerText = score;
@@ -1083,16 +1129,20 @@ function showGameOverScreen(reason) {
     try { lvlName = getDifficultyMultipliers().level; } catch (e) {}
     const has = attempts > 0;
     if ($('gameOverTitle')) $('gameOverTitle').innerText = has ? 'ПОПЫТКА ПОТЕРЯНА' : 'ПОПЫТКИ ЗАКОНЧИЛИСЬ';
-    if ($('gameOverSubtext')) $('gameOverSubtext').innerText = has ? 'Списана 1 попытка' : 'Списана последняя попытка';
+    if ($('gameOverSubtext')) {
+        $('gameOverSubtext').innerText = has ? 'Списана 1 попытка' : 'Списана последняя попытка';
+        $('gameOverSubtext').hidden = checkingAttempts;
+    }
     const modalEl = $('gameOverModal');
     if (modalEl) modalEl.classList.toggle('go-none', !has);
     if ($('goIcon')) $('goIcon').className = 'fa-solid ' + (has ? 'fa-heart-crack' : 'fa-hourglass-end');
     const info = $('gameOverInfo');
     if (info) {
+        const coins = earnedCoins ? ' За вылет получено ' + earnedCoins + ' ' + ruPlural(earnedCoins, ['монета', 'монеты', 'монет']) + '.' : '';
         info.classList.toggle('go-warn', !has);
         info.innerHTML = has
-            ? `<div class="go-ii"><i class="fa-solid fa-floppy-disk"></i></div><div><b>Прогресс сохранён</b>Продолжите с того же места${lvlName ? ` — сложность <span class="go-lvl">${lvlName}</span>` : ''}. Темы, вопросы, перья и силы остаются.</div>`
-            : `<div class="go-ii"><i class="fa-solid fa-triangle-exclamation"></i></div><div><b>Попытки на сегодня закончились</b>Прогресс сохранён до конца дня — купите попытку в лавке за монеты. Завтра — ${MAX_ATTEMPTS} новые попытки и игра с начала.</div>`;
+            ? `<div class="go-ii"><i class="fa-solid fa-floppy-disk"></i></div><div><b>Прогресс сохранён</b>Продолжи с того же места${lvlName ? ` — сложность <span class="go-lvl">${lvlName}</span>` : ''}.${coins}</div>`
+            : `<div class="go-ii"><i class="fa-solid fa-triangle-exclamation"></i></div><div><b>Попытки на сегодня закончились</b>Прогресс полёта сохранён до конца дня.${coins}</div>`;
     }
     const contBtn = $('continueAttemptBtn'), restartBtn = $('restartFromGameOverBtn'), homeBtn = $('gameOverHomeBtn'), okBtn = $('gameOverOkBtn');
     if (contBtn) contBtn.classList.toggle('hidden', !has);
@@ -1101,7 +1151,6 @@ function showGameOverScreen(reason) {
     if (restartBtn) restartBtn.classList.add('hidden');
     if (homeBtn) homeBtn.classList.toggle('hidden', !has);
     if (okBtn) okBtn.classList.toggle('hidden', has);
-    if ($('earnAttemptBtn')) $('earnAttemptBtn').classList.toggle('hidden', has);   // попыток нет — можно купить в лавке
     updateMenuVisibility();
     const modal = $('gameOverModal');
     if (modal) modal.classList.remove('hidden');

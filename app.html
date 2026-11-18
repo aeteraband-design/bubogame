@@ -11,27 +11,29 @@
     <link rel="icon" type="image/png" href="icons/icon-192.png?v=8">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BUBOGAME v0.14.26</title>
+    <title>BUBOGAME v0.17.0</title>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.14.26">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.17.0">
     <!-- Onest: локальные файлы -->
-    <link rel="stylesheet" href="css/fonts.css?v=0.14.26">
+    <link rel="stylesheet" href="css/fonts.css?v=0.17.0">
 
-    <script src="js/music-hold.js?v=0.14.26"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.14.26">
+    <script src="js/music-hold.js?v=0.17.0"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.17.0">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.14.26" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.17.0" id="adminStyle">
     <!-- Tailwind: готовый файл стилей вместо онлайн-компилятора (тот следил за каждым изменением страницы и пересобирал стили прямо во время игры) -->
-    <link rel="stylesheet" href="css/tailwind.css?v=0.14.26">
+    <link rel="stylesheet" href="css/tailwind.css?v=0.17.0">
+    <link rel="stylesheet" href="css/flight-quiz-bonus.css?v=0.17.0">
+    <link rel="stylesheet" href="css/campaign.css?v=0.17.0">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.14.26">
-    <link rel="stylesheet" href="css/features.css?v=0.14.26">
-    <link rel="stylesheet" href="css/rules.css?v=0.14.26">
-    <link rel="stylesheet" href="css/settings.css?v=0.14.26">
-    <link rel="stylesheet" href="css/profile.css?v=0.14.26">
+    <link rel="stylesheet" href="css/boot.css?v=0.17.0">
+    <link rel="stylesheet" href="css/features.css?v=0.17.0">
+    <link rel="stylesheet" href="css/rules.css?v=0.17.0">
+    <link rel="stylesheet" href="css/settings.css?v=0.17.0">
+    <link rel="stylesheet" href="css/profile.css?v=0.17.0">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -47,10 +49,10 @@
             </div>
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
-        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.14.26</div>
+        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.17.0</div>
     </div>
     <div id="menuHalo"><div class="mh"></div></div>   <!-- свечение совы с экрана загрузки остаётся и в главном меню -->
-    <script src="js/boot.js?v=0.14.26"></script>
+    <script src="js/boot.js?v=0.17.0"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 overflow-y-auto custom-scroll">
@@ -146,7 +148,7 @@
                     <button id="menuGoalX" type="button" aria-label="Скрыть"><i class="fa-solid fa-xmark"></i></button>
                     <div class="flex items-center space-x-2 text-[12px] uppercase tracking-wider text-[#FE7600] font-black">
                         <i class="fa-solid fa-bullseye text-sm"></i>
-                        <span class="font-black">Цель полёта</span>
+                        <span class="font-black">Цель свободного полёта</span>
                     </div>
                     <p class="text-[11px] text-purple-100 leading-snug font-medium">
                         <span id="menuGoalText"></span>
@@ -169,7 +171,17 @@
                     </button>
                 </div>
 
-                <button id="startBtn" class="btn-bubo w-full py-2 px-3 rounded-2xl flex flex-col items-center justify-center shadow-2xl active:scale-95 transition-all">
+                <div id="campaignActions" hidden>
+                    <button id="campaignStartBtn" class="btn-bubo camp-start" type="button">
+                        <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+                        <span><strong>Начать поход</strong><small>Три учебные трубы</small></span>
+                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                    </button>
+                    <button id="campaignReplayBtn" class="btn-secondary camp-replay" type="button" hidden>
+                        <i class="fa-solid fa-feather" aria-hidden="true"></i>Разминка
+                    </button>
+                </div>
+                <button id="startBtn" class="btn-secondary camp-free w-full py-2 px-3 rounded-2xl flex flex-col items-center justify-center active:scale-95 transition-all">
                     <div class="flex items-center space-x-2">
                         <i class="fa-solid fa-play text-[11px] text-white font-black"></i>
                         <span id="startBtnLabel" class="text-[15px] font-black tracking-wider uppercase text-white">НАЧАТЬ ПОЛЕТ</span>
@@ -219,6 +231,11 @@
         </div>
 
         <canvas id="gameCanvas" class="w-full h-full"></canvas>
+        <section id="campaignHUD" aria-label="Прогресс похода" hidden>
+            <div class="camp-hud-row"><strong id="campaignHudTitle"></strong><b id="campaignHudGates"></b></div>
+            <div class="camp-meter" id="campaignProgress" role="progressbar" aria-label="Пройдено труб"><span></span></div>
+            <div class="camp-hud-row camp-hud-detail"><span id="campaignHudHint"></span><span id="campaignHudTopics" hidden></span><span id="campaignHudPower" hidden></span></div>
+        </section>
 
         <div id="tapToStartMsg" class="hidden absolute inset-0 z-25 flex items-center justify-center pointer-events-none transition-opacity duration-300">
             <div class="glass-panel border-[#FE7600] px-5 py-2.5 rounded-2xl shadow-[0_0_24px_rgba(254,118,0,0.65)] flex items-center space-x-2.5 animate-bounce">
@@ -431,6 +448,27 @@
         </div>
     </div>
 
+    <div id="campaignResult" hidden>
+        <section id="campaignResultCard" role="dialog" aria-modal="true" aria-labelledby="campaignResultTitle">
+            <div class="camp-result-icon" aria-hidden="true"><i class="fa-solid fa-flag-checkered"></i></div>
+            <div class="camp-result-copy">
+                <h2 id="campaignResultTitle"></h2>
+                <p id="campaignResultMessage"></p>
+            </div>
+            <div id="campaignReward" class="camp-rewards" hidden></div>
+            <p id="campaignTopicSummary" class="camp-topic-summary" hidden></p>
+            <p id="campaignAttemptDetail" class="camp-attempt-detail" hidden></p>
+            <div class="camp-result-actions">
+                <button id="campaignResultNext" class="btn-bubo camp-main" type="button" hidden></button>
+                <button id="campaignSecondWindConfirm" class="camp-alt" type="button" hidden>Отменить покупку</button>
+                <button id="campaignResultSkill" class="camp-alt camp-skill" type="button" hidden><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i><span id="campaignResultSkillLabel">Выбрать навык</span></button>
+                <button id="campaignResultQuiz" class="camp-alt camp-question" type="button" hidden><i class="fa-solid fa-comments" aria-hidden="true"></i>Вопросы дня</button>
+                <button id="campaignResultReplay" class="camp-alt" type="button" hidden><i class="fa-solid fa-feather" aria-hidden="true"></i>Разминка</button>
+                <button id="campaignResultHome" class="camp-alt" type="button">В главное меню</button>
+            </div>
+        </section>
+    </div>
+
     <!-- ЭКРАН ПОРАЖЕНИЯ -->
     <div id="gameOverModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-4 bg-[#140326]/20 backdrop-blur-[7px] text-center">
         <div id="goWin">
@@ -448,6 +486,7 @@
             </div>
 
             <div id="gameOverInfo" class="go-info"></div>
+            <div id="goAttemptDetail" class="camp-attempt-detail" hidden></div>
 
             <div class="go-btns">
                 <button id="continueAttemptBtn" class="btn-bubo w-full py-3 px-3 rounded-2xl flex flex-col items-center justify-center shadow-xl active:scale-95 transition-all">
@@ -465,10 +504,8 @@
                     <i class="fa-solid fa-house text-sm font-black"></i>
                     <span class="font-black">В ГЛАВНОЕ МЕНЮ</span>
                 </button>
-                <button id="earnAttemptBtn" class="hidden go-shop w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black active:scale-95 transition-all">
-                    <i class="fa-solid fa-store text-sm font-black"></i>
-                    <span class="font-black text-white">КУПИТЬ ПОПЫТКУ В ЛАВКЕ</span>
-                </button>
+                <button id="goQuizBtn" class="camp-alt camp-question" type="button" hidden><i class="fa-solid fa-comments" aria-hidden="true"></i>Вопросы дня</button>
+                <button id="goCampaignHelpBtn" class="camp-alt" type="button" hidden><i class="fa-solid fa-feather" aria-hidden="true"></i>Второе дыхание в Походе</button>
                 <button id="gameOverHomeBtn" class="btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black">
                     <i class="fa-solid fa-house text-xs font-black text-[#FE7600]"></i>
                     <span class="font-black text-white">В ГЛАВНОЕ МЕНЮ</span>
@@ -571,52 +608,61 @@
         </div>
     </div>
 
-    <script src="js/audio.js?v=0.14.26"></script>
-    <script src="js/game-core.js?v=0.14.26"></script>
-    <script src="js/owl.js?v=0.14.26"></script>
-    <script src="js/hud.js?v=0.14.26"></script>
-    <script src="js/scenery.js?v=0.14.26"></script>
-    <script src="js/items.js?v=0.14.26"></script>
-    <script src="js/shazam.js?v=0.14.26"></script>
-    <script src="js/crystals.js?v=0.14.26"></script>
-    <script src="js/water.js?v=0.14.26"></script>
-    <script src="js/menu-fx.js?v=0.14.26"></script>
-    <script src="js/quiz.js?v=0.14.26"></script>
-    <script src="js/quiz-bank.js?v=0.14.26"></script>
-    <script src="quiz-new/music.js?v=0.14.26"></script>
-    <script src="quiz-new/kino.js?v=0.14.26"></script>
-    <script src="quiz-new/series.js?v=0.14.26"></script>
-    <script src="quiz-new/cartoons.js?v=0.14.26"></script>
-    <script src="quiz-new/games.js?v=0.14.26"></script>
-    <script src="quiz-new/memes.js?v=0.14.26"></script>
-    <script src="quiz-new/hp.js?v=0.14.26"></script>
-    <script src="quiz-new/lit.js?v=0.14.26"></script>
-    <script src="quiz-new/history.js?v=0.14.26"></script>
-    <script src="quiz-new/geo.js?v=0.14.26"></script>
-    <script src="quiz-new/chem.js?v=0.14.26"></script>
-    <script src="quiz-new/phys.js?v=0.14.26"></script>
-    <script src="quiz-new/space.js?v=0.14.26"></script>
-    <script src="quiz-new/nature.js?v=0.14.26"></script>
-    <script src="quiz-new/sport.js?v=0.14.26"></script>
-    <script src="quiz-new/food.js?v=0.14.26"></script>
-    <script src="quiz-new/art.js?v=0.14.26"></script>
-    <script src="quiz-new/humor.js?v=0.14.26"></script>
-    <script src="js/quiz-bank-build.js?v=0.14.26"></script>
-    <script src="js/shop.js?v=0.14.26"></script>
-    <script src="js/weather.js?v=0.14.26"></script>
-    <script src="js/update.js?v=0.14.26"></script>
-    <script src="js/render.js?v=0.14.26"></script>
-    <script src="js/wheel.js?v=0.14.26"></script>
-    <script src="js/ui.js?v=0.14.26"></script>
-    <script src="js/inventory.js?v=0.14.26"></script>
-    <script src="js/rules.js?v=0.14.26"></script>
-<script src="js/admin.js?v=0.14.26"></script>
-<script src="js/text-measure.js?v=0.14.26"></script>
-<script src="js/fullscreen.js?v=0.14.26"></script>
-<script src="js/settings-ui.js?v=0.14.26"></script>
-<script src="js/exit-confirm.js?v=0.14.26"></script>
-<script src="js/logo-anim.js?v=0.14.26"></script>
-<script src="js/profile.js?v=0.14.26"></script>
-<script src="js/scrollbars.js?v=0.14.26"></script>
+    <script src="js/audio.js?v=0.17.0"></script>
+    <script src="js/bubo-playtest.js?v=0.17.0"></script>
+    <script src="js/flight-quiz-bonus.js?v=0.17.0"></script>
+    <script src="js/game-core.js?v=0.17.0"></script>
+    <script src="js/owl.js?v=0.17.0"></script>
+    <script src="js/hud.js?v=0.17.0"></script>
+    <script src="js/scenery.js?v=0.17.0"></script>
+    <script src="js/items.js?v=0.17.0"></script>
+    <script src="js/shazam.js?v=0.17.0"></script>
+    <script src="js/crystals.js?v=0.17.0"></script>
+    <script src="js/water.js?v=0.17.0"></script>
+    <script src="js/menu-fx.js?v=0.17.0"></script>
+    <script src="js/campaign-topics.js?v=0.17.0"></script>
+    <script src="js/quiz.js?v=0.17.0"></script>
+    <script src="js/quiz-bank.js?v=0.17.0"></script>
+    <script src="quiz-new/music.js?v=0.17.0"></script>
+    <script src="quiz-new/kino.js?v=0.17.0"></script>
+    <script src="quiz-new/series.js?v=0.17.0"></script>
+    <script src="quiz-new/cartoons.js?v=0.17.0"></script>
+    <script src="quiz-new/games.js?v=0.17.0"></script>
+    <script src="quiz-new/memes.js?v=0.17.0"></script>
+    <script src="quiz-new/hp.js?v=0.17.0"></script>
+    <script src="quiz-new/lit.js?v=0.17.0"></script>
+    <script src="quiz-new/history.js?v=0.17.0"></script>
+    <script src="quiz-new/geo.js?v=0.17.0"></script>
+    <script src="quiz-new/chem.js?v=0.17.0"></script>
+    <script src="quiz-new/phys.js?v=0.17.0"></script>
+    <script src="quiz-new/space.js?v=0.17.0"></script>
+    <script src="quiz-new/nature.js?v=0.17.0"></script>
+    <script src="quiz-new/sport.js?v=0.17.0"></script>
+    <script src="quiz-new/food.js?v=0.17.0"></script>
+    <script src="quiz-new/art.js?v=0.17.0"></script>
+    <script src="quiz-new/humor.js?v=0.17.0"></script>
+    <script src="js/quiz-bank-build.js?v=0.17.0"></script>
+    <script src="js/shop.js?v=0.17.0"></script>
+    <script src="js/weather.js?v=0.17.0"></script>
+    <script src="js/second-wind.js?v=0.17.0"></script>
+    <script src="js/campaign.js?v=0.17.0"></script>
+    <script src="js/campaign-guardian.js?v=0.17.0"></script>
+    <script src="js/campaign-combat.js?v=0.17.0"></script>
+    <script src="js/update.js?v=0.17.0"></script>
+    <script src="js/campaign-day-art.js?v=0.17.0"></script>
+    <script src="js/render.js?v=0.17.0"></script>
+    <script src="js/wheel.js?v=0.17.0"></script>
+    <script src="js/ui.js?v=0.17.0"></script>
+    <script src="js/inventory.js?v=0.17.0"></script>
+    <script src="js/rules.js?v=0.17.0"></script>
+<script src="js/admin.js?v=0.17.0"></script>
+<script src="js/text-measure.js?v=0.17.0"></script>
+<script src="js/fullscreen.js?v=0.17.0"></script>
+<script src="js/settings-ui.js?v=0.17.0"></script>
+<script src="js/exit-confirm.js?v=0.17.0"></script>
+<script src="js/logo-anim.js?v=0.17.0"></script>
+<script src="js/profile.js?v=0.17.0"></script>
+<script src="js/campaign-ui.js?v=0.17.0"></script>
+<script src="js/scrollbars.js?v=0.17.0"></script>
 </body>
 </html>
