@@ -132,7 +132,8 @@ function showGoldBanner(text, icon, color, duration = 2700, campaignTopic = fals
         el.classList.add('campaign-topic-tag');
     }
     el.style.setProperty('--c', c);
-    el.style.setProperty('--bx', (right ? 18 : -18) + 'px');
+    const slide = campaignTopic ? 8 : 18;
+    el.style.setProperty('--bx', (right ? slide : -slide) + 'px');
     el.innerHTML = `<i class="fa-solid ${icon} bt-ic"></i><span class="bt-tx">${campaignTopic ? text : /^[+\d]/.test(text) ? text.toLowerCase() : sentenceCase(text)}</span>`
         + '<b class="bt-sp" style="left:5px;top:2px;--d:.3s">✦</b><b class="bt-sp" style="left:22px;top:20px;--d:.8s">✦</b>'
         + (kind === 'bt-coin' ? '<b class="bt-sp" style="left:70%;top:8%;--d:1.1s">✦</b>' : '');   // звёздочки поблёскивают у иконки, как у монет в меню
@@ -158,14 +159,13 @@ function collectCampaignTopic({ id, slot, test }) {
     const topics = window.BuboCampaignTopics;
     const stamp = topics?.collect(id, slot, test);
     if (!stamp) {
-        showGoldBanner('Отметка не сохранена', 'fa-circle-exclamation', '#FCA5A5', 1700, true);
+        showGoldBanner('Сбой сохранения', 'fa-circle-exclamation', '#FCA5A5', 1700, true);
         return false;
     }
     if (!stamp.changed) return false;
     const topic = topics.visual(id) || CATEGORIES.question;
-    const label = test ? 'Тест · ' + topic.name + ' · ' + stamp.progress + '/2'
-        : topic.name + (stamp.unlocked ? ' · тема открыта' : ' · ' + stamp.progress + '/2');
-    showGoldBanner(label, topic.faClass, topic.color, stamp.unlocked && !test ? 1800 : 1200, true);
+    const label = (topic.label || topic.name) + ' · ' + stamp.progress + '/2';
+    showGoldBanner(label, topic.faClass, topic.color, 1200, true);
     return true;
 }
 
@@ -424,15 +424,23 @@ function findArrivalTarget(targetType) {
         } else targetElem = cont;
     } else if (targetType === 'attempts') {
         targetElem = document.getElementById('attemptsVal');
-    } else if (['music', 'logic', 'kino', 'series', 'cartoons', 'fun'].includes(targetType)) {
+    } else if (window.BuboJourney?.themeKeys().includes(targetType)) {
         targetElem = document.getElementById(`icon_${targetType}`) || document.getElementById(`badge-${targetType}`);
         isThemeBadge = true;
     }
 
     return { targetElem, isThemeBadge };
 }
-function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIcon, isBonus) {
-    if (!fxLayer) return;
+const reducedThemeMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+function arrivalCenter(target, layer) {
+    const rect = target.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    return { x: rect.left - layer.left + rect.width / 2, y: rect.top - layer.top + rect.height / 2 };
+}
+
+function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIcon, isBonus, afterArrival) {
+    if (!fxLayer) { afterArrival?.(); return; }
     // координаты мира → экран: учитываем увеличение мира и приближение камеры, иначе подсказка и шарик появляются левее и выше нужного места
     {
         const SK = viewScale * (typeof WORLD_K === 'number' ? WORLD_K : 1), cz = (typeof camZoom === 'number') ? camZoom : 1;
@@ -444,7 +452,7 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
     let preTarget = null;
     if (targetType && targetType !== 'other') {
         preTarget = findArrivalTarget(targetType);
-        if (preTarget.targetElem) { preTarget.targetRect = preTarget.targetElem.getBoundingClientRect(); preTarget.containerRect = container.getBoundingClientRect(); }
+        if (preTarget.targetElem) preTarget.center = arrivalCenter(preTarget.targetElem, fxLayer.getBoundingClientRect());
     }
     let iconHtml = `<i class="fa-solid ${faIcon} text-[10px]" style="color:${color}"></i>`;
     if (faIcon === 'svg-compress') {
@@ -458,6 +466,7 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
     if (textLabel) {
         const tag = document.createElement('div');
         tag.className = 'fly-label-tag text-[10px] font-black py-0.5 rounded-xl shadow-lg flex items-center border';
+        if (preTarget?.isThemeBadge) tag.dataset.themeSlot = targetType;
         tag.style.padding = '3px 6px 3px 6px';
         tag.style.gap = '3px';
         tag.style.left = `${Math.min(container.clientWidth - 95, Math.max(12, startX - 45))}px`;
@@ -486,27 +495,27 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
         }, 880);
     }
 
-    if (targetType === 'other' || !targetType) return;
-
-    const { targetElem, isThemeBadge } = preTarget || { targetElem: null, isThemeBadge: false };
-    if (!targetElem) return;
+    if (!preTarget?.center) { afterArrival?.(); return; }
+    const { targetElem, isThemeBadge, center } = preTarget;
+    if (isThemeBadge && reducedThemeMotion.matches) {
+        triggerBadgeAnimation(targetType);
+        afterArrival?.();
+        return;
+    }
     const hudG = hudGroup(targetType);
     hudPending[hudG] = (hudPending[hudG] || 0) + 1;
-
-    const { targetRect, containerRect } = preTarget;
-
-    const endX = targetRect.left - containerRect.left + targetRect.width / 2;
-    const endY = targetRect.top - containerRect.top + targetRect.height / 2;
+    const district = isThemeBadge ? window.BuboJourney.region().id : '';
 
     const orb = document.createElement('div');
     orb.className = 'flying-orb';
+    if (isThemeBadge) orb.dataset.themeSlot = targetType;
     orb.style.width = '20px';
     orb.style.height = '20px';
     orb.style.left = `${startX - 10}px`;
     orb.style.top = `${startY - 10}px`;
     orb.style.backgroundColor = 'rgba(29, 9, 54, 0.95)';
     orb.style.border = `2px solid ${color}`;
-    orb.style.boxShadow = `0 0 10px ${color}`;
+    if (!isThemeBadge || gfxQuality !== 'low') orb.style.boxShadow = `0 0 10px ${color}`;
     
     if (faIcon === 'svg-compress') {
         orb.innerHTML = `<svg class="w-2.5 h-2.5 inline-block shrink-0" viewBox="0 0 24 24" fill=\"none\" stroke=\"${color}\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v7.5m-4-3.5L12 9.5l4-3.5M12 22v-7.5m-4 3.5L12 14.5l4 3.5\"/></svg>`;
@@ -520,59 +529,68 @@ function spawnFlyingArrivalFX(startX, startY, targetType, textLabel, color, faIc
     
     fxLayer.appendChild(orb);
 
-    // полёт — через transform, и каждый кадр шарик целится в ТЕКУЩУЮ позицию иконки (она может сдвигаться или пульсировать),
-    // поэтому прилетает точно в иконку. Смещение переводим в систему самого шарика (его масштаб scale: --ui-zoom).
-    const orbZ = uiFx();   // шарик масштабирован тем же множителем (scale: var(--fx)) — без запроса стилей у браузера
-    orb.style.transition = 'none';   // полёт ведём сами по кадрам — без CSS-перехода
-    const flyT0 = performance.now(), FLY_MS = 480;   // полёт заканчивается чуть раньше момента прилёта (500 мс), когда обновляется панель
-    let flyStop = false;
-    const flyEase = (t) => 1 - Math.pow(1 - t, 3);
-    let flyDX = 0, flyDY = 0, ex = endX, ey = endY, flyMeasT = flyT0, flyLate = false;
-    const flyTick = (now) => {
-        if (flyStop) return;   // после прилёта положение больше не меняем: панель обновляется и иконки сдвигаются, шарик не должен за ними «уезжать»
-        const t = Math.min(1, (now - flyT0) / FLY_MS);
-        // положение иконки перемеряем раз в 120 мс и ещё раз перед самым прилётом (а не каждый кадр): замер заставляет браузер пересчитывать всю вёрстку — от этого были подёргивания
-        if (now - flyMeasT > 120 || (t > 0.8 && !flyLate)) {
-            flyMeasT = now; if (t > 0.8) flyLate = true;
-            const tr = targetElem.getBoundingClientRect(), cr = container.getBoundingClientRect();
-            ex = tr.left - cr.left + tr.width / 2; ey = tr.top - cr.top + tr.height / 2;
-        }
-        const k = flyEase(t);
-        flyDX = ((startX + (ex - startX) * k) - startX) / orbZ;
-        flyDY = ((startY + (ey - startY) * k) - startY) / orbZ;
-        orb.style.transform = `translate(${flyDX}px, ${flyDY}px) scale(0.8)`;
-        if (t < 1 && orb.parentNode) requestAnimationFrame(flyTick);
-    };
-    requestAnimationFrame(flyTick);
+    orb.style.transition = 'none';
+    const started = performance.now(), duration = 480;
+    let target = center, measured = started, finished = false;
 
-    setTimeout(() => {
-        flyStop = true;
-        // долетев, шарик не исчезает рывком: плавно растворяется и «уходит» внутрь иконки (на месте прилёта)
-        orb.style.transition = 'opacity 0.26s ease-in, transform 0.26s cubic-bezier(0.55, 0, 0.9, 0.4)';   // впитывается: быстро сжимается в центр иконки и гаснет
-        orb.style.opacity = '0';
-        orb.style.transform = `translate(${flyDX}px, ${flyDY}px) scale(0.05)`;
-        setTimeout(() => { if (orb.parentNode) orb.parentNode.removeChild(orb); }, 380);
+    function place(x, y, size) {
+        // Индивидуальный translate применяется в координатах слоя до масштаба самого значка.
+        orb.style.translate = (x - startX) + 'px ' + (y - startY) + 'px';
+        orb.style.transform = 'scale(' + size + ')';
+    }
+
+    function finishArrival() {
+        if (finished) return;
+        finished = true;
+        clearTimeout(fallback);
         hudPending[hudG] = Math.max(0, hudPending[hudG] - 1);
-        flushHud(); // цифра на плашке меняется в момент прилёта
-        
+        flushHud();
+        const layer = fxLayer.getBoundingClientRect();
+        const destination = arrivalCenter(targetElem, layer);
+        if (!orb.isConnected || !destination || (district && district !== window.BuboJourney.region().id)) {
+            orb.remove();
+            afterArrival?.();
+            return;
+        }
+        orb.style.transition = 'opacity .26s ease-in, transform .26s cubic-bezier(.55, 0, .9, .4)';
+        place(destination.x, destination.y, .05);
+        orb.style.opacity = '0';
+        setTimeout(() => orb.remove(), 300);
+
         if (targetType === 'attempts') {
-            // попытка долетела: цифра обновляется и «подпрыгивает»
             updateAttemptsHUD();
             restartClass(targetElem, ['attempt-pop'], 'attempt-pop');
-        } else if (isThemeBadge) {
-            triggerBadgeAnimation(targetType);
-        } else {
-            triggerTopHUDPop(targetType);
+        } else if (isThemeBadge) triggerBadgeAnimation(targetType);
+        else triggerTopHUDPop(targetType);
+        if (!isThemeBadge || gfxQuality !== 'low') {
+            const worldScale = viewScale * WORLD_K, zoom = camZoom || 1;
+            const origin = canvas.getBoundingClientRect();
+            const x = width / 2 + ((destination.x + layer.left - origin.left) / worldScale - width / 2) / zoom;
+            const y = height / 2 + ((destination.y + layer.top - origin.top) / worldScale - height / 2) / zoom;
+            for (let i = 0; i < 5; i++) {
+                particles.push({
+                    x, y, vx: (Math.random() - .5) * 2.5, vy: (Math.random() - .5) * 2.5,
+                    color, alpha: .9, size: Math.random() * 2 + 1
+                });
+            }
         }
-        
-        for (let i = 0; i < 5; i++) {
-            particles.push({
-                x: endX / viewScale, y: endY / viewScale,
-                vx: (Math.random() - 0.5) * 2.5, vy: (Math.random() - 0.5) * 2.5,
-                color: color, alpha: 0.9, size: Math.random() * 2 + 1
-            });
+        afterArrival?.();
+    }
+
+    function fly(now) {
+        if (finished) return;
+        const t = Math.min(1, Math.max(0, (now - started) / duration));
+        if (t === 1 || !orb.isConnected) { finishArrival(); return; }
+        if (now - measured >= 110) {
+            measured = now;
+            target = arrivalCenter(targetElem, fxLayer.getBoundingClientRect()) || target;
         }
-    }, 500);
+        const ease = 1 - (1 - t) ** 3;
+        place(startX + (target.x - startX) * ease, startY + (target.y - startY) * ease, .8);
+        requestAnimationFrame(fly);
+    }
+    const fallback = setTimeout(finishArrival, 540);
+    requestAnimationFrame(fly);
 }
 
 function triggerTopHUDPop(type) {
@@ -787,34 +805,24 @@ function updateAttemptsHUD() {
 }
 
 function triggerBadgeAnimation(key, isLoss) {
-    const el = document.getElementById(`badge-${key}`);
-    const icon = document.getElementById(`icon_${key}`);
-    const col = (CATEGORIES[key] && CATEGORIES[key].color) || '#FE7600';
-    if (el) {
-        if (isLoss) {
-            restartClass(el, ['badge-animate', 'badge-pop', 'badge-loss'], 'badge-loss');
-            setTimeout(() => el.classList.remove('badge-loss'), 680);
-        } else {
-            el.style.setProperty('--pop-col', col);
-            restartClass(el, ['badge-animate', 'badge-pop', 'badge-loss'], 'badge-pop');
-            setTimeout(() => el.classList.remove('badge-pop'), 480);
-        }
-    }
-    if (icon && !isLoss) {
-        // иконка слегка поворачивается и увеличивается, как наверху
-        icon.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
-        icon.style.display = 'inline-block';
-        icon.style.transform = 'scale(1.4) rotate(15deg)';
-        setTimeout(() => { icon.style.transform = 'scale(1) rotate(0deg)'; }, 300);
-    }
-    if (icon && isLoss && fxLayer && el && el.offsetParent !== null) {
-        // копия иконки «отваливается» от плашки и падает вниз
-        const cr = container.getBoundingClientRect();
-        const ir = icon.getBoundingClientRect();
-        const cx = ir.left + ir.width / 2 - cr.left, cy = ir.top + ir.height / 2 - cr.top;
+    const el = document.getElementById('badge-' + key);
+    const icon = document.getElementById('icon_' + key);
+    const theme = window.BuboJourney?.themeVisual(key) || CATEGORIES[key];
+    if (!el || !theme) return;
+    const effect = isLoss ? 'badge-loss' : 'badge-pop';
+    el.style.setProperty('--pop-col', theme.color);
+    clearTimeout(el.__themeEffectTimer);
+    restartClass(el, ['badge-animate', 'badge-pop', 'badge-loss'], effect);
+    el.__themeEffectTimer = setTimeout(() => el.classList.remove(effect), isLoss ? 680 : 420);
+    if (icon && isLoss && fxLayer && el.offsetParent !== null && !reducedThemeMotion.matches) {
+        // От плашки отделяется копия именно видимого значка текущего района.
+        const origin = arrivalCenter(icon, fxLayer.getBoundingClientRect());
+        if (!origin) return;
+        const { x: cx, y: cy } = origin;
         const fall = document.createElement('i');
-        fall.className = `fa-solid ${CATEGORIES[key].faClass} icon-fall`;
-        fall.style.cssText += `left:${cx}px;top:${cy}px;color:${col};font-size:15px;filter:drop-shadow(0 0 6px ${col});`;
+        fall.className = 'fa-solid ' + theme.faClass + ' icon-fall';
+        fall.style.cssText = 'left:' + cx + 'px;top:' + cy + 'px;color:' + theme.color + ';font-size:15px';
+        if (gfxQuality !== 'low') fall.style.filter = 'drop-shadow(0 0 6px ' + theme.color + ')';
         fxLayer.appendChild(fall);
         const minus = document.createElement('div');
         minus.className = 'loss-minus';
@@ -912,11 +920,6 @@ function renderCollectionHUD() {
     });
     if (labelsChanged && typeof fitThemeLabels === 'function') fitThemeLabels();
     updateDifficultyHUD();
-}
-
-function checkVictoryCondition() {
-    if (!gameActive) return;
-    window.BuboJourney.onCollectionComplete();
 }
 
 function updateMenuVisibility() {

@@ -302,19 +302,19 @@
         .gfx-low .glass-panel-menu { background: rgba(29, 9, 54, 0.9) !important; }
         .gfx-low #startScreen, .gfx-low #rulesModal, .gfx-low #settingsModal, .gfx-low #gameOverModal, .gfx-low #victoryModal { background-color: rgba(20, 3, 38, 0.55) !important; }
         /* Главные оранжевые кнопки (начать / продолжить / начать заново): перелив и мягкое «дыхание» */
-        #campaignStartBtn, #continueAttemptBtn, #restartFromGameOverBtn.restart-big, #understoodRulesBtn, #rlSpinBtn, #rlClaimBtn {
+        #campaignStartBtn, #journeyPickerStart, #continueAttemptBtn, #restartFromGameOverBtn.restart-big, #understoodRulesBtn, #rlSpinBtn, #rlClaimBtn {
             position: relative; overflow: hidden; isolation: isolate;
             background: linear-gradient(110deg, #FE7600 0%, #ff8c1a 35%, #ffb054 50%, #ff8c1a 65%, #FE7600 100%);
             background-size: 220% 100%;
             animation: btnFlow 3.2s ease-in-out infinite, btnBreath 2.4s ease-in-out infinite;
         }
-        #campaignStartBtn::after, #continueAttemptBtn::after, #restartFromGameOverBtn.restart-big::after, #understoodRulesBtn::after, #rlSpinBtn::after, #rlClaimBtn::after {
+        #campaignStartBtn::after, #journeyPickerStart::after, #continueAttemptBtn::after, #restartFromGameOverBtn.restart-big::after, #understoodRulesBtn::after, #rlSpinBtn::after, #rlClaimBtn::after {
             content: ''; position: absolute; top: -20%; bottom: -20%; left: -60%; width: 45%;
             background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0) 20%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0) 80%, transparent 100%);
             transform: skewX(-20deg); pointer-events: none; z-index: 1;
             animation: btnShine 2.8s ease-in-out infinite;
         }
-        #campaignStartBtn > *, #continueAttemptBtn > *, #restartFromGameOverBtn.restart-big > *, #understoodRulesBtn > *, #rlSpinBtn > *, #rlClaimBtn > * { position: relative; z-index: 2; }
+        #campaignStartBtn > *, #journeyPickerStart > *, #continueAttemptBtn > *, #restartFromGameOverBtn.restart-big > *, #understoodRulesBtn > *, #rlSpinBtn > *, #rlClaimBtn > * { position: relative; z-index: 2; }
         @keyframes btnShine { 0% { left: -60%; } 55% { left: 130%; } 100% { left: 130%; } }
         @keyframes btnFlow { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
         @keyframes btnBreath {

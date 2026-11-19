@@ -10,11 +10,12 @@
         { id: 'jungle', name: 'Джунгли', shortName: 'Джунгли', legacy: ['', '', 'cartoons'] }
     ];
     const BOSS_REWARD = { xp: 150, coins: 0, spins: 1 };
+    const THEME_COMPLETION_KEYS = new Set(DISTRICTS.flatMap(({ id }) => THEME_KEYS.map(key => id + ':' + key)));
     function newRunId() { return window.crypto?.randomUUID?.() || Date.now() + '-' + Math.random().toString(36).slice(2); }
     function newState(pending = []) {
         return {
             version: 2, runId: newRunId(), index: 0, bonusGates: 0, bossWave: 0, prize: '', pending, legacyCollection: null,
-            lostAttempts: 0, stars: DISTRICTS.map(() => 0), pathCoins: [0, 0, 0]
+            lostAttempts: 0, stars: DISTRICTS.map(() => 0), pathCoins: [0, 0, 0], completedThemes: []
         };
     }
     let state = newState();
@@ -52,6 +53,8 @@
                 lostAttempts: count(data.lostAttempts),
                 stars: DISTRICTS.map((_, i) => Math.min(3, count(data.stars?.[i]))),
                 pathCoins: [0, 1, 2].map(i => Math.min(4, count(data.pathCoins?.[i]))),
+                completedThemes: Array.isArray(data.completedThemes)
+                    ? [...new Set(data.completedThemes.filter(key => THEME_COMPLETION_KEYS.has(key)))] : [],
                 prize: index < DISTRICTS.length && data.prize === DISTRICTS[index].id ? data.prize : '',
                 legacyCollection: data.legacyCollection && typeof data.legacyCollection === 'object'
                     ? data.legacyCollection : null
@@ -66,7 +69,10 @@
         loadDistrictCollection(region());
     }
 
-    function snapshot() { return { ...state, pending: [...state.pending], stars: [...state.stars], pathCoins: [...state.pathCoins] }; }
+    function snapshot() {
+        return { ...state, pending: [...state.pending], stars: [...state.stars],
+            pathCoins: [...state.pathCoins], completedThemes: [...state.completedThemes] };
+    }
     function notify() { window.dispatchEvent(new Event(CHANGED)); }
     function region() { return DISTRICTS[Math.min(state.index, DISTRICTS.length - 1)]; }
     function regionName(id) { return DISTRICTS.find(district => district.id === id)?.name || ''; }
@@ -77,6 +83,24 @@
 
     function themeQuota(key, district = region().id) { return ADMIN_CFG.districtThemes[district]?.[key] || ADMIN_CFG.themes[key]; }
     function districtTotal(district) { return THEME_KEYS.reduce((sum, key) => sum + themeQuota(key, district), 0); }
+
+    function testFlightSave(district, difficulty) {
+        const index = DISTRICTS.findIndex(entry => entry.id === district);
+        if (index < 0 || !Number.isInteger(difficulty) || !DIFF_LEVELS[difficulty]) return null;
+        const journey = { ...newState(), index };
+        const collection = Object.fromEntries(THEME_KEYS.map(key => [key, 0]));
+        const total = districtTotal(district);
+        const target = Math.ceil(difficulty * Math.max(total, DIFF_LEVELS.length) / DIFF_LEVELS.length);
+        let left = Math.min(total, target);
+        for (let i = 0; left > 0; i = (i + 1) % THEME_KEYS.length) {
+            const key = THEME_KEYS[i];
+            if (collection[key] >= themeQuota(key, district)) continue;
+            collection[key]++;
+            left--;
+        }
+        journey.bonusGates = Math.max(0, target - total);
+        return { journey, collected: collection, attempts: MAX_ATTEMPTS, playDay: todayKey() };
+    }
     function recordLoss() { state.lostAttempts++; }
     function starsFor(id) { return state.stars[DISTRICTS.findIndex(district => district.id === id)] || 0; }
     function availablePathCoins(tier) { return Math.max(0, 4 - (state.pathCoins[tier] || 0)); }
@@ -115,25 +139,47 @@
         return Math.min(DIFF_LEVELS.length - 1, Math.floor(passed * DIFF_LEVELS.length / total));
     }
 
+    function hasCompletedTheme(district, key) {
+        const index = DISTRICTS.findIndex(entry => entry.id === district);
+        // A finished district in an older save proves its whole collection was completed.
+        return index >= 0 && (index < state.index || state.stars[index] > 0
+            || state.completedThemes.includes(district + ':' + key));
+    }
+
+    function themeCollection(district, key) {
+        const required = themeQuota(key, district);
+        const amount = district === region().id ? count(collected[key]) : 0;
+        return { amount: hasCompletedTheme(district, key) ? required : Math.min(required, amount), required };
+    }
+
     function recordCollection(key) {
         if (!THEME_KEYS.includes(key)) return null;
-        const amount = collected[key];
-        const credit = themeQuota(key) === 1 && amount >= 1 ? 2 : amount;
-        return window.BuboCampaignTopics?.collectDistrictToken(region().id, key, credit);
+        const district = region().id;
+        if (count(collected[key]) < themeQuota(key, district) || hasCompletedTheme(district, key)) return null;
+        state.completedThemes.push(district + ':' + key);
+        window.dispatchEvent(new Event('bubo:campaign-topics'));
+        return { unlocked: true };
     }
 
     function resetRoute({ retainRewards = true } = {}) {
         clearTimeout(openBossTimer);
         openBossTimer = 0;
-        const stars = state.stars;
+        const { stars, completedThemes } = state;
         state = newState(retainRewards ? state.pending : []);
-        if (retainRewards) state.stars = stars;
+        if (retainRewards) {
+            state.stars = stars;
+            state.completedThemes = completedThemes;
+        }
         window.BuboCampaignCombat?.resetFlightHazard({ newRoute: true });
         notify();
     }
 
     function syncTopicUnlocks() {
-        for (const key of THEME_KEYS) recordCollection(key);
+        let changed = false;
+        for (const key of THEME_KEYS) {
+            if (recordCollection(key)) changed = true;
+        }
+        if (changed) StorageManager.saveLocal();
     }
 
     function enterFlight({ secondWind = false } = {}) {
@@ -158,19 +204,25 @@
         return passed >= total;
     }
     function show(type, message) { window.BuboCampaign.showJourneyResult(type, message); }
-    function onCollectionComplete() {
-        if (!flight || openBossTimer || !isBossReady()) return;
+    function onCollectionComplete(playArrival) {
+        if (!flight || openBossTimer || !isBossReady()) return false;
         const saved = StorageManager.saveLocal();
         gameActive = false;
         waitingFirstTap = false;
-        openBossTimer = setTimeout(() => {
+        const finish = () => {
+            if (openBossTimer !== timer) return;
+            clearTimeout(timer);
             openBossTimer = 0;
             window.FlightQuizBonus?.endFlight(score, 'boss-ready');
             returnToHome();
             show(saved ? 'journey-ready' : 'journey-save-error', saved
                 ? 'Коллекция района собрана. Путь к Смотрителю открыт.'
                 : 'Не удалось сохранить коллекцию. Попробуй ещё раз.');
-        }, 0);
+        };
+        const timer = setTimeout(finish, playArrival ? 760 : 0);
+        openBossTimer = timer;
+        if (playArrival) playArrival(finish);
+        return true;
     }
 
     function onRegularGate() {
@@ -331,7 +383,7 @@
         restore, snapshot, markSaved, isOutdated, reloadIfOutdated, resetRoute, recordCollection, syncTopicUnlocks, onRegularGate, enterFlight, leaveFlight, onCollectionComplete,
         isFlight: () => flight, isSecondWind: () => launchingWind || windFlight, inSecondWind: () => windFlight,
         region, regionName, regionProgress, flightProgress, difficultyIndex, themeKeys: () => THEME_KEYS,
-        districts: () => [...DISTRICTS], themeVisual, themeQuota, districtTotal, starsFor, recordLoss, availablePathCoins, recordPathCoin, prizeDistrictId, advanceAfterPrize, refreshAfterPrize, completedCount: () => state.index,
+        districts: () => [...DISTRICTS], themeVisual, themeQuota, themeCollection, districtTotal, testFlightSave, starsFor, recordLoss, availablePathCoins, recordPathCoin, prizeDistrictId, advanceAfterPrize, refreshAfterPrize, completedCount: () => state.index,
         isBossReady, hasDefeatedBoss, bossWave, saveBossWave, commitBoss, settleRewards, offer, start, celebrate
     };
 })();

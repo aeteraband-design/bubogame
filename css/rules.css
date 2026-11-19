@@ -49,6 +49,7 @@
 #rlWin .ru-tabs.fl { --ruL: 26px; }
 #rlWin .ru-tabs.fr { --ruR: 26px; }
 #rlWin .ru-tab { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 12px; cursor: pointer;
+    min-height: calc(48px / var(--menu-zoom, 1));
     border: 1px solid rgba(120, 44, 233, 0.5); background: rgba(120, 44, 233, 0.2); color: #d8c4ff;
     font: 800 11.5px/1.1 Onest, sans-serif; white-space: nowrap; letter-spacing: .01em;
     transition: background .2s, color .2s, box-shadow .2s, border-color .2s; -webkit-tap-highlight-color: transparent; }
@@ -56,7 +57,7 @@
 #rlWin .ru-tab i { font-size: 12px; color: var(--c); transition: color .2s; }
 #rlWin .ru-tab:active { transform: scale(.96); }
 #rlWin .ru-tab.on { background: linear-gradient(180deg, #FF9F1C, #FE7600); border-color: rgba(255, 214, 150, 0.85); color: #fff;
-    box-shadow: 0 0 0 1px rgba(255, 190, 110, 0.35), 0 0 9px rgba(254, 118, 0, 0.7); text-shadow: 0 0 6px rgba(255, 200, 120, 0.6); }
+    box-shadow: none; text-shadow: none; }
 #rlWin .ru-tab.on i { color: #fff; }
 
 /* ---- содержимое: листается, сверху и снизу мягкое затенение; полоска прокрутки — на обводке окна ---- */
@@ -144,6 +145,15 @@
 #rlWin .ru-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 10px; border-radius: 16px; font-weight: 900; font-size: 13px; letter-spacing: .05em; cursor: pointer; }
 #rlWin .ru-btn.sec { padding: 11px 10px; font-size: 11.5px; color: #fff; background: rgba(45, 14, 82, 0.9); border: 1px solid rgba(168, 85, 247, 0.5); }
 #rlWin .ru-btn.sec i { color: #FE7600; }
+#rlWin #understoodRulesBtn {
+    min-height: calc(56px / var(--menu-zoom, 1));
+    background: linear-gradient(135deg, #FE7600, #ff8c1a);
+    box-shadow: none;
+    text-shadow: none;
+    animation: none;
+}
+#rlWin #understoodRulesBtn::after { display: none; }
+#rlWin #rulesBackBtn { min-height: calc(48px / var(--menu-zoom, 1)); }
 
 /* низкие экраны: шапка компактнее, чтобы тексту оставалось место */
 #rulesModal > #rlWin.ru-compact { gap: 10px; padding-top: 12px; padding-bottom: 12px; }
@@ -153,9 +163,14 @@
 #rlWin.ru-compact .ru-title span { display: none; }
 #rlWin.ru-compact .ru-btn { padding: 11px 10px; }
 #rlWin.ru-compact .ru-btn.sec { padding: 9px 10px; }
+@media (max-width: 350px) {
+    #rlWin .ru-emb, #rlWin.ru-compact .ru-emb { width: 68px; height: 68px; }
+    #rlWin .ru-core i, #rlWin.ru-compact .ru-core i { font-size: 31px; }
+    #rlWin .ru-title b { font-size: 24px; }
+}
 @media (prefers-reduced-motion: reduce) {
     #rulesModal > #rlWin { transition: none; }
-    #rlWin .ru-pane.ru-in { animation: none; }
+    #rlWin :is(.ru-pane.ru-in, .ru-glow, .ru-ring, .ru-core i, .ru-tw) { animation: none; }
 }
 .gfx-low #rlWin .ru-ring, .gfx-low #rlWin .ru-core i, .gfx-low #rlWin .ru-glow, .gfx-low #rlWin .ru-tw { animation-duration: 0s; animation-play-state: paused; }
 /* v0.13.89: иконки в кружках — белые и контрастные: кружок чуть темнее, без теней под значками */
@@ -175,7 +190,8 @@
 /* лента начинается на 10 px выше: крестик стоит там же, где был, и не обрезается; вкладки у края — в 16 px от верха, как кнопки снизу */
 #rlWin.ru-stick .ru-body { margin-top: -10px; }
 #rlWin.ru-stick .ru-head { position: relative; padding-top: 10px; }
-#rlWin.ru-stick .ru-head > .win-x { position: absolute !important; top: 4px !important; right: -4px !important; }
+#rlWin.ru-stick .ru-head > .win-x { position: absolute !important; top: 4px !important; right: -4px !important;
+    width: calc(48px / var(--menu-zoom, 1)) !important; height: calc(48px / var(--menu-zoom, 1)) !important; }
 #rlWin.ru-stick .ru-tabs { position: absolute; top: 0; left: -4px; right: -4px; z-index: 3; margin: 0; padding: 10px 4px 8px; }
 #rlWin.ru-stick .ru-tabsph { margin-top: 6px; }
 /* текст под вкладками прячется и мягко проявляется ниже них — та же маска, что у нижнего края над кнопками */

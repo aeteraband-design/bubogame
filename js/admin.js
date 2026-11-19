@@ -45,7 +45,7 @@
             rowDef('questionsPerAttempt', 'За +1 попытку', '', 'fa-circle-question', '#FE7600', (n) => ruPlural(n, ['вопрос', 'вопроса', 'вопросов'])),
             rowDef('maxLives', 'Макс. сердечек', '', 'fa-heart', '#EF4444', (n) => ruPlural(n, ['сердечко', 'сердечка', 'сердечек'])),
             rowDef('stormFreq', 'Частота гроз', '', 'fa-cloud-rain', '#93C5FD', (n) => ['редко', 'по умолчанию', 'часто', 'очень часто'][n] || ''),
-            rowDef('crystalFreq', 'Опасные трубы / Водонапор', '', 'fa-fire', '#FF4A3D', (n) => ['1-1-2-2-3-3 по уровням', 'раз за уровень', '2 раза за уровень'][n] || ''),
+            rowDef('crystalFreq', 'Огонь и водонапор', '', 'fa-fire', '#FF4A3D', (n) => ['1-1-2-2-3-3 по уровням', 'раз за уровень', '2 раза за уровень'][n] || ''),
         ]
     };
     let tab = 'themes';
@@ -186,10 +186,13 @@
             }
         } else h += ROWS[tab].map(rowHtml).join('');        if (tab === 'game') h += `<div class="adq-acts"><button type="button" class="adq-btn" data-g="coins"><i class="fa-solid fa-coins"></i>+1000 монет</button><button type="button" class="adq-btn" data-g="lvl"><i class="fa-solid fa-star"></i>+1 уровень совы</button></div>`
             + `<div class="adq-acts"><button type="button" class="adq-btn" data-g="spin1"><i class="fa-solid fa-dice"></i>+1 вращение рулетки</button><button type="button" class="adq-btn" data-g="spin5"><i class="fa-solid fa-dice"></i>+5 вращений</button></div>`
-            + '<div class="adm-sum"><span>Предпросмотр районов</span></div>'
+            + '<section class="adm-flight-test" aria-label="Тестовый полёт"><div class="adm-sum"><label for="admFlightDifficulty">Тестовый полёт</label>'
+            + '<select id="admFlightDifficulty" class="adq-btn">' + DIFF_LEVELS.map((level, index) =>
+                '<option value="' + index + '">' + level.name + '</option>').join('') + '</select></div>'
+            + '<p id="admFlightTestStatus" role="status">Отдельная вкладка с тестовым сохранением.</p>'
             + journey.districts().map(({ id, name }) =>
-                '<div class="adq-acts"><button type="button" class="adq-btn" data-g="stage-' + id + '">' + name + '</button>'
-                    + '<button type="button" class="adq-btn" data-g="stage-boss-' + id + '">Босс</button></div>').join('')
+                '<div class="adq-acts"><button type="button" class="adq-btn" data-g="flight-' + id + '">' + name + '</button>'
+                    + '<button type="button" class="adq-btn" data-g="stage-boss-' + id + '" aria-label="Босс · ' + name + '">Босс</button></div>').join('') + '</section>'
             + `<div class="adq-acts"><button type="button" class="adq-btn" data-g="out"><i class="fa-solid fa-right-from-bracket"></i>Выйти из админки</button></div>`;
         body.innerHTML = h;
         body.scrollTop = 0;
@@ -242,6 +245,7 @@
         syncAll();
     };
     function syncAll() {
+        window.BuboJourney.syncTopicUnlocks();
         syncRulesCfg();
         try { renderLivesHUD(); } catch (e) {}
         try { renderRulesGoal(); } catch (e) {}
@@ -339,6 +343,19 @@
             rouletteSpins = Math.min(99, rouletteSpins + (b.dataset.g === 'spin5' ? 5 : 1));
             try { rwUpdateUI(); StorageManager.save(); } catch (er) {}
             b.innerHTML = '<i class="fa-solid fa-check"></i>Вращений: ' + rouletteSpins;
+        }
+        else if (b.dataset.g.startsWith('flight-')) {
+            const difficulty = Number($('admFlightDifficulty').value);
+            const save = window.BuboJourney.testFlightSave(b.dataset.g.slice(7), difficulty);
+            if (!save) return;
+            const opened = BuboLocalProfiles.openTestFlight({
+                bubo_wipe: BuboSaveStorage.getItem('bubo_wipe'),
+                [ADMIN_KEY]: JSON.stringify(ADMIN_CFG),
+                [StorageManager.LOCAL_KEY]: JSON.stringify(save),
+                bubo_campaign_first_map_v1: JSON.stringify({ version: 1, seed: 1, stage: 1, pending: [] })
+            });
+            $('admFlightTestStatus').textContent = opened ? 'Тестовый полёт открыт в отдельной вкладке.'
+                : 'Браузер не открыл вкладку. Разреши всплывающие окна и попробуй ещё раз.';
         }
         else if (b.dataset.g.startsWith('stage-')) {
             close();
@@ -481,6 +498,12 @@
     $('admDone').addEventListener('click', close);
     ['click', 'pointerdown', 'touchstart'].forEach((ev) => modal.addEventListener(ev, (e) => e.stopPropagation()));
 
+    if (BuboLocalProfiles.testFlight) {
+        const notice = document.createElement('p');
+        notice.className = 'text-purple-200 text-center text-xs font-bold';
+        notice.textContent = 'Тестовый полёт · ' + window.BuboJourney.region().name;
+        $('campaignStartBtn').before(notice);
+    }
     syncRulesCfg();
     try { updateCollectionHUD(); } catch (e) {}
 })();

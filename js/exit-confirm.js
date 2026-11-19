@@ -82,11 +82,16 @@
     }
 
     // --- открытые окна: [id, как закрыть] — сверху вниз по слоям ---
-    const vis = (id) => { const el = document.getElementById(id); return !!(el && !el.classList.contains('hidden') && el.style.display !== 'none' && el.offsetParent !== null); };
+    const vis = id => {
+        const el = document.getElementById(id);
+        if (!el || el.classList.contains('hidden') || el.style.display === 'none') return false;
+        return el.tagName === 'DIALOG' ? el.open : el.offsetParent !== null;
+    };
     const click = (id) => () => { const b = document.getElementById(id); if (b) b.click(); };
     const call = (fn, fb) => () => { try { if (typeof window[fn] === 'function') { window[fn](); return; } } catch (e) {} if (fb) fb(); };
     const hide = (id) => () => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); };
     const WINDOWS = [
+        ['journeyPicker', click('journeyPickerClose')],
         ['authModal', () => {}],   // регистрация обязательна — «назад» её не закрывает
         ['profModal', call('closeProfile', hide('profModal'))],
         ['resetConfirmModal', click('resetNoBtn')],
@@ -132,7 +137,7 @@
 
     // Esc на компьютере — то же, что «назад», только без ухода со страницы
     window.addEventListener('keydown', (e) => {
-        if (e.key !== 'Escape' || e.repeat) return;
+        if (e.key !== 'Escape' || e.repeat || vis('journeyPicker')) return;
         if (isExitOpen()) { closeExit(true); return; }
         for (const [id, close] of WINDOWS) { if (vis(id)) { if (id === 'quizModal' && quizTrap()) return; try { close(); } catch (er) {} return; } }
     });

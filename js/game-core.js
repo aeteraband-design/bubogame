@@ -644,6 +644,7 @@ const StorageManager = {
         this.loadLocal();
         updateMenuVisibility();
         updateHUDAll();
+        if (BuboLocalProfiles.testFlight) return;
 
         try {
             if (typeof __firebase_config !== 'undefined') {

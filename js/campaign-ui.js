@@ -16,7 +16,9 @@
     let confirmingWind = false;
     let recoveryTimer = 0;
     const picker = $('journeyPicker');
+    const pickerScroll = $('journeyPickerScroll');
     const pickerStart = $('journeyPickerStart');
+    const pickerStartLabel = $('journeyPickerStartLabel');
     const pickerReturn = $('journeyPickerReturn');
     const districts = journey.districts();
     const previewUrl = district => 'assets/levels/' + district.id + '.webp?v=0.18.8';
@@ -43,6 +45,12 @@
         const stars = document.createElement('span');
         stars.className = 'journey-level-stars';
         stars.setAttribute('aria-hidden', 'true');
+        const starIcons = Array.from({ length: 3 }, () => {
+            const star = document.createElement('i');
+            star.className = 'journey-level-star fa-solid fa-star';
+            stars.append(star);
+            return star;
+        });
         button.append(art, number, label, icon, stars);
         item.append(button);
         $('journeyPickerLevels').append(item);
@@ -50,7 +58,7 @@
             selectedLevel = index;
             refreshPicker();
         });
-        return { district, button, icon, art, stars };
+        return { district, button, icon, art, stars, starIcons };
     });
     let selectedLevel = 0;
 
@@ -70,14 +78,17 @@
         progress.textContent = completedRoute ? 'Все районы пройдены'
             : selectedLevel === current ? passed + ' / ' + total + ' значков'
                 : 'Цель района · ' + selectedTotal + ' ' + ruPlural(selectedTotal, ['значок', 'значка', 'значков']);
-        levels.forEach(({ district, button, icon, stars }, index) => {
+        levels.forEach(({ district, button, icon, stars, starIcons }, index) => {
             const passedLevel = index < completedCount;
             const status = passedLevel ? 'Пройдено' : index === current ? 'Доступно' : 'Закрыто';
             button.dataset.status = index === current ? 'current' : passedLevel ? 'passed' : 'upcoming';
             button.setAttribute('aria-pressed', String(index === selectedLevel));
             const rating = journey.starsFor(district.id);
             stars.hidden = !passedLevel || !rating;
-            stars.textContent = '★'.repeat(rating) + '☆'.repeat(3 - rating);
+            starIcons.forEach((star, place) => {
+                const earned = place < rating;
+                star.dataset.earned = String(earned);
+            });
             button.setAttribute('aria-label', (index + 1) + '. ' + district.name + '. ' + status
                 + (!stars.hidden ? '. Звёзды: ' + rating + ' из 3' : ''));
             icon.className = 'fa-solid ' + (index === current ? 'fa-play' : passedLevel ? 'fa-check' : 'fa-lock');
@@ -93,21 +104,20 @@
         const preview = $('journeyPickerImage');
         const source = previewUrl(selected);
         if (preview.getAttribute('src') !== source) preview.src = source;
-        $('journeyPickerLevelNumber').textContent = 'Район ' + (selectedLevel + 1);
         $('journeyPickerLevelName').textContent = selected.name;
         const canStart = selectedLevel === current;
         pickerStart.disabled = !canStart;
         pickerStart.hidden = !canStart;
         pickerReturn.hidden = canStart;
-        pickerStart.textContent = completedRoute ? 'Начать новый маршрут' : awaitingPrize ? 'Забрать приз'
+        pickerStartLabel.textContent = completedRoute ? 'Новый маршрут' : awaitingPrize ? 'Забрать приз'
             : bossReady ? 'К Смотрителю' : passed > 0 ? 'Продолжить полёт' : 'В полёт';
         let hint = '';
         if (completedRoute && canStart) hint = 'Новый маршрут начнётся в Ночном городе.';
-        else if (selectedLevel > current && !completedRoute) hint = 'Победи Смотрителя и забери приз в предыдущем районе.';
+        else if (selectedLevel > current && !completedRoute) hint = 'Пройди предыдущий район и забери приз.';
         else if (canStart && awaitingPrize) hint = 'Приз откроет следующий район.';
         else if (canStart && bossReady) hint = 'Три волны. Победа даёт вращение в рулетке.';
         const topics = window.BuboCampaignTopics.districtTopics(selected.id);
-        document.getElementById('journeyPickerTopics').textContent = topics.map(theme => theme.name).join(' · ');
+        document.getElementById('journeyPickerTopics').textContent = topics.map(theme => theme.name).join(', ');
         $('journeyPickerHint').textContent = hint;
     }
     function untilReset() {
@@ -141,6 +151,11 @@
     function action(button, fn) {
         button.addEventListener('click', event => { event.stopPropagation(); fn(); });
     }
+    function focusSelectedLevel() {
+        picker.scrollTop = 0;
+        pickerScroll.scrollTop = 0;
+        levels[selectedLevel].button.focus();
+    }
     action(campaignStart, () => {
         if (journey.reloadIfOutdated()) return;
         if (!campaign.status().practiced) {
@@ -155,13 +170,13 @@
         for (const { district, art } of levels) {
             if (!art.hasAttribute('src')) art.src = previewUrl(district);
         }
-        levels[selectedLevel].button.focus();
+        focusSelectedLevel();
     });
     action($('journeyPickerClose'), () => picker.close());
     action(pickerReturn, () => {
         selectedLevel = playableLevel();
         refreshPicker();
-        levels[selectedLevel].button.focus();
+        focusSelectedLevel();
     });
     action(pickerStart, () => {
         if (selectedLevel !== playableLevel()) return;

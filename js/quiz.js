@@ -666,21 +666,20 @@ function qzThemeCards(lv) {
     const district = window.BuboJourney?.region().id;
     const visible = [...campaign.values()].filter(topic => topic.district === district || topics.isUnlocked(topic.id));
     const list = paid ? QZ_THEMES : [qzTheme('all'), ...visible.map(topic => qzTheme(topic.id))];
-    const required = topics?.required || 2;
     const levelLocked = qzLvLocked(lv);
     const seen = new Set(quizSeen());
     return list.map(t => {
         const chapter = !paid && campaign.get(t.id);
-        const locked = chapter && !topics.isUnlocked(t.id);
+        const collection = chapter && topics.collection(t.id);
+        const locked = collection && collection.amount < collection.required;
         const pool = qzPool(t.id).filter(q => !lv || q.lvl === lv);
         const total = pool.length, done = pool.filter(q => seen.has(q.id)).length;
         const empty = done === total;
         const on = QS.selT === t.id && !locked && !empty;
-        const count = locked ? topics.progress(t.id) : done;
         const chapterName = chapter ? window.BuboJourney?.regionName(chapter.district) : '';
-        const note = locked ? (chapterName ? chapterName + ' · ' : '') + count + '/' + required
+        const note = locked ? (chapterName ? chapterName + ' · ' : '') + collection.amount + '/' + collection.required
             : empty ? (total ? 'Всё пройдено!' : 'Пока нет вопросов') : 'Пройдено ' + done + '/' + total;
-        const progress = locked ? Math.round(count / required * 100) : (total ? Math.round(done / total * 100) : 0);
+        const progress = locked ? Math.round(collection.amount / collection.required * 100) : (total ? Math.round(done / total * 100) : 0);
         const icon = locked || levelLocked ? 'fa-lock qz-thl' : 'fa-check qz-thk';
         return `<button type="button" class="qz-th${t.id === 'all' ? ' wide' : ''}${on ? ' on' : ''}${locked ? ' campaign-locked' : ''}${empty && !locked ? ' empty' : ''}" data-th="${t.id}"${locked || empty ? ' disabled' : ''} style="--tc:${t.col};--tcA:${t.col}55;--tcB:${t.col}22">`
             + `<span class="qz-thi"><i class="fa-solid ${t.icon}" aria-hidden="true"></i></span><span class="qz-thtx"><span class="qz-thn">${t.name}</span><span class="qz-thc">${note}</span><span class="qz-thb"><i style="width:${progress}%"></i></span></span><i class="fa-solid ${icon}" aria-hidden="true"></i></button>`;
@@ -851,6 +850,13 @@ function qzResumeAttempt(a) {
     QS.attempt = a; QS.mode = a.mode;
     QS.selT = a.theme; QS.selL = a.lvl;
     if (a.outcome) { qzFinishAttempt(a); return; }
+    if (!a.selected && !qzThemeAllowed(a.theme, a.lvl)) {
+        if (a.mode === 'bonus') FlightQuizBonus.release?.(a.id);
+        qzSaveAttempt(null);
+        QS.attempt = null;
+        qzRenderPick('Собери все значки темы в полёте, чтобы открыть её.');
+        return;
+    }
     if (a.mode === 'bonus' && typeof FlightQuizBonus !== 'undefined' && typeof FlightQuizBonus.reserve === 'function'
         && !FlightQuizBonus.reserve(a.id, a.token || '')) {
         qzSaveAttempt(null);

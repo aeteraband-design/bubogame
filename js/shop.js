@@ -464,15 +464,19 @@ function shopSyncBtn() {
     const st = document.createElement('style');
     st.textContent = '#startScreen > *{transition:opacity .25s ease}#startScreen.menu-under-pop > *{opacity:0!important;pointer-events:none!important}';
     document.head.appendChild(st);
-    const POPS = ['authModal', 'profModal', 'rouletteModal', 'quizModal', 'shopModal', 'rulesModal', 'settingsModal', 'adminModal', 'admLogin', 'resetConfirmModal', 'winModal'];
+    const POPS = ['authModal', 'profModal', 'rouletteModal', 'quizModal', 'shopModal', 'rulesModal', 'settingsModal', 'adminModal', 'admLogin', 'resetConfirmModal', 'winModal', 'journeyPicker'];
     const sync = () => {
         const ss = document.getElementById('startScreen'); if (!ss) return;
-        const any = POPS.some((id) => { const e = document.getElementById(id); return e && !e.classList.contains('hidden') && e.style.display !== 'none' && !e.classList.contains('closing') && e.offsetParent !== null; });
+        const any = POPS.some(id => {
+            const popup = document.getElementById(id);
+            if (!popup || popup.classList.contains('hidden') || popup.style.display === 'none' || popup.classList.contains('closing')) return false;
+            return popup.tagName === 'DIALOG' ? popup.open : popup.offsetParent !== null;
+        });
         ss.classList.toggle('menu-under-pop', any);
     };
     // следим за всей страницей (окна лежат в разных местах), плюс страховка раз в полсекунды
     let q = 0; const kick = () => { if (!q) q = requestAnimationFrame(() => { q = 0; sync(); }); };
-    try { new MutationObserver(kick).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class', 'style'], childList: true }); } catch (e) {}
+    try { new MutationObserver(kick).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class', 'style', 'open'], childList: true }); } catch (e) {}
     setInterval(sync, 500);
     sync();
 })();

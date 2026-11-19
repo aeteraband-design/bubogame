@@ -102,3 +102,9 @@
 #adminModal #admReset { display: none; }   /* настройки админки сбрасывает кнопка «Админка» в блоке «Сбросить» */
 
 #admPlaytestExport{display:block;width:100%;min-height:7em;margin:0 0 9px;padding:8px;box-sizing:border-box;background:#1d0936;color:#f4eaff;border:1px solid #782ce9;border-radius:8px;font:12px monospace}
+
+#adminModal .adm-flight-test { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid #782ce953; }
+#adminModal .adm-flight-test .adm-sum { flex-wrap: wrap; }
+#adminModal .adm-flight-test .adq-acts { display: grid; grid-template-columns: minmax(0, 1fr) max-content; }
+#adminModal .adm-flight-test .adq-btn { min-height: 48px; }
+#admFlightTestStatus { margin: 2px 4px 4px; color: #d9c2f5; font-size: 12px; line-height: 1.35; }

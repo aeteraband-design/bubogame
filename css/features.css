@@ -382,12 +382,12 @@ html.hud-ll #buffBar .buff-tag { align-self: flex-start !important; }
 #rlWin .rl-btn.sec i { color: #FE7600; }
 
 /* ===== Крестик закрытия — во всех окнах как в лавке: еле заметная плашка в цвет окна, в правом верхнем углу ===== */
-#rlWin .win-x, #qzWin .qz-x, #shWin .sh-x, #rwWindow #closeRouletteBtn, #settingsModal #closeSettingsBtn, #adminModal #admClose {
+#rlWin .win-x, #qzWin .qz-x, #shWin .sh-x, #rwWindow #closeRouletteBtn, #settingsModal #closeSettingsBtn, #journeyPicker .st-x, #adminModal #admClose {
     position: absolute !important; top: 10px !important; right: 10px !important; z-index: 3; width: 32px !important; height: 32px !important; border-radius: 11px !important; padding: 0 !important;
     display: flex !important; align-items: center !important; justify-content: center !important; font-size: 14px !important; cursor: pointer;
     color: color-mix(in srgb, var(--xc, #E9D5FF) 55%, #fff) !important; background: color-mix(in srgb, var(--xc, #ffffff) 8%, transparent) !important;
     border: 1px solid color-mix(in srgb, var(--xc, #ffffff) 26%, transparent) !important; box-shadow: none !important; }
-#rlWin .win-x i, #qzWin .qz-x i, #shWin .sh-x i, #rwWindow #closeRouletteBtn i, #settingsModal #closeSettingsBtn i, #adminModal #admClose i { font-size: 14px !important; color: inherit !important; }
+#rlWin .win-x i, #qzWin .qz-x i, #shWin .sh-x i, #rwWindow #closeRouletteBtn i, #settingsModal #closeSettingsBtn i, #journeyPicker .st-x i, #adminModal #admClose i { font-size: 14px !important; color: inherit !important; }
 #rlWin { --xc: #FE7600; } #qzWin { --xc: #38BDF8; } #shWin { --xc: #FFC53D; } #rwWindow { } #settingsModal { } #adminModal { --xc: #FE7600; }
 #settingsModal > .glass-panel, #adminModal .adm-panel { position: relative; }
 

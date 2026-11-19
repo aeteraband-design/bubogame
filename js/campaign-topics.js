@@ -18,8 +18,8 @@
         instruments: '\uf7a6', dance: '\uf54b', phys: '\uf5d2', mythology: '\uf6d5',
         animals: '\uf700', exploration: '\uf14e'
     };
-    const topics = [...DISTRICTS].flatMap(([district, ids]) => ids.map(id => ({ id, phase: district, district })));
-    const topicIds = new Set(topics.map(topic => topic.id));
+    const topics = [...DISTRICTS].flatMap(([district, ids]) => ids.map((id, slot) => ({ id, phase: district, district, slot })));
+    const topicsById = new Map(topics.map(topic => [topic.id, topic]));
     const HUD_LABELS = {
         cartoons: 'Мультики', hp: 'Поттер', lit: 'Книги', architecture: 'Здания',
         instruments: 'Инструм.', exploration: 'Походы'
@@ -39,17 +39,20 @@
         return stamps.filter(slot => hasSlot(id, slot, test)).length;
     }
 
-    function progress(id) {
-        if (!topicIds.has(id)) return 0;
-        try { return count(id); } catch (e) { return 0; }
+    function collection(id) {
+        const topic = topicsById.get(id);
+        const journey = window.BuboJourney;
+        if (!topic || !journey) return null;
+        return journey.themeCollection(topic.district, journey.themeKeys()[topic.slot]);
     }
 
     function isUnlocked(id) {
-        return progress(id) === stamps.length;
+        const progress = collection(id);
+        return Boolean(progress && progress.amount === progress.required);
     }
 
     function visual(id) {
-        if (!topicIds.has(id) || typeof qzTheme !== 'function') return null;
+        if (!topicsById.has(id) || typeof qzTheme !== 'function') return null;
         if (!visuals.has(id)) {
             const quiz = qzTheme(id);
             if (quiz.id !== id) return null;
@@ -84,37 +87,13 @@
     }
 
     function collect(id, slot, test = false) {
-        if (!topicIds.has(id) || !stamps.includes(slot)) return null;
+        if (!topicsById.has(id) || !stamps.includes(slot)) return null;
         try {
-            if (hasSlot(id, slot, test)) return { changed: false, progress: count(id, test), unlocked: false };
+            if (hasSlot(id, slot, test)) return { changed: false, progress: count(id, test) };
             const key = slotKey(id, slot);
             if (test) previewStamps.add(key);
             else BuboSaveStorage.setItem(key, '1');
-            const progress = count(id, test);
-            const result = { changed: true, progress, unlocked: progress === stamps.length };
-            if (!test) notify({ id, ...result });
-            return result;
-        } catch (e) { return null; }
-    }
-
-    function collectDistrictToken(district, tokenKey, tokens) {
-        const id = DISTRICTS.get(district)?.[window.BuboJourney.themeKeys().indexOf(tokenKey)];
-        if (!id || !Number.isInteger(tokens) || tokens < 1) return null;
-        try {
-            const collected = stamps.filter(slot => hasSlot(id, slot, false));
-            const previous = collected.length;
-            const target = Math.min(tokens, stamps.length);
-            for (const slot of stamps) {
-                if (collected.length >= target) break;
-                if (collected.includes(slot)) continue;
-                BuboSaveStorage.setItem(slotKey(id, slot), '1');
-                collected.push(slot);
-            }
-            const progress = collected.length;
-            const changed = progress > previous;
-            const result = { id, changed, progress, unlocked: changed && progress === stamps.length };
-            if (changed) notify(result);
-            return result;
+            return { changed: true, progress: count(id, test) };
         } catch (e) { return null; }
     }
 
@@ -127,12 +106,8 @@
         return true;
     }
 
-    window.addEventListener('storage', event => {
-        if (event.key === null || event.key.startsWith(BuboLocalProfiles.storageKey(KEY))) notify();
-    });
-
     window.BuboCampaignTopics = {
-        list, districtTopics, collectDistrictToken, progress, isUnlocked, required: stamps.length,
+        list, districtTopics, collection, isUnlocked,
         forGate, collect, visual, reset, resetPreview: () => previewStamps.clear()
     };
 })();

@@ -513,19 +513,17 @@ function update() {
                 const maxLimit = window.BuboJourney.themeQuota(it.type);
                 if (collected[it.type] < maxLimit) {
                     collected[it.type]++;
-                    const topic = window.BuboJourney.recordCollection(it.type);
-                    if (topic?.unlocked) showGoldBanner(cat.name + ' · тема открыта', cat.faClass, cat.color, 1800, true);
+                    const unlocked = window.BuboJourney.recordCollection(it.type)?.unlocked;
+                    if (unlocked) showGoldBanner('Открыто: ' + (cat.label || cat.name), cat.faClass, cat.color, 1800, true);
                     if (typeof profFlightCollect === 'function') profFlightCollect('theme', 1);
                     checkFlightThemeBonus(it.type);
                     if (typeof quizOnTheme === 'function') quizOnTheme();   // каждые 10% тем — портал в квиз-мир
                     crystalOnTheme();   // редкий значок «Опасные трубы»/«Водонапор»: считаем собранные темы
-                    const labelText = collected[it.type] === maxLimit ? `+1 ${cat.name} (${maxLimit}/${maxLimit})` : `+1 ${cat.name}`;
-                    it.pendingFX = { target: it.type, text: labelText, color: cat.color, icon: cat.faClass };
+                    it.pendingFX = { target: it.type, text: unlocked ? '' : `+1 ${cat.label || cat.name}`, color: cat.color, icon: cat.faClass };
                     updateCollectionHUD();
                     StorageManager.save();
-                    checkVictoryCondition();
                 } else {
-                    it.pendingFX = { target: it.type, text: `${maxLimit}/${maxLimit} ${cat.name}`, color: cat.color, icon: cat.faClass };
+                    it.pendingFX = { target: it.type, text: `${cat.label || cat.name}: ${maxLimit}/${maxLimit}`, color: cat.color, icon: cat.faClass };
                 }
             }
 
@@ -534,6 +532,15 @@ function update() {
                 AudioFX.onSpeedChanged();
             }
 
+            const arrival = it.pendingFX;
+            if (arrival && window.BuboJourney.themeKeys().includes(arrival.target) && window.BuboJourney.onCollectionComplete(finish => {
+                spawnCollectionStarBurst(collectX, collectY, arrival.color);
+                spawnFlyingArrivalFX(collectX, collectY, arrival.target, arrival.text, arrival.color, arrival.icon, false,
+                    () => setTimeout(finish, 160));
+            })) {
+                items.splice(i, 1);
+                return;
+            }
             continue;
         }
         if (it.x < -40) items.splice(i, 1);
@@ -1005,15 +1012,14 @@ function handleSecretRoulette(originX, originY) {
                 const key = open[Math.floor(Math.random() * open.length)];
                 collected[key]++;
                 const theme = window.BuboJourney.themeVisual(key);
-                const topic = window.BuboJourney.recordCollection(key);
-                if (topic?.unlocked) showGoldBanner(theme.name + ' · тема открыта', theme.faClass, theme.color, 1800, true);
+                const unlocked = window.BuboJourney.recordCollection(key)?.unlocked;
+                if (unlocked) showGoldBanner('Открыто: ' + (theme.label || theme.name), theme.faClass, theme.color, 1800, true);
                 if (typeof profFlightCollect === 'function') profFlightCollect('theme', 1);
                 checkFlightThemeBonus(key);
                 updateCollectionHUD();
                 AudioFX.playThemeCollect();
                 StorageManager.save();
-                checkVictoryCondition();
-                return { label: `+1 ${theme.name}`, color: theme.color, icon: theme.faClass, isScoreAdd: false, target: key };   // иконка темы летит вниз в свою плашку, как при обычном сборе
+                return { label: unlocked ? '' : `+1 ${theme.label || theme.name}`, color: theme.color, icon: theme.faClass, isScoreAdd: false, target: key };   // иконка темы летит вниз в свою плашку, как при обычном сборе
             }
             return null;
         } },
