@@ -79,13 +79,17 @@ function wxTick() {
     if (WX.left < 0) {
         // продолжение сохранённой игры: погода — та же, что была, когда вышли (дождём внезапно не начинается)
         let themes = 0; try { themes = getTotalCollectedThemes(); } catch (e) {}
-        if (themes > 0) {
+        const district = window.BuboJourney?.isFlight() ? window.BuboJourney.region().id : '';
+        if (themes > 0 || district) {
             let sv = null; try { sv = JSON.parse(BuboSaveStorage.getItem('bubo_wx') || 'null'); } catch (e) {}
-            if (sv && typeof sv.left === 'number') {
+            if (sv && typeof sv.left === 'number' && (!district || sv.district === district)) {
                 WX.on = !!sv.on; WX.left = sv.left; WX.peak = sv.peak || 0.7;
                 stormCover = sv.cover || 0; stormIntensity = sv.si || 0; STORM.fade = sv.fade || 0; STORM.wet = sv.wet || 0;
                 STORM.cl = null; STORM.sndFast = stormIntensity > 0.2;
-            } else WX.left = wxRand(F.first[0], F.first[1]);   // старое сохранение без погоды — ясно, гроза позже, как обычно
+            } else {
+                const maxDelay = [240, 110, 70, 20][ADMIN_CFG.stormFreq] ?? 110;
+                WX.left = wxRand(Math.min(F.first[0], maxDelay), Math.min(F.first[1], maxDelay));
+            }
             return;
         }
         try { BuboSaveStorage.removeItem('bubo_wx'); } catch (e) {}   // новая игра — своя случайная погода
@@ -103,7 +107,11 @@ function wxTick() {
     // раз в ~2 с запоминаем погоду, чтобы при продолжении игры она была той же
     if ((STORM.saveT = (STORM.saveT || 0) + dt) > 2) {
         STORM.saveT = 0;
-        try { BuboSaveStorage.setItem('bubo_wx', JSON.stringify({ on: WX.on, left: WX.left, peak: WX.peak, cover: stormCover, si: Math.max(0, stormIntensity), fade: STORM.fade || 0, wet: STORM.wet || 0 })); } catch (e) {}
+        try { BuboSaveStorage.setItem('bubo_wx', JSON.stringify({
+            district: window.BuboJourney?.isFlight() ? window.BuboJourney.region().id : '',
+            on: WX.on, left: WX.left, peak: WX.peak, cover: stormCover,
+            si: Math.max(0, stormIntensity), fade: STORM.fade || 0, wet: STORM.wet || 0
+        })); } catch (e) {}
     }
     WX.left -= dt;
     if (WX.left > 0) return;

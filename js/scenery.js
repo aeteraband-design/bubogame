@@ -394,7 +394,7 @@ function drawCity() {
     ctx.fillRect(0, height * 0.45, width, height * 0.55);
     // с ростом сложности дымка внизу чуть теплеет и становится оранжевее, как у труб (до +5% на последнем уровне)
     let warm = 0;
-    try { warm = Math.max(0, Math.min(1, getTotalCollectedThemes() / Math.max(1, TOTAL_THEMES * (DIFF_LEVELS.length - 1) / DIFF_LEVELS.length))); } catch (e) {}
+    try { warm = Math.max(0, Math.min(1, getTotalCollectedThemes() / Math.max(1, window.BuboJourney.flightProgress().total * (DIFF_LEVELS.length - 1) / DIFF_LEVELS.length))); } catch (e) {}
     if (warm > 0.02) {
         if (!window.__cityGlow || window.__cityGlowH !== height) {
             const gl = ctx.createLinearGradient(0, height * 0.4, 0, height);
@@ -574,7 +574,7 @@ function moonPhaseTarget() {
     const ss = moonPhaseTarget.__s || (moonPhaseTarget.__s = document.getElementById('startScreen'));
     if (window.__booting || (ss && !ss.classList.contains('hidden'))) return 1;   // на загрузке и в меню — всегда полная луна вверху; в игре — по прогрессу
     let p = 0;
-    try { p = Math.min(1, getTotalCollectedThemes() / TOTAL_THEMES); } catch (e) {}
+    try { const progress = window.BuboJourney.flightProgress(); p = Math.min(1, progress.passed / progress.total); } catch (e) {}
     // полная луна наступает, когда начинается последний уровень сложности (Хард+), а не в самом конце
     const lastLevelStart = (DIFF_LEVELS.length - 1) / DIFF_LEVELS.length;
     return 0.06 + 0.94 * Math.min(1, p / lastLevelStart);
@@ -1054,7 +1054,9 @@ function drawPipe(pipe) {
     ctx.restore();
 
     drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width);   // шляпка — из заготовки (без дорогой обрезки каждый кадр)
-    const redK = typeof crystalRedK === 'number' ? crystalRedK : 0;   // «Опасные трубы»: шляпки плавно краснеют
+    const combat = window.BuboCampaignCombat;
+    const canHeat = !combat?.usesFlightHazards() || combat.isFlightHazardPipe(pipe, 'fire');
+    const redK = canHeat && typeof crystalRedK === 'number' ? crystalRedK : 0;   // «Опасные трубы»: шляпки плавно краснеют
     if (redK > 0.01) { ctx.globalAlpha = redK; drawPipeCap(capX, topCapY, capW, capH, capRadius, capH - 2.5, pipe.width, true); ctx.globalAlpha = 1; }
 
     const bottomY = height - effectiveBottom;

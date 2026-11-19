@@ -100,6 +100,12 @@ function normalizeAdminCfg(raw) {
     // темы: старые сохранённые значения (до перехода на «по 20») не берём — один раз сбрасываем на новые стандартные
     if (raw.themesV === 2 && raw.themes && typeof raw.themes === 'object') for (const k in out.themes) if (k in raw.themes) out.themes[k] = cl(raw.themes[k], ADMIN_SPEC.theme, out.themes[k]);
     out.themesV = 2;
+    const journey = window.BuboJourney;
+    out.districtThemes = Object.fromEntries(journey.districts().map(({ id }) => [
+        id, Object.fromEntries(journey.themeKeys().map(key => [
+            key, cl(raw.districtThemes?.[id]?.[key], ADMIN_SPEC.theme, out.themes[key])
+        ]))
+    ]));
     return out;
 }
 let ADMIN_CFG = (function () { try { return normalizeAdminCfg(JSON.parse(BuboSaveStorage.getItem(ADMIN_KEY))); } catch (e) { return normalizeAdminCfg(null); } })();
@@ -196,8 +202,10 @@ function addFlightScore(points) {
 }
 
 function checkFlightThemeBonus(key) {
-    if (collected[key] === CATEGORIES[key].count) {
-        window.FlightQuizBonus?.observeTheme(key, playDay);
+    if (collected[key] === window.BuboJourney.themeQuota(key)) {
+        const theme = window.BuboJourney.themeVisual(key);
+        const existingBonusTheme = theme?.id === 'hp' ? 'fun' : theme?.id;
+        if (existingBonusTheme) window.FlightQuizBonus?.observeTheme(existingBonusTheme, playDay);
     }
 }
 
@@ -550,9 +558,7 @@ for (const k in ADMIN_CFG.themes) if (CATEGORIES[k]) CATEGORIES[k].count = ADMIN
 let TOTAL_THEMES = Object.keys(CATEGORIES).reduce((a, k) => a + (CATEGORIES[k].count || 0), 0);
 const THEME_KEYS_ALL = Object.keys(CATEGORIES).filter(k => CATEGORIES[k].count);
 function renderRulesGoal() {
-    // один и тот же текст цели — в правилах и в «Цели полёта» в меню (числа берутся из настроек тем)
-    const parts = THEME_KEYS_ALL.map(k => `<span style="color:${CATEGORIES[k].color}" class="font-black">${CATEGORIES[k].name} ${CATEGORIES[k].count}</span>`).join(', ');
-    const html = `Лети между трубами и собирай значки. Собери все <span class="text-white font-black">${TOTAL_THEMES}</span>, чтобы открыть башню Смотрителя. За победу получишь вращение рулетки. <span>${parts}.</span>`;
+    const html = `Собирай значки тем, побеждай Смотрителей и открывай новые районы.`;
     ['rulesGoalText', 'menuGoalText'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = html; });
 }
 renderRulesGoal();
@@ -597,7 +603,7 @@ const StorageManager = {
                     collected.cartoons = data.collected.cartoons || 0;
                     collected.fun = data.collected.fun || 0;
                 }
-                window.BuboJourney?.restore(data.journey);
+                window.BuboJourney?.restore(data.journey, true);
                 if (data.settings) {
                     if (typeof data.settings.musicVolume === 'number') AudioFX.setMusicVolume(data.settings.musicVolume);
                     if (typeof data.settings.sfxVolume === 'number') AudioFX.setSfxVolume(data.settings.sfxVolume);
@@ -611,6 +617,8 @@ const StorageManager = {
 
     saveLocal() {
         try {
+            const journey = window.BuboJourney;
+            if (journey?.isOutdated()) return false;
             const payload = {
                 attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins, roulettePending, campaignSpinReceipts, heartOverflow, zeroDay, playDay,
                 collected: { ...collected },
@@ -627,6 +635,7 @@ const StorageManager = {
             const classic = window.BuboCampaign?.classicResources?.();
             if (classic) Object.assign(payload, classic);
             BuboSaveStorage.setItem(this.LOCAL_KEY, JSON.stringify(payload));
+            journey?.markSaved(payload.journey);
             return true;
         } catch (e) { return false; }
     },
@@ -702,13 +711,13 @@ const StorageManager = {
         try { inFlight = gameActive; } catch (e) {}
         if (inFlight) {
             try { updateCollectionHUD(); updateAttemptsHUD(); } catch (e) {}
-            if (!this._saveTimer) this._saveTimer = setTimeout(() => { this._saveTimer = 0; this.saveLocal(); this.saveRemote(); }, 1500);
+            if (!this._saveTimer) this._saveTimer = setTimeout(() => { this._saveTimer = 0; if (this.saveLocal()) this.saveRemote(); }, 1500);
             return;
         }
         if (this._saveTimer) { clearTimeout(this._saveTimer); this._saveTimer = 0; }
-        this.saveLocal();
+        const saved = this.saveLocal();
         updateMenuVisibility();
-        return this.saveRemote();
+        if (saved) return this.saveRemote();
     },
     async saveRemote() {
         if (!this.db || !this.userId || window.BuboCampaign?.isActive?.()) return;

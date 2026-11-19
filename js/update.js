@@ -267,9 +267,11 @@ function update() {
             }
         }
         if (!gameActive && campaign) return;
-        if (campaign && p.campaign && !p.passed && p.x + p.width < owl.x - owl.radius) {
+        if (!p.passed && p.x + p.width < owl.x - owl.radius) {
             p.passed = true;
-            if (campaign.onPipePassed(p)) return;
+            if (campaign && p.campaign && campaign.onPipePassed(p)) return;
+            if (!campaign && window.BuboJourney.isFlight()) window.BuboJourney.onRegularGate();
+            if (!gameActive) return;
         }
         if (p.x + p.width < -40 - width * 0.03) pipes.splice(i, 1);
     }
@@ -284,6 +286,7 @@ function update() {
         for (let i = shieldTouches.length - 1; i >= 0; i--) { shieldTouches[i].p *= Math.pow(0.9, dtMult); if (shieldTouches[i].p < 0.02) shieldTouches.splice(i, 1); }
     }
 
+    window.BuboCampaignCombat?.updateFlightHazard(dtMult);
     const livesBeforeFire = lives;
     crystalUpdate(currentSpeed, activeSqueeze);   // эффект «Опасные трубы»
     if (gameActive && lives > 0 && lives < livesBeforeFire) owlReactToHeartLoss();
@@ -312,7 +315,7 @@ function update() {
                 const burstX = it.centerX;
                 const burstY = it.centerY;
                 const topic = it.campaignTopic && window.BuboCampaignTopics?.visual(it.campaignTopic.id);
-                const itemCat = topic || CATEGORIES[it.type] || CATEGORIES.question;
+                const itemCat = topic || it.themeVisual || CATEGORIES[it.type] || CATEGORIES.question;
 
                 spawnCollectionStarBurst(burstX, burstY, itemCat.color);
 
@@ -420,7 +423,9 @@ function update() {
                 it.extraFX = registerDrink();
             } else if (it.type === 'coin') {
                 const n = it.coins || 50;
-                if (addFlightCoins(n, 'pickup')) {
+                const tier = it.coinTier ?? Math.floor(getDifficultyIndex() / 2);
+                if (window.BuboJourney.availablePathCoins(tier) && addFlightCoins(n, 'pickup')) {
+                    window.BuboJourney.recordPathCoin(tier);
                     try { AudioFX.playStarCollect(); AudioFX.playCollect(true); Haptics.collectTheme(); } catch (e) {}
                     showGoldBanner('+' + n + ' ' + ruPlural(n, ['монета', 'монеты', 'монет']), 'fa-coins', '#FFC53D');
                 }
@@ -504,11 +509,12 @@ function update() {
                 StorageManager.save();
             } else {
                 AudioFX.playThemeCollect();
-                const cat = CATEGORIES[it.type];
-                const maxLimit = cat.count;
+                const cat = it.themeVisual || window.BuboJourney.themeVisual(it.type) || CATEGORIES[it.type];
+                const maxLimit = window.BuboJourney.themeQuota(it.type);
                 if (collected[it.type] < maxLimit) {
                     collected[it.type]++;
-                    window.BuboJourney?.recordCollection();
+                    const topic = window.BuboJourney.recordCollection(it.type);
+                    if (topic?.unlocked) showGoldBanner(cat.name + ' · тема открыта', cat.faClass, cat.color, 1800, true);
                     if (typeof profFlightCollect === 'function') profFlightCollect('theme', 1);
                     checkFlightThemeBonus(it.type);
                     if (typeof quizOnTheme === 'function') quizOnTheme();   // каждые 10% тем — портал в квиз-мир
@@ -888,7 +894,7 @@ function pickWeighted(options) {
 // Все подсказки: «Штраф: ...» — плохо, «Бонус: ...» — хорошо.
 function handleSecretRoulette(originX, originY) {
     const negativeChance = getDifficultyMultipliers().negChance;
-    const THEME_KEYS = ['music', 'logic', 'kino', 'series', 'cartoons', 'fun'];
+    const THEME_KEYS = window.BuboJourney.themeKeys();
 
     if (Math.random() < negativeChance) {
         return pickWeightedNoRepeat('neg', [
@@ -929,11 +935,10 @@ function handleSecretRoulette(originX, originY) {
                 }
                 const lostKey = existing[Math.floor(Math.random() * existing.length)];
                 collected[lostKey]--;
-                window.BuboJourney?.recordCollection();
                 updateCollectionHUD();
                 AudioFX.playThemeLose();   // потеря темы — свой звук «вычитания», не удар
                 triggerBadgeAnimation(lostKey, true);
-                return { label: `Штраф: -1 ${CATEGORIES[lostKey].name}`, color: '#F43F5E', icon: 'fa-triangle-exclamation', isScoreAdd: false };
+                return { label: `Штраф: -1 ${window.BuboJourney.themeVisual(lostKey).name}`, color: '#F43F5E', icon: 'fa-triangle-exclamation', isScoreAdd: false };
             } },
             { w: 13, kind: 'compress', run() {
                 AudioFX.playCompressStart((1 - currentCompressionFactor) / COMPRESS_STEP / 60);
@@ -995,18 +1000,20 @@ function handleSecretRoulette(originX, originY) {
             return { label: `Замедление ${ADMIN_CFG.slowSec}с`, color: '#38BDF8', icon: 'fa-hourglass-half', isScoreAdd: false };
         } },
         { w: 20, run() {
-            const open = THEME_KEYS.filter(k => (collected[k] || 0) < CATEGORIES[k].count);
+            const open = THEME_KEYS.filter(k => (collected[k] || 0) < window.BuboJourney.themeQuota(k));
             if (open.length > 0) {
                 const key = open[Math.floor(Math.random() * open.length)];
                 collected[key]++;
-                window.BuboJourney?.recordCollection();
+                const theme = window.BuboJourney.themeVisual(key);
+                const topic = window.BuboJourney.recordCollection(key);
+                if (topic?.unlocked) showGoldBanner(theme.name + ' · тема открыта', theme.faClass, theme.color, 1800, true);
                 if (typeof profFlightCollect === 'function') profFlightCollect('theme', 1);
                 checkFlightThemeBonus(key);
                 updateCollectionHUD();
                 AudioFX.playThemeCollect();
                 StorageManager.save();
                 checkVictoryCondition();
-                return { label: `+1 ${CATEGORIES[key].name}`, color: CATEGORIES[key].color, icon: CATEGORIES[key].faClass, isScoreAdd: false, target: key };   // иконка темы летит вниз в свою плашку, как при обычном сборе
+                return { label: `+1 ${theme.name}`, color: theme.color, icon: theme.faClass, isScoreAdd: false, target: key };   // иконка темы летит вниз в свою плашку, как при обычном сборе
             }
             return null;
         } },
@@ -1108,6 +1115,7 @@ function handleRunFailure(reason, opts) {
     if (window.BuboCampaign?.onFatal(reason)) return;
     const journey = window.BuboJourney;
     const secondWind = Boolean(journey?.inSecondWind());
+    if (journey?.isFlight()) journey.recordLoss();
     gameActive = false;
     const attemptsAfterLoss = secondWind ? attempts : Math.max(0, attempts - 1);
     const earnedCoins = window.FlightQuizBonus?.endFlight(score, 'loss', attemptsAfterLoss) || 0;
@@ -1123,7 +1131,7 @@ function handleRunFailure(reason, opts) {
     setTimeout(() => {
         if (!secondWind) attempts = Math.max(0, attempts - 1);
         if (attempts <= 0 && !zeroDay) zeroDay = todayKey();
-        if (!gameActive && !waitingFirstTap) journey?.leaveFlight();
+        if (!gameActive && !waitingFirstTap) { journey?.leaveFlight(); window.BuboCampaignCombat?.resetFlightHazard(); }
         StorageManager.save();
 
         // Если за это время игрок уже вышел в главное меню — экран поражения не показываем
@@ -1143,7 +1151,7 @@ function showGameOverScreen(reason, earnedCoins = 0, checkingAttempts = false) {
     const $ = (id) => document.getElementById(id);
     const totalItems = getTotalCollectedThemes();
     if ($('finalScore')) $('finalScore').innerText = score;
-    if ($('finalTokens')) $('finalTokens').innerText = `${totalItems}/${TOTAL_THEMES}`;   // без пробелов — влезает и 120/120
+    if ($('finalTokens')) $('finalTokens').innerText = `${totalItems}/${window.BuboJourney.regionProgress().total}`;   // без пробелов — влезает и 120/120
     if ($('finalAttempts')) $('finalAttempts').innerText = `${attempts}`;
     if ($('gameOverReason')) $('gameOverReason').innerText = reason;
     let lvlName = '';

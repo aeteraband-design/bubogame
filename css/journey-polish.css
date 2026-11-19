@@ -1,13 +1,8 @@
+#campaignStartBtn { min-height: 50px; }
 #startScreen :is(#openRulesBtn, #openSettingsBtn) {
     position: relative;
-    min-height: calc(34px / var(--menu-zoom, 1));
+    min-height: calc(44px / var(--menu-zoom, 1));
     padding-block: 4px;
-}
-
-#startScreen :is(#openRulesBtn, #openSettingsBtn)::before {
-    content: "";
-    position: absolute;
-    inset: calc(-6px / var(--menu-zoom, 1)) 0;
 }
 
 #startScreen :is(#openRulesBtn, #openSettingsBtn):focus-visible {
@@ -15,7 +10,7 @@
     outline-offset: 2px;
 }
 
-#staminaVal, #diffPercent, #menuDiffPercent, #menuScore, #menuTokens,
+#staminaVal, #diffPercent, #menuScore, #menuTokens,
 .collection-badge-slot > :is([id^="cnt_"], [id^="menu-cnt_"]) {
     font-variant-numeric: tabular-nums;
 }
@@ -30,11 +25,22 @@
     margin: 0;
     padding: 0;
     border: 0;
+    --district-accent: #c28aff;
     background: radial-gradient(95% 48% at 50% 23%, #34204e, transparent), #160d28;
+    background:
+        radial-gradient(62% 70% at 100% 0%, #a6542721, transparent),
+        radial-gradient(85% 58% at 20% 15%, color-mix(in srgb, var(--district-accent) 20%, #1d0d32), transparent),
+        linear-gradient(#210e36, #10091d);
     color: #f8eeff;
     font-family: Onest, sans-serif;
     overflow: hidden;
 }
+
+:is(#journeyPicker, .journey-level)[data-district="night"] { --district-accent: #c28aff; }
+:is(#journeyPicker, .journey-level)[data-district="dawn"] { --district-accent: #6dcee8; }
+:is(#journeyPicker, .journey-level)[data-district="music"] { --district-accent: #eca26e; }
+:is(#journeyPicker, .journey-level)[data-district="magic"] { --district-accent: #a998fb; }
+:is(#journeyPicker, .journey-level)[data-district="jungle"] { --district-accent: #83c99a; }
 
 #journeyPicker[open] { display: flex; }
 #journeyPicker [hidden] { display: none !important; }
@@ -78,7 +84,11 @@
 
 #journeyPickerProgress {
     margin: 0;
-    color: #dcc8f0;
+    padding: 5px 7px;
+    border: 1px solid #785297;
+    border-radius: 8px;
+    background: #28163e;
+    color: #f2e4ff;
     font: 750 12px/1.15 Onest, sans-serif;
     font-variant-numeric: tabular-nums;
     text-align: right;
@@ -109,7 +119,17 @@
     overflow: hidden;
     border-radius: 18px;
     background: #2a1944;
-    box-shadow: 0 3px 0 #100a20;
+    box-shadow: 0 4px 0 #100a20, 0 6px 16px #10091b66;
+}
+.journey-picker-preview::after {
+    content: "";
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    border: 1px solid color-mix(in srgb, var(--district-accent) 68%, #51406b);
+    border-radius: inherit;
+    box-shadow: inset 0 1px 0 #ffffff47;
+    pointer-events: none;
 }
 
 #journeyPickerImage {
@@ -128,9 +148,10 @@
     left: 11px;
     padding: 5px 9px;
     border: 1px solid #ffcc8c66;
-    border-radius: 7px;
-    background: #23142aef;
-    color: #ffddac;
+    border-color: color-mix(in srgb, var(--district-accent) 70%, #352042);
+    border-radius: 8px;
+    background: #24162ded;
+    color: #fff2d9;
     font: 800 11px/1.15 Onest, sans-serif;
     font-variant-numeric: tabular-nums;
 }
@@ -176,7 +197,44 @@
     touch-action: pan-y;
 }
 
-.journey-picker-levels > li { min-width: 0; }
+.journey-picker-levels > li {
+    position: relative;
+    min-width: 0;
+    --route-line: #745690;
+}
+.journey-picker-levels > li:has(.journey-level[data-status="passed"]) { --route-line: #ee9759; }
+.journey-picker-levels > li:is(:nth-child(1), :nth-child(2), :nth-child(4))::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    width: 8px;
+    height: 2px;
+    background: var(--route-line);
+    pointer-events: none;
+}
+.journey-picker-levels > li:nth-child(3)::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    right: 50%;
+    width: calc(200% + 16px);
+    height: 6px;
+    border: solid var(--route-line);
+    border-width: 0 2px 2px 0;
+    border-radius: 0 0 5px 0;
+    pointer-events: none;
+}
+.journey-picker-levels > li:nth-child(4)::before {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    width: 2px;
+    height: 5px;
+    background: #745690;
+    pointer-events: none;
+}
 
 .journey-level {
     position: relative;
@@ -189,9 +247,10 @@
     overflow: hidden;
     padding: 0;
     border: 1px solid #79549e;
-    border-radius: 11px;
+    border-color: color-mix(in srgb, var(--district-accent) 52%, #4e2e6d);
+    border-radius: 13px;
     background: #25163d;
-    box-shadow: 0 3px 0 #11091e;
+    box-shadow: inset 0 1px 0 #ffffff2b, 0 3px 0 #11091e;
     color: #fff5ff;
     cursor: pointer;
 }
@@ -214,6 +273,19 @@
     background: linear-gradient(0deg, #170a2b 0%, #170a2bbf 23%, transparent 70%);
 }
 
+.journey-level-stars {
+    position: absolute;
+    z-index: 1;
+    top: 5px;
+    right: 5px;
+    padding: 3px 4px;
+    border-radius: 8px;
+    background: #211033ed;
+    color: #ffc56c;
+    font: 900 10px/1 Onest, sans-serif;
+    letter-spacing: 1px;
+}
+.journey-level-stars[hidden], .journey-level:has(.journey-level-stars:not([hidden])) > i { display: none; }
 .journey-level-number,
 .journey-level > i {
     position: absolute;
@@ -252,10 +324,13 @@
 .journey-level[data-status="passed"] { border-color: #8360a7; }
 .journey-level[data-status="passed"] > i { color: #b3ecc6; }
 
-.journey-level[data-status="upcoming"] { border-color: #644984; }
+.journey-level[data-status="upcoming"] {
+    border-color: #644984;
+    border-color: color-mix(in srgb, var(--district-accent) 28%, #4e346e);
+}
 .journey-level[data-status="upcoming"] .journey-level-art {
-    opacity: .72;
-    filter: saturate(.66);
+    opacity: .8;
+    filter: saturate(.78);
 }
 .journey-level[data-status="upcoming"] .journey-level-name { color: #eddefb; }
 
@@ -287,13 +362,13 @@
     text-align: left;
 }
 
-#journeyPickerHint {
+#journeyPickerTopics, #journeyPickerHint {
     margin: 0;
     color: #e4d2f5;
     font: 650 12px/1.32 Onest, sans-serif;
     overflow-wrap: anywhere;
 }
-#journeyPickerHint:empty { display: none; }
+#journeyPickerHint:empty, #journeyPickerTopics:empty { display: none; }
 
 #journeyPickerStart {
     display: grid;
@@ -438,4 +513,11 @@ html:is([data-gfx-quality='low'], .gfx-low) #campaignResult {
     #startScreen :is(#openRulesBtn, #openSettingsBtn) { transition: none; }
     #campaignStartBtn:active,
     #startScreen :is(#openRulesBtn, #openSettingsBtn):active { transform: none; }
+}
+
+.gfx-low #campaignStartBtn { animation: none; }
+.gfx-low #campaignStartBtn::after { display: none; }
+@media (prefers-reduced-motion: reduce) {
+    #campaignStartBtn { animation: none; }
+    #campaignStartBtn::after { display: none; }
 }

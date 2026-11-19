@@ -206,6 +206,7 @@ function rwStartIdle() { if (!rw.idleRAF) { rw.lastT = 0; rw.idleRAF = requestAn
 
 function openRoulette(opts) {
     const m = rwEl('rouletteModal'); if (!m) return;
+    window.BuboJourney?.settleRewards();
     AudioFX.resume();
     const vic = rwEl('rwVictory');
     if (vic) vic.classList.toggle('hidden', !(opts && opts.victory));
@@ -241,7 +242,7 @@ function closeRoulette() {
     if (AudioFX.mode === 'victory' || AudioFX._pendMode === 'victory') AudioFX.setMode('menu', { fade: true });
 }
 function spinRoulette() {
-    if (rw.spinning || rw.prize || rwHasPending() || rouletteSpins <= 0) return;
+    if (rw.spinning || rw.prize || rwHasPending() || rouletteSpins <= 0 || window.BuboJourney?.reloadIfOutdated()) return;
     const viewport = rwEl('rwReel'); if (!viewport) return;
     const saved = rwSavedProgress();
     if (saved?.roulettePending) {
@@ -253,7 +254,8 @@ function spinRoulette() {
     const prizeKey = rwPickPrize();
     const pending = {
         id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2),
-        key: prizeKey
+        key: prizeKey,
+        district: window.BuboJourney?.prizeDistrictId() || ''
     };
     roulettePending = pending;
     rouletteSpins--;
@@ -376,7 +378,7 @@ function rwShowResult(key) {
 }
 function claimRoulettePrize() {
     const pending = roulettePending;
-    if (!rwHasPending() || rw.prize !== pending.key) return;
+    if (!rwHasPending() || rw.prize !== pending.key || window.BuboJourney?.reloadIfOutdated()) return;
     const saved = rwSavedProgress();
     if (!saved) {
         rwEl('rwResDesc').innerText = 'Не удалось прочитать сохранение. Попробуй забрать приз ещё раз.';
@@ -401,7 +403,9 @@ function claimRoulettePrize() {
     if (key === 'life') { const base = lives <= 0.5 ? startLives : lives; lives = Math.min(maxLives, base + 1); }
     if (key === 'stamina') { maxStamina += 20; stamina = maxStamina; }
     roulettePending = null;
+    const restoreDistrict = window.BuboJourney?.advanceAfterPrize(saved.roulettePending.district);
     if (!StorageManager.saveLocal()) {
+        restoreDistrict?.();
         [attempts, rouletteSpins, startLives, maxLives, lives, maxStamina, stamina] = previous;
         roulettePending = pending;
         rwEl('rwResDesc').innerText = 'Не удалось сохранить приз. Попробуй ещё раз.';
@@ -411,6 +415,13 @@ function claimRoulettePrize() {
     updateAttemptsHUD(); updateLivesHUD(); updateStaminaHUD(); updateMenuVisibility();
     void StorageManager.saveRemote();
     rwFinishClaim();
+    if (restoreDistrict) {
+        window.BuboJourney.refreshAfterPrize();
+        closeRoulette();
+        const completed = window.BuboJourney.hasDefeatedBoss();
+        window.BuboCampaign.showJourneyResult('journey-district-cleared', completed
+            ? 'Все районы пройдены.' : 'Открыт район «' + window.BuboJourney.region().name + '».');
+    }
 }
 function rwFinishClaim() {
     rwEl('rwResult').classList.add('hidden'); rwEl('rwResult').classList.remove('rw-res-in');

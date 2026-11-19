@@ -4,17 +4,11 @@
     align-items: center;
 }
 .bubo-flight-bonus-callout[hidden],
-.bubo-flight-bonus-caption[hidden],
+
 .bubo-flight-bonus-button[hidden],
 .bubo-flight-bonus-count[hidden],
 .bubo-flight-bonus-ring[hidden] {
     display: none !important;
-}
-.bubo-flight-bonus-caption {
-    color: #d7bbff;
-    text-align: center;
-    font-size: 10px;
-    font-weight: 700;
 }
 .bubo-flight-bonus-button {
     display: grid;
@@ -96,7 +90,7 @@
     margin: 0 !important;
     border-radius: inherit;
     pointer-events: none;
-    background: conic-gradient(#bb9bff var(--fb-progress, 0%), transparent var(--fb-progress, 0%));
+    background: conic-gradient(from -90deg, #ffad4d 0%, #ff7815 var(--fb-progress, 0%), transparent var(--fb-progress, 0%));
     padding: 2px;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
@@ -104,5 +98,5 @@
     mask-composite: exclude;
 }
 .bubo-flight-bonus-ring.is-complete {
-    background: #60d9a5;
+    background: #ff9a32;
 }

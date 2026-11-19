@@ -113,7 +113,7 @@ const closeRulesBtn = document.getElementById('closeRulesBtn');
 if (closeRulesBtn) closeRulesBtn.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('rulesModal').classList.add('hidden'); });
 
 const understoodRulesBtn = document.getElementById('understoodRulesBtn');
-if (understoodRulesBtn) understoodRulesBtn.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('rulesModal').classList.add('hidden'); startOrResumeFlight(); });
+if (understoodRulesBtn) understoodRulesBtn.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('rulesModal').classList.add('hidden'); document.getElementById('campaignStartBtn').click(); });
 
 const openSettingsBtn = document.getElementById('openSettingsBtn');
 const closeSettingsBtn = document.getElementById('closeSettingsBtn');
@@ -288,12 +288,6 @@ if (settingsVibeToggle) {
     });
 }
 
-const startBtn = document.getElementById('startBtn');
-if (startBtn) startBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    window.BuboJourney.start();
-});
-
 const resetProgressBtn = document.getElementById('resetProgressBtn');
 if (resetProgressBtn) resetProgressBtn.addEventListener('click', (e) => {
     e.stopPropagation(); openResetConfirm();
@@ -311,7 +305,7 @@ function openResetConfirm() {
         const total = getTotalCollectedThemes();
         const rows = [];
         if (maxStamina > 100) rows.push(['fa-feather-pointed', '#67E8F9', `Сила: +${Math.round(maxStamina - 100)}% к стартовым 100%`]);
-        if (total > 0) rows.push(['fa-layer-group', '#A855F7', `Собранные темы: ${total} / ${TOTAL_THEMES}`]);
+        if (total > 0) rows.push(['fa-layer-group', '#A855F7', `Собранные темы: ${total} / ${window.BuboJourney.regionProgress().total}`]);
         if (score > 0) rows.push(['fa-circle-question', '#FE7600', `Собранные вопросы: ${score} шт.`]);
         list.innerHTML = rows.map(r => `<li><i class="fa-solid ${r[0]}" style="color:${r[1]}"></i><span>${r[2]}</span></li>`).join('');
         list.classList.toggle('hidden', rows.length === 0);

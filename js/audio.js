@@ -75,6 +75,7 @@ function districtTrack(voice, accents, bassPattern, measures) {
     return { voice, accents, bars };
 }
 
+// Ночь использует исходную мелодию полёта (gameArp4/gameBass4).
 const FLIGHT_DISTRICT_TRACKS = {
     // Рассвет: Cadd9 — G — Am7 — Fmaj7, светлое восходящее арпеджио.
     dawn: districtTrack('sine', [0, 2, 4, 6], [0, 0, 7, 0, 12, 7, 0, 7], [
@@ -103,13 +104,6 @@ const FLIGHT_DISTRICT_TRACKS = {
         [43, [0, 4, 7], [67, 71, 74, 72, 79, 74, 71, 69]],
         [48, [0, 4, 7], [64, 67, 72, 74, 76, 72, 67, 64]],
         [50, [0, 3, 7], [65, 62, 69, 72, 74, 72, 69, 67]]
-    ]),
-    // Ночной: Dm — B♭ — Gm — A7, низкий пульс и нисходящие ответы.
-    night: districtTrack('triangle', [0, 3, 4, 6], [0, 0, 7, 0, -12, 0, 7, 0], [
-        [50, [0, 3, 7], [62, 69, 74, 69, 65, 62, 60, 62]],
-        [46, [0, 4, 7], [65, 70, 74, 70, 65, 62, 58, 62]],
-        [43, [0, 3, 7], [67, 70, 74, 70, 67, 62, 58, 62]],
-        [45, [0, 4, 7, 10], [69, 73, 76, 73, 67, 64, 61, 64]]
     ])
 };
 
@@ -433,11 +427,16 @@ const AudioFX = {
             this.mode = m; this.step = 0; this._nextStartAt = T; this.stopMusic(); this.startMusicLoop();
         }, Math.max(0, (T - nowT) * 1000 - 70));
     },
+    _musicTempoMult() {
+        const difficulty = getDifficultyMultipliers();
+        // У авторских мотивов темп соответствует скорости района; у Ночи — исходная кривая.
+        return this.district ? difficulty.speedMult : difficulty.musicTempoMult;
+    },
     // длина шага и высота музыки режима (в игре — с учётом сложности, ускорения и замедления)
     _modeStep(m) {
         let d = m === 'game' ? 0.185 : (m === 'death' ? 0.56 : (m === 'victory' ? 0.2 : (m === 'quiz' ? 0.3 : (m === 'shop' ? 0.19 : (m === 'library' ? 0.34 : (m === 'menu' ? 60 / 140 / 4 : (m === 'workshop' ? 0.2 : (m === 'think' ? this._thinkD() : 0.29)))))))), p = 1;
         if (m === 'game') {
-            try { const diff = getDifficultyMultipliers(); if (diff.musicTempoMult) { d /= diff.musicTempoMult; p *= diff.musicTempoMult; } } catch (e) {}
+            try { const tempo = this._musicTempoMult(); if (tempo) { d /= tempo; p *= tempo; } } catch (e) {}
             const sf = this.speedFactor || 1; d /= sf; p *= sf;
         }
         return { d, p };
@@ -619,6 +618,17 @@ const AudioFX = {
         osc.connect(lp); lp.connect(g); g.connect(this.sfxGain || ctx.destination);
         osc.start(t); osc.stop(t + dur + 0.05);
     },
+    playWatcherWarning(kind) {
+        if (!this.ctx || this.ctx.state !== 'running') return;
+        const t = this.ctx.currentTime + 0.02;
+        if (kind === 'fire') {
+            this._toneSweep(t, 0.10, 466, 420, 1700, 1000, 0.044, 'triangle', 0.15);
+            this._toneSweep(t + 0.12, 0.16, 349, 311, 1350, 760, 0.034, 'triangle', 0.15);
+        } else if (kind === 'water') {
+            this._toneSweep(t, 0.10, 330, 415, 1000, 1450, 0.046, 'sine', 0.18);
+            this._toneSweep(t + 0.11, 0.15, 440, 587, 1200, 1700, 0.039, 'sine', 0.18);
+        }
+    },
     playPipesHeat() {     // «Опасные трубы» включились: глухой «вух» поджига газа, короткая тревожная двухнотная сирена и треск огня
         try {
             if (!this.ctx || this.ctx.state !== 'running') return; const t = this.ctx.currentTime + 0.02;
@@ -720,8 +730,8 @@ const AudioFX = {
                         this.playMusicStep(this.nextNoteTime);
                         let d = (this.mode === 'game') ? 0.185 : (this.mode === 'death' ? 0.56 : (this.mode === 'victory' ? 0.2 : (this.mode === 'quiz' ? 0.3 : (this.mode === 'shop' ? 0.19 : (this.mode === 'library' ? 0.34 : (this.mode === 'menu' ? 60 / 140 / 4 : (this.mode === 'workshop' ? 0.2 : (this.mode === 'think' ? this._thinkD() : 0.29))))))));
                         if (this.mode !== 'death' && this.mode !== 'victory' && this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop' && this.mode !== 'library' && this.mode !== 'workshop' && this.mode !== 'think') {   // в меню темп всегда стандартный — не зависит ни от сложности, ни от ускорения
-                            const diff = getDifficultyMultipliers();
-                            if (diff.musicTempoMult) d /= (this._tmS || diff.musicTempoMult);
+                            const tempo = this._musicTempoMult();
+                            if (tempo) d /= (this._tmS || tempo);
                             d /= this.updateSpeedFactor();
                         }
                         this.nextNoteTime += d;
@@ -762,10 +772,10 @@ const AudioFX = {
         let pitchMultiplier = 1.0;
 
         if (this.mode !== 'menu' && this.mode !== 'quiz' && this.mode !== 'shop' && this.mode !== 'library' && this.mode !== 'workshop' && this.mode !== 'think') {   // музыка меню всегда в стандартном темпе и высоте — сложность и ускорение на неё не влияют
-            const diff = getDifficultyMultipliers();
-            if (diff.musicTempoMult) {   // темп и высота нового уровня меняются плавно (≈4 такта), а не рывком
-                if (this.step === 0 || !this._tmS) this._tmS = diff.musicTempoMult;
-                else this._tmS += (diff.musicTempoMult - this._tmS) * 0.04;
+            const tempo = this._musicTempoMult();
+            if (tempo) {   // темп и высота нового уровня меняются плавно (≈4 такта), а не рывком
+                if (this.step === 0 || !this._tmS) this._tmS = tempo;
+                else this._tmS += (tempo - this._tmS) * 0.04;
                 pitchMultiplier *= this._tmS;
             }
 
@@ -1089,7 +1099,6 @@ const AudioFX = {
                 if (track.accents.includes(i8)) tone(track.voice, aFreq, 0.22, 0.15 * len);
                 if (this._playingDistrict === 'magic' && (i8 === 2 || i8 === 5)) tone('sine', aFreq * 2, 0.06, 0.38 * len);
                 if (this._playingDistrict === 'jungle' && (i8 === 1 || i8 === 4 || i8 === 6)) tone('sine', 212, 0.16, 0.09 * len, 112);
-                if (this._playingDistrict === 'night' && i8 === 0) tone('sine', chord[0] / 4 * pitchMultiplier, 0.12, 0.48 * len);
             } else if (this.step % 2 === 0) {
                 tone('sine', aFreq, 0.24, 0.15 * len);
             } else if (W(1) > 0.01) {

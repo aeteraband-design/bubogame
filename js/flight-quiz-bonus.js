@@ -252,7 +252,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
-        const start = document.getElementById('startBtn');
+        const start = document.getElementById('campaignStartBtn');
         const quiz = document.getElementById('openQuizBtn');
         const badge = document.getElementById('scoreBadge');
         const end = document.querySelector('#goWin .go-btns');
@@ -261,10 +261,6 @@
         const menuCallout = document.createElement('div');
         menuCallout.className = 'bubo-flight-bonus-callout';
         start.after(menuCallout);
-
-        const startHint = document.createElement('span');
-        startHint.className = 'bubo-flight-bonus-caption';
-        menuCallout.append(startHint);
 
         const menuBadge = document.createElement('span');
         menuBadge.className = 'bubo-flight-bonus-count';
@@ -277,7 +273,7 @@
         badge.classList.add('bubo-flight-bonus-score');
         badge.append(progressRing);
 
-        function makeButton(location, node) {
+        function makeButton(location, parent, before = null) {
             const button = document.createElement('button');
             button.className = 'bubo-flight-bonus-button';
             button.type = 'button';
@@ -298,7 +294,7 @@
             arrow.className = 'fa-solid fa-chevron-right bubo-flight-bonus-button-arrow';
             arrow.setAttribute('aria-hidden', 'true');
             button.append(mark, body, arrow);
-            node.before(button);
+            parent.insertBefore(button, before);
             button.addEventListener('click', event => {
                 event.stopPropagation();
                 const data = status();
@@ -309,8 +305,8 @@
             return { button, available };
         }
 
-        const menuAction = makeButton('menu', startHint);
-        const endAction = makeButton('end', end.children[1] || end.firstElementChild);
+        const menuAction = makeButton('menu', menuCallout);
+        const endAction = makeButton('end', end, end.children[1] || end.firstElementChild);
 
         function paintProgress(data) {
             progressRing.hidden = !data.enabled;
@@ -324,11 +320,7 @@
             const points = typeof score === 'number' ? score : 0;
             const data = status(points);
             const haveBonus = data.enabled && data.available > 0;
-            const finished = data.nextPoints === null;
-            const next = finished ? 'Дневной лимит достигнут' : 'До следующего: ' + data.remainingPoints + ' «?»';
-            menuCallout.hidden = !data.enabled || (!haveBonus && finished);
-            startHint.hidden = !data.enabled || haveBonus || finished;
-            startHint.textContent = points > 0 ? next : data.firstPoints + ' «?» в полёте открывают бонусный вопрос';
+            menuCallout.hidden = !haveBonus;
             menuBadge.hidden = !haveBonus;
             menuBadge.textContent = String(data.available);
             quiz.setAttribute('aria-label', haveBonus ? 'Вопросы дня, бонусных вопросов: ' + data.available : 'Вопросы дня');

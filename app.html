@@ -11,30 +11,30 @@
     <link rel="icon" type="image/png" href="icons/icon-192.png?v=8">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BUBOGAME v0.18.6</title>
+    <title>BUBOGAME v0.18.9</title>
     <!-- Font Awesome 6 Free -->
-    <link rel="stylesheet" href="css/fontawesome.css?v=0.18.6">
+    <link rel="stylesheet" href="css/fontawesome.css?v=0.18.9">
     <!-- Onest: локальные файлы -->
-    <link rel="stylesheet" href="css/fonts.css?v=0.18.6">
+    <link rel="stylesheet" href="css/fonts.css?v=0.18.9">
 
-    <script src="js/music-hold.js?v=0.18.6"></script>
-    <link rel="stylesheet" href="css/style.css?v=0.18.6">
+    <script src="js/music-hold.js?v=0.18.9"></script>
+    <link rel="stylesheet" href="css/style.css?v=0.18.9">
     
     
-<link rel="stylesheet" href="css/admin.css?v=0.18.6" id="adminStyle">
+<link rel="stylesheet" href="css/admin.css?v=0.18.9" id="adminStyle">
     <!-- Tailwind: готовый файл стилей вместо онлайн-компилятора (тот следил за каждым изменением страницы и пересобирал стили прямо во время игры) -->
-    <link rel="stylesheet" href="css/tailwind.css?v=0.18.6">
-    <link rel="stylesheet" href="css/flight-quiz-bonus.css?v=0.18.6">
-    <link rel="stylesheet" href="css/campaign.css?v=0.18.6">
+    <link rel="stylesheet" href="css/tailwind.css?v=0.18.9">
+    <link rel="stylesheet" href="css/flight-quiz-bonus.css?v=0.18.9">
+    <link rel="stylesheet" href="css/campaign.css?v=0.18.9">
 </head>
 <body class="flex items-center justify-center h-full w-full">
     <!-- ЭКРАН ЗАГРУЗКИ: свои стили (не зависят от Tailwind); логотип ставится ровно на место логотипа главного меню -->
-    <link rel="stylesheet" href="css/boot.css?v=0.18.6">
-    <link rel="stylesheet" href="css/features.css?v=0.18.6">
-    <link rel="stylesheet" href="css/rules.css?v=0.18.6">
-    <link rel="stylesheet" href="css/settings.css?v=0.18.6">
-    <link rel="stylesheet" href="css/profile.css?v=0.18.6">
-    <link rel="stylesheet" href="css/journey-polish.css?v=0.18.6">
+    <link rel="stylesheet" href="css/boot.css?v=0.18.9">
+    <link rel="stylesheet" href="css/features.css?v=0.18.9">
+    <link rel="stylesheet" href="css/rules.css?v=0.18.9">
+    <link rel="stylesheet" href="css/settings.css?v=0.18.9">
+    <link rel="stylesheet" href="css/profile.css?v=0.18.9">
+    <link rel="stylesheet" href="css/journey-polish.css?v=0.18.9">
     <div id="bootLoader">
         <canvas class="bl-stars" id="blStars"></canvas>
         <div class="bl-haze"></div>
@@ -50,10 +50,10 @@
             </div>
             <div class="bl-tap" id="blGo">Тапни, чтобы продолжить</div>
         </div>
-        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.18.6</div>
+        <div id="buildTag" style="display:block;position:absolute;left:0;right:0;bottom:6px;text-align:center;pointer-events:none;user-select:none;font:600 7px/1 monospace;color:rgba(255,255,255,.3);letter-spacing:.04em">v0.18.9</div>
     </div>
     <div id="menuHalo"><div class="mh"></div></div>   <!-- свечение совы с экрана загрузки остаётся и в главном меню -->
-    <script src="js/boot.js?v=0.18.6"></script>
+    <script src="js/boot.js?v=0.18.9"></script>
     <div id="gameContainer" class="relative w-full h-full max-w-md max-h-[920px] aspect-[9/16] shadow-2xl overflow-hidden flex flex-col justify-between bg-[#140326]">
         <!-- СТАРТОВЫЙ ЭКРАН / ГЛАВНОЕ МЕНЮ -->
         <div id="startScreen" class="absolute inset-0 z-30 flex flex-col justify-between p-3 bg-[#140326]/20 overflow-y-auto custom-scroll">
@@ -85,21 +85,15 @@
             </div>
 
             <div class="w-full space-y-2 py-1">
-                <div id="menuDiffCard" class="diff-card hidden glass-panel-menu border-[#782CE9]/60 rounded-2xl p-3 shadow-xl space-y-1">
-                    <div class="flex justify-between items-center text-[10px] font-black text-purple-200">
-                        <div class="flex items-center space-x-1 text-cyan-400 uppercase tracking-tight">
-                            <i class="fa-solid fa-gauge-high text-[10px]"></i>
-                            <span>СЛОЖНОСТЬ: <strong id="menuDiffLabel" class="diff-label text-emerald-400 font-black">СУПЕРЛАЙТ</strong></span>
-                        </div>
-                        <div id="menuDiffPercent" class="text-purple-300 font-black">0%</div>
-                    </div>
-                    <div class="diff-bar" data-prefix="menu"></div>
-                </div>
-
                 <div id="statsCard" class="hidden glass-panel-menu border-[#FE7600]/45 rounded-2xl p-3.5 shadow-xl text-left space-y-2">
-                    <div class="flex justify-between items-center text-[11px] text-[#FE7600] font-black">
-                        <span class="uppercase tracking-wider font-black" style="color:#fff"><i class="fa-solid fa-chart-line mr-1" style="color:#FE7600"></i> Прогресс</span>
-                        <div id="menuAttempts" class="flex items-center space-x-1 uppercase tracking-wider shrink-0" style="color:#fff;font-size:11px"><i class="fa-solid fa-rotate-right" style="color:#FE7600;font-size:11px"></i><span class="font-black" style="font-size:11px">ПОПЫТКИ: <strong id="menuAttemptsVal" class="font-black" style="color:#FE7600;font-size:11px">2</strong></span></div>
+                    <div id="menuDiffCard" class="diff-card hidden space-y-1">
+                        <div class="flex justify-between items-center text-[10px] font-black text-purple-200">
+                            <div class="flex items-center space-x-1 text-cyan-400 uppercase tracking-tight">
+                                <i class="fa-solid fa-gauge-high text-[10px]"></i>
+                                <span>СЛОЖНОСТЬ: <strong id="menuDiffLabel" class="diff-label text-emerald-400 font-black">СУПЕРЛАЙТ</strong></span>
+                            </div>
+                        </div>
+                        <div class="diff-bar" data-prefix="menu"></div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 text-purple-200">
                         <div class="bg-[#140326]/80 px-2.5 py-1 rounded-xl border border-purple-900/50 flex justify-between items-center whitespace-nowrap">
@@ -108,20 +102,10 @@
                         </div>
                         <div class="bg-[#140326]/80 px-2.5 py-1 rounded-xl border border-purple-900/50 flex justify-between items-center whitespace-nowrap">
                             <span class="text-[11px] font-bold" style="color:#A855F7">Темы:</span>
-                            <span id="menuTokens" class="text-[13px] font-black ml-1" style="color:#A855F7">0 / 70</span>
+                            <span id="menuTokens" class="text-[13px] font-black ml-1" style="color:#A855F7">0 / 100</span>
                         </div>
                     </div>
-                    <div class="grid grid-cols-6 gap-1 pt-1 pb-0.5">
-                        <div id="menu-badge-music" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between">
-                            <i id="menu-icon_music" class="fa-solid fa-music text-gray-500 text-[12px] leading-none"></i>
-                            <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Музыка</span>
-                            <span id="menu-cnt_music" class="text-[8px] text-gray-300 font-black leading-none">0/20</span>
-                        </div>
-                        <div id="menu-badge-logic" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between">
-                            <i id="menu-icon_logic" class="fa-solid fa-brain text-gray-500 text-[12px] leading-none"></i>
-                            <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Обо всём</span>
-                            <span id="menu-cnt_logic" class="text-[8px] text-gray-300 font-black leading-none">0/15</span>
-                        </div>
+                    <div class="district-collection-grid grid gap-1 pt-1 pb-0.5">
                         <div id="menu-badge-kino" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between">
                             <i id="menu-icon_kino" class="fa-solid fa-film text-gray-500 text-[12px] leading-none"></i>
                             <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Кино</span>
@@ -137,24 +121,26 @@
                             <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Мультики</span>
                             <span id="menu-cnt_cartoons" class="text-[8px] text-gray-300 font-black leading-none">0/10</span>
                         </div>
-                        <div id="menu-badge-fun" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between">
-                            <i id="menu-icon_fun" class="fa-solid fa-hat-wizard text-gray-500 text-[12px] leading-none"></i>
-                            <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Фан-дом</span>
-                            <span id="menu-cnt_fun" class="text-[8px] text-gray-300 font-black leading-none">0/5</span>
+                        <div id="menu-badge-music" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between">
+                            <i id="menu-icon_music" class="fa-solid fa-gamepad text-gray-500 text-[12px] leading-none"></i>
+                            <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Игры</span>
+                            <span id="menu-cnt_music" class="text-[8px] text-gray-300 font-black leading-none">0/20</span>
                         </div>
+                        <div id="menu-badge-fun" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between">
+                            <i id="menu-icon_fun" class="fa-solid fa-face-laugh-squint text-gray-500 text-[12px] leading-none"></i>
+                            <span class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Мемы</span>
+                            <span id="menu-cnt_fun" class="text-[8px] text-gray-300 font-black leading-none">0/20</span>
+                        </div>
+
                     </div>
                 </div>
 
                 <div id="menuGoalCard" class="relative glass-panel-menu border-[#782CE9]/60 rounded-2xl p-3.5 shadow-xl text-left space-y-2">
-                    <button id="menuGoalX" type="button" aria-label="Скрыть описание"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                     <div class="flex items-center space-x-2 text-[12px] uppercase tracking-wider text-[#FE7600] font-black">
                         <i class="fa-solid fa-bullseye text-sm" aria-hidden="true"></i>
                         <span class="font-black">Цель полёта</span>
                     </div>
                     <p class="text-[11px] text-purple-100 leading-snug font-medium"><span id="menuGoalText"></span></p>
-                    <p class="text-[10px] text-purple-300 leading-snug font-medium">
-                        <i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1.5 text-[9px]" aria-hidden="true"></i>Остерегайся труб и подбирай перья и напитки, чтобы у совы хватало сил.
-                    </p>
                 </div>
             </div>
 
@@ -170,21 +156,13 @@
                     </button>
                 </div>
 
-                <div id="campaignActions" hidden>
-                    <button id="campaignStartBtn" class="btn-bubo camp-start" type="button" aria-haspopup="dialog">
-                        <i class="fa-solid fa-play" aria-hidden="true"></i>
-                        <span><strong>Начать полёт</strong><small id="campaignStartAttempts">Осталось попыток: 2</small></span>
-                        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-                    </button>
-                </div>
-                <button id="startBtn" class="hidden" type="button" hidden>
-                    <div class="flex items-center space-x-2">
-                        <i class="fa-solid fa-play text-[11px] text-white font-black"></i>
-                        <span id="startBtnLabel" class="text-[15px] font-black tracking-wider uppercase text-white">НАЧАТЬ ПОЛЕТ</span>
-                    </div>
-                    <span id="startBtnSub" class="text-[9px] font-bold text-white/85 mt-0.5 tracking-tight uppercase">ОСТАЛОСЬ ПОПЫТОК: 2</span>
+                <button id="campaignStartBtn" class="btn-bubo w-full py-2 px-3 rounded-2xl flex flex-col items-center justify-center active:scale-95 transition-all" type="button" aria-haspopup="dialog">
+                    <span class="flex items-center space-x-2">
+                        <i class="fa-solid fa-play text-[11px] text-white" aria-hidden="true"></i>
+                        <span id="startBtnLabel" class="text-[15px] font-black tracking-wider uppercase text-white">Начать полёт</span>
+                    </span>
+                    <span id="campaignStartAttempts" class="text-[11px] font-bold text-white mt-0.5 tracking-tight">Осталось попыток: 2</span>
                 </button>
-
                 <button id="resetProgressBtn" class="hidden btn-secondary w-full py-2.5 rounded-2xl text-[11px] uppercase tracking-wider flex items-center justify-center space-x-2 font-black">
                     <i class="fa-solid fa-rotate-left text-xs"></i>
                     <span class="font-black">ЗАНОВО</span>
@@ -249,7 +227,7 @@
                         <i class="fa-solid fa-gauge-high text-[8px]"></i>
                         <span>СЛОЖНОСТЬ: <strong id="diffLabel" class="diff-label text-emerald-400 font-black">СУПЕРЛАЙТ</strong></span>
                     </div>
-                    <span id="journeyDistrict" hidden></span><div id="diffPercent" class="text-purple-300 font-black">0%</div>
+                    <div id="diffPercent" class="text-purple-300 font-black">0%</div>
                 </div>
                 <div class="diff-bar" data-prefix=""></div>
             </div>
@@ -266,17 +244,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-6 gap-1 pt-0.5 pb-0.5">
-                    <div id="badge-music" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between transition-all duration-300">
-                        <i id="icon_music" class="fa-solid fa-music text-gray-500 text-[12px] leading-none"></i>
-                        <span id="label_music" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Музыка</span>
-                        <span id="cnt_music" class="text-[8px] text-gray-300 font-black leading-none">0/20</span>
-                    </div>
-                    <div id="badge-logic" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between transition-all duration-300">
-                        <i id="icon_logic" class="fa-solid fa-brain text-gray-500 text-[12px] leading-none"></i>
-                        <span id="label_logic" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Обо всём</span>
-                        <span id="cnt_logic" class="text-[8px] text-gray-300 font-black leading-none">0/15</span>
-                    </div>
+                <div class="district-collection-grid grid gap-1 pt-0.5 pb-0.5">
                     <div id="badge-kino" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between transition-all duration-300">
                         <i id="icon_kino" class="fa-solid fa-film text-gray-500 text-[12px] leading-none"></i>
                         <span id="label_kino" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Кино</span>
@@ -292,11 +260,17 @@
                         <span id="label_cartoons" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Мультики</span>
                         <span id="cnt_cartoons" class="text-[8px] text-gray-300 font-black leading-none">0/10</span>
                     </div>
-                    <div id="badge-fun" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between transition-all duration-300">
-                        <i id="icon_fun" class="fa-solid fa-hat-wizard text-gray-500 text-[12px] leading-none"></i>
-                        <span id="label_fun" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Фан-дом</span>
-                        <span id="cnt_fun" class="text-[8px] text-gray-300 font-black leading-none">0/5</span>
+                    <div id="badge-music" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between transition-all duration-300">
+                        <i id="icon_music" class="fa-solid fa-gamepad text-gray-500 text-[12px] leading-none"></i>
+                        <span id="label_music" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Игры</span>
+                        <span id="cnt_music" class="text-[8px] text-gray-300 font-black leading-none">0/20</span>
                     </div>
+                    <div id="badge-fun" class="collection-badge-slot rounded-xl bg-[#140326]/90 border border-white/10 flex flex-col items-center justify-between transition-all duration-300">
+                        <i id="icon_fun" class="fa-solid fa-face-laugh-squint text-gray-500 text-[12px] leading-none"></i>
+                        <span id="label_fun" class="collection-theme-label text-[6px] text-gray-400 font-black leading-none">Мемы</span>
+                        <span id="cnt_fun" class="text-[8px] text-gray-300 font-black leading-none">0/20</span>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -449,7 +423,7 @@
         <div class="journey-picker-content">
             <header class="journey-picker-header">
                 <button id="journeyPickerClose" type="button" aria-label="Назад"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></button>
-                <h2 id="journeyPickerTitle">Выбор уровня</h2>
+                <h2 id="journeyPickerTitle">Карта районов</h2>
                 <p id="journeyPickerProgress"></p>
             </header>
             <figure class="journey-picker-preview">
@@ -459,9 +433,10 @@
             </figure>
             <ol id="journeyPickerLevels" class="journey-picker-levels"></ol>
             <footer class="journey-picker-footer">
+                <p id="journeyPickerTopics"></p>
                 <p id="journeyPickerHint" aria-live="polite"></p>
-                <button id="journeyPickerStart" class="btn-bubo camp-start" type="button">В полёт</button>
-                <button id="journeyPickerReturn" class="journey-picker-return" type="button" hidden><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>К текущему уровню</button>
+                <button id="journeyPickerStart" class="btn-bubo" type="button">В полёт</button>
+                <button id="journeyPickerReturn" class="journey-picker-return" type="button" hidden><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>К текущему району</button>
             </footer>
         </div>
     </dialog>
@@ -498,7 +473,7 @@
 
             <div class="go-stats">
                 <div class="go-st" style="--c:#FE7600"><i class="fa-solid fa-rotate-right"></i><b id="finalAttempts">1</b><span>попыток</span></div>
-                <div class="go-st" style="--c:#A855F7"><i class="fa-solid fa-layer-group"></i><b id="finalTokens">0 / 120</b><span>собрано тем</span></div>
+                <div class="go-st" style="--c:#A855F7"><i class="fa-solid fa-layer-group"></i><b id="finalTokens">0 / 100</b><span>собрано тем</span></div>
                 <div class="go-st" style="--c:#38BDF8"><i class="fa-solid fa-circle-question"></i><b id="finalScore">0</b><span>вопросов</span></div>
             </div>
 
@@ -625,63 +600,70 @@
         </div>
     </div>
 
-    <script src="js/local-profiles.js?v=0.18.6"></script>
-    <script src="js/audio.js?v=0.18.6"></script>
-    <script src="js/bubo-playtest.js?v=0.18.6"></script>
-    <script src="js/flight-quiz-bonus.js?v=0.18.6"></script>
-    <script src="js/journey.js?v=0.18.6"></script>
-    <script src="js/game-core.js?v=0.18.6"></script>
-    <script src="js/owl.js?v=0.18.6"></script>
-    <script src="js/hud.js?v=0.18.6"></script>
-    <script src="js/scenery.js?v=0.18.6"></script>
-    <script src="js/items.js?v=0.18.6"></script>
-    <script src="js/shazam.js?v=0.18.6"></script>
-    <script src="js/crystals.js?v=0.18.6"></script>
-    <script src="js/water.js?v=0.18.6"></script>
-    <script src="js/menu-fx.js?v=0.18.6"></script>
-    <script src="js/campaign-topics.js?v=0.18.6"></script>
-    <script src="js/quiz.js?v=0.18.6"></script>
-    <script src="js/quiz-bank.js?v=0.18.6"></script>
-    <script src="quiz-new/music.js?v=0.18.6"></script>
-    <script src="quiz-new/kino.js?v=0.18.6"></script>
-    <script src="quiz-new/series.js?v=0.18.6"></script>
-    <script src="quiz-new/cartoons.js?v=0.18.6"></script>
-    <script src="quiz-new/games.js?v=0.18.6"></script>
-    <script src="quiz-new/memes.js?v=0.18.6"></script>
-    <script src="quiz-new/hp.js?v=0.18.6"></script>
-    <script src="quiz-new/lit.js?v=0.18.6"></script>
-    <script src="quiz-new/history.js?v=0.18.6"></script>
-    <script src="quiz-new/geo.js?v=0.18.6"></script>
-    <script src="quiz-new/chem.js?v=0.18.6"></script>
-    <script src="quiz-new/phys.js?v=0.18.6"></script>
-    <script src="quiz-new/space.js?v=0.18.6"></script>
-    <script src="quiz-new/nature.js?v=0.18.6"></script>
-    <script src="quiz-new/sport.js?v=0.18.6"></script>
-    <script src="quiz-new/food.js?v=0.18.6"></script>
-    <script src="quiz-new/art.js?v=0.18.6"></script>
-    <script src="quiz-new/humor.js?v=0.18.6"></script>
-    <script src="js/quiz-bank-build.js?v=0.18.6"></script>
-    <script src="js/shop.js?v=0.18.6"></script>
-    <script src="js/weather.js?v=0.18.6"></script>
-    <script src="js/second-wind.js?v=0.18.6"></script>
-    <script src="js/campaign.js?v=0.18.6"></script>
-    <script src="js/campaign-guardian.js?v=0.18.6"></script>
-    <script src="js/campaign-combat.js?v=0.18.6"></script>
-    <script src="js/update.js?v=0.18.6"></script>
-    <script src="js/campaign-day-art.js?v=0.18.6"></script>
-    <script src="js/render.js?v=0.18.6"></script>
-    <script src="js/wheel.js?v=0.18.6"></script>
-    <script src="js/ui.js?v=0.18.6"></script>
-    <script src="js/inventory.js?v=0.18.6"></script>
-    <script src="js/rules.js?v=0.18.6"></script>
-<script src="js/admin.js?v=0.18.6"></script>
-<script src="js/text-measure.js?v=0.18.6"></script>
-<script src="js/fullscreen.js?v=0.18.6"></script>
-<script src="js/settings-ui.js?v=0.18.6"></script>
-<script src="js/exit-confirm.js?v=0.18.6"></script>
-<script src="js/logo-anim.js?v=0.18.6"></script>
-<script src="js/profile.js?v=0.18.6"></script>
-<script src="js/campaign-ui.js?v=0.18.6"></script>
-<script src="js/scrollbars.js?v=0.18.6"></script>
+    <script src="js/local-profiles.js?v=0.18.9"></script>
+    <script src="js/audio.js?v=0.18.9"></script>
+    <script src="js/bubo-playtest.js?v=0.18.9"></script>
+    <script src="js/flight-quiz-bonus.js?v=0.18.9"></script>
+    <script src="js/journey.js?v=0.18.9"></script>
+    <script src="js/game-core.js?v=0.18.9"></script>
+    <script src="js/owl.js?v=0.18.9"></script>
+    <script src="js/hud.js?v=0.18.9"></script>
+    <script src="js/scenery.js?v=0.18.9"></script>
+    <script src="js/items.js?v=0.18.9"></script>
+    <script src="js/shazam.js?v=0.18.9"></script>
+    <script src="js/crystals.js?v=0.18.9"></script>
+    <script src="js/water.js?v=0.18.9"></script>
+    <script src="js/menu-fx.js?v=0.18.9"></script>
+    <script src="js/campaign-topics.js?v=0.18.9"></script>
+    <script src="js/quiz.js?v=0.18.9"></script>
+    <script src="js/quiz-bank.js?v=0.18.9"></script>
+    <script src="quiz-new/music.js?v=0.18.9"></script>
+    <script src="quiz-new/kino.js?v=0.18.9"></script>
+    <script src="quiz-new/series.js?v=0.18.9"></script>
+    <script src="quiz-new/cartoons.js?v=0.18.9"></script>
+    <script src="quiz-new/games.js?v=0.18.9"></script>
+    <script src="quiz-new/memes.js?v=0.18.9"></script>
+    <script src="quiz-new/hp.js?v=0.18.9"></script>
+    <script src="quiz-new/lit.js?v=0.18.9"></script>
+    <script src="quiz-new/history.js?v=0.18.9"></script>
+    <script src="quiz-new/geo.js?v=0.18.9"></script>
+    <script src="quiz-new/chem.js?v=0.18.9"></script>
+    <script src="quiz-new/phys.js?v=0.18.9"></script>
+    <script src="quiz-new/space.js?v=0.18.9"></script>
+    <script src="quiz-new/nature.js?v=0.18.9"></script>
+    <script src="quiz-new/sport.js?v=0.18.9"></script>
+    <script src="quiz-new/food.js?v=0.18.9"></script>
+    <script src="quiz-new/art.js?v=0.18.9"></script>
+    <script src="quiz-new/humor.js?v=0.18.9"></script>
+    <script src="quiz-new/architecture.js?v=0.18.9"></script>
+    <script src="quiz-new/transport.js?v=0.18.9"></script>
+    <script src="quiz-new/instruments.js?v=0.18.9"></script>
+    <script src="quiz-new/dance.js?v=0.18.9"></script>
+    <script src="quiz-new/mythology.js?v=0.18.9"></script>
+    <script src="quiz-new/animals.js?v=0.18.9"></script>
+    <script src="quiz-new/exploration.js?v=0.18.9"></script>
+    <script src="js/quiz-bank-build.js?v=0.18.9"></script>
+    <script src="js/shop.js?v=0.18.9"></script>
+    <script src="js/weather.js?v=0.18.9"></script>
+    <script src="js/second-wind.js?v=0.18.9"></script>
+    <script src="js/campaign.js?v=0.18.9"></script>
+    <script src="js/campaign-guardian.js?v=0.18.9"></script>
+    <script src="js/campaign-combat.js?v=0.18.9"></script>
+    <script src="js/update.js?v=0.18.9"></script>
+    <script src="js/campaign-day-art.js?v=0.18.9"></script>
+    <script src="js/render.js?v=0.18.9"></script>
+    <script src="js/wheel.js?v=0.18.9"></script>
+    <script src="js/ui.js?v=0.18.9"></script>
+    <script src="js/inventory.js?v=0.18.9"></script>
+    <script src="js/rules.js?v=0.18.9"></script>
+<script src="js/admin.js?v=0.18.9"></script>
+<script src="js/text-measure.js?v=0.18.9"></script>
+<script src="js/fullscreen.js?v=0.18.9"></script>
+<script src="js/settings-ui.js?v=0.18.9"></script>
+<script src="js/exit-confirm.js?v=0.18.9"></script>
+<script src="js/logo-anim.js?v=0.18.9"></script>
+<script src="js/profile.js?v=0.18.9"></script>
+<script src="js/campaign-ui.js?v=0.18.9"></script>
+<script src="js/scrollbars.js?v=0.18.9"></script>
 </body>
 </html>

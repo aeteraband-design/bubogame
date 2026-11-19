@@ -1,26 +1,30 @@
 (function () {
     const KEY = 'bubo_campaign_topics_v1:';
     const CHANGED = 'bubo:campaign-topics';
-    const BY_PHASE = new Map([
-        ['night', ['music', 'kino', 'series', 'games', 'hp']],
-        ['dawn', ['nature', 'geo', 'sport', 'food', 'art']]
+    const DISTRICTS = new Map([
+        ['night', ['kino', 'series', 'space', 'games', 'memes']],
+        ['dawn', ['geo', 'history', 'food', 'architecture', 'transport']],
+        ['music', ['music', 'art', 'humor', 'instruments', 'dance']],
+        ['magic', ['hp', 'lit', 'chem', 'phys', 'mythology']],
+        ['jungle', ['nature', 'sport', 'cartoons', 'animals', 'exploration']]
     ]);
     const ICON_CODES = {
-        music: '\uf001', kino: '\uf008', series: '\ue131', games: '\uf11b', hp: '\uf6e8',
-        nature: '\uf6ed', geo: '\uf7a2', sport: '\uf1e3', food: '\uf805', art: '\uf53f'
+        kino: '\uf008', series: '\ue131', space: '\uf135',
+        geo: '\uf7a2', history: '\uf66f', food: '\uf805',
+        music: '\uf001', art: '\uf53f', humor: '\uf586',
+        hp: '\uf6e8', lit: '\uf518', chem: '\uf0c3',
+        nature: '\uf6ed', sport: '\uf1e3', cartoons: '\uf1b0',
+        games: '\uf11b', memes: '\uf59b', architecture: '\uf1ad', transport: '\uf238',
+        instruments: '\uf7a6', dance: '\uf54b', phys: '\uf5d2', mythology: '\uf6d5',
+        animals: '\uf700', exploration: '\uf14e'
     };
-    const DISTRICTS = new Map([
-        ['dawn', { native: ['logic'], quiz: ['nature', 'geo'] }],
-        ['music', { native: ['music'], quiz: ['music', 'art'] }],
-        ['magic', { native: ['fun'], quiz: ['hp', 'series'] }],
-        ['jungle', { native: ['cartoons'], quiz: ['food', 'sport'] }],
-        ['night', { native: ['kino', 'series'], quiz: ['kino', 'games'] }]
-    ]);
-    const districtByTopic = new Map();
-    for (const [district, group] of DISTRICTS) for (const id of group.quiz) districtByTopic.set(id, district);
-    const topics = [...BY_PHASE].flatMap(([phase, ids]) => ids.map(id => ({ id, phase, district: districtByTopic.get(id) })));
+    const topics = [...DISTRICTS].flatMap(([district, ids]) => ids.map(id => ({ id, phase: district, district })));
     const topicIds = new Set(topics.map(topic => topic.id));
-    const slots = [0, 1];
+    const HUD_LABELS = {
+        cartoons: 'Мультики', hp: 'Поттер', lit: 'Книги', architecture: 'Здания',
+        instruments: 'Инструм.', exploration: 'Походы'
+    };
+    const stamps = [0, 1];
     const previewStamps = new Set();
     const visuals = new Map();
 
@@ -32,7 +36,7 @@
     }
 
     function count(id, test = false) {
-        return slots.filter(slot => hasSlot(id, slot, test)).length;
+        return stamps.filter(slot => hasSlot(id, slot, test)).length;
     }
 
     function progress(id) {
@@ -40,37 +44,39 @@
         try { return count(id); } catch (e) { return 0; }
     }
 
+    function isUnlocked(id) {
+        return progress(id) === stamps.length;
+    }
+
     function visual(id) {
         if (!topicIds.has(id) || typeof qzTheme !== 'function') return null;
         if (!visuals.has(id)) {
             const quiz = qzTheme(id);
-            visuals.set(id, { name: quiz.name, color: quiz.col, faClass: quiz.icon, iconCode: ICON_CODES[id] });
+            if (quiz.id !== id) return null;
+            visuals.set(id, {
+                id, name: quiz.name, label: HUD_LABELS[id] || quiz.name,
+                color: quiz.col, faClass: quiz.icon, iconCode: ICON_CODES[id]
+            });
         }
         return visuals.get(id);
     }
 
+    function districtTopics(district) {
+        return (DISTRICTS.get(district) || []).map(visual).filter(Boolean);
+    }
+
+    function list() {
+        return topics.map(topic => ({ ...topic }));
+    }
+
     function missing(id, test) {
-        try { return { id, slots: slots.filter(slot => !hasSlot(id, slot, test)) }; }
-        catch (e) { return { id, slots: [...slots] }; }
+        try { return { id, slots: stamps.filter(slot => !hasSlot(id, slot, test)) }; }
+        catch (e) { return { id, slots: [...stamps] }; }
     }
 
-    function forGate({ phase, index, test } = {}) {
-        const id = BY_PHASE.get(phase)?.[index];
+    function forGate({ phase, district, index, test } = {}) {
+        const id = DISTRICTS.get(district || phase)?.[index];
         return id ? missing(id, test) : null;
-    }
-
-    function forDistrict(district, turn = 0) {
-        const ids = DISTRICTS.get(district)?.quiz;
-        if (!ids) return null;
-        for (let offset = 0; offset < ids.length; offset++) {
-            const topic = missing(ids[(turn + offset) % ids.length]);
-            if (topic.slots.length) return topic;
-        }
-        return null;
-    }
-
-    function nativeThemesForDistrict(district) {
-        return DISTRICTS.get(district)?.native || [];
     }
 
     function notify(detail) {
@@ -78,24 +84,44 @@
     }
 
     function collect(id, slot, test = false) {
-        if (!topicIds.has(id) || !slots.includes(slot)) return null;
-        let result;
+        if (!topicIds.has(id) || !stamps.includes(slot)) return null;
         try {
-            if (hasSlot(id, slot, test)) return { changed: false, progress: count(id, test) };
+            if (hasSlot(id, slot, test)) return { changed: false, progress: count(id, test), unlocked: false };
             const key = slotKey(id, slot);
             if (test) previewStamps.add(key);
             else BuboSaveStorage.setItem(key, '1');
             const progress = count(id, test);
-            result = { changed: true, progress, unlocked: progress === slots.length };
+            const result = { changed: true, progress, unlocked: progress === stamps.length };
+            if (!test) notify({ id, ...result });
+            return result;
         } catch (e) { return null; }
-        if (!test) notify({ id, ...result });
-        return result;
+    }
+
+    function collectDistrictToken(district, tokenKey, tokens) {
+        const id = DISTRICTS.get(district)?.[window.BuboJourney.themeKeys().indexOf(tokenKey)];
+        if (!id || !Number.isInteger(tokens) || tokens < 1) return null;
+        try {
+            const collected = stamps.filter(slot => hasSlot(id, slot, false));
+            const previous = collected.length;
+            const target = Math.min(tokens, stamps.length);
+            for (const slot of stamps) {
+                if (collected.length >= target) break;
+                if (collected.includes(slot)) continue;
+                BuboSaveStorage.setItem(slotKey(id, slot), '1');
+                collected.push(slot);
+            }
+            const progress = collected.length;
+            const changed = progress > previous;
+            const result = { id, changed, progress, unlocked: changed && progress === stamps.length };
+            if (changed) notify(result);
+            return result;
+        } catch (e) { return null; }
     }
 
     function reset() {
         previewStamps.clear();
         try {
-            for (const { id } of topics) for (const slot of slots) BuboSaveStorage.removeItem(slotKey(id, slot));
+            for (const { id } of topics) for (const slot of stamps) BuboSaveStorage.removeItem(slotKey(id, slot));
         } catch (e) { return false; }
         notify();
         return true;
@@ -106,8 +132,7 @@
     });
 
     window.BuboCampaignTopics = {
-        list: () => topics.map(topic => ({ ...topic })),
-        progress, isUnlocked: id => progress(id) === slots.length,
-        forGate, forDistrict, nativeThemesForDistrict, collect, visual, reset, resetPreview: () => previewStamps.clear()
+        list, districtTopics, collectDistrictToken, progress, isUnlocked, required: stamps.length,
+        forGate, collect, visual, reset, resetPreview: () => previewStamps.clear()
     };
 })();

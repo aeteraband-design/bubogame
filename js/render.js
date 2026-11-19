@@ -130,78 +130,37 @@ function campaignSky(scene) {
     }
     return campaignSkyCache.palettes[scene];
 }
-let nativeGuardianPhase = '', nativeGuardianLastActive = 0;
+let nativeGuardianPhase = '', nativeGuardianLastActive = 0, nativeGuardianWarning = false;
 
-function drawFlightGuardian(guardian, campaignScene, journey, nativePhase) {
+function drawFlightGuardian(guardian, campaignScene, journey, hazard) {
+    const nativePhase = hazard?.kind;
     if (!guardian) return;
     if (campaignScene === 'boss') {
         nativeGuardianPhase = '';
         guardian.draw(ctx, width, height, pipes, owl.x);
         return;
     }
-    if (!journey || !gameActive) { nativeGuardianPhase = ''; return; }
+    if (!journey || !gameActive) { nativeGuardianPhase = ''; nativeGuardianWarning = false; return; }
     const now = performance.now();
     if (nativePhase) {
         if (!nativeGuardianPhase) guardian.reset();
         if (nativePhase !== nativeGuardianPhase) guardian.phase(nativePhase);
+        if (!hazard.warning && nativeGuardianWarning) guardian.strike(nativePhase);
+        nativeGuardianWarning = hazard.warning;
         nativeGuardianPhase = nativePhase;
         nativeGuardianLastActive = now;
     }
     if (!nativeGuardianPhase) return;
     const opacity = Math.max(0, 1 - (now - nativeGuardianLastActive) / 300);
-    if (opacity > 0) guardian.draw(ctx, width, height, pipes, owl.x, Boolean(nativePhase), opacity);
+    if (opacity > 0) guardian.draw(ctx, width, height, pipes, owl.x, Boolean(nativePhase && !hazard.warning), opacity, hazard);
     else nativeGuardianPhase = '';
-}
-
-const DISTRICT_SKY_TRANSITION = {
-    dawn: { from: 'night', top: '#1c113d', bottom: '#47334f', opacity: .56 },
-    music: { from: 'dawn', top: '#4382b4', bottom: '#90b7c7', opacity: .34 },
-    magic: { from: 'music', top: '#392352', bottom: '#9a637f', opacity: .38 },
-    jungle: { from: 'magic', top: '#38325b', bottom: '#877292', opacity: .36 }
-};
-const districtTransitionMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const districtTransitionDuration = 340;
-let journeyBackdropRegion = '', journeySkyTransition = null;
-
-window.addEventListener('bubo:journey-change', () => {
-    const journey = window.BuboJourney;
-    const next = journey?.isFlight() ? journey.region()?.id : '';
-    if (next === journeyBackdropRegion) return;
-    const tint = DISTRICT_SKY_TRANSITION[next];
-    const advancing = tint?.from === journeyBackdropRegion && gameActive;
-    journeyBackdropRegion = next;
-    journeySkyTransition = advancing && gfxQuality !== 'low' && !districtTransitionMotion.matches && !document.hidden
-        ? { tint, began: performance.now(), shade: null, canvasHeight: 0 } : null;
-});
-
-function drawJourneySkyTransition(journey) {
-    const transition = journeySkyTransition;
-    if (!transition) return;
-    const elapsed = performance.now() - transition.began;
-    if (!journey || !gameActive || gfxQuality === 'low' || districtTransitionMotion.matches
-        || document.hidden || elapsed >= districtTransitionDuration) {
-        journeySkyTransition = null;
-        return;
-    }
-    if (!transition.shade || transition.canvasHeight !== height) {
-        const shade = ctx.createLinearGradient(0, 0, 0, height);
-        shade.addColorStop(0, transition.tint.top);
-        shade.addColorStop(1, transition.tint.bottom);
-        transition.shade = shade;
-        transition.canvasHeight = height;
-    }
-    // Смягчаем смену палитры нового неба одним слоем до отрисовки объектов и опасностей.
-    ctx.save();
-    ctx.globalAlpha = transition.tint.opacity * (1 - elapsed / districtTransitionDuration) ** 2;
-    ctx.fillStyle = transition.shade;
-    ctx.fillRect(0, 0, width, height);
-    ctx.restore();
 }
 
 function drawScene() {
     const campaignScene = window.BuboCampaign?.scene();
     const journey = !campaignScene && window.BuboJourney?.isFlight() ? window.BuboJourney : null;
-    const region = campaignScene === 'dawn' ? 'dawn' : journey?.region()?.id;
+    const campaignDistrict = window.BuboCampaign.district();
+    const region = campaignDistrict || (campaignScene === 'dawn' ? 'dawn' : journey?.region()?.id);
     const districts = window.BuboCampaignDayArt;
     const districtArt = districts?.supports(region) ? districts : null;
     const districtScale = districtArt ? Math.max(1, Math.min(1.5, viewScale * renderScale * WORLD_K)) : 1;
@@ -236,7 +195,6 @@ function drawScene() {
         }
     }
     ctx.globalAlpha = 1;
-    drawJourneySkyTransition(journey);
 
     const dsEl = drawScene.__el || (drawScene.__el = { s: document.getElementById('startScreen'), g: document.getElementById('gameOverModal') });
     const isStartMenuOpen = !dsEl.s.classList.contains('hidden');
@@ -253,11 +211,12 @@ function drawScene() {
         if (cr.height && mr && mr.height) { const base = mr.top + mr.height / 2 - (dsEl.h.__dy || 0), dy = Math.round((cr.top + MENU_PIPE.cy / height * cr.height - base) * 2) / 2; if (dsEl.h.__dy !== dy) { dsEl.h.__dy = dy; dsEl.h.style.transform = 'translateY(' + dy + 'px)'; } }
     }   // свечение совы — только в меню
     if (!districtArt) drawMoon();
-    if (stormVisuals) stormDrawBack();
+    if (!campaignScene) stormDrawBack();
     districtArt?.drawCelebration(ctx, width, height, region);
     const guardian = window.BuboCampaignGuardian;
-    const nativePhase = journey && gameActive && crystalTime > 0 ? 'fire' : journey && gameActive && waterTime > 0 ? 'water' : '';
-    drawFlightGuardian(guardian, campaignScene, journey, nativePhase);
+    const combat = window.BuboCampaignCombat;
+    const hazard = journey && gameActive ? combat?.flightHazard() : null;
+    drawFlightGuardian(guardian, campaignScene, journey, hazard);
     // фон на загрузке может ускоряться (сова в ускорении, рывок ШАЗАМа) — после загрузки плавно возвращается к обычному
     if (!window.__booting && (window.__bgSpeed || 1) > 1.001) window.__bgSpeed += (1 - window.__bgSpeed) * Math.min(1, 0.035 * dtMult);
     const bgK = window.__bgSpeed || 1;
@@ -285,7 +244,7 @@ function drawScene() {
     }
     ctx.save();
     if (Math.abs(camZoom - 1) > 0.0005) { ctx.translate(width / 2, height / 2); ctx.scale(camZoom, camZoom); ctx.translate(-width / 2, -height / 2); }
-    const owlInPlay = (gameActive || waitingFirstTap) && !isStartMenuOpen;   // в меню, его окнах и на экране поражения сову не рисуем
+    const owlInPlay = (gameActive || waitingFirstTap || window.BuboCampaign.isDefeating()) && !isStartMenuOpen;   // в меню, его окнах и на экране поражения сову не рисуем
     const owlBehind = shazamOwlBehind() && owlInPlay;   // ШАЗАМ: сова пролетает за трубой — рисуем её до труб
     if (owlBehind) { drawSpeedStars(); owl.draw(); }
     window.__sceneDrawn = true;
@@ -296,9 +255,12 @@ function drawScene() {
     // потоки «Водонапора» — за трубами; в дождь вода рисуется один раз — поверх серой пелены (stormDrawHotFx), а не дважды
     if (typeof drawWater === 'function' && (!stormVisuals || !(typeof stormGradeK === 'function' && stormGradeK() >= 0.02))) drawWater();
     if (isStartMenuOpen && typeof drawMenuPipes === 'function') drawMenuPipes();   // в меню — свои декоративные трубы вокруг логотипа
-    else if (region === 'dawn' && districtArt && !(journey && (nativePhase || crystalRedK > .01 || STORM.wet > .03))) {
+    else if (region === 'dawn' && districtArt) {
         const squeeze = currentDifficultySqueeze + currentCompressionFactor * compressionMaxForLevel();
-        pipes.forEach(pipe => districtArt.drawPipe(ctx, pipe, height, squeeze, camZoom, districtScale));
+        pipes.forEach(pipe => {
+            const heated = pipe.campaign?.hazard === 'fire' || combat?.isFlightHazardPipe(pipe, 'fire');
+            districtArt.drawPipe(ctx, pipe, height, squeeze, camZoom, districtScale, heated ? crystalRedK : 0);
+        });
     } else pipes.forEach(drawPipe);
     if (typeof quizDrawPortal2D === 'function') quizDrawPortal2D();   // портал в квиз-мир — в проёме между трубами
     if (typeof crystalDrawHeat === 'function') crystalDrawHeat(0.5);   // «Опасные трубы»: трубы калятся, из устьев — красный туман
@@ -456,6 +418,7 @@ function startOrResumeFlight(options) {
         }
         if (hasWonGame) startNewQuestKeepScore();
     }
+    if (!campaign) window.BuboJourney.enterFlight({ secondWind: Boolean(secondWind) });
     snapProgressVisuals();
     AudioFX.resume();
     AudioFX.setMode('game');
@@ -486,6 +449,7 @@ function startOrResumeFlight(options) {
         try { if (typeof waterReset === 'function') waterReset(); if (typeof crystalReset === 'function') crystalReset(); owl._wWet = 0; owl._wb = []; owl._wbb = []; if (typeof STORM !== 'undefined') STORM.ice = 0; } catch (e) {}
         invulnerableTime = 0; if (typeof shazamReset === 'function') shazamReset(); shieldTime = 0; shieldAppearAnim = 0; infiniteStaminaTime = 0; compressionTime = 0; currentCompressionFactor = 0; speedBoostTime = 0; slowMotionTime = 0; AudioFX._lastSpeedState = 'normal';
         if (campaign) window.BuboCampaignCombat?.reset();
+        else window.BuboCampaignCombat?.resetFlightHazard();
         window.BuboCampaignDayArt?.reset();
         lastBuffStateKey = '';
         resetOvereatDrunk();
@@ -532,7 +496,6 @@ function startOrResumeFlight(options) {
     if (!campaign) StorageManager.save();
     gameActive = false;
     waitingFirstTap = true;
-    if (!campaign) window.BuboJourney?.enterFlight({ secondWind: Boolean(secondWind) });
     if (typeof prewarmTokenSprites === 'function') prewarmTokenSprites();   // заготовки значков — заранее, пока сова ждёт первого касания
     return true;
 }
@@ -656,7 +619,10 @@ function returnToHome() {
     lastBuffStateKey = '';
 
     gameActive = false; waitingFirstTap = true;
-    if (!leavingCampaign) journey?.leaveFlight();
+    if (!leavingCampaign) {
+        journey?.leaveFlight();
+        if (!pausing) window.BuboCampaignCombat?.resetFlightHazard();
+    }
     window.FlightQuizBonus?.endFlight(score, 'pause');
     cutGameSfx();   // длинные звуки эффектов игры (ускорение, замедление, ШАЗАМ, вода…) обрываем мягко, в меню их не слышно
     AudioFX.setMode('menu');

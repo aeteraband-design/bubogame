@@ -7,7 +7,6 @@
 .btn-red { color: #fff; border: 1px solid rgba(255, 255, 255, 0.22); background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%); box-shadow: 0 4px 20px rgba(239, 68, 68, 0.45); transition: all 0.2s ease; }
 .btn-red:hover { filter: brightness(1.08); }
 .btn-red:active { transform: scale(0.96); }
-#startBtn.no-attempts { filter: grayscale(0.55) brightness(0.85); box-shadow: none; }
 
 /* ===== Экран смерти ===== */
 #gameOverModal .go-reason { display: flex; align-items: center; gap: 10px; text-align: left; padding: 9px 11px; border-radius: 14px;
@@ -478,8 +477,6 @@ html.menu-pc #startScreen > .menu-logo-wrap { padding-top: 0 !important; padding
 #menuGoalCard > p:first-of-type { font-size: 14px !important; line-height: 1.4 !important; }
 #menuGoalCard > p:last-of-type { font-size: 13px !important; line-height: 1.4 !important; }
 #menuGoalCard > p:last-of-type i { font-size: 12px !important; }
-#menuGoalX { position: absolute; width: 28px; height: 28px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: rgba(233,213,255,.8); background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); font-size: 13px; cursor: pointer; }
-#menuGoalX:active { transform: scale(.92); }
 /* v0.13.37: плитки тем в меню — те же размеры, что в игре */
 #statsCard .collection-badge-slot [class*="text-[8px]"] { font-size: calc(8px * var(--tb, 1)) !important; }
 #statsCard .collection-badge-slot [class*="text-[12px]"] { font-size: calc(12px * var(--tb, 1)) !important; }
@@ -552,7 +549,6 @@ html.menu-pc #startScreen > .menu-logo-wrap { padding-top: 0 !important; padding
 #qzWin .qz-curt span { font-size: 11.5px !important; font-weight: 900 !important; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
 #qzWin .qz-curt span em { font-weight: 900; }
 #qzWin .qz-curt span .qz-coin { font-size: 13px !important; }
-#menuGoalX { top: 8px !important; right: 8px !important; }
 
 /* ===== Экран смерти v2 — в стиле окна вопросов ===== */
 @property --goA { syntax: '<angle>'; inherits: false; initial-value: 0deg; }

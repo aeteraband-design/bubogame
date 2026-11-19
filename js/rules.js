@@ -75,8 +75,11 @@
 
     // ---------- значения из игры ----------
     const V = {
-        themes() { const C = typeof CATEGORIES !== 'undefined' ? CATEGORIES : {}; const keys = typeof THEME_KEYS_ALL !== 'undefined' ? THEME_KEYS_ALL : []; return keys.map(k => ({ k, ...C[k] })); },
-        total() { return typeof TOTAL_THEMES !== 'undefined' ? TOTAL_THEMES : this.themes().reduce((a, t) => a + (t.count || 0), 0); },
+        themes() {
+            const journey = window.BuboJourney;
+            return journey.themeKeys().map(k => ({ k, ...journey.themeVisual(k), count: journey.themeQuota(k) }));
+        },
+        total() { return window.BuboJourney.regionProgress().total; },
         attempts() { return CFG().attempts || 2; },
         qpa() { return CFG().questionsPerAttempt || 200; },
         maxLives() { return CFG().maxLives || 5; },
@@ -87,7 +90,7 @@
         shz() { const S = typeof SHZ !== 'undefined' ? SHZ : { INTRO: 60, DUR: 900, FADE: 300 }; return { intro: Math.round(S.INTRO / 60), full: Math.round(S.DUR / 60), fade: Math.round(S.FADE / 60), total: Math.round((S.DUR + S.FADE) / 60) }; },
         crystal() { return typeof CRYSTAL !== 'undefined' ? CRYSTAL : { SEC: 10, HIT_DMG: 0.5, PER_PIPE: [1, 1, 2, 2, 3, 3] }; },
         water() { return typeof WATERFX !== 'undefined' ? WATERFX : { SEC: 10 }; },
-        levelStart(i) { return Math.ceil(i * this.total() / Math.max(1, LV().length)); },
+        levelStart(i) { return Math.ceil(i * window.BuboJourney.flightProgress().total / Math.max(1, LV().length)); },
         coinOnPath(i) { return typeof COIN_PATH_VALUES !== 'undefined' ? COIN_PATH_VALUES[Math.max(0, Math.min(5, i))] : 5; },   // как в spawnPipe (hud.js)
         // монеты за рубежи вопросов в полёте — как в checkAttemptMilestone (game-core.js)
         milestoneCoins(k) { return typeof coinsForMilestone === 'function' ? coinsForMilestone(k) : 15; },
@@ -119,10 +122,10 @@
         const windFree = wind?.FREE_LIMIT ?? 2;
         return sec('fa-map-location-dot', '#FFBD80', 'Маршрут совы',
                  row('fa-feather', '#FFBD80', 'Первые три трубы', 'Учебный участок можно повторять свободно. Он не расходует попытки.')
-                 + row('fa-flag-checkered', '#C4A1FF', 'Уровни маршрута', 'Первый уровень — Ночной город. Остальные открываются по мере сбора значков. В меню полёта можно посмотреть каждый уровень.')
-                 + row('fa-layer-group', '#FFC53D', 'Коллекция', `Собери все ${T} значков. По мере сбора включаются шесть ступеней скорости и открываются новые районы.`) + chips
-                 + row('fa-comments', '#38BDF8', 'Темы викторины', 'Две дополнительные отметки одной темы открывают её на Суперлайте и Лайте.')
-                 + row('fa-chess-rook', '#38BDF8', 'Смотритель башни', 'Смотритель появляется во время огня и водонапора. Полная коллекция открывает финальный бой. Мороженое сдерживает огонь, ускорение помогает в воде. За победу полагается вращение.'))
+                 + row('fa-flag-checkered', '#C4A1FF', 'Уровни маршрута', 'Первый район — Ночной город. Чтобы открыть следующий, пройди все ступени, победи Смотрителя и забери приз.')
+                 + row('fa-layer-group', '#FFC53D', 'Коллекция', `Собери все ${T} значков. Внутри района включаются шесть ступеней скорости. После коллекции начинается бой за район.`) + chips
+                 + row('fa-comments', '#38BDF8', 'Темы викторины', 'Первые два значка темы открывают её в викторине на Суперлайте и Лайте. «Обо всём» доступно сразу.')
+                 + row('fa-chess-rook', '#38BDF8', 'Смотритель башни', 'Красные глаза предупреждают об огне, голубые — о воде. В бою мороженое защищает от огня, ускорение помогает в воде. За победу полагается вращение.'))
             + sec('fa-hand-pointer', '#FE7600', 'Как летать',
                 row('fa-hand-pointer', '#FE7600', 'Нажимай на экран', 'сова взмахивает крыльями и подлетает вверх. Не нажимаешь — падает. Полёт начинается с первого касания.')
                 + row('fa-feather-pointed', '#67E8F9', 'Силы', `каждый взмах тратит немного сил, и понемногу они уходят даже без взмахов. Чем выше уровень сложности, тем быстрее (до ×${num(maxDrain)}).`)
@@ -149,14 +152,11 @@
     function buildThemes() {
         const th = V.themes(), lv = LV(), Q = V.qpa();
         const tiles = `<div class="ru-tgrid">${th.map(t => `<div class="ru-tt" style="--c:${t.color}">${ball(t.faClass, t.color)}<b>${t.name}</b><span>нужно ${t.count}</span></div>`).join('')}</div>`;
-        const byW = th.slice().sort((a, b) => (b.weight || 0) - (a.weight || 0));
-        const often = byW.length && byW[0].weight !== byW[byW.length - 1].weight
-            ? `Чаще всех попадается <b style="color:${byW[0].color}">${byW[0].name}</b>, реже всех — <b style="color:${byW[byW.length - 1].color}">${byW[byW.length - 1].name}</b>.` : '';
+
         const ms = [1, 2, 3, 4].map(k => { const c = V.milestoneCoins(k); return `${k * 50} — ${c ? coinsW(c) : 'без монет'}`; }).join(', ');
         const c0 = V.coinOnPath(0), c1 = V.coinOnPath(Math.max(0, lv.length - 1));
         return sec('fa-layer-group', '#A855F7', 'Темы',
-                p('Главная цель. Значки тем летят по одному — через несколько труб и не два одинаковых подряд.') + tiles
-                + row('fa-scale-balanced', '#C4A1FF', '', often)
+                p('Главная цель. Значки тем летят по одному — через несколько труб. Собранная тема уступает место остальным.') + tiles
                 + row('fa-check-double', '#22C55E', 'Тема собрана до конца', 'её значки больше не попадаются. Если секретная звезда заберёт одну — тема снова появится.')
                 + row('fa-chart-line', '#FB923C', 'Выше уровень', 'темы попадаются реже.'))
             + sec('fa-circle-question', '#FE7600', 'Значки на пути',

@@ -16,9 +16,15 @@ function crystalPlanBuild() {
     let f = 0; try { f = ADMIN_CFG.crystalFreq | 0; } catch (e) {}
     const T = Math.max(6, TOTAL_THEMES | 0), key = T + '|' + f;
     if (CRYSTAL.plan && CRYSTAL.planKey === key) return CRYSTAL.plan;
+    CRYSTAL.plan = makeCrystalPlan(T, f, getTotalCollectedThemes());
+    CRYSTAL.planKey = key;
+    return CRYSTAL.plan;
+}
+
+function makeCrystalPlan(T, f, passed, lastTrigger = Infinity) {
+    if (lastTrigger < 1) return [];
     const lvStart = (i) => Math.ceil(i * T / 6);   // с какого числа тем начинается уровень i
     const segs = [];
-    // по умолчанию: Суперлайт+Лайт — 1 раз, Медиум+Медиум+ — 2 раза, Хард+Хард+ — 3 раза; точки разнесены по отрезку
     // по умолчанию: Суперлайт — 1, Лайт — 1, Медиум — 2, Медиум+ — 2, Хард — 3, Хард+ — 3; точки разнесены по уровню
     if (f <= 0) [1, 1, 2, 2, 3, 3].forEach((k, j) => {
         const a = lvStart(j), b = lvStart(j + 1);
@@ -35,26 +41,25 @@ function crystalPlanBuild() {
         for (let i = kinds.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [kinds[i], kinds[j]] = [kinds[j], kinds[i]]; }
         if (!kinds.some((k, i) => i >= 2 && k === kinds[i - 1] && k === kinds[i - 2])) break;
     }
-    const now = getTotalCollectedThemes();
-    CRYSTAL.plan = segs.map(([a, b], i) => {
-        const lo = Math.max(1, a + 1), hi = Math.max(lo, b - 1);
+    return segs.map(([a, b], i) => {
+        const lo = Math.min(lastTrigger, Math.max(1, a + 1));
+        const hi = Math.max(lo, Math.min(lastTrigger, b - 1));
         const at = lo + Math.floor(Math.random() * (hi - lo + 1));
-        return { at, done: at <= now, kind: kinds[i] };
+        return { at, done: at <= passed, kind: kinds[i] };
     });
-    CRYSTAL.planKey = key;
-    return CRYSTAL.plan;
 }
 // после каждой собранной темы: дошли до точки из плана — следующий подходящий значок будет кристаллом
 function crystalOnTheme() {
+    if (window.BuboCampaignCombat?.usesFlightHazards()) return;
     const plan = crystalPlanBuild(), n = getTotalCollectedThemes();
     for (const p of plan) if (!p.done && n >= p.at) { p.done = true; crystalPending = p.kind || true; }
 }
 function crystalReset() { crystalTime = 0; crystals.length = 0; crystalRedK = 0; crystalMist.length = 0; }
 
 // значок взят: включаем эффект
-function registerCrystal() {
+function registerCrystal({ pickedUp = true } = {}) {
     crystalTime = CRYSTAL.SEC * 60; CRYSTAL.id++;
-    try { AudioFX.playStarCollect(); AudioFX.playPipesHeat(); Haptics.powerup(); } catch (e) {}
+    try { if (pickedUp) AudioFX.playStarCollect(); AudioFX.playPipesHeat(); if (pickedUp) Haptics.powerup(); } catch (e) {}
     return { target: 'other', text: `Опасные трубы ${CRYSTAL.SEC}с`, color: CRYSTAL.COLOR, icon: 'fa-fire' };
 }
 
@@ -151,8 +156,12 @@ function crystalSqueeze() { try { return currentDifficultySqueeze + (currentComp
 // boost: 1 — обычно; в дождь рисуется ещё раз поверх серой пелены — ярко
 function crystalDrawHeat(boost) {
     const rk = typeof crystalRedK === 'number' ? crystalRedK : 0;
+    const combat = window.BuboCampaignCombat;
+    const warning = boost === 0.5 && gameActive && combat?.usesFlightHazards() ? combat.flightHazard() : null;
+    if (warning?.warning) window.BuboCampaignGuardian?.drawFlightWarning(ctx, pipes, width, height, crystalSqueeze(), warning.kind, combat.isFlightHazardPipe);
     if (rk < 0.02 && !crystalMist.length) return;
     const sq = crystalSqueeze(), hs = crystalHeatSprite(), ms = crystalMistSprite();
+    const selective = combat?.usesFlightHazards();
     const campaign = window.BuboCampaign?.isActive();
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -160,7 +169,8 @@ function crystalDrawHeat(boost) {
         const pipeHeat = crystalPipeHeatSprite();
         const t = (typeof frame === 'number' ? frame : 0);
         for (const p of pipes) {
-            if ((campaign && p.campaign?.hazard !== 'fire') || p.x + p.width < -40 || p.x > width + 40) continue;
+            if ((campaign && p.campaign?.hazard !== 'fire') || (selective && !combat.isFlightHazardPipe(p, 'fire'))
+                || p.x + p.width < -40 || p.x > width + 40) continue;
             const w = p.width, cx = p.x + w / 2, flick = 0.88 + 0.12 * Math.sin(t * 0.13 + p.x * 0.05);
             const yT = p.top + sq, yB = height - (p.bottom + sq);
             // раскалённая труба: красный отсвет по телу, сильнее у устья
@@ -181,9 +191,11 @@ function crystalDrawHeat(boost) {
 function crystalMistUpdate(speed, squeeze) {
     const dt = dtMult, rk = typeof crystalRedK === 'number' ? crystalRedK : 0;
     const campaign = window.BuboCampaign?.isActive();
+    const combat = window.BuboCampaignCombat, selective = combat?.usesFlightHazards();
     if (rk > 0.1 && gfxQuality !== 'low') {
         for (const p of pipes) {
-            if ((campaign && p.campaign?.hazard !== 'fire') || p.x + p.width < -30 || p.x > width + 30) continue;
+            if ((campaign && p.campaign?.hazard !== 'fire') || (selective && !combat.isFlightHazardPipe(p, 'fire'))
+                || p.x + p.width < -30 || p.x > width + 30) continue;
             if (Math.random() < 0.12 * rk * dt && crystalMist.length < 36) {
                 const top = Math.random() < 0.5, y0 = top ? p.top + squeeze : height - (p.bottom + squeeze);
                 crystalMist.push({ x: p.x + 6 + Math.random() * (p.width - 12), y: y0 + (top ? 4 : -4), vy: (top ? 1 : -1) * (0.12 + Math.random() * 0.3), vx: (Math.random() - 0.5) * 0.2, r: 14 + Math.random() * 12, a: 0.2 + 0.14 * rk });
@@ -199,6 +211,7 @@ function crystalMistUpdate(speed, squeeze) {
 function crystalUpdate(speed, squeeze) {
     const dt = dtMult, shz = typeof shazamBusy === 'function' && shazamBusy();
     const campaign = window.BuboCampaign?.isActive();
+    const combat = window.BuboCampaignCombat, selective = combat?.usesFlightHazards();
     const fireGates = campaign ? pipes.filter(p => p.campaign?.hazard === 'fire' && p.x < width && p.x + p.width >= owl.x) : [];
     // новая игра (тем снова 0): план выпадения — заново
     if (CRYSTAL.plan && CRYSTAL.plan.some((q) => q.done) && getTotalCollectedThemes() === 0) { CRYSTAL.plan = null; crystalPending = false; }
@@ -223,7 +236,7 @@ function crystalUpdate(speed, squeeze) {
         let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {}
         const N = CRYSTAL.PER_PIPE[lv] || 1;
         for (const p of pipes) {
-            if (p.x + p.width < owl.x - 30 || p.x > width - 10) continue;   // трубы на экране впереди и рядом с совой
+            if ((selective && !combat.isFlightHazardPipe(p, 'fire')) || p.x + p.width < owl.x - 30 || p.x > width - 10) continue;   // трубы на экране впереди и рядом с совой
             if (p._cId !== CRYSTAL.id) { p._cId = CRYSTAL.id; p._cT = 10 + Math.random() * 50; }
             // из устьев труб всё время вылетают крошечные огненные искорки
             if (Math.random() < 0.3 * dt && particles.length < 500) {

@@ -7,10 +7,21 @@
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     let scenery = null, sunProgress = null, celebration = null;
     const DISTRICTS = {
-        music: { sky: ['#241846', '#4f3880', '#895180', '#e79789'], far: '#49477a', city: ['#25224c', '#452c62', '#34305e'], trim: '#f1a5df', light: '#92f4f6' },
+        music: { sky: ['#322449', '#754867', '#bf746c', '#e6a775'], far: '#805570', city: ['#ac654f', '#b48055', '#a76473', '#8c5762'] },
         magic: { sky: ['#232348', '#514981', '#8776b1', '#ceacbf'], far: '#575581', city: ['#2a2b49', '#42375e', '#526080'], trim: '#b5a0d4', light: '#ffce8b' },
         jungle: { sky: ['#2b5c58', '#5e9d86', '#a9c69b', '#ebd6a0'], far: '#5e8776', city: ['#295247', '#3e7654', '#6b9666'], trim: '#2d4d41', light: '#b0bc72' }
     };
+    const SKYLINE_HEIGHT = {
+        dawn: [.54, .55],
+        music: [.68, .69],
+        magic: [.65, .69],
+        jungle: [.70, .72]
+    };
+    const VENICE_PALACES = [
+        [0, 58, .38], [55, 63, .31], [143, 70, .34], [207, 81, .26], [281, 71, .35],
+        [348, 79, .28], [431, 61, .39], [518, 87, .29], [600, 65, .34], [661, 59, .30]
+    ];
+    const VENICE_FLAGS = ['#ce7765', '#dcc185', '#a3af98', '#af7aab'];
 
     function layer(width, height, scale, paint) {
         const canvas = document.createElement('canvas');
@@ -200,6 +211,12 @@
 
         g.fillStyle = '#f8ddb6cc';
         g.fillRect(x - 2, top + 1, w + 4, 2);
+        if (detail && index % 3 !== 1) {
+            g.fillStyle = '#8369534a';
+            g.fillRect(x + 3, top + 5, front - 6, 1);
+            g.fillStyle = '#f8ddb683';
+            g.fillRect(x + 5, top + 7, front - 10, 1);
+        }
         for (let wy = top + 13, row = 0; wy < bottom - 6; wy += 20, row++) {
             for (let wx = x + 8, col = 0; wx < x + front - 5; wx += 13, col++) {
                 g.fillStyle = '#526d7b';
@@ -374,6 +391,13 @@
             g.stroke();
         }
         if (detail > 1) {
+            g.fillStyle = '#476c5269';
+            g.beginPath();
+            g.moveTo(x+w*.13, top+w*.055);
+            g.quadraticCurveTo(x+w*.43, top+w*.13, x+w*.70, top+w*.015);
+            g.quadraticCurveTo(x+w*.50, top+w*.20, x+w*.23, top+w*.13);
+            g.closePath();
+            g.fill();
             for (const [cx,cy] of [[.19,.44],[.78,.55],[.80,.35]]) {
                 g.fillStyle = palette.light;
                 path(g,[x+w*cx,top+w*cy, x+w*(cx+.065),top+w*(cy-.043),
@@ -411,52 +435,163 @@
         disc(g,x,y,radius);
     }
 
-    function musicHall(g, x, top, w, bottom, palette, detail) {
-        g.fillStyle = detail ? horizontalShade(g,x,w,'#694477','#29284b') : '#42315d';
-        g.fillRect(x,top,w,bottom-top);
-        g.fillStyle = '#292444';
-        g.fillRect(x-4,top-4,w+8,6);
-        g.fillRect(x+w*.15,top-13,w*.70,10);
-        const cx = x+w*.5, cy=top+22;
-        if (detail > 1) neonLamp(g,cx,cy,30,'#e7a5dd3f');
-        g.fillStyle = '#211d39'; disc(g,cx,cy,15);
-        g.strokeStyle = palette.trim;
-        g.lineWidth = 1.6;
-        g.beginPath(); g.arc(cx,cy,14,0,Math.PI*2); g.stroke();
-        if (detail) { g.beginPath(); g.arc(cx,cy,10,0,Math.PI*2); g.stroke(); }
-        g.fillStyle = palette.light; disc(g,cx,cy,4.0);
-        g.fillStyle = palette.trim; g.fillRect(x+6,top+42,w-12,2);
-        g.fillStyle = '#a991b6';
-        for (let wx=x+12; wx<x+w-8; wx+=17) archedWindow(g,wx,top+52,4.5,17);
-        if (detail) {
-            g.fillStyle = '#4d3f65';
-            g.fillRect(x+6,top+73,w-12,2);
+    function veniceRoofline(g, height, color) {
+        g.fillStyle = color;
+        for (const [x, w, proportion] of DISTANT_ROOFS) {
+            const y = height * (.59 - proportion * .43);
+            g.fillRect(x, y, w, height - y);
+            path(g, [x-2,y+1, x+w*.5,y-7, x+w+2,y+1]); g.fill();
+        }
+        for (const [x, y, w] of [[61,.32,38], [327,.30,43], [548,.36,40]]) {
+            const base = height * y;
+            g.fillRect(x, base, w, height - base);
+            g.beginPath();
+            g.moveTo(x-3, base);
+            g.quadraticCurveTo(x+w*.06, base-w*.62, x+w*.5, base-w*.67);
+            g.quadraticCurveTo(x+w*.94, base-w*.62, x+w+3, base);
+            g.fill();
+            g.fillRect(x+w*.47, base-w*.80, w*.06, w*.17);
+        }
+        for (const [x, y] of [[122,.17], [431,.23], [647,.19]]) {
+            const top = height * y;
+            g.fillRect(x, top, 13, height - top);
+            path(g, [x-3,top+1, x+6.5,top-15, x+16,top+1]); g.fill();
         }
     }
 
-    function musicBuilding(g,x,top,w,bottom,index,palette,detail) {
-        g.fillStyle = detail ? horizontalShade(g,x,w,palette.city[index%3],'#292440') : palette.city[index%3];
-        g.fillRect(x,top,w,bottom-top);
-        g.fillStyle = '#2a213f';
-        g.fillRect(x+w*.17,top-8,w*.51,9);
-        g.fillStyle = index % 2 ? palette.trim : palette.light;
-        g.fillRect(x+1,top+1,w-2,1.5);
-        if (index % 3 !== 0) {
-            if (detail > 1) neonLamp(g,x+w*.5,top+23,w*.70,index%2?'#ed87c94a':'#69d4ee3d');
-            for (let col=0; col<5; col++) {
-                const h=[8,16,11,19,10][(col+index)%5];
-                g.fillStyle = index%2 ? palette.trim : palette.light;
-                g.fillRect(x+w*.21+col*w*.115,top+30-h,w*.067,h);
+    function venicePalace(g, x, top, w, bank, index, palette, detail) {
+        const face = palette.city[index % palette.city.length];
+        g.fillStyle = detail ? horizontalShade(g, x, w, face, '#8f595b') : face;
+        g.fillRect(x, top, w, bank - top);
+        g.fillStyle = '#643d51';
+        path(g, [x-3,top+1, x+3,top-6, x+w-6,top-6, x+w+3,top+1]); g.fill();
+        g.fillStyle = '#deb187';
+        g.fillRect(x-1, top+1, w+2, 2);
+        if (index % 3 === 1) {
+            g.fillStyle = '#774b55';
+            g.fillRect(x+w*.72, top-14, 6, 8);
+        }
+        for (let y = top + 11, row = 0; y < bank - 9; y += 24, row++) {
+            for (let wx = x+9, col = 0; wx <= x+w-7; wx += 13, col++) {
+                g.fillStyle = '#d3a88a';
+                archedWindow(g, wx, y, 3.7, 12);
+                g.fillStyle = (index + col + 2*row) % 4 === 0 ? '#efba7e' : '#694b59';
+                archedWindow(g, wx, y+1.5, 2.4, 9);
+                if (detail > 1 && row === 0) {
+                    g.fillStyle = '#714554';
+                    g.fillRect(wx-.45, y+4, .9, 6);
+                }
+            }
+            if (detail && row % 2 === 0) {
+                g.fillStyle = '#ebba9788';
+                g.fillRect(x+2, y+14, w-4, 1.3);
             }
         }
-        if (!detail) return;
-        for (let wy=top+44,row=0;wy<bottom-5;wy+=15,row++) {
-            for (let wx=x+7,col=0;wx<x+w*.81;wx+=12,col++) {
-                g.fillStyle=(index+row+col)%5===0?'#eacc97':'#8a74a2';
-                g.fillRect(wx,wy,4.4,5.4);
-                if(detail>1) { g.fillStyle='#352f50';g.fillRect(wx+1.7,wy,1,5.4); }
+        g.fillStyle = '#977176';
+        g.fillRect(x, bank-3, w, 3);
+    }
+
+    function carnivalFlags(g, x, y, span) {
+        g.strokeStyle = '#71505b';
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(x,y);
+        g.quadraticCurveTo(x+span*.5,y+18,x+span,y+2);
+        g.stroke();
+        for (let index=0; index<7; index++) {
+            const t = (index+.6)/7, flagX=x+span*t, flagY=y+36*t*(1-t)+2*t*t;
+            g.fillStyle = VENICE_FLAGS[index % VENICE_FLAGS.length];
+            path(g, [flagX-3,flagY, flagX+4,flagY+.8, flagX,flagY+6]); g.fill();
+        }
+    }
+
+    function carnivalMask(g, x, y, detail) {
+        g.fillStyle = '#724d5e';
+        disc(g, x, y, 13);
+        g.fillStyle = '#eabb78';
+        g.beginPath();
+        g.moveTo(x-11,y-4);
+        g.quadraticCurveTo(x-7,y-8,x,y-3);
+        g.quadraticCurveTo(x+7,y-8,x+11,y-4);
+        g.quadraticCurveTo(x+9,y+7,x,y+2);
+        g.quadraticCurveTo(x-9,y+7,x-11,y-4);
+        g.fill();
+        g.fillStyle = '#724d5e';
+        g.beginPath();
+        g.ellipse(x-5,y-1,2.6,1.2,.28,0,Math.PI*2);
+        g.ellipse(x+5,y-1,2.6,1.2,-.28,0,Math.PI*2);
+        g.fill();
+        if (detail) {
+            g.fillStyle = '#f9d49a';
+            disc(g,x,y-2,1.2);
+        }
+    }
+
+    function veniceBridge(g, x, water, w, detail) {
+        const crest = water - 24, foot = water + 9;
+        g.fillStyle = '#9c747b';
+        g.beginPath();
+        g.moveTo(x, foot); g.lineTo(x, water-4);
+        g.quadraticCurveTo(x+w*.5, crest-27, x+w, water-4);
+        g.lineTo(x+w, foot); g.lineTo(x+w*.83, foot);
+        g.quadraticCurveTo(x+w*.5, crest-3, x+w*.17, foot);
+        g.closePath(); g.fill();
+        g.strokeStyle = '#d2a78d';
+        g.lineWidth = 2.5;
+        g.beginPath(); g.moveTo(x,water-6);
+        g.quadraticCurveTo(x+w*.5,crest-29,x+w,water-6);
+        g.stroke();
+        if (detail) {
+            g.strokeStyle = '#b28b83';
+            g.lineWidth = 1.2;
+            g.beginPath(); g.moveTo(x+w*.17,foot);
+            g.quadraticCurveTo(x+w*.5,crest-3,x+w*.83,foot); g.stroke();
+        }
+    }
+
+    function veniceCanal(g, y, height, detail) {
+        const water = g.createLinearGradient(0,y,0,height);
+        water.addColorStop(0, '#86747c');
+        water.addColorStop(.29, '#646771');
+        water.addColorStop(1, '#485263');
+        g.fillStyle = water; g.fillRect(0,y,CITY_WIDTH,height-y);
+        g.fillStyle = '#e2b28c78'; g.fillRect(0,y,CITY_WIDTH,1);
+        if (detail) {
+            for (let index=0; index<46; index++) {
+                const x = 5 + (index*73)%688, offset = 4 + (index*19)%91;
+                g.fillStyle = offset < 26 ? '#edba9470' : '#d9a99638';
+                g.fillRect(x,y+offset,11+(index*9)%22,offset < 40 ? 1.1 : .75);
             }
         }
+        for (const [x, depth] of [[277,25], [606,40]]) {
+            const base = y + depth;
+            g.fillStyle = '#473d55';
+            path(g, [x-30,base-7,x-22,base-3,x+21,base-3,x+27,base-8,x+33,base-10,x+31,base-2,x+21,base+2,x-20,base+2]);
+            g.fill();
+            g.fillStyle = '#cf93915d';
+            g.fillRect(x-18,base+4,41,1);
+        }
+    }
+
+    function makeVenice(height, scale, near, detail) {
+        const palette = DISTRICTS.music;
+        return layer(CITY_WIDTH, height, scale, g => {
+            if (!near) {
+                veniceRoofline(g, height, palette.far);
+                return;
+            }
+            const bank = height * .565;
+            VENICE_PALACES.forEach(([x,w,top],index) => venicePalace(g,x,height*top,w,bank,index,palette,detail));
+            carnivalMask(g, 247, height*.26+43, detail);
+            carnivalMask(g, 556, height*.29+43, detail);
+            if (detail) {
+                carnivalFlags(g, 158, height*.34+15, 143);
+                carnivalFlags(g, 500, height*.35+12, 130);
+            }
+            veniceCanal(g, bank, height, detail);
+            veniceBridge(g, 95, bank, 110, detail);
+            veniceBridge(g, 452, bank, 86, detail);
+        });
     }
 
     function stoneTower(g, x, y, w, bottom, palette, detail, spire) {
@@ -479,7 +614,16 @@
         }
     }
 
-    function magicSchool(g, x, height, palette, detail, position) {
+    function alchemyFlask(g, x, y, size, color) {
+        g.fillStyle = color;
+        path(g, [x-size*.21,y-size, x+size*.21,y-size,
+            x+size*.21,y-size*.40, x+size*.78,y+size*.65,
+            x+size*.62,y+size*.87, x-size*.62,y+size*.87,
+            x-size*.78,y+size*.65, x-size*.21,y-size*.40]);
+        g.fill();
+    }
+
+    function alchemistCastle(g, x, height, palette, detail, position) {
         const top = height*position, w=88;
         g.fillStyle = detail ? horizontalShade(g,x,w,'#5d4b70','#463857') : '#443650';
         g.fillRect(x,top,w,height-top);
@@ -488,21 +632,41 @@
         stoneTower(g,x-18,top-9,21,height,palette,detail,true);
         stoneTower(g,x+w-4,top-5,24,height,palette,detail,true);
         stoneTower(g,x+w*.36,top-20,23,height,palette,detail,true);
-        if (detail > 1) neonLamp(g,x+w*.5,top+37,25,'#ffba7947');
+        const labX = x+w*.5, labY = top+37;
+        if (detail > 1) neonLamp(g,labX,labY+17,32,'#ffb07650');
+        if (detail) {
+            g.fillStyle = '#302841a8';
+            archedWindow(g,labX,labY-2,15.5,38);
+        }
         g.fillStyle='#a582a0';
-        archedWindow(g,x+w*.5,top+37,13.5,34);
-        g.fillStyle=palette.light;
-        archedWindow(g,x+w*.5,top+41,7.8,23);
-        if(detail){
-            g.fillStyle='#80698b';
-            g.fillRect(x+w*.5-1,top+46,2,18);
-            g.fillRect(x+w*.5-6,top+55,12,1.5);
+        archedWindow(g,labX,labY,13.5,34);
+        if (detail) {
+            const amber = g.createLinearGradient(0,labY+3,0,labY+29);
+            amber.addColorStop(0,'#d9957d');
+            amber.addColorStop(.55,'#ffdd9a');
+            amber.addColorStop(1,'#ffc07c');
+            g.fillStyle = amber;
+        } else g.fillStyle = palette.light;
+        archedWindow(g,labX,labY+4,10.5,25);
+        alchemyFlask(g, labX-4.2, labY+23, 4.9, '#765068');
+        alchemyFlask(g, labX+5.2, labY+24, 3.6, '#557b7a');
+        g.fillStyle = '#866278';
+        g.fillRect(labX-10.5,labY+28,21,1.5);
+        if (detail) {
+            const signX = x+18, signY = top+26;
+            g.fillStyle = '#aa837c';
+            g.fillRect(signX-8,signY-10,10,1.2);
+            g.fillRect(signX-.5,signY-10,1,5);
+            g.fillStyle = '#47364d';
+            disc(g,signX,signY,7);
+            alchemyFlask(g,signX,signY,4.2,'#d8a677');
         }
     }
 
     function districtBuildings(height, scale, id, near, detail) {
         if (id === 'jungle') return makeJungle(height,scale,near,detail);
-        const palette = DISTRICTS[id];
+        if (id === 'music') return makeVenice(height,scale,near,detail);
+        const palette = DISTRICTS.magic;
         return layer(CITY_WIDTH, height, scale, g => {
             for (let i=0; i<DISTANT_ROOFS.length; i++) {
                 const [x,w,proportion] = DISTANT_ROOFS[i];
@@ -510,21 +674,14 @@
                 if (!near) {
                     g.fillStyle = palette.far;
                     g.fillRect(x,top,w,height-top);
-                    if (id === 'magic') {
-                        path(g,[x-2,top+1,x+w*.38,top-w*.35,x+w+2,top+1]);g.fill();
-                    }
-                } else if (id === 'magic') {
+                    path(g,[x-2,top+1,x+w*.38,top-w*.35,x+w+2,top+1]);g.fill();
+                } else {
                     if ((x<143 || x>271) && (x<448 || x>567)) stoneTower(g,x,top,w,height,palette,detail,i%3===0);
-                } else if ((x<145 || x>230) && (x<523 || x>610)) musicBuilding(g,x,top,w,height,i,palette,detail);
+                }
             }
             if (!near) return;
-            if (id === 'magic') {
-                magicSchool(g,165,height,palette,detail,.41);
-                magicSchool(g,470,height,palette,detail,.54);
-            } else {
-                musicHall(g,157,height*.37,68,height,palette,detail);
-                musicHall(g,539,height*.48,67,height,palette,detail);
-            }
+            alchemistCastle(g,165,height,palette,detail,.41);
+            alchemistCastle(g,470,height,palette,detail,.54);
         });
     }
 
@@ -533,8 +690,9 @@
         const detail = quality === 'low' ? 0 : quality === 'high' ? 2 : 1;
         if (scenery?.width === width && scenery.height === height && scenery.scale === scale
             && scenery.id === id && scenery.detail === detail) return scenery;
-        const near = height * (id === 'dawn' ? .42 : .56);
-        const far = height * (id === 'dawn' ? .48 : .61);
+        const [nearRatio, farRatio] = SKYLINE_HEIGHT[id];
+        const near = height * nearRatio;
+        const far = height * farRatio;
         if (id === 'dawn') {
             const radius = Math.min(width * .086, height * .085);
             scenery = {
@@ -654,6 +812,13 @@
         return gradient;
     }
 
+    function capOutline(g, width, inset) {
+        g.beginPath();
+        const w = width - inset * 2, h = CAP_HEIGHT - inset * 2;
+        if (g.roundRect) g.roundRect(inset, inset, w, h, 6 - inset);
+        else g.rect(inset, inset, w, h);
+    }
+
     function getPipeArt(ctx, width, scale) {
         const key = width + '|' + scale;
         if (pipeArt.has(key)) return pipeArt.get(key);
@@ -661,9 +826,7 @@
         const stem = metal(ctx, 0, width, ['#163c51', '#246173', '#367f8c', '#72afa9', '#408895', '#1b4a61']);
         const cap = layer(capWidth, CAP_HEIGHT, scale, g => {
             g.fillStyle = metal(g, 0, capWidth, ['#62452f', '#a8794b', '#c49258', '#f3c481', '#cb934e', '#70412c']);
-            g.beginPath();
-            if (g.roundRect) g.roundRect(.5, .5, capWidth - 1, CAP_HEIGHT - 1, 5.5);
-            else g.rect(.5, .5, capWidth - 1, CAP_HEIGHT - 1);
+            capOutline(g, capWidth, .5);
             g.fill();
             g.strokeStyle = '#514338';
             g.lineWidth = 1;
@@ -677,7 +840,17 @@
                 g.fillStyle = 'rgba(255, 247, 205, .65)'; disc(g, x - .4, CAP_HEIGHT * .52 - .4, .53);
             }
         });
-        const art = { stem, cap, capWidth };
+        const fireRim = layer(capWidth, CAP_HEIGHT, scale, g => {
+            const heat = g.createLinearGradient(0, 0, 0, CAP_HEIGHT);
+            heat.addColorStop(0, '#ffd09d');
+            heat.addColorStop(.30, '#ee7049');
+            heat.addColorStop(1, '#ad312e');
+            capOutline(g, capWidth, 1.2);
+            g.strokeStyle = heat;
+            g.lineWidth = 1.8;
+            g.stroke();
+        });
+        const art = { stem, cap, capWidth, fireRim };
         pipeArt.set(key, art);
         return art;
     }
@@ -690,11 +863,11 @@
         }
     }
 
-    function drawPipe(ctx, pipe, height, squeeze, zoom, scale) {
+    function drawPipe(ctx, pipe, height, squeeze, zoom, scale, fireGlow = 0) {
         const top = pipe.top + squeeze, bottom = height - pipe.bottom - squeeze;
         const topStem = Math.max(0, top - CAP_HEIGHT + 2), bottomStem = bottom + CAP_HEIGHT - 2;
         const overdraw = zoom < .999 ? Math.ceil(height * (1 - zoom) * .6) + 4 : 0;
-        const { stem, cap, capWidth } = getPipeArt(ctx, pipe.width, scale);
+        const { stem, cap, capWidth, fireRim } = getPipeArt(ctx, pipe.width, scale);
         ctx.save();
         ctx.translate(pipe.x, 0);
         ctx.fillStyle = stem;
@@ -703,6 +876,11 @@
         drawStem(ctx, pipe.width, bottomStem, height + overdraw, bottomStem + STEM_RIB_STEP, false);
         ctx.drawImage(cap, -CAP_OVERHANG, top - CAP_HEIGHT, capWidth, CAP_HEIGHT);
         ctx.drawImage(cap, -CAP_OVERHANG, bottom, capWidth, CAP_HEIGHT);
+        if (fireGlow > 0) {
+            ctx.globalAlpha *= Math.min(fireGlow, 1);
+            ctx.drawImage(fireRim, -CAP_OVERHANG, top - CAP_HEIGHT, capWidth, CAP_HEIGHT);
+            ctx.drawImage(fireRim, -CAP_OVERHANG, bottom, capWidth, CAP_HEIGHT);
+        }
         ctx.restore();
     }
 

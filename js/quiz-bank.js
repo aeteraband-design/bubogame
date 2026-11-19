@@ -22,7 +22,14 @@ const QZ_THEMES = [
     { id: 'sport', name: 'Спорт', icon: 'fa-futbol', col: '#F87171' },
     { id: 'food', name: 'Еда', icon: 'fa-burger', col: '#FDBA74' },
     { id: 'art', name: 'Искусство', icon: 'fa-palette', col: '#F0ABFC' },
-    { id: 'humor', name: 'Юмор', icon: 'fa-face-grin-squint-tears', col: '#FB7185' }
+    { id: 'humor', name: 'Юмор', icon: 'fa-face-grin-squint-tears', col: '#FB7185' },
+    { id: 'architecture', name: 'Архитектура', icon: 'fa-building', col: '#93C5FD' },
+    { id: 'transport', name: 'Транспорт', icon: 'fa-train', col: '#E9C46A' },
+    { id: 'instruments', name: 'Инструменты', icon: 'fa-guitar', col: '#FBBF24' },
+    { id: 'dance', name: 'Танцы', icon: 'fa-shoe-prints', col: '#38BDF8' },
+    { id: 'mythology', name: 'Мифы', icon: 'fa-dragon', col: '#F7BF69' },
+    { id: 'animals', name: 'Животные', icon: 'fa-otter', col: '#FDBA74' },
+    { id: 'exploration', name: 'Экспедиции', icon: 'fa-compass', col: '#E9C46A' }
 ];
 // уровни сложности и монеты за верный ответ
 const QZ_LEVELS = [

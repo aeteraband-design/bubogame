@@ -115,7 +115,7 @@ function drawToken(item) {
     // взятый значок доигрывает анимацию тем же видом, что был до подбора (иначе на миг мелькала обычная иконка ускорения)
     const shzCharged = item.type === 'speedup' && (item.__forceShz || (item.collected ? !!item.__shzLatch : (item.__shzLatch = typeof shazamNextCharged === 'function' && shazamNextCharged())));
     const campaignTopic = item.campaignTopic && window.BuboCampaignTopics?.visual(item.campaignTopic.id);
-    const cat = campaignTopic || (shzCharged ? SHZ_TOKEN : CATEGORIES[item.type] || CATEGORIES.question);
+    const cat = campaignTopic || item.themeVisual || (shzCharged ? SHZ_TOKEN : CATEGORIES[item.type] || CATEGORIES.question);
     const col = cat.color;
     const isThematic = Boolean(campaignTopic) || TOKEN_THEMATIC.has(item.type);
 
@@ -367,7 +367,7 @@ function prewarmTokenSprites() {
         const g = c.getContext('2d'), main = ctx, fr = frame, S = viewScale * renderScale * WORLD_K;
         ctx = g;
         try {
-            for (const t of Object.keys(CATEGORIES)) { g.setTransform(S, 0, 0, S, 0, 0); drawToken({ x: 0, y: 0, radius: 26, type: t, floatOffset: 0, scale: 1 }); }
+            for (const t of Object.keys(CATEGORIES)) { g.setTransform(S, 0, 0, S, 0, 0); drawToken({ x: 0, y: 0, radius: 26, type: t, themeVisual: window.BuboJourney.themeVisual(t), floatOffset: 0, scale: 1 }); }
             g.setTransform(S, 0, 0, S, 0, 0); drawToken({ x: 0, y: 0, radius: 26, type: 'speedup', floatOffset: 0, scale: 1, __forceShz: true });
             g.setTransform(S, 0, 0, S, 0, 0); drawPipe({ x: 0, width: 86, top: 200, gap: 220, bottom: 200 });
         } finally { ctx = main; frame = fr; }

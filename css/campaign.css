@@ -1,21 +1,9 @@
-#campaignActions[hidden], #campaignActions [hidden], #campaignResult[hidden], #campaignResult [hidden], #campaignHUD[hidden],
+#campaignResult[hidden], #campaignResult [hidden], #campaignHUD[hidden],
 #campaignHUD [hidden], #goQuizBtn[hidden], #goAttemptDetail[hidden], #goCampaignHelpBtn[hidden] {
     display: none !important;
 }
-#campaignActions { display: grid; gap: 6px; }
-#startBtn[hidden], #journeyDistrict[hidden] { display:none !important; }
-#journeyDistrict {
-    min-width:0; margin-inline:6px; color:#f6e4ff; font-size:9px;
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
-.camp-start {
-    display: grid; grid-template-columns: 34px 1fr 15px; gap: 10px;
-    width: 100%; min-height: 54px; padding: 8px 13px; text-align: left; align-items: center; border-radius: 16px;
-}
-.camp-start > i:first-child { display:grid; place-items:center; width:34px; height:34px; border-radius:10px; background:#6d2b173d; }
-.camp-start strong, .camp-start small { display: block; color:#fff; }
-.camp-start strong { font-size: 14px; font-weight: 900; line-height:1.12; text-transform:uppercase; }
-.camp-start small { margin-top:2px; font: 700 11px Onest,sans-serif; }
+.district-collection-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.district-collection-grid .collection-theme-label { line-height: calc(12px * var(--tb, 1)) !important; }
 .camp-active #scoreBadge, .camp-active #bottomHud { display:none !important; }
 #campaignHUD {
     position:absolute; bottom:12px; left:14px; right:14px; z-index:21; pointer-events:none;
@@ -61,4 +49,4 @@
 .camp-skill { color:#ead6ff; border-color:#b78eebad; background:#502e6f; }
 .camp-question { color:#d5f3ff; border-color:#63c8ee9e; background:#202e59; }
 .camp-alt:active { transform:scale(.98); }
-.camp-main:focus-visible, .camp-alt:focus-visible, .camp-start:focus-visible { outline:2px solid #fff5d2; outline-offset:2px; }
+.camp-main:focus-visible, .camp-alt:focus-visible, #campaignStartBtn:focus-visible { outline:2px solid #fff5d2; outline-offset:2px; }

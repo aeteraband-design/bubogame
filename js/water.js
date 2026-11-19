@@ -12,9 +12,9 @@ function waterReset() { waterTime = 0; waterStreams.length = 0; waterK = 0; WATE
 function waterPipeWet() { return WATERFX.wetT > 0 ? Math.min(0.85, WATERFX.wetT / 600) : 0; }
 
 // значок взят: включаем эффект
-function registerWater() {
+function registerWater({ pickedUp = true } = {}) {
     waterTime = WATERFX.SEC * 60; WATERFX.id++;
-    try { AudioFX.playStarCollect(); AudioFX.playWaterStart(); Haptics.powerup(); } catch (e) {}
+    try { if (pickedUp) AudioFX.playStarCollect(); AudioFX.playWaterStart(); if (pickedUp) Haptics.powerup(); } catch (e) {}
     return { target: 'other', text: `Водонапор ${WATERFX.SEC}с`, color: WATERFX.COLOR, icon: 'fa-droplet' };
 }
 
@@ -253,6 +253,7 @@ function addWaterStream(pipe, squeeze, scripted) {
 function waterUpdate(speed, squeeze) {
     const dt = dtMult, shz = typeof shazamBusy === 'function' && shazamBusy();
     const campaign = window.BuboCampaign?.isActive();
+    const combat = window.BuboCampaignCombat, selective = combat?.usesFlightHazards();
     let lv0 = 0; try { lv0 = getDifficultyIndex(); } catch (e) {}
     // сила по ступеням: Суперлайт/Лайт — слабый напор, Медиум/Медиум+ — средний, Хард/Хард+ — сильный (внутри ступени чуть растёт)
     const lv = campaign ? 2.4 : [0, 0.8, 1.8, 2.8, 4, 5][Math.max(0, Math.min(5, lv0))];
@@ -268,7 +269,7 @@ function waterUpdate(speed, squeeze) {
         waterTime -= dt;
         if (waterTime <= 0) { WATERFX.wetT = 900; if (!shz) { try { AudioFX.playWaterEnd(); } catch (e) {} } }   // после «Водонапора» трубы ещё ~15 с мокрые, как после дождя
         for (const p of pipes) {
-            if (p.x + p.width < -40 || p.x > width + 40) continue;
+            if ((selective && !combat.isFlightHazardPipe(p, 'water')) || p.x + p.width < -40 || p.x > width + 40) continue;
             if (p._wId !== WATERFX.id) {
                 p._wId = WATERFX.id;
                 addWaterStream(p, squeeze, false);

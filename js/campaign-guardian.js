@@ -36,7 +36,8 @@
     );
     const EYE_GLINT = new Path2D('M-10 1Q-4 2 5 3Q0 6-8 4Z');
     const MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let sprite, spriteQuality, entered = null, wave = '', phaseAt = 0, impact = null;
+    const DEFEAT_MS = 800;
+    let sprite, spriteQuality, entered = null, wave = '', phaseAt = 0, impact = null, defeatedAt = null;
     let frameAt = 0, visiblePose = null, entranceDuration = 0, entranceDepth = 0;
 
     function getShadow(quality) {
@@ -97,8 +98,11 @@
         const side = kind === 'fire' && pipe ? (pipe.campaign?.index % 2 === 0 ? -1 : 1) : 0;
         impact = { kind, at: performance.now(), side };
     }
+    function defeat() {
+        if (defeatedAt === null) defeatedAt = performance.now();
+    }
     function reset() {
-        entered = null;
+        entered = defeatedAt = null;
         wave = '';
         phaseAt = 0;
         impact = null;
@@ -157,13 +161,16 @@
         else ctx.fillRect(-6, 2, 8, 2);
         ctx.restore();
     }
-    function draw(ctx, width, height, pipes, owlX, fullCharge = false, opacity = 1) {
+    function draw(ctx, width, height, pipes, owlX, fullCharge = false, opacity = 1, telegraph = null) {
         const now = performance.now();
+        const defeatProgress = defeatedAt === null ? 0 : (now - defeatedAt) / DEFEAT_MS;
+        if (defeatProgress >= 1) return;
         const quality = typeof gfxQuality === 'undefined' ? 'medium' : gfxQuality;
         if (entered === null) {
             entered = now;
-            entranceDuration = fullCharge ? 440 : 1030;
-            entranceDepth = fullCharge ? .10 : .20;
+            const quickEntrance = fullCharge || telegraph?.warning;
+            entranceDuration = quickEntrance ? 440 : 1030;
+            entranceDepth = quickEntrance ? .10 : .20;
         }
         const age = now - entered;
         const still = MOTION.matches;
@@ -180,7 +187,7 @@
                 shotTilt = impact.side * .024;
             }
         }
-        const charge = fullCharge ? 1 : wave
+        const charge = telegraph?.warning ? .4 + .6 * smooth(telegraph.progress) : fullCharge ? 1 : wave
             ? Math.max(palette.ready * smooth((now - phaseAt) / 430), warming(pipes, owlX, width))
             : 0;
         const chroma = smooth(Math.max(charge * 1.18, hit));
@@ -201,15 +208,37 @@
         const core = 'rgb(' + pose.core.map(Math.round) + ')';
         const glow = 'rgba(' + pose.glow.map(Math.round) + ',' + (.42 + pose.energy * .58) + ')';
         ctx.save();
-        ctx.globalAlpha = opacity * (.18 + entrance * .82);
-        ctx.translate(width * pose.x, Math.max(57, height * .13) + height * pose.y);
+        const fall = still ? 0 : smooth(defeatProgress) * .27;
+        ctx.globalAlpha = opacity * (.18 + entrance * .82) * (1 - smooth((defeatProgress - .20) / .80));
+        const flightPeek = telegraph && height > width ? .065 : 0;
+        ctx.translate(width * pose.x, Math.max(57, height * .13) + height * (pose.y + flightPeek + fall));
         ctx.rotate(pose.angle);
         ctx.scale(scale, scale);
         ctx.translate(-208, 0);
         ctx.drawImage(getShadow(quality), 0, 0);
-        EYES.forEach(mark => eye(ctx, mark, core, glow, blink * pose.eye, pose.energy, quality));
+        if (defeatProgress < .25) {
+            ctx.globalAlpha *= 1 - smooth(defeatProgress * 4);
+            EYES.forEach(mark => eye(ctx, mark, core, glow, blink * pose.eye, pose.energy, quality));
+        }
         ctx.restore();
     }
 
-    window.BuboCampaignGuardian = { draw, phase, strike, reset };
+    function drawFlightWarning(ctx, pipes, width, height, squeeze, kind, isTarget) {
+        ctx.save();
+        ctx.strokeStyle = kind === 'fire' ? '#FF9977' : '#9FE9FF';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        for (const pipe of pipes) {
+            if (!isTarget(pipe, kind) || pipe.x > width || pipe.x + pipe.width < 0) continue;
+            const left = pipe.x + 7, right = pipe.x + pipe.width - 7;
+            const upper = pipe.top + squeeze, lower = height - pipe.bottom - squeeze;
+            ctx.moveTo(left, upper); ctx.lineTo(right, upper);
+            ctx.moveTo(left, lower); ctx.lineTo(right, lower);
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    window.BuboCampaignGuardian = { draw, phase, strike, defeat, defeatDuration: DEFEAT_MS, reset, drawFlightWarning };
 })();

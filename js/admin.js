@@ -51,15 +51,22 @@
     let tab = 'themes';
     let quizPreviewLevel = '';
 
-    function themeRows() {
-        return Object.keys(ADMIN_DEFAULTS.themes).map((k) => {
-            const c = CATEGORIES[k] || {};
-            return rowDef('themes.' + k, c.name || k, '', c.faClass || 'fa-star', c.color || '#fff', (n) => ruPlural(n, ['значок', 'значка', 'значков']));
+    function themeRows(district) {
+        const journey = window.BuboJourney;
+        const themes = window.BuboCampaignTopics.districtTopics(district);
+        return journey.themeKeys().map((key, index) => {
+            const theme = themes[index];
+            return rowDef('districtThemes.' + district + '.' + key, theme.name, '', theme.faClass, theme.color,
+                (n) => ruPlural(n, ['значок', 'значка', 'значков']));
         });
     }
-    const getVal = (k) => k.indexOf('themes.') === 0 ? ADMIN_CFG.themes[k.slice(7)] : ADMIN_CFG[k];
-    const specOf = (k) => k.indexOf('themes.') === 0 ? ADMIN_SPEC.theme : ADMIN_SPEC[k];
-
+    const isThemeRow = key => key.startsWith('districtThemes.');
+    function getVal(key) {
+        if (!isThemeRow(key)) return ADMIN_CFG[key];
+        const [, district, slot] = key.split('.');
+        return window.BuboJourney.themeQuota(slot, district);
+    }
+    const specOf = key => isThemeRow(key) ? ADMIN_SPEC.theme : ADMIN_SPEC[key];
     function rowHtml(r) {
         const v = getVal(r.k);
         return `<div class="adm-row" data-k="${r.k}">
@@ -73,7 +80,6 @@
     function renderTabs() {
         tabsEl.innerHTML = TABS.map((t) => `<button type="button" class="adm-tab${t.id === tab ? ' on' : ''}" data-tab="${t.id}"><i class="fa-solid ${t.icon}"></i><span>${t.name}</span></button>`).join('');
     }
-    function themesTotal() { return Object.keys(ADMIN_CFG.themes).reduce((a, k) => a + ADMIN_CFG.themes[k], 0); }
     // ===== Вкладка «Тест»: сова на звёздном небе — накидываем эффекты (можно несколько сразу) и смотрим, как она выглядит в игре =====
     // Рисуется настоящими функциями игры (owl.draw, drawFrozenOwl, звёздочки ускорения, щит, свечение пера). Игровое состояние на время
     // отрисовки подменяется и сразу возвращается обратно, так что на саму игру предпросмотр не влияет.
@@ -171,28 +177,32 @@
         if (tab === 'test') { renderTest(); return; }
         if (tab === 'quiz') { prevStop(); body.innerHTML = bonusPlaytestHtml() + ROWS.quiz.map(rowHtml).join('') + (typeof quizAdminHtml === 'function' ? quizAdminHtml() : ''); body.scrollTop = 0; if (typeof quizAdminMount === 'function') quizAdminMount(body); return; }
         prevStop();
-        const rows = tab === 'themes' ? themeRows() : ROWS[tab];
+        const journey = window.BuboJourney;
         let h = '';
-        if (tab === 'themes') h += `<div class="adm-sum"><span>Всего тем для победы</span><b id="admTotal">${themesTotal()}</b></div>`;
-        h += rows.map(rowHtml).join('');
-        if (tab === 'game') h += `<div class="adq-acts"><button type="button" class="adq-btn" data-g="coins"><i class="fa-solid fa-coins"></i>+1000 монет</button><button type="button" class="adq-btn" data-g="lvl"><i class="fa-solid fa-star"></i>+1 уровень совы</button></div>`
+        if (tab === 'themes') {
+            for (const { id, name } of journey.districts()) {
+                h += '<div class="adm-sum"><span>' + name + ' · значков</span><b id="admTotal-' + id + '">' + journey.districtTotal(id) + '</b></div>';
+                h += themeRows(id).map(rowHtml).join('');
+            }
+        } else h += ROWS[tab].map(rowHtml).join('');        if (tab === 'game') h += `<div class="adq-acts"><button type="button" class="adq-btn" data-g="coins"><i class="fa-solid fa-coins"></i>+1000 монет</button><button type="button" class="adq-btn" data-g="lvl"><i class="fa-solid fa-star"></i>+1 уровень совы</button></div>`
             + `<div class="adq-acts"><button type="button" class="adq-btn" data-g="spin1"><i class="fa-solid fa-dice"></i>+1 вращение рулетки</button><button type="button" class="adq-btn" data-g="spin5"><i class="fa-solid fa-dice"></i>+5 вращений</button></div>`
-            + `<div class="adm-sum"><span>Предпросмотр Похода</span></div>
-                <div class="adq-acts"><button type="button" class="adq-btn" data-g="stage-night">Ночной город</button>
-                <button type="button" class="adq-btn" data-g="stage-dawn">Дневной город</button>
-                <button type="button" class="adq-btn" data-g="stage-boss">Смотритель</button></div>`
+            + '<div class="adm-sum"><span>Предпросмотр районов</span></div>'
+            + journey.districts().map(({ id, name }) =>
+                '<div class="adq-acts"><button type="button" class="adq-btn" data-g="stage-' + id + '">' + name + '</button>'
+                    + '<button type="button" class="adq-btn" data-g="stage-boss-' + id + '">Босс</button></div>').join('')
             + `<div class="adq-acts"><button type="button" class="adq-btn" data-g="out"><i class="fa-solid fa-right-from-bracket"></i>Выйти из админки</button></div>`;
         body.innerHTML = h;
         body.scrollTop = 0;
     }
     function refreshRow(k) {
-        const rows = tab === 'themes' ? themeRows() : ROWS[tab];
+        const district = isThemeRow(k) ? k.split('.')[1] : '';
+        const rows = district ? themeRows(district) : ROWS[tab];
         const r = rows.find((x) => x.k === k); if (!r) return;
         const el = body.querySelector(`.adm-row[data-k="${k}"]`); if (!el) return;
         const v = getVal(k);
         el.querySelector('.adm-num').textContent = v;
         el.querySelector('.adm-unit').textContent = r.unit(v);
-        const tot = $('admTotal'); if (tot) tot.textContent = themesTotal();
+        const tot = $('admTotal-' + district); if (tot) tot.textContent = window.BuboJourney.districtTotal(district);
     }
     function change(k, d) {
         const sp = specOf(k); if (!sp) return;
@@ -201,7 +211,10 @@
         let nv = Math.round((cur + d * sp[2]) / sp[2]) * sp[2];
         nv = Math.max(sp[0], Math.min(sp[1], nv));
         if (nv === cur) return;
-        if (k.indexOf('themes.') === 0) cfg.themes[k.slice(7)] = nv; else cfg[k] = nv;
+        if (isThemeRow(k)) {
+            const [, district, slot] = k.split('.');
+            cfg.districtThemes[district][slot] = nv;
+        } else cfg[k] = nv;
         window.applyAdminConfig(cfg);
         refreshRow(k);
     }
@@ -222,7 +235,6 @@
         for (const k in ADMIN_CFG.themes) {
             if (!CATEGORIES[k]) continue;
             CATEGORIES[k].count = ADMIN_CFG.themes[k];
-            if (collected && collected[k] > CATEGORIES[k].count) collected[k] = CATEGORIES[k].count;
         }
         TOTAL_THEMES = Object.keys(CATEGORIES).reduce((a, k) => a + (CATEGORIES[k].count || 0), 0);
         if (attempts === oldMax) attempts = MAX_ATTEMPTS;                        // игра ещё не начата — берём новое число попыток

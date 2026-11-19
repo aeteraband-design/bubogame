@@ -628,7 +628,7 @@ function pfRenderPane() {
     let h = '';
     if (pfTab === 'owl') {
         let lv = 3, ml = 3, st = 100, ms = 100, at = 0, sc = 0, th = 0, tt = 120, dn = '', dc = '#4ADE80';
-        try { lv = lives; ml = maxLives; st = stamina; ms = maxStamina; at = attempts; sc = score; th = getTotalCollectedThemes(); tt = TOTAL_THEMES; const d = getDifficultyMultipliers(); dn = d.level; dc = d.color || dc; } catch (e) {}
+        try { lv = lives; ml = maxLives; st = stamina; ms = maxStamina; at = attempts; sc = score; th = getTotalCollectedThemes(); tt = window.BuboJourney.regionProgress().total; const d = getDifficultyMultipliers(); dn = d.level; dc = d.color || dc; } catch (e) {}
         const lvTxt = (x) => (Math.round(x * 2) / 2).toString().replace('.', ',');
         h += `<div class="pf-cards">`
             + pfCard('fa-heart', '#F43F5E', `${lvTxt(lv)} / ${lvTxt(ml)}`, 'Жизни', 'shop')

@@ -61,6 +61,21 @@
     ];
 
     const BOSS_WAVE_STARTS = [0, 3, 6];
+    const DISTRICT_BOSSES = {
+        night: { name: 'Смотритель Ночи', waves: ['fire', 'water'], centers: [.50, .46, .49, .52, .56, .52] },
+        dawn: { name: 'Смотритель Рассвета', waves: ['water', 'fire'], centers: [.54, .58, .50, .46, .42, .49], items: { 1: 'speedup' } },
+        music: { name: 'Смотритель Карнавала', waves: ['fire', 'water'], centers: [.50, .43, .54, .49, .57, .47], items: { 2: 'slowmo' } },
+        magic: { name: 'Смотритель Замка', waves: ['water', 'fire'], centers: [.47, .42, .55, .52, .58, .48], items: { 2: 'shield' } },
+        jungle: { name: 'Смотритель Джунглей', waves: ['water', 'fire'], centers: [.54, .56, .47, .54, .46, .52], items: { 2: 'stamina', 5: 'icecream' } }
+    };
+    function districtBossRoute(district) {
+        const boss = DISTRICT_BOSSES[district];
+        if (!boss) return BOSS_ROUTE;
+        return [...boss.waves, 'shazam'].flatMap(wave => BOSS_ROUTE.filter(gate => gate.wave === wave))
+            .map((gate, index) => ({
+                ...gate, center: boss.centers[index] ?? gate.center, item: boss.items?.[index] ?? gate.item
+            }));
+    }
     let runtime = null;
     let result = null;
 
@@ -133,7 +148,9 @@
         const stage = STAGES[phase];
         const bossWave = runtime?.checkpoint ?? (journey ? window.BuboJourney?.bossWave() ?? 0
             : progress.replayStage === 3 ? progress.replayBossWave : progress.bossWave);
-        const checkpointWave = phase === 'boss' ? BOSS_ROUTE[BOSS_WAVE_STARTS[bossWave]].wave : '';
+        const district = runtime?.district || result?.district || '';
+        const gates = runtime?.route || (phase === 'boss' ? districtBossRoute(district) : route(phase, progress.seed));
+        const checkpointWave = phase === 'boss' ? gates[BOSS_WAVE_STARTS[bossWave]].wave : '';
         const wave = runtime?.wave || checkpointWave;
         return {
             phase,
@@ -143,13 +160,13 @@
             journey,
             canReplay: progress.stage === PHASES.length - 1 && progress.replayStage === null,
             mapReplay: runtime?.mapReplay ?? progress.replayStage !== null,
-            title: stage.title,
+            title: runtime?.district ? DISTRICT_BOSSES[runtime.district].name : runtime?.previewDistrict ? window.BuboJourney.regionName(runtime.previewDistrict) : stage.title,
             hint: WAVES[wave]?.warning || stage.hint,
             wave,
             waveTitle: WAVES[wave]?.title || '',
-            waveIndex: wave ? Object.keys(WAVES).indexOf(wave) + 1 : 0,
+            waveIndex: wave ? [...new Set(gates.map(gate => gate.wave).filter(Boolean))].indexOf(wave) + 1 : 0,
             passed: runtime?.passed.size || (phase === 'boss' ? BOSS_WAVE_STARTS[bossWave] : 0),
-            total: runtime?.route.length || route(phase, progress.seed).length,
+            total: gates.length,
             active: !!runtime,
             test: Boolean(runtime?.test),
             attempts: typeof attempts === 'number' ? attempts : 0,
@@ -178,16 +195,20 @@
         };
     }
 
-    function setStageForTest(phase) {
-        if (!['night', 'dawn', 'boss'].includes(phase) || runtime || gameActive || typeof startOrResumeFlight !== 'function') return false;
+    function setStageForTest(key) {
+        if (runtime || gameActive || typeof startOrResumeFlight !== 'function') return false;
+        const boss = key === 'boss' || key.startsWith('boss-');
+        const id = boss ? (key === 'boss' ? '' : key.slice(5)) : key;
+        if ((!boss || id) && !DISTRICT_BOSSES[id]) return false;
+        const phase = boss ? 'boss' : id === 'night' ? 'night' : 'dawn';
+        const gates = boss ? districtBossRoute(id) : route(phase, read().seed);
         window.BuboCampaignTopics?.resetPreview();
-        runtime = createRuntime(phase, route(phase, read().seed), 0, { test: true });
+        runtime = createRuntime(phase, gates, 0, { test: true, previewKey: key, [boss ? 'district' : 'previewDistrict']: id });
         result = null;
         startOrResumeFlight({ campaign: true });
         notify();
         return true;
     }
-
     function sceneProgress() {
         return runtime ? { passed: runtime.passed.size, total: runtime.route.length } : null;
     }
@@ -261,10 +282,13 @@
 
     function showJourneyResult(type, message) {
         const checkpoint = window.BuboJourney?.bossWave();
-        const phase = checkpoint != null || type === 'journey-win' ? 'boss' : 'night';
+        const district = window.BuboJourney.region().id;
+        const phase = checkpoint != null ? 'boss' : 'night';
         result = {
-            type, phase, journey: true, title: STAGES[phase].title, reason: message,
-            waveTitle: checkpoint != null ? WAVES[BOSS_ROUTE[BOSS_WAVE_STARTS[checkpoint]].wave].title : ''
+            type, phase, district, journey: true,
+            title: phase === 'boss' ? DISTRICT_BOSSES[district].name : window.BuboJourney.region().name,
+            reason: message,
+            waveTitle: checkpoint != null ? WAVES[districtBossRoute(district)[BOSS_WAVE_STARTS[checkpoint]].wave].title : ''
         };
         notify();
     }
@@ -282,7 +306,8 @@
             return false;
         }
         result = null;
-        runtime = createRuntime('boss', BOSS_ROUTE, checkpoint, { journey: true, secondWind });
+        const district = journey.region().id;
+        runtime = createRuntime('boss', districtBossRoute(district), checkpoint, { district, journey: true, secondWind });
         try {
             startOrResumeFlight({ campaign: true });
         } catch (e) {
@@ -314,7 +339,7 @@
         const pipe = runtime.route[index];
         const startsWave = pipe.wave && runtime.route[index - 1]?.wave !== pipe.wave;
         return {
-            ...pipe, index, phase: runtime.phase, test: Boolean(runtime.test), gapScale: STAGES[runtime.phase].gapScale,
+            ...pipe, index, phase: runtime.phase, district: runtime.previewDistrict, test: Boolean(runtime.test), gapScale: STAGES[runtime.phase].gapScale,
             warning: startsWave ? WAVES[pipe.wave].warning : ''
         };
     }
@@ -355,6 +380,7 @@
         const { phase, replay, mapReplay } = runtime;
         if (runtime.passed.size < runtime.route.length) {
             if (phase === 'boss' && !checkpointBossWave()) {
+                if (runtime.journey && window.BuboJourney.reloadIfOutdated()) return true;
                 completeFlight({
                     type: runtime.journey ? 'journey-save-error' : 'save-error',
                     phase, title: STAGES[phase].title, reason: 'Не удалось сохранить волну. Попробуй ещё раз.'
@@ -369,13 +395,11 @@
             return true;
         }
         if (runtime.journey) {
-            const outcome = window.BuboJourney?.finishBoss();
-            completeFlight(outcome ? {
-                type: 'journey-win', phase, title: STAGES[phase].title, ...outcome
-            } : {
-                type: 'journey-save-error', phase, title: STAGES[phase].title,
-                reason: 'Не удалось сохранить победу. Финальная волна доступна снова.'
-            });
+            const finishedRun = runtime;
+            gameActive = false;
+            waitingFirstTap = false;
+            finishedRun.defeating = true;
+            void finishJourneyBoss(finishedRun);
             return true;
         }
         const index = PHASES.indexOf(phase);
@@ -403,6 +427,30 @@
             reward
         });
         return true;
+    }
+
+    async function finishJourneyBoss(run) {
+        const journey = window.BuboJourney;
+        const { district, phase } = run;
+        const title = DISTRICT_BOSSES[district].name;
+        let outcome = false;
+        try { outcome = await journey.commitBoss(); } catch (error) {}
+        if (runtime !== run) return;
+        if (!outcome) {
+            if (!journey.reloadIfOutdated()) completeFlight({
+                type: 'journey-save-error', phase, district, title,
+                reason: 'Не удалось сохранить победу. Финальная волна доступна снова.'
+            });
+            return;
+        }
+        const guardian = window.BuboCampaignGuardian;
+        guardian?.defeat();
+        if (!window.BuboCampaignDayArt?.celebrate(district)) launchFireworkShow('#FFB459', 5);
+        AudioFX.playLevelUp();
+        Haptics.powerup();
+        setTimeout(() => {
+            if (runtime === run) completeFlight({ type: 'journey-win', phase, district, title, ...outcome });
+        }, guardian?.defeatDuration || 0);
     }
 
     function consumeGuard() {
@@ -436,22 +484,25 @@
             return true;
         }
         const training = phase === 'training';
+        if (runtime.journey) window.BuboJourney.recordLoss();
         if (!training && !runtime.secondWind) attempts = Math.max(0, attempts - 1);
         const loss = runtime.journey ? (attempts === 0 ? 'journey-exhausted' : 'journey-failure')
             : training ? 'training-failure' : 'failure';
         completeFlight({
             type: loss,
             phase,
-            title: STAGES[phase].title,
+            district: runtime.district,
+            title: runtime.district ? DISTRICT_BOSSES[runtime.district].name : STAGES[phase].title,
             reason,
             hint: training ? learningHint(reason) : STAGES[phase].hint,
-            waveTitle: phase === 'boss' ? WAVES[BOSS_ROUTE[BOSS_WAVE_STARTS[checkpoint]].wave].title : ''
+            waveTitle: phase === 'boss' ? WAVES[runtime.route[BOSS_WAVE_STARTS[checkpoint]].wave].title : ''
         });
         return true;
     }
 
     function completeFlight(value) {
         const secondWind = runtime?.secondWind || '';
+        if (runtime?.test) value.previewKey = runtime.previewKey;
         if (runtime?.journey) value.journey = true;
         gameActive = false;
         waitingFirstTap = false;
@@ -506,6 +557,8 @@
         isTestRun: () => Boolean(runtime?.test),
         sceneProgress,
         scene: () => runtime?.phase || '',
+        district: () => runtime?.district || runtime?.previewDistrict || '',
+        isDefeating: () => Boolean(runtime?.defeating),
         difficultyIndex: () => runtime?.phase === 'dawn' || runtime?.phase === 'boss' ? 1 : 0,
         status, nextPipe, onPipePassed, onWave, onFatal, consumeGuard, leaveFlight, dismissResult, reset,
         classicResources: () => runtime ? { ...runtime.classic } : null,

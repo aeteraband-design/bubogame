@@ -68,14 +68,13 @@ window.addEventListener('resize', resize);
 resize();
 
 function getTotalCollectedThemes() {
-    return (collected.music || 0) + (collected.logic || 0) + (collected.kino || 0) + (collected.series || 0) + (collected.cartoons || 0) + (collected.fun || 0);
+    return window.BuboJourney.regionProgress().passed;
 }
 
 function getDifficultyIndex() {
     const campaign = window.BuboCampaign;
     if (campaign?.isActive()) return campaign.difficultyIndex();
-    const total = getTotalCollectedThemes();
-    return Math.max(0, Math.min(DIFF_LEVELS.length - 1, Math.floor(total * DIFF_LEVELS.length / TOTAL_THEMES)));
+    return window.BuboJourney.difficultyIndex();
 }
 
 function getDifficultyMultipliers() {
@@ -141,7 +140,11 @@ function showGoldBanner(text, icon, color, duration = 2700, campaignTopic = fals
         const fr = fxLayer.getBoundingClientRect(), uz = uiFx();   // масштаб — как у таймеров
         const th = document.getElementById('topHud'), bb = document.getElementById('buffBar');
         let top = 56 * uz;
-        if (bb && bb.offsetParent) top = bb.getBoundingClientRect().top - fr.top;
+        if (bb && bb.offsetParent) {
+            const bounds = bb.getBoundingClientRect();
+            const crowded = fr.width < 450 && bb.childElementCount > 0;
+            top = (crowded ? bounds.bottom + 6 * uz : bounds.top) - fr.top;
+        }
         else if (th && th.offsetParent) top = th.getBoundingClientRect().bottom - fr.top + 8 * uz;
         const prev = [...fxLayer.querySelectorAll('.bonus-tag.' + (right ? 'on-right' : 'on-left'))].length;   // несколько подряд — столбиком
         el.style.top = (top + prev * 34 * uz) + 'px';
@@ -204,8 +207,8 @@ function triggerDiffLevelUp(info) {
 }
 
 function updateDifficultyHUD() {
-    const total = getTotalCollectedThemes();
-    const p = Math.min(100, (total / TOTAL_THEMES) * 100);
+    const { passed, total } = window.BuboJourney.flightProgress();
+    const p = Math.min(100, (passed / total) * 100);
     const percent = Math.round(p);
     const info = getDifficultyMultipliers();
     // сила свечения плавно растёт вместе с заполнением шкалы (а значит и с каждым уровнем)
@@ -827,10 +830,14 @@ function triggerBadgeAnimation(key, isLoss) {
 }
 
 function renderCollectionHUD() {
-    ['music', 'logic', 'kino', 'series', 'cartoons', 'fun'].forEach(key => {
-        const count = collected[key] || 0;
-        const maxCount = CATEGORIES[key].count;
-        const col = CATEGORIES[key].color;
+    const journey = window.BuboJourney;
+    let labelsChanged = false;
+    journey.themeKeys().forEach(key => {
+        const maxCount = journey.themeQuota(key);
+        const count = Math.min(maxCount, collected[key] || 0);
+        const theme = journey.themeVisual(key);
+        const col = theme.color;
+        const name = theme.label || theme.name;
 
         const badge = document.getElementById(`badge-${key}`);
         const icon = document.getElementById(`icon_${key}`);
@@ -840,6 +847,17 @@ function renderCollectionHUD() {
         if (cntEl) cntEl.innerText = `${count}/${maxCount}`;
 
         if (badge && icon && label) {
+            if (label.textContent !== name) {
+                label.textContent = name;
+                badge.title = theme.name;
+                labelsChanged = true;
+            }
+            if (icon.dataset.themeIcon !== theme.faClass) {
+                if (icon.dataset.themeIcon) icon.classList.remove(icon.dataset.themeIcon);
+                else icon.classList.remove(CATEGORIES[key].faClass);
+                icon.classList.add(theme.faClass);
+                icon.dataset.themeIcon = theme.faClass;
+            }
             if (count === 0) {
                 badge.style.backgroundColor = 'rgba(20, 3, 38, 0.9)';
                 badge.style.borderColor = 'rgba(255, 255, 255, 0.08)';
@@ -863,6 +881,17 @@ function renderCollectionHUD() {
         if (menuCnt) menuCnt.innerText = `${count}/${maxCount}`;
         if (menuBadge && menuIcon) {
             const menuLabel = menuBadge.querySelector('.collection-theme-label');
+            if (menuLabel && menuLabel.textContent !== name) {
+                menuLabel.textContent = name;
+                menuBadge.title = theme.name;
+                labelsChanged = true;
+            }
+            if (menuIcon.dataset.themeIcon !== theme.faClass) {
+                if (menuIcon.dataset.themeIcon) menuIcon.classList.remove(menuIcon.dataset.themeIcon);
+                else menuIcon.classList.remove(CATEGORIES[key].faClass);
+                menuIcon.classList.add(theme.faClass);
+                menuIcon.dataset.themeIcon = theme.faClass;
+            }
             // те же цвета и подсветка, что у плиток в игре: оба набора выглядят одинаково
             if (count === 0) {
                 menuBadge.style.backgroundColor = 'rgba(20, 3, 38, 0.9)';
@@ -881,28 +910,25 @@ function renderCollectionHUD() {
             }
         }
     });
+    if (labelsChanged && typeof fitThemeLabels === 'function') fitThemeLabels();
     updateDifficultyHUD();
 }
 
 function checkVictoryCondition() {
     if (!gameActive) return;
-    if (THEME_KEYS_ALL.every(k => (collected[k] || 0) >= CATEGORIES[k].count)) {
-        window.BuboJourney?.onCollectionComplete();
-    }
+    window.BuboJourney.onCollectionComplete();
 }
 
 function updateMenuVisibility() {
     try { rwUpdateUI(); } catch (e) {}
     window.refreshFlightBonusUI?.();
     const pickerAttempts = document.getElementById('campaignStartAttempts');
-    if (pickerAttempts) pickerAttempts.textContent = attempts > 0 ? 'Осталось попыток: ' + attempts : 'Попытки обновятся завтра';
-    try { const sb = document.getElementById('startBtnSub'); if (sb) sb.innerText = attempts > 0 ? 'ОСТАЛОСЬ ПОПЫТОК: ' + attempts : 'ПОПЫТКИ ОБНОВЯТСЯ ЗАВТРА'; } catch (e) {}
-    try { const sbt = document.getElementById('startBtn'); if (sbt) sbt.classList.toggle('no-attempts', attempts <= 0); } catch (e) {}
+    if (pickerAttempts) pickerAttempts.textContent = window.BuboJourney.prizeDistrictId() ? 'Приз ждёт в рулетке'
+        : attempts > 0 ? 'Осталось попыток: ' + attempts : 'Попытки обновятся завтра';
     const statsCard = document.getElementById('statsCard');
     const menuDiffCard = document.getElementById('menuDiffCard');
     const resetProgressBtn = document.getElementById('resetProgressBtn');
     const startBtnLabel = document.getElementById('startBtnLabel');
-    const menuAttempts = document.getElementById('menuAttempts');
     const menuScore = document.getElementById('menuScore');
     const menuTokens = document.getElementById('menuTokens');
 
@@ -916,7 +942,8 @@ function updateMenuVisibility() {
     }
 
     if (startBtnLabel) {
-        startBtnLabel.innerText = (attempts <= 0) ? 'ПОПЫТКИ КОНЧИЛИСЬ' : (hasWonGame ? 'НАЧАТЬ НОВЫЙ ПОЛЕТ' : (hasProgress ? 'ПРОДОЛЖИТЬ ПОЛЕТ' : 'НАЧАТЬ ПОЛЕТ'));
+        startBtnLabel.textContent = hasWonGame ? 'Новый маршрут'
+            : hasProgress ? 'Продолжить полёт' : 'Начать полёт';
     }
 
     if (statsCard) {
@@ -943,10 +970,8 @@ function updateMenuVisibility() {
         }
     }
 
-    const menuAttemptsVal = document.getElementById('menuAttemptsVal');
-    if (menuAttemptsVal) menuAttemptsVal.textContent = `${attempts}`;
     if (menuScore) menuScore.innerText = score;
-    if (menuTokens) menuTokens.innerText = `${total} / ${TOTAL_THEMES}`;
+    if (menuTokens) menuTokens.innerText = `${total} / ${window.BuboJourney.regionProgress().total}`;
 
     updateCollectionHUD();
     updateAttemptsHUD();
@@ -992,12 +1017,10 @@ function pipeVerticalBounds(gap) {
     if (hi < lo) { const mid = (lo + hi) / 2; lo = hi = mid; }    // очень низкий экран — проём ровно посередине между панелями
     return { min: Math.round(lo), max: Math.round(hi) };
 }
-const JOURNEY_STAMP_SPACING = 2;
 const JOURNEY_SPECIAL_CHANCE = {
     music: { speedup: 0.13 },
     magic: { slowmo: 0.10, shield: 0.12 }
 };
-let journeyThemePipes = 0;
 
 function spawnQuizStamps(pipe, topic, offset, test = false) {
     const y = pipe.top + pipe.gap / 2;
@@ -1053,7 +1076,6 @@ function spawnPipe(startX) {
 
     const journey = window.BuboJourney;
     const district = journey?.isFlight() ? journey.region()?.id : '';
-    const campaignTopics = window.BuboCampaignTopics;
     let itemType = 'question';
     const canSpawnFood = lives < maxLives;
     pipesSinceTheme++;
@@ -1068,21 +1090,16 @@ function spawnPipe(startX) {
     } else {
         // ТЕМЫ: летят по одной, разные, не слишком часто и не слишком редко.
         // Тема, собранная до конца, больше не встречается — но если секретная звезда заберёт одну, она снова появится.
-        const themeKeysAll = ['music', 'logic', 'kino', 'series', 'cartoons', 'fun'];
-        const openThemes = themeKeysAll.filter(k => (collected[k] || 0) < CATEGORIES[k].count);
+        const openThemes = journey.themeKeys().filter(key => {
+            const outstanding = items.filter(item => item.type === key && !item.collected && item.x > owl.x).length;
+            return (collected[key] || 0) + outstanding < journey.themeQuota(key);
+        });
         let themeKey = null;
         const tl = Math.min(5, Math.max(0, getDifficultyIndex()));   // с каждым уровнем темы реже: 100% → 96 → 92 → 88 → 84 → 80%
         if (openThemes.length > 0 && pipesSinceTheme >= 3 && (pipesSinceTheme >= THEME_FORCE_BY_LEVEL[tl] || Math.random() < THEME_P_BY_LEVEL[tl])) {
             let pool = openThemes.filter(k => k !== lastThemeKey);
             if (pool.length === 0) pool = openThemes;
-            const localThemes = campaignTopics?.nativeThemesForDistrict(district) || [];
-            const weights = pool.map(k => CATEGORIES[k].weight * (localThemes.includes(k) ? 2 : 1));
-            let randW = Math.random() * weights.reduce((acc, weight) => acc + weight, 0);
-            themeKey = pool[pool.length - 1];
-            for (let i = 0; i < pool.length; i++) {
-                randW -= weights[i];
-                if (randW < 0) { themeKey = pool[i]; break; }
-            }
+            themeKey = pool[Math.floor(Math.random() * pool.length)];
         }
 
         if (themeKey) {
@@ -1158,22 +1175,20 @@ function spawnPipe(startX) {
         }
         if (itemType === 'icecream') pipesSinceIceCream = 0;
     }
-    // монеты на пути: редко и случайно — за пару уровней сложности (Суперлайт+Лайт, Медиум+Медиум+, Хард+Хард+) от 0 до 2 раз.
-    // Номинал растёт с уровнем: 5, 8, 12, 18, 24, 30 (COIN_PATH_VALUES); до 4 раз за каждые два уровня
-    {
-        const isThemeItem = !!(CATEGORIES[itemType] && CATEGORIES[itemType].count);
-        let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {}
-        const tier = Math.min(2, Math.floor(lv / 2));
-        if (!coinSpawns.st || (typeof getTotalCollectedThemes === 'function' && getTotalCollectedThemes() === 0 && coinSpawns.lastThemes > 0)) coinSpawns.st = [0, 0, 0];
-        try { coinSpawns.lastThemes = getTotalCollectedThemes(); } catch (e) {}
-        if (!isThemeItem && itemType !== 'secret' && coinSpawns.st[tier] < 4 && Math.random() < 0.03) { itemType = 'coin'; coinSpawns.st[tier]++; }
+    // Up to four pickups in each pair of difficulty levels, saved with the district.
+    const coinLevel = getDifficultyIndex();
+    const coinTier = Math.floor(coinLevel / 2);
+    const coinChance = district === 'music' ? .04 : .03;
+    if (!CATEGORIES[itemType]?.count && itemType !== 'secret' && journey.availablePathCoins(coinTier) && Math.random() < coinChance) {
+        const outstanding = items.filter(item => item.type === 'coin' && item.coinTier === coinTier && !item.collected && item.x > owl.x).length;
+        if (outstanding < journey.availablePathCoins(coinTier)) itemType = 'coin';
     }
     // редкий значок — «Опасные трубы» или «Водонапор» (что именно, решает случай): выпадает на месте обычного значка (не темы и не секретной звезды), когда набралось достаточно тем
-    if (crystalPending && crystalTime <= 0 && !(typeof waterTime !== 'undefined' && waterTime > 0) && itemType !== 'secret' && !(CATEGORIES[itemType] && CATEGORIES[itemType].count)) { itemType = (typeof registerWater === 'function' && (crystalPending === 'water' || (crystalPending === true && Math.random() < 0.5))) ? 'water' : 'crystal'; crystalPending = false; }   // «Опасные трубы» или «Водонапор» — по плану
+    if (!window.BuboCampaignCombat?.usesFlightHazards() && crystalPending && crystalTime <= 0 && !(typeof waterTime !== 'undefined' && waterTime > 0) && itemType !== 'secret' && !(CATEGORIES[itemType] && CATEGORIES[itemType].count)) { itemType = (typeof registerWater === 'function' && (crystalPending === 'water' || (crystalPending === true && Math.random() < 0.5))) ? 'water' : 'crystal'; crystalPending = false; }   // «Опасные трубы» или «Водонапор» — по плану
     if (typeof shazamBlockedType === 'function' && shazamBlockedType(itemType)) itemType = 'question';   // в ШАЗАМе щит, заморозка и т.п. на пути не появляются
     lastSpawnedItemType = itemType;
     const tokenRadius = 26;
-    let coinVal = 0; if (itemType === 'coin') { let lv = 0; try { lv = getDifficultyIndex(); } catch (e) {} coinVal = Math.round(COIN_PATH_VALUES[Math.max(0, Math.min(5, lv))] * (window.skCoinMul ? skCoinMul() : 1)); }   // навык «Монетный нюх»
+    const coinVal = itemType === 'coin' ? Math.round(COIN_PATH_VALUES[coinLevel] * (window.skCoinMul ? skCoinMul() : 1)) : 0;
 
     if (itemType === 'stamina' || itemType === 'infinite') {
         items.push({
@@ -1184,22 +1199,13 @@ function spawnPipe(startX) {
     } else {
         items.push({
             x: px + pipeWidth / 2, y: topHeight + baseGap / 2, baseY: topHeight + baseGap / 2,
-            radius: tokenRadius, type: itemType, isMoving: false, collected: false, floatOffset: Math.random() * Math.PI * 2, coins: coinVal
+            radius: tokenRadius, type: itemType, themeVisual: journey.themeVisual(itemType), isMoving: false, collected: false, floatOffset: Math.random() * Math.PI * 2, coins: coinVal, coinTier
         });
-    }
-    if (district && CATEGORIES[itemType]?.count) {
-        const ordinal = journeyThemePipes++;
-        if (ordinal % JOURNEY_STAMP_SPACING === 0) {
-            // Отдельные отметки стоят до и после основного жетона в проходе.
-            const topic = campaignTopics?.forDistrict(district, ordinal / JOURNEY_STAMP_SPACING);
-            spawnQuizStamps(pipe, topic, 83);
-        }
     }
     return true;
 }
 
 // Стартовые трубы: на том же расстоянии от совы, что и на телефоне, с обычным шагом
-const coinSpawns = { st: null, lastThemes: 0 };   // сколько раз монеты уже выпадали на каждой паре уровней
 function spawnInitialPipes() {
     const spawnLine = width + 25 + Math.ceil(width * 0.03);
     const firstX = Math.min(spawnLine, owl.x + 383);
