@@ -23,7 +23,7 @@
 
     function read() {
         let saved = {};
-        try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+        try { saved = JSON.parse(BuboSaveStorage.getItem(KEY)) || {}; } catch (e) {}
         const persisted = /^\d{4}-\d{2}-\d{2}$/.test(saved.day || '');
         const earnedToday = count(saved.earnedToday, THRESHOLDS.length);
         const available = count(saved.available, THRESHOLDS.length + CARRY_LIMIT);
@@ -55,7 +55,7 @@
 
     function write(data, announce = true) {
         const saved = { ...data, persisted: true };
-        try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) { return false; }
+        try { BuboSaveStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) { return false; }
         current = saved;
         if (announce) notify();
         return true;
@@ -218,7 +218,7 @@
         if (source === 'milestone') flight.milestoneCoins += amount;
     }
 
-    function endFlight(points, reason) {
+    function endFlight(points, reason, attemptsLeft = attempts) {
         if (!flight) return;
         const session = flight;
         flight = null;
@@ -229,7 +229,11 @@
             milestoneCoins: session.milestoneCoins,
             durationMs: Math.round(performance.now() - session.started),
             day: session.day,
-            reason
+            reason,
+            district: window.BuboJourney?.region()?.id,
+            collected: getTotalCollectedThemes(),
+            attemptsLeft,
+            balance: coinsGet()
         });
         sync();
         notify();
@@ -241,7 +245,7 @@
         takeAward, beginFlight, recordCoins, endFlight
     };
     window.addEventListener('storage', event => {
-        if (event.key === KEY || event.key === null) {
+        if (event.key === BuboLocalProfiles.storageKey(KEY) || event.key === null) {
             sync(undefined, true);
             notify();
         }

@@ -252,7 +252,10 @@
                 if (owlBox) { owlBox.style.setProperty('--hx', (MV.x * 2.5).toFixed(1) + 'px'); owlBox.style.setProperty('--hy', (MV.y * 2.5).toFixed(1) + 'px'); owlBox.style.setProperty('--ho', Math.max(0, 1 - (MV.exit || 0) * 1.1).toFixed(3)); }
                 syncLogo();
                 if (!ready) {
-                    if (shown >= 99.9 && ep >= 1) { ready = true; go.classList.add('ready'); el.querySelector('.bl-foot').classList.add('done'); }
+                    if (shown >= 99.9 && ep >= 1) {
+                        ready = true; go.classList.add('ready'); el.querySelector('.bl-foot').classList.add('done');
+                        if (typeof BuboLocalProfiles !== 'undefined' && BuboLocalProfiles.consumeHandoff()) dismiss();
+                    }
                 }
                 requestAnimationFrame(tick);
             })();

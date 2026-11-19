@@ -64,6 +64,55 @@ document.addEventListener('touchcancel', () => { Haptics._down = false; }, true)
     setTimeout(() => { Haptics._gesture = false; }, 0);
 }, true));
 
+// Мотивы районов используют ту же сетку тактов, что и обычная музыка полёта.
+function districtTrack(voice, accents, bassPattern, measures) {
+    const frequency = note => 440 * Math.pow(2, (note - 69) / 12);
+    const bars = measures.map(([root, intervals, melody]) => ({
+        melody: melody.map(frequency),
+        bass: bassPattern.map(interval => frequency(root + interval)),
+        chord: intervals.map(interval => frequency(root + 12 + interval))
+    }));
+    return { voice, accents, bars };
+}
+
+const FLIGHT_DISTRICT_TRACKS = {
+    // Рассвет: Cadd9 — G — Am7 — Fmaj7, светлое восходящее арпеджио.
+    dawn: districtTrack('sine', [0, 2, 4, 6], [0, 0, 7, 0, 12, 7, 0, 7], [
+        [48, [0, 4, 7, 14], [60, 62, 64, 67, 72, 67, 74, 72]],
+        [43, [0, 4, 7], [67, 69, 71, 74, 79, 74, 76, 74]],
+        [45, [0, 3, 7, 10], [69, 67, 64, 67, 72, 76, 74, 72]],
+        [41, [0, 4, 7, 11], [65, 67, 69, 72, 76, 72, 67, 64]]
+    ]),
+    // Музыкальный: Fmaj7 — Gm7 — C7 — Dm7, синкопы и скачки баса.
+    music: districtTrack('triangle', [0, 2, 3, 5, 6, 7], [0, 12, 7, 0, 12, 7, 0, 12], [
+        [41, [0, 4, 7, 11], [69, 65, 72, 76, 74, 72, 69, 72]],
+        [43, [0, 3, 7, 10], [70, 67, 74, 77, 76, 74, 70, 67]],
+        [48, [0, 4, 7, 10], [67, 64, 70, 76, 74, 72, 67, 70]],
+        [50, [0, 3, 7, 10], [65, 62, 69, 72, 74, 69, 77, 76]]
+    ]),
+    // Магический: Am — F — Dm — E7, паузы и тихие колокольчики.
+    magic: districtTrack('sine', [0, 2, 5, 6], [0, 0, 7, 0, 0, 12, 7, 7], [
+        [45, [0, 3, 7], [76, 72, 81, 76, 72, 79, 77, 76]],
+        [41, [0, 4, 7], [72, 69, 77, 72, 69, 76, 74, 72]],
+        [50, [0, 3, 7], [74, 69, 77, 74, 69, 81, 77, 74]],
+        [40, [0, 4, 7, 10], [71, 68, 76, 71, 68, 74, 71, 68]]
+    ]),
+    // Джунгли: ре-дорийский лад и короткие деревянные удары.
+    jungle: districtTrack('triangle', [0, 1, 3, 4, 6], [0, 7, 0, 12, 0, 7, 12, 7], [
+        [50, [0, 3, 7], [62, 65, 69, 67, 72, 69, 65, 67]],
+        [43, [0, 4, 7], [67, 71, 74, 72, 79, 74, 71, 69]],
+        [48, [0, 4, 7], [64, 67, 72, 74, 76, 72, 67, 64]],
+        [50, [0, 3, 7], [65, 62, 69, 72, 74, 72, 69, 67]]
+    ]),
+    // Ночной: Dm — B♭ — Gm — A7, низкий пульс и нисходящие ответы.
+    night: districtTrack('triangle', [0, 3, 4, 6], [0, 0, 7, 0, -12, 0, 7, 0], [
+        [50, [0, 3, 7], [62, 69, 74, 69, 65, 62, 60, 62]],
+        [46, [0, 4, 7], [65, 70, 74, 70, 65, 62, 58, 62]],
+        [43, [0, 3, 7], [67, 70, 74, 70, 67, 62, 58, 62]],
+        [45, [0, 4, 7, 10], [69, 73, 76, 73, 67, 64, 61, 64]]
+    ])
+};
+
 const AudioFX = {
     ctx: null,
     musicGain: null,
@@ -73,6 +122,7 @@ const AudioFX = {
     musicVolume: 0.38,
     sfxVolume: 1.0,
     mode: 'menu',
+    district: null,
     musicTimer: null,
     step: 0,
     ready: false,
@@ -277,6 +327,31 @@ const AudioFX = {
         this.setMuted(!this.isMusicMuted);
     },
 
+    setDistrict(id) {
+        this.district = Object.hasOwn(FLIGHT_DISTRICT_TRACKS, id) ? id : null;
+    },
+
+    // На границе такта переносим новый мотив в отдельную шину.
+    // Нарастающая шина и хвост предыдущей обе подчиняются общей громкости музыки.
+    _districtOutput(when) {
+        const previous = this._districtBus;
+        const sameContext = previous?.context === this.ctx;
+        if (sameContext && (this._playingDistrict === this.district || this.step % 8 !== 0)) return previous;
+        const bus = this.ctx.createGain();
+        bus.connect(this.musicGain);
+        this._districtBus = bus;
+        this._playingDistrict = this.district;
+        if (sameContext) {
+            const fade = 0.36;
+            previous.gain.setValueAtTime(1, when);
+            previous.gain.linearRampToValueAtTime(0, when + fade);
+            bus.gain.setValueAtTime(0, when);
+            bus.gain.linearRampToValueAtTime(1, when + fade);
+            setTimeout(() => previous.disconnect(), Math.max(0, (when - this.ctx.currentTime + fade + 0.16) * 1000));
+        }
+        return bus;
+    },
+
     // Смена музыки: плавное затухание старой и мягкое вступление новой
     setMode(newMode, opts) {
         const eff = this._pendMode || this.mode;
@@ -377,7 +452,11 @@ const AudioFX = {
         else if (m === 'library') f = this.libChords[Math.floor(s / 8) % 4][this.libArp[s % 8]];
         else if (m === 'victory') f = this.victoryMelody[s % this.victoryMelody.length];
         else if (m === 'death') f = this.deathMelody[s % this.deathMelody.length];
-        else if (m === 'game') f = this.gameArp4[Math.floor(s / 8) % 4][s % 8];
+        else if (m === 'game') {
+            const bar = Math.floor(s / 8) % 4;
+            const notes = FLIGHT_DISTRICT_TRACKS[this.district]?.bars[bar].melody || this.gameArp4[bar];
+            f = notes[s % 8];
+        }
         else if (m === 'workshop') f = this.wsLead[Math.floor(s / 8) % 4][s % 8];
         else if (m === 'think') { const T = this._thinkSet(); f = T.ch[Math.floor(s / 8) % 4][[0, 2, 1, 2][s % 4]] * 2; }
         return f ? f * (p || 1) : 0;
@@ -922,7 +1001,13 @@ const AudioFX = {
             const s16 = this.step % 16;
             // Фраза — 4 такта (Dm – B♭ – F – C), как в меню; на Хард+ — 8 тактов: вторая половина тёмная, с «нотками опасности».
             const bar = Math.floor(this.step / 8), i8 = this.step % 8, c4 = bar % 4, pass = Math.floor(bar / 4) % 2;
-            let arpArr = this.gameArp4[c4], bassArr = this.gameBass4[c4], aMul = 1, lead = false, dark = false, warn = false;
+            const out = this._districtOutput(now);
+            const track = FLIGHT_DISTRICT_TRACKS[this._playingDistrict];
+            const measure = track?.bars[c4];
+            const arpArr = measure?.melody || this.gameArp4[c4];
+            const bassArr = measure?.bass || this.gameBass4[c4];
+            const chord = measure?.chord || this.menuChords[c4];
+            let aMul = 1, lead = false, dark = false, warn = false;
             if (lvl === 4) {
                 if (c4 === 1 && i8 >= 6) aMul = 2;                       // ответ фразы — окончание на октаву выше
                 if (c4 >= 2) lead = true;                                // вторая половина — верхний голос
@@ -945,7 +1030,6 @@ const AudioFX = {
             const rm = (f) => { if (RM) for (const [a0, b0] of RM) if (Math.abs(f - a0) < 0.5) return b0; return f; };
             const bFreq = rm(bassArr[s8 % bassArr.length]) * pitchMultiplier;
             const aFreq = rm(arpArr[i8 % arpArr.length]) * pitchMultiplier * aMul;
-            const out = this.musicGain;
             const tone = (type, f, vol, dur, f2) => {
                 const os = this.ctx.createOscillator(), g = this.ctx.createGain();
                 os.type = type;
@@ -1000,14 +1084,22 @@ const AudioFX = {
             // Хард: новый элемент — быстрый басовый арпеджио на каждую вторую восьмую (тихо, «пульс» под мелодией)
             if (W(4) > 0.01 && this.step % 2 === 1) tone('triangle', bFreq * 2, 0.03 * W(4), 0.06 * len);
 
-            // Мелодия — исходная; с Лайт звучит на каждый шаг (плотнее)
-            if (this.step % 2 === 0) tone('sine', aFreq, 0.24, 0.15 * len);
-            else if (W(1) > 0.01) tone('sine', aFreq, 0.24 * W(1), 0.15 * len);
+            // В районах свой рисунок мелодии. В обычном полёте Лайт по-прежнему уплотняет исходную мелодию.
+            if (track) {
+                if (track.accents.includes(i8)) tone(track.voice, aFreq, 0.22, 0.15 * len);
+                if (this._playingDistrict === 'magic' && (i8 === 2 || i8 === 5)) tone('sine', aFreq * 2, 0.06, 0.38 * len);
+                if (this._playingDistrict === 'jungle' && (i8 === 1 || i8 === 4 || i8 === 6)) tone('sine', 212, 0.16, 0.09 * len, 112);
+                if (this._playingDistrict === 'night' && i8 === 0) tone('sine', chord[0] / 4 * pitchMultiplier, 0.12, 0.48 * len);
+            } else if (this.step % 2 === 0) {
+                tone('sine', aFreq, 0.24, 0.15 * len);
+            } else if (W(1) > 0.01) {
+                tone('sine', aFreq, 0.24 * W(1), 0.15 * len);
+            }
             // Хард: высокая «нотка»-отголосок в начале каждого такта
             if (W(4) > 0.01 && this.step % 8 === 0) tone('triangle', aFreq * 2, 0.1 * W(4), 0.3 * len);
             // Хард+: тёмный второй голос под мелодией (тревожная гармония)
             if (W(5) > 0.01) {   // Хард+: второй голос — ближайшая нота аккорда ниже мелодии (всегда в лад)
-                const pc = dark ? [aFreq / 1.1892] : this.menuChords[c4].map(f => f * pitchMultiplier);
+                const pc = dark ? [aFreq / 1.1892] : chord.map(f => f * pitchMultiplier);
                 let lo = 0; for (const b0 of pc) for (let o = 0.25; o <= 2; o *= 2) { const v = b0 * o; if (v < aFreq * 0.97 && v > lo) lo = v; }
                 if (lo) tone('triangle', lo, 0.09 * W(5), 0.14 * len);
             }
@@ -1020,7 +1112,7 @@ const AudioFX = {
                 this._shK = (this._shK || 0) + (tgt - (this._shK || 0)) * (tgt > (this._shK || 0) ? 0.14 : 0.25);
                 const k = this._shK;
                 if (k > 0.02) {
-                    const ch = dark ? [aFreq / 2, aFreq / 2 * 1.189, aFreq / 2 * 1.498] : this.menuChords[c4].map(f => rm(f) * pitchMultiplier);
+                    const ch = dark ? [aFreq / 2, aFreq / 2 * 1.189, aFreq / 2 * 1.498] : chord.map(f => rm(f) * pitchMultiplier);
                     const pool = [ch[0], ch[1], ch[2], ch[0] * 2, ch[1] * 2, ch[2] * 2];
                     // ШАЗАМ — геройская «электро-фанфара»: мягкая «медь» (квадрат + треугольник через фильтр, без «пилы»),
                     // скачущий бас октавами, марш-барабан и редкие электрические разряды. Без высоких «пиков» — не путается со звуком сбора
@@ -1053,13 +1145,13 @@ const AudioFX = {
 
             // дождь: тихая подложка-«вздох» на корне аккорда и редкая грустная нотка сверху
             if (rainK > 0.05 && s8 === 0 && !dark) {   // дождь: тихий «струнный» аккорд из нот такта и редкий колокольчик — всё в тональности
-                this.menuChords[c4].forEach((f, k) => tone('sine', f * pitchMultiplier, (k ? 0.035 : 0.05) * rainK, 1.5 * len));
+                chord.forEach((f, k) => tone('sine', f * pitchMultiplier, (k ? 0.035 : 0.05) * rainK, 1.5 * len));
                 tone('sine', bassArr[0] * pitchMultiplier, 0.06 * rainK, 1.5 * len);
-                if (c4 % 2 === 1) tone('sine', this.menuChords[c4][2] * 2 * pitchMultiplier, 0.035 * rainK, 1.1 * len);
+                if (c4 % 2 === 1) tone('sine', chord[2] * 2 * pitchMultiplier, 0.035 * rainK, 1.1 * len);
             }
 
             // ===== «Весёлые» нотки из музыки меню: с Медиум — лёгкие аккорды-чопы, с Медиум+ — колокольчик в начале такта =====
-            if (W(2) > 0.01 && !dark && this.step % 4 === 2) this.menuChords[c4].forEach((f) => tone('square', rm(f) * pitchMultiplier, (lvl >= 4 ? 0.02 : 0.016) * W(2), 0.07 * len));
+            if (W(2) > 0.01 && !dark && this.step % 4 === 2) chord.forEach((f) => tone('square', rm(f) * pitchMultiplier, (lvl >= 4 ? 0.02 : 0.016) * W(2), 0.07 * len));
             if (W(3) > 0.01 && !dark && this.step % 8 === 0 && (pass || lvl >= 4)) tone('sine', aFreq * 4, 0.035 * W(3), 0.35 * len);
             if (lvl >= 5 && warn && this.step % 8 === 0) tone('sawtooth', aFreq / 4, 0.04, 0.6 * len, aFreq / 4 * 0.94);
             // Хард+: та же музыка, что на Хард, плюс «опасность»: низкий гул во второй половине восьмёрки и в самом её конце —

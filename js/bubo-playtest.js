@@ -4,18 +4,20 @@
     const limit = 500;
     const fields = {
         flight_start: ['score', 'points', 'durationMs', 'reason', 'day'],
-        flight_end: ['score', 'points', 'pickupCoins', 'milestoneCoins', 'durationMs', 'reason', 'day'],
+        flight_end: ['score', 'points', 'pickupCoins', 'milestoneCoins', 'durationMs', 'reason', 'day', 'district', 'collected', 'attemptsLeft', 'balance'],
+        'journey:district': ['from', 'to', 'collected', 'score'],
         bonus_earned: ['count', 'score', 'day'],
         'quiz:answered': ['mode', 'correct', 'timedOut', 'elapsedMs', 'level', 'coins'],
         'campaign:result': ['phase', 'result', 'replay', 'rewardPending', 'xp', 'coins', 'spins', 'balance', 'attempts', 'secondWind'],
         'second_wind:started': ['phase', 'mode', 'price', 'balance'],
         'shop:purchase': ['item', 'price', 'balance'],
+        'skill:purchase': ['item', 'rank', 'price', 'balance'],
         experiment: ['enabled', 'thematic']
     };
 
     function read() {
         try {
-            const rows = JSON.parse(localStorage.getItem(key) || '[]');
+            const rows = JSON.parse(BuboSaveStorage.getItem(key) || '[]');
             return Array.isArray(rows) ? rows : [];
         } catch (e) { return []; }
     }
@@ -34,7 +36,7 @@
             }
             const rows = read().slice(1 - limit);
             rows.push(entry);
-            localStorage.setItem(key, JSON.stringify(rows));
+            BuboSaveStorage.setItem(key, JSON.stringify(rows));
         } catch (e) {}
     }
 

@@ -8,10 +8,10 @@ const INV_TYPES = [
     { key: 'slow', name: 'Замедление', icon: 'fa-hourglass-half', col: '#38BDF8' },
     { key: 'shazam', name: 'ШАЗАМ', icon: 'fa-bolt-lightning', col: '#FF7A00' }
 ];
-function invGet() { try { const o = JSON.parse(localStorage.getItem(INV_KEY)); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } }
+function invGet() { try { const o = JSON.parse(BuboSaveStorage.getItem(INV_KEY)); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } }
 function invCount(k, stock = invGet()) { return Math.max(0, Math.min(INV_MAX, stock[k] | 0)); }
 function invWrite(stock) {
-    try { localStorage.setItem(INV_KEY, JSON.stringify(stock)); return true; } catch (e) { return false; }
+    try { BuboSaveStorage.setItem(INV_KEY, JSON.stringify(stock)); return true; } catch (e) { return false; }
 }
 function invChange(k, delta) {
     const stock = invGet();
@@ -21,7 +21,7 @@ function invChange(k, delta) {
     return invWrite(stock);
 }
 function invAdd(k) { return invChange(k, 1); }
-function invSideLeft() { try { return localStorage.getItem(INV_SIDE_KEY) !== '0'; } catch (e) { return true; } }   // по умолчанию — слева
+function invSideLeft() { try { return BuboSaveStorage.getItem(INV_SIDE_KEY) !== '0'; } catch (e) { return true; } }   // по умолчанию — слева
 // Старые покупки «на старт полёта» переносим одним сохранением.
 (function () {
     if (typeof shopPend !== 'function') return;
@@ -160,7 +160,7 @@ window.addEventListener('resize', () => { try { if (invVisible()) invPlace(); } 
         if (sl) { sl.classList.toggle('text-white', left); sl.classList.toggle('text-purple-300', !left); sl.style.opacity = left ? '1' : '.55'; }
         if (sr) { sr.classList.toggle('text-white', !left); sr.classList.toggle('text-purple-300', left); sr.style.opacity = left ? '.55' : '1'; }
     };
-    const setSide = (left) => { try { localStorage.setItem(INV_SIDE_KEY, left ? '1' : '0'); } catch (er) {} paint(); invRender(); };
+    const setSide = (left) => { try { BuboSaveStorage.setItem(INV_SIDE_KEY, left ? '1' : '0'); } catch (er) {} paint(); invRender(); };
     if (hb) { paint(); hb.addEventListener('click', (e) => { e.stopPropagation(); setSide(!invSideLeft()); }); }
     if (sl) sl.addEventListener('click', (e) => { e.stopPropagation(); setSide(true); });
     if (sr) sr.addEventListener('click', (e) => { e.stopPropagation(); setSide(false); });

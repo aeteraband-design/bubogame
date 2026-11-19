@@ -44,20 +44,20 @@ function wxAdminFreqChanged(oldF, newF) {
         };
         if (STORM.pausedWx) fix(STORM.pausedWx);
         else if (WX.left >= 0) fix(WX);
-        try { localStorage.removeItem('bubo_wx'); } catch (e) {}
+        try { BuboSaveStorage.removeItem('bubo_wx'); } catch (e) {}
     } catch (e) {}
 }
 function wxStart() { WX.on = true; WX.peak = wxRand(0.55, 1); WX.left = wxRand(WX.DUR_MIN, WX.DUR_MAX); }
 // самая первая игра игрока: дождь не начинается в первые ~1,5 минуты. Флаг ставится, когда первая игра закончилась (поражение) или игрок вышел в меню
 function wxFirstGame() {
     if (WX.firstDone) return false;
-    try { WX.firstDone = localStorage.getItem('bubo_first_game_done') === '1'; } catch (e) { WX.firstDone = true; }
+    try { WX.firstDone = BuboSaveStorage.getItem('bubo_first_game_done') === '1'; } catch (e) { WX.firstDone = true; }
     return !WX.firstDone;
 }
 function wxMarkFirstDone() {
     if (WX.firstDone || !(STORM.flightT > 0)) return;
     WX.firstDone = true;
-    try { localStorage.setItem('bubo_first_game_done', '1'); } catch (e) {}
+    try { BuboSaveStorage.setItem('bubo_first_game_done', '1'); } catch (e) {}
 }
 function wxDt() {   // настоящие секунды с прошлого кадра (замедление и прочие эффекты на длительность грозы не влияют)
     const now = performance.now(), d = STORM.lastT ? (now - STORM.lastT) / 1000 : 0;
@@ -80,7 +80,7 @@ function wxTick() {
         // продолжение сохранённой игры: погода — та же, что была, когда вышли (дождём внезапно не начинается)
         let themes = 0; try { themes = getTotalCollectedThemes(); } catch (e) {}
         if (themes > 0) {
-            let sv = null; try { sv = JSON.parse(localStorage.getItem('bubo_wx') || 'null'); } catch (e) {}
+            let sv = null; try { sv = JSON.parse(BuboSaveStorage.getItem('bubo_wx') || 'null'); } catch (e) {}
             if (sv && typeof sv.left === 'number') {
                 WX.on = !!sv.on; WX.left = sv.left; WX.peak = sv.peak || 0.7;
                 stormCover = sv.cover || 0; stormIntensity = sv.si || 0; STORM.fade = sv.fade || 0; STORM.wet = sv.wet || 0;
@@ -88,7 +88,7 @@ function wxTick() {
             } else WX.left = wxRand(F.first[0], F.first[1]);   // старое сохранение без погоды — ясно, гроза позже, как обычно
             return;
         }
-        try { localStorage.removeItem('bubo_wx'); } catch (e) {}   // новая игра — своя случайная погода
+        try { BuboSaveStorage.removeItem('bubo_wx'); } catch (e) {}   // новая игра — своя случайная погода
         if (wxFirstGame()) { WX.left = Math.max(wxRand(F.first[0], F.first[1]), wxRand(75, 100)); return; }   // самая первая игра: первые ~1,5 мин без дождя
         if (Math.random() < F.none) WX.left = 1e9;   // в этой игре грозы не будет
         else if (Math.random() < F.start) {
@@ -103,7 +103,7 @@ function wxTick() {
     // раз в ~2 с запоминаем погоду, чтобы при продолжении игры она была той же
     if ((STORM.saveT = (STORM.saveT || 0) + dt) > 2) {
         STORM.saveT = 0;
-        try { localStorage.setItem('bubo_wx', JSON.stringify({ on: WX.on, left: WX.left, peak: WX.peak, cover: stormCover, si: Math.max(0, stormIntensity), fade: STORM.fade || 0, wet: STORM.wet || 0 })); } catch (e) {}
+        try { BuboSaveStorage.setItem('bubo_wx', JSON.stringify({ on: WX.on, left: WX.left, peak: WX.peak, cover: stormCover, si: Math.max(0, stormIntensity), fade: STORM.fade || 0, wet: STORM.wet || 0 })); } catch (e) {}
     }
     WX.left -= dt;
     if (WX.left > 0) return;

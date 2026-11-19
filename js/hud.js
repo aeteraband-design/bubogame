@@ -173,7 +173,7 @@ function showAttemptBanner(n) {
 }
 
 function triggerDiffLevelUp(info) {
-    launchFireworkShow(info.color, info.idx + 1);   // столько фейерверков, каков номер уровня
+    if (!window.BuboJourney?.celebrate?.(info)) launchFireworkShow(info.color, info.idx + 1);
     AudioFX.playLevelUp(); AudioFX.playLevelShift();
     // если на новом уровне трубы сжимаются — вместе со звуком уровня играет и звук сжатия труб
     if (info.idx > 0 && DIFF_LEVELS[info.idx].targetSqueeze > DIFF_LEVELS[info.idx - 1].targetSqueeze) {
@@ -886,19 +886,16 @@ function renderCollectionHUD() {
 
 function checkVictoryCondition() {
     if (!gameActive) return;
-    const isAllCollected = THEME_KEYS_ALL.every(k => (collected[k] || 0) >= CATEGORIES[k].count);
-    if (isAllCollected && !hasWonGame) {
-        hasWonGame = true;
-        StorageManager.save();
-        setTimeout(() => {
-            triggerVictory();
-        }, 600);
+    if (THEME_KEYS_ALL.every(k => (collected[k] || 0) >= CATEGORIES[k].count)) {
+        window.BuboJourney?.onCollectionComplete();
     }
 }
 
 function updateMenuVisibility() {
     try { rwUpdateUI(); } catch (e) {}
     window.refreshFlightBonusUI?.();
+    const pickerAttempts = document.getElementById('campaignStartAttempts');
+    if (pickerAttempts) pickerAttempts.textContent = attempts > 0 ? 'Осталось попыток: ' + attempts : 'Попытки обновятся завтра';
     try { const sb = document.getElementById('startBtnSub'); if (sb) sb.innerText = attempts > 0 ? 'ОСТАЛОСЬ ПОПЫТОК: ' + attempts : 'ПОПЫТКИ ОБНОВЯТСЯ ЗАВТРА'; } catch (e) {}
     try { const sbt = document.getElementById('startBtn'); if (sbt) sbt.classList.toggle('no-attempts', attempts <= 0); } catch (e) {}
     const statsCard = document.getElementById('statsCard');
@@ -911,6 +908,12 @@ function updateMenuVisibility() {
 
     const total = getTotalCollectedThemes();
     const hasProgress = hasStartedCampaign || score > 0 || total > 0 || attempts < MAX_ATTEMPTS || isFlightPaused;
+    const goal = document.getElementById('menuGoalCard');
+    if (goal) {
+        let dismissed = false;
+        try { dismissed = BuboSaveStorage.getItem('bubo_goal_hidden') === '1'; } catch (error) {}
+        goal.classList.toggle('hidden', hasProgress || dismissed);
+    }
 
     if (startBtnLabel) {
         startBtnLabel.innerText = (attempts <= 0) ? 'ПОПЫТКИ КОНЧИЛИСЬ' : (hasWonGame ? 'НАЧАТЬ НОВЫЙ ПОЛЕТ' : (hasProgress ? 'ПРОДОЛЖИТЬ ПОЛЕТ' : 'НАЧАТЬ ПОЛЕТ'));
@@ -932,8 +935,6 @@ function updateMenuVisibility() {
         }
     }
 
-    // «Цель полёта» — только до первой игры (и пока не закрыли крестиком)
-    try { const gc = document.getElementById('menuGoalCard'); if (gc) gc.classList.toggle('hidden', hasProgress || localStorage.getItem('bubo_goal_hidden') === '1'); } catch (e) {}
     if (resetProgressBtn) {
         if (false) {
             resetProgressBtn.classList.remove('hidden');
@@ -991,6 +992,25 @@ function pipeVerticalBounds(gap) {
     if (hi < lo) { const mid = (lo + hi) / 2; lo = hi = mid; }    // очень низкий экран — проём ровно посередине между панелями
     return { min: Math.round(lo), max: Math.round(hi) };
 }
+const JOURNEY_STAMP_SPACING = 2;
+const JOURNEY_SPECIAL_CHANCE = {
+    music: { speedup: 0.13 },
+    magic: { slowmo: 0.10, shield: 0.12 }
+};
+let journeyThemePipes = 0;
+
+function spawnQuizStamps(pipe, topic, offset, test = false) {
+    const y = pipe.top + pipe.gap / 2;
+    for (const slot of topic?.slots || []) {
+        if (items.some(it => !it.collected && it.campaignTopic?.id === topic.id && it.campaignTopic.slot === slot)) continue;
+        items.push({
+            x: pipe.x + pipe.width / 2 + (slot === 0 ? -offset : offset), y, baseY: y, radius: 23,
+            type: 'campaign-topic', campaignTopic: { id: topic.id, slot, test }, campaignPipe: pipe,
+            isMoving: false, collected: false, floatOffset: slot * Math.PI
+        });
+    }
+}
+
 function spawnPipe(startX) {
     const campaign = window.BuboCampaign;
     const gate = campaign?.isActive() ? campaign.nextPipe() : undefined;
@@ -1018,14 +1038,7 @@ function spawnPipe(startX) {
 
     if (gate) {
         const y = topHeight + baseGap / 2;
-        const topic = window.BuboCampaignTopics?.forGate(gate);
-        for (const slot of topic?.slots || []) {
-            items.push({
-                x: px + pipeWidth / 2 + (slot === 0 ? -50 : 50), y, baseY: y, radius: 23,
-                type: 'campaign-topic', campaignTopic: { id: topic.id, slot, test: gate.test }, campaignPipe: pipe,
-                isMoving: false, collected: false, floatOffset: slot * Math.PI
-            });
-        }
+        spawnQuizStamps(pipe, window.BuboCampaignTopics?.forGate(gate), 50, gate.test);
         if (gate.item) {
             const launcher = gate.item === 'shazam';
             items.push({
@@ -1038,6 +1051,9 @@ function spawnPipe(startX) {
         return true;
     }
 
+    const journey = window.BuboJourney;
+    const district = journey?.isFlight() ? journey.region()?.id : '';
+    const campaignTopics = window.BuboCampaignTopics;
     let itemType = 'question';
     const canSpawnFood = lives < maxLives;
     pipesSinceTheme++;
@@ -1059,12 +1075,13 @@ function spawnPipe(startX) {
         if (openThemes.length > 0 && pipesSinceTheme >= 3 && (pipesSinceTheme >= THEME_FORCE_BY_LEVEL[tl] || Math.random() < THEME_P_BY_LEVEL[tl])) {
             let pool = openThemes.filter(k => k !== lastThemeKey);
             if (pool.length === 0) pool = openThemes;
-            const totalWeight = pool.reduce((acc, k) => acc + CATEGORIES[k].weight, 0);
-            let randW = Math.random() * totalWeight;
+            const localThemes = campaignTopics?.nativeThemesForDistrict(district) || [];
+            const weights = pool.map(k => CATEGORIES[k].weight * (localThemes.includes(k) ? 2 : 1));
+            let randW = Math.random() * weights.reduce((acc, weight) => acc + weight, 0);
             themeKey = pool[pool.length - 1];
-            for (const k of pool) {
-                if (randW < CATEGORIES[k].weight) { themeKey = k; break; }
-                randW -= CATEGORIES[k].weight;
+            for (let i = 0; i < pool.length; i++) {
+                randW -= weights[i];
+                if (randW < 0) { themeKey = pool[i]; break; }
             }
         }
 
@@ -1089,25 +1106,22 @@ function spawnPipe(startX) {
                 { t: 'shield', since: frame - lastShieldSpawnTime, gap: sec(pickLv([22, 24, 26, 28, 30, 32])), p: 0.15 }
             ];
             const afterSpecial = SPECIAL_TYPES.includes(lastSpawnedItemType);   // после эффекта следующий эффект не сразу
-            const hit = afterSpecial ? null : specials.find(s => s.since >= s.gap && Math.random() < s.p);
-            if (hit) {
-                itemType = hit.t;
-                if (hit.t === 'compress') lastCompressSpawnTime = frame;
-                else if (hit.t === 'speedup') lastSpeedSpawnTime = frame;
-                else if (hit.t === 'slowmo') lastSlowSpawnTime = frame;
-                else lastShieldSpawnTime = frame;
-            } else {
+            let hit = afterSpecial ? null : specials.find(s => s.since >= s.gap && Math.random() < s.p);
+            if (!hit) {
                 const r = Math.random();
-                if (r < 0.044) itemType = 'infinite';
-                else if (r < 0.126) itemType = 'stamina';
+                const featherChance = district === 'dawn' ? 0.073 : 0.044;
+                const staminaCutoff = district === 'jungle' ? 0.170 : featherChance + 0.082;
+                if (r < featherChance) itemType = 'infinite';
+                else if (r < staminaCutoff) itemType = 'stamina';
                 else if (r < 0.62) itemType = 'question';
                 else if (r < 0.71) itemType = 'secret';
                 else if (r < 0.87 && canSpawnFood) {
-                    // сердца и еда (лечат жизнь) — только пока жизней меньше максимума; при полном запасе на пути их нет совсем
+                    // сердца и еда появляются только при неполных сердцах.
                     const hRoll = Math.random();
-                    if (hRoll < 0.25) itemType = 'heart';
-                    else if (hRoll < 0.50) itemType = 'pizza';
-                    else if (hRoll < 0.75) itemType = 'burger';
+                    const [heart, pizza, burger] = district === 'jungle' ? [0.38, 0.62, 0.82] : [0.25, 0.50, 0.75];
+                    if (hRoll < heart) itemType = 'heart';
+                    else if (hRoll < pizza) itemType = 'pizza';
+                    else if (hRoll < burger) itemType = 'burger';
                     else itemType = 'hotdog';
                 }
                 else if (r < 0.87) itemType = 'question';
@@ -1117,6 +1131,18 @@ function spawnPipe(startX) {
                     else if (bRoll < 0.70) itemType = 'mocktail';
                     else itemType = 'icecream';
                 }
+                // Районный бонус иногда заменяет «?». Секретные звёзды и интервалы особых предметов сохраняются.
+                const localChance = JOURNEY_SPECIAL_CHANCE[district];
+                if (itemType === 'question' && !afterSpecial && localChance) {
+                    hit = specials.find(s => localChance[s.t] && s.since >= s.gap && Math.random() < localChance[s.t]);
+                }
+            }
+            if (hit) {
+                itemType = hit.t;
+                if (hit.t === 'compress') lastCompressSpawnTime = frame;
+                else if (hit.t === 'speedup') lastSpeedSpawnTime = frame;
+                else if (hit.t === 'slowmo') lastSlowSpawnTime = frame;
+                else lastShieldSpawnTime = frame;
             }
         }
     }
@@ -1160,6 +1186,14 @@ function spawnPipe(startX) {
             x: px + pipeWidth / 2, y: topHeight + baseGap / 2, baseY: topHeight + baseGap / 2,
             radius: tokenRadius, type: itemType, isMoving: false, collected: false, floatOffset: Math.random() * Math.PI * 2, coins: coinVal
         });
+    }
+    if (district && CATEGORIES[itemType]?.count) {
+        const ordinal = journeyThemePipes++;
+        if (ordinal % JOURNEY_STAMP_SPACING === 0) {
+            // Отдельные отметки стоят до и после основного жетона в проходе.
+            const topic = campaignTopics?.forDistrict(district, ordinal / JOURNEY_STAMP_SPACING);
+            spawnQuizStamps(pipe, topic, 83);
+        }
     }
     return true;
 }

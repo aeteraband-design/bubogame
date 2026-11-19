@@ -66,7 +66,7 @@
 
     function read() {
         try {
-            const raw = JSON.parse(localStorage.getItem(KEY));
+            const raw = JSON.parse(BuboSaveStorage.getItem(KEY));
             if (raw?.version === 1 && Number.isSafeInteger(raw.seed) && raw.seed >= 0 && Number.isInteger(raw.stage)
                 && raw.stage >= 0 && raw.stage < PHASES.length && Array.isArray(raw.pending)) {
                 return {
@@ -91,7 +91,7 @@
     }
 
     function save(value) {
-        try { localStorage.setItem(KEY, JSON.stringify(value)); return true; }
+        try { BuboSaveStorage.setItem(KEY, JSON.stringify(value)); return true; }
         catch (e) { return false; }
     }
 
@@ -126,10 +126,13 @@
 
     function status() {
         const progress = read();
-        const nextPhase = PHASES[progress.replayStage ?? progress.stage];
+        const journey = Boolean(runtime?.journey || result?.journey);
+        const nextPhase = journey ? (result?.type === 'journey-win' ? 'complete' : result?.phase || 'boss')
+            : PHASES[progress.replayStage ?? progress.stage];
         const phase = runtime?.phase || nextPhase;
         const stage = STAGES[phase];
-        const bossWave = runtime?.checkpoint ?? (progress.replayStage === 3 ? progress.replayBossWave : progress.bossWave);
+        const bossWave = runtime?.checkpoint ?? (journey ? window.BuboJourney?.bossWave() ?? 0
+            : progress.replayStage === 3 ? progress.replayBossWave : progress.bossWave);
         const checkpointWave = phase === 'boss' ? BOSS_ROUTE[BOSS_WAVE_STARTS[bossWave]].wave : '';
         const wave = runtime?.wave || checkpointWave;
         return {
@@ -137,6 +140,7 @@
             stageIndex: PHASES.indexOf(phase),
             nextPhase,
             checkpointWave,
+            journey,
             canReplay: progress.stage === PHASES.length - 1 && progress.replayStage === null,
             mapReplay: runtime?.mapReplay ?? progress.replayStage !== null,
             title: stage.title,
@@ -255,6 +259,41 @@
         return true;
     }
 
+    function showJourneyResult(type, message) {
+        const checkpoint = window.BuboJourney?.bossWave();
+        const phase = checkpoint != null || type === 'journey-win' ? 'boss' : 'night';
+        result = {
+            type, phase, journey: true, title: STAGES[phase].title, reason: message,
+            waveTitle: checkpoint != null ? WAVES[BOSS_ROUTE[BOSS_WAVE_STARTS[checkpoint]].wave].title : ''
+        };
+        notify();
+    }
+
+    function startJourneyBoss(options) {
+        if (runtime || gameActive || typeof startOrResumeFlight !== 'function') return false;
+        const journey = window.BuboJourney;
+        const secondWind = options?.secondWind === true && journey?.isSecondWind();
+        if (options?.secondWind && !secondWind) return false;
+        if (!secondWind) checkDailyReset();
+        const checkpoint = journey?.bossWave();
+        if (![0, 1, 2].includes(checkpoint)) return false;
+        if (attempts <= 0 && !secondWind) {
+            showJourneyResult('journey-exhausted', 'На сегодня попыток не осталось.');
+            return false;
+        }
+        result = null;
+        runtime = createRuntime('boss', BOSS_ROUTE, checkpoint, { journey: true, secondWind });
+        try {
+            startOrResumeFlight({ campaign: true });
+        } catch (e) {
+            returnToHome();
+            showJourneyResult('journey-save-error', 'Не удалось открыть башню. Попробуй ещё раз.');
+            return false;
+        }
+        notify();
+        return true;
+    }
+
     function startMapReplay() {
         if (runtime || gameActive) return false;
         const progress = read();
@@ -296,6 +335,11 @@
             runtime.checkpoint = wave;
             return true;
         }
+        if (runtime.journey) {
+            if (!window.BuboJourney?.saveBossWave(wave)) return false;
+            runtime.checkpoint = wave;
+            return true;
+        }
         const progress = read();
         const field = runtime.mapReplay ? 'replayBossWave' : 'bossWave';
         const stage = runtime.mapReplay ? progress.replayStage : progress.stage;
@@ -311,7 +355,10 @@
         const { phase, replay, mapReplay } = runtime;
         if (runtime.passed.size < runtime.route.length) {
             if (phase === 'boss' && !checkpointBossWave()) {
-                completeFlight({ type: 'save-error', phase, title: STAGES[phase].title, reason: 'Не удалось сохранить волну. Попробуй ещё раз.' });
+                completeFlight({
+                    type: runtime.journey ? 'journey-save-error' : 'save-error',
+                    phase, title: STAGES[phase].title, reason: 'Не удалось сохранить волну. Попробуй ещё раз.'
+                });
                 return true;
             }
             notify();
@@ -319,6 +366,16 @@
         }
         if (runtime.test) {
             completeFlight({ type: 'test-complete', phase, title: STAGES[phase].title, test: true });
+            return true;
+        }
+        if (runtime.journey) {
+            const outcome = window.BuboJourney?.finishBoss();
+            completeFlight(outcome ? {
+                type: 'journey-win', phase, title: STAGES[phase].title, ...outcome
+            } : {
+                type: 'journey-save-error', phase, title: STAGES[phase].title,
+                reason: 'Не удалось сохранить победу. Финальная волна доступна снова.'
+            });
             return true;
         }
         const index = PHASES.indexOf(phase);
@@ -380,8 +437,10 @@
         }
         const training = phase === 'training';
         if (!training && !runtime.secondWind) attempts = Math.max(0, attempts - 1);
+        const loss = runtime.journey ? (attempts === 0 ? 'journey-exhausted' : 'journey-failure')
+            : training ? 'training-failure' : 'failure';
         completeFlight({
-            type: training ? 'training-failure' : 'failure',
+            type: loss,
             phase,
             title: STAGES[phase].title,
             reason,
@@ -393,6 +452,7 @@
 
     function completeFlight(value) {
         const secondWind = runtime?.secondWind || '';
+        if (runtime?.journey) value.journey = true;
         gameActive = false;
         waitingFirstTap = false;
         returnToHome();
@@ -401,7 +461,7 @@
             notify();
             return;
         }
-        if (!rewardPending()) value.rewardPending = true;
+        if (!value.journey && !rewardPending()) value.rewardPending = true;
         window.BuboPlaytest?.record('campaign:result', {
             phase: value.phase, result: value.type, replay: Boolean(value.replay || value.mapReplay),
             rewardPending: Boolean(value.rewardPending), xp: value.reward?.xp || 0, coins: value.reward?.coins || 0,
@@ -426,7 +486,7 @@
     }
 
     function reset() {
-        try { localStorage.removeItem(KEY); } catch (e) { return false; }
+        try { BuboSaveStorage.removeItem(KEY); } catch (e) { return false; }
         if (runtime) returnToHome();
         window.BuboSecondWind?.reset();
         window.BuboCampaignTopics?.reset();
@@ -440,7 +500,8 @@
         startSecondWind: () => begin(false, true),
         secondWindOffer,
         trainingReplay: () => begin(true),
-        startMapReplay, setStageForTest,
+        startMapReplay, setStageForTest, startJourneyBoss, showJourneyResult,
+        onboardingSince: () => read().onboardingSince,
         isActive: () => !!runtime,
         isTestRun: () => Boolean(runtime?.test),
         sceneProgress,

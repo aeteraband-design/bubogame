@@ -4,8 +4,52 @@
 // ===== Общие настройки =====
 // Качество графики: low / medium / high (сохраняется в браузере)
 const GFX_KEY = 'bubo_gfx_quality';
-let gfxQuality = 'medium';
-try { const q = localStorage.getItem(GFX_KEY); if (q === 'low' || q === 'medium' || q === 'high') gfxQuality = q; } catch (e) {}
+const GFX_LEVELS = ['low', 'medium', 'high'];
+const GFX_OPTIONS = ['auto', ...GFX_LEVELS];
+
+function recommendGfxQuality() {
+    const memory = Number(window.navigator?.deviceMemory) || 0;
+    const cores = Number(window.navigator?.hardwareConcurrency) || 0;
+    const { innerWidth, innerHeight } = window;
+    const handheld = (innerWidth > 0 && innerWidth <= 520) || window.matchMedia?.('(pointer: coarse)')?.matches;
+    if ((memory > 0 && memory <= 2) || (cores > 0 && cores <= 2)) return 'low';
+    if (handheld && memory > 0 && memory <= 4 && cores > 0 && cores <= 4) return 'low';
+    const pixels = innerWidth * innerHeight * Math.min(window.devicePixelRatio || 1, 3) ** 2;
+    if (memory >= 8 && cores >= 8 && pixels > 0 && pixels <= 3600000) return 'high';
+    return 'medium';
+}
+
+let gfxPreference = 'auto';
+try {
+    const saved = BuboSaveStorage.getItem(GFX_KEY);
+    if (GFX_OPTIONS.includes(saved)) gfxPreference = saved;
+} catch (e) {}
+
+let gfxQuality;
+function setEffectiveGfxQuality(quality) {
+    gfxQuality = quality;
+    const root = document.documentElement;
+    root.dataset.gfxQuality = quality;
+    root.dataset.gfxMode = gfxPreference === 'auto' ? 'auto' : 'manual';
+    root.classList.toggle('gfx-low', quality === 'low');
+}
+setEffectiveGfxQuality(gfxPreference === 'auto' ? recommendGfxQuality() : gfxPreference);
+
+function selectGfxPreference(choice) {
+    if (!GFX_OPTIONS.includes(choice) || choice === gfxPreference) return false;
+    gfxPreference = choice;
+    try { BuboSaveStorage.setItem(GFX_KEY, choice); } catch (e) {}
+    setEffectiveGfxQuality(choice === 'auto' ? recommendGfxQuality() : choice);
+    return true;
+}
+
+function lowerAutomaticGfxQuality() {
+    const index = GFX_LEVELS.indexOf(gfxQuality);
+    if (gfxPreference !== 'auto' || index <= 0) return false;
+    setEffectiveGfxQuality(GFX_LEVELS[index - 1]);
+    return true;
+}
+
 let renderScale = 1;
 let __tokHoldK = 1, __gfxSoft = false;   // >1 после автоматического понижения качества: заготовки остаются прежней чёткости
 function computeRenderScale() {
@@ -20,9 +64,9 @@ const ADMIN_KEY = 'bubo_admin_cfg_v1';
 (function () {
     try {
         const W = 'bubo_wipe', V = '2026-10-17b';
-        if (localStorage.getItem(W) !== V) {
-            ['bubo_owl_flight_progress_v3', ADMIN_KEY, 'bubo_coins', 'bubo_shop_pending', 'bubo_quiz_day10', 'bubo_quiz_seen', 'bubo_quiz_prog', 'bubo_quiz_day', 'bubo_last_prize'].forEach((k) => localStorage.removeItem(k));
-            localStorage.setItem(W, V);
+        if (BuboSaveStorage.getItem(W) !== V) {
+            ['bubo_owl_flight_progress_v3', ADMIN_KEY, 'bubo_coins', 'bubo_shop_pending', 'bubo_quiz_day10', 'bubo_quiz_seen', 'bubo_quiz_prog', 'bubo_quiz_day', 'bubo_last_prize'].forEach((k) => BuboSaveStorage.removeItem(k));
+            BuboSaveStorage.setItem(W, V);
         }
     } catch (e) {}
 })();
@@ -58,7 +102,7 @@ function normalizeAdminCfg(raw) {
     out.themesV = 2;
     return out;
 }
-let ADMIN_CFG = (function () { try { return normalizeAdminCfg(JSON.parse(localStorage.getItem(ADMIN_KEY))); } catch (e) { return normalizeAdminCfg(null); } })();
+let ADMIN_CFG = (function () { try { return normalizeAdminCfg(JSON.parse(BuboSaveStorage.getItem(ADMIN_KEY))); } catch (e) { return normalizeAdminCfg(null); } })();
 function ruPlural(n, f) { const a = Math.abs(n) % 100, b = a % 10; return (a > 10 && a < 20) ? f[2] : (b > 1 && b < 5) ? f[1] : (b === 1) ? f[0] : f[2]; }
 let MAX_ATTEMPTS = ADMIN_CFG.attempts; // сколько попыток в новой игре
 
@@ -508,7 +552,7 @@ const THEME_KEYS_ALL = Object.keys(CATEGORIES).filter(k => CATEGORIES[k].count);
 function renderRulesGoal() {
     // один и тот же текст цели — в правилах и в «Цели полёта» в меню (числа берутся из настроек тем)
     const parts = THEME_KEYS_ALL.map(k => `<span style="color:${CATEGORIES[k].color}" class="font-black">${CATEGORIES[k].name} ${CATEGORIES[k].count}</span>`).join(', ');
-    const html = `Лети между труб и собирай значки тем. Нужно собрать все <span class="text-white font-black">${TOTAL_THEMES} тем</span>: ${parts} — тогда ты сможешь крутить рулетку призов!`;
+    const html = `Лети между трубами и собирай значки. Собери все <span class="text-white font-black">${TOTAL_THEMES}</span>, чтобы открыть башню Смотрителя. За победу получишь вращение рулетки. <span>${parts}.</span>`;
     ['rulesGoalText', 'menuGoalText'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = html; });
 }
 renderRulesGoal();
@@ -524,7 +568,7 @@ const StorageManager = {
 
     loadLocal() {
         try {
-            const raw = localStorage.getItem(this.LOCAL_KEY);
+            const raw = BuboSaveStorage.getItem(this.LOCAL_KEY);
             if (raw) {
                 const data = JSON.parse(raw);
                 if (typeof data.attempts === 'number') attempts = Math.max(0, Math.min(99, data.attempts));
@@ -553,6 +597,7 @@ const StorageManager = {
                     collected.cartoons = data.collected.cartoons || 0;
                     collected.fun = data.collected.fun || 0;
                 }
+                window.BuboJourney?.restore(data.journey);
                 if (data.settings) {
                     if (typeof data.settings.musicVolume === 'number') AudioFX.setMusicVolume(data.settings.musicVolume);
                     if (typeof data.settings.sfxVolume === 'number') AudioFX.setSfxVolume(data.settings.sfxVolume);
@@ -569,6 +614,7 @@ const StorageManager = {
             const payload = {
                 attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins, roulettePending, campaignSpinReceipts, heartOverflow, zeroDay, playDay,
                 collected: { ...collected },
+                journey: window.BuboJourney?.snapshot() ?? null,
                 settings: {
                     musicVolume: AudioFX.musicVolume,
                     sfxVolume: AudioFX.sfxVolume,
@@ -580,7 +626,7 @@ const StorageManager = {
             };
             const classic = window.BuboCampaign?.classicResources?.();
             if (classic) Object.assign(payload, classic);
-            localStorage.setItem(this.LOCAL_KEY, JSON.stringify(payload));
+            BuboSaveStorage.setItem(this.LOCAL_KEY, JSON.stringify(payload));
             return true;
         } catch (e) { return false; }
     },
@@ -627,6 +673,7 @@ const StorageManager = {
                             collected.cartoons = data.collected.cartoons || 0;
                             collected.fun = data.collected.fun || 0;
                         }
+                        window.BuboJourney?.restore(data.journey);
                         if (data.settings) {
                             if (typeof data.settings.musicVolume === 'number') AudioFX.setMusicVolume(data.settings.musicVolume);
                             if (typeof data.settings.sfxVolume === 'number') AudioFX.setSfxVolume(data.settings.sfxVolume);
@@ -671,6 +718,7 @@ const StorageManager = {
             await setDoc(progressRef, {
                 attempts, score, lives, stamina, hasStartedCampaign, hasWonGame, maxStamina, magicFeathersCaught, featherMaxBonus, startLives, maxLives, rouletteSpins, heartOverflow, zeroDay, playDay,
                 collected: { ...collected },
+                journey: window.BuboJourney?.snapshot() ?? null,
                 settings: {
                     musicVolume: AudioFX.musicVolume,
                     sfxVolume: AudioFX.sfxVolume,

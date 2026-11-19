@@ -111,18 +111,18 @@ function quizOnTheme() {} function quizResetProgress() {} function quizAbort() {
 // ---------- какие вопросы игрок уже видел ----------
 function quizSeen() {
     try {
-        const seen = JSON.parse(localStorage.getItem(QUIZ_SEEN_KEY));
+        const seen = JSON.parse(BuboSaveStorage.getItem(QUIZ_SEEN_KEY));
         return Array.isArray(seen) ? seen : [];
     } catch (e) { return []; }
 }
 function quizMarkSeen(id) {
     try {
         const seen = quizSeen();
-        if (!seen.includes(id)) { seen.push(id); localStorage.setItem(QUIZ_SEEN_KEY, JSON.stringify(seen)); }
+        if (!seen.includes(id)) { seen.push(id); BuboSaveStorage.setItem(QUIZ_SEEN_KEY, JSON.stringify(seen)); }
         return true;
     } catch (e) { return false; }
 }
-function quizResetSeen() { try { localStorage.removeItem(QUIZ_SEEN_KEY); } catch (e) {} }
+function quizResetSeen() { try { BuboSaveStorage.removeItem(QUIZ_SEEN_KEY); } catch (e) {} }
 // ---------- темы и уровни (QZ_THEMES, QZ_LEVELS — в quiz-bank.js) ----------
 function qzTheme(id) { return (typeof QZ_THEMES !== 'undefined' && QZ_THEMES.find(t => t.id === id)) || { id: 'misc', name: 'Обо всём', icon: 'fa-brain', col: '#4ADE80' }; }
 function qzLevel(id) { return (typeof QZ_LEVELS !== 'undefined' && QZ_LEVELS.find(l => l.id === id)) || { id: 'm', name: 'Средне', coins: 100, col: '#FACC15' }; }
@@ -140,13 +140,13 @@ function quizNextId(day) {
 
 // ---------- день: 10 вопросов ----------
 // v0.13.55: уровни сдвинулись (лайт → суперлайт, средне → лайт, хард → средне) — переносим сохранённый выбор игрока
-(function () { try { if (localStorage.getItem('bubo_quiz_lv5')) return; const M = { s: 's', l: 's', m: 'l', h: 'm' };
-    const v = localStorage.getItem('bubo_quiz_lvl'); if (v && M[v]) localStorage.setItem('bubo_quiz_lvl', M[v]);
-    const d = JSON.parse(localStorage.getItem(QUIZ_DAY_KEY) || 'null'); if (d && d.lvl && M[d.lvl]) { d.lvl = M[d.lvl]; localStorage.setItem(QUIZ_DAY_KEY, JSON.stringify(d)); }
-    localStorage.setItem('bubo_quiz_lv5', '1'); } catch (e) {} })();
+(function () { try { if (BuboSaveStorage.getItem('bubo_quiz_lv5')) return; const M = { s: 's', l: 's', m: 'l', h: 'm' };
+    const v = BuboSaveStorage.getItem('bubo_quiz_lvl'); if (v && M[v]) BuboSaveStorage.setItem('bubo_quiz_lvl', M[v]);
+    const d = JSON.parse(BuboSaveStorage.getItem(QUIZ_DAY_KEY) || 'null'); if (d && d.lvl && M[d.lvl]) { d.lvl = M[d.lvl]; BuboSaveStorage.setItem(QUIZ_DAY_KEY, JSON.stringify(d)); }
+    BuboSaveStorage.setItem('bubo_quiz_lv5', '1'); } catch (e) {} })();
 function qzToday() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 function qzStoredDay() {
-    try { return JSON.parse(localStorage.getItem(QUIZ_DAY_KEY)); } catch (e) { return null; }
+    try { return JSON.parse(BuboSaveStorage.getItem(QUIZ_DAY_KEY)); } catch (e) { return null; }
 }
 function quizDay(day = qzToday()) {
     let d = qzStoredDay();
@@ -156,11 +156,11 @@ function quizDay(day = qzToday()) {
     return d;
 }
 function quizSaveDay(d) {
-    try { localStorage.setItem(QUIZ_DAY_KEY, JSON.stringify(d)); return true; } catch (e) { return false; }
+    try { BuboSaveStorage.setItem(QUIZ_DAY_KEY, JSON.stringify(d)); return true; } catch (e) { return false; }
 }
 function qzReadAttempt() {
     try {
-        const a = JSON.parse(localStorage.getItem(QUIZ_ATTEMPT_KEY));
+        const a = JSON.parse(BuboSaveStorage.getItem(QUIZ_ATTEMPT_KEY));
         if (!a) return null;
         if (a.id && a.day && ['daily', 'bonus'].includes(a.mode) && Number.isFinite(a.startedAt)
             && typeof a.ord === 'string' && a.ord.length === 4 && QUIZ_QUESTIONS.some(q => q.id === a.question)) return a;
@@ -171,13 +171,13 @@ function qzReadAttempt() {
 }
 function qzSaveAttempt(a) {
     try {
-        if (a) localStorage.setItem(QUIZ_ATTEMPT_KEY, JSON.stringify(a));
-        else localStorage.removeItem(QUIZ_ATTEMPT_KEY);
+        if (a) BuboSaveStorage.setItem(QUIZ_ATTEMPT_KEY, JSON.stringify(a));
+        else BuboSaveStorage.removeItem(QUIZ_ATTEMPT_KEY);
         return true;
     } catch (e) { return false; }
 }
 function quizResetDay() {
-    try { localStorage.removeItem(QUIZ_DAY_KEY); } catch (e) {}
+    try { BuboSaveStorage.removeItem(QUIZ_DAY_KEY); } catch (e) {}
     if (qzReadAttempt()?.mode === 'daily') qzSaveAttempt(null);
     quizMenuBadge();
 }
@@ -512,7 +512,7 @@ function qzHead() {
 const QZ_SUB_KEY = 'bubo_quiz_sub', QZ_PAID_LV = ['m', 'x'];
 function qzSubAll() {
     try {
-        const s = JSON.parse(localStorage.getItem(QZ_SUB_KEY) || 'null') || {};
+        const s = JSON.parse(BuboSaveStorage.getItem(QZ_SUB_KEY) || 'null') || {};
         if (s.until && !s.m && !s.x) return { m: +s.until, x: +s.until };   // старая общая подписка — на оба уровня
         return { m: +s.m || 0, x: +s.x || 0 };
     } catch (e) { return { m: 0, x: 0 }; }
@@ -620,7 +620,7 @@ function qzRenderPick(msg, ok) {
     const bonus = QS.mode === 'bonus';
     const lvOn = qzLevelsOn().filter(l => !bonus || QZ_BONUS_LEVELS.includes(l.id));
     let sT = '', sL = '';
-    try { sT = localStorage.getItem('bubo_quiz_theme') || ''; sL = localStorage.getItem('bubo_quiz_lvl') || ''; } catch (e) {}
+    try { sT = BuboSaveStorage.getItem('bubo_quiz_theme') || ''; sL = BuboSaveStorage.getItem('bubo_quiz_lvl') || ''; } catch (e) {}
     if (QS.selT === undefined) QS.selT = d.theme || sT || 'all';
     if (QS.selL === undefined) {
         const last = (!bonus && qzAdminPreview) || d.lvl || sL;
@@ -674,7 +674,7 @@ function qzThemeCards(lv) {
         const empty = done === total;
         const on = QS.selT === t.id && !locked && !empty;
         const count = locked ? topics.progress(t.id) : done;
-        const chapterName = chapter?.phase === 'night' ? 'Ночной город' : 'Дневной город';
+        const chapterName = window.BuboJourney?.regionName(chapter?.district) || (chapter?.phase === 'night' ? 'Ночной город' : 'Дневной город');
         const note = locked ? chapterName + ' · ' + count + '/2'
             : empty ? (total ? 'Всё пройдено!' : 'Пока нет вопросов') : 'Пройдено ' + done + '/' + total;
         const progress = locked ? count * 50 : (total ? Math.round(done / total * 100) : 0);
@@ -700,7 +700,7 @@ function qzPickGo() {
     if (qzLvLocked(QS.selL)) { qzPayOpen(QS.selL); return; }
     const d = quizDay();
     d.theme = QS.selT; d.lvl = QS.selL; quizSaveDay(d);
-    try { localStorage.setItem('bubo_quiz_lvl', QS.selL); localStorage.setItem('bubo_quiz_theme', QS.selT); } catch (e) {}
+    try { BuboSaveStorage.setItem('bubo_quiz_lvl', QS.selL); BuboSaveStorage.setItem('bubo_quiz_theme', QS.selT); } catch (e) {}
     QS.phase = 'ready'; qzStartQuestion();
 }
 function qzRenderDone() {

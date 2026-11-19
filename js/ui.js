@@ -37,7 +37,6 @@ document.addEventListener('visibilitychange', () => {
 
 // ===== Качество графики =====
 const _shadowBlurDesc = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'shadowBlur');
-const GFX_LEVELS = ['low', 'medium', 'high'];
 const GFX_TEXT = {
     low: { name: 'Низкая', hint: 'Для слабых телефонов и компьютеров: без теней и размытия' },
     medium: { name: 'Средняя', hint: 'Баланс чёткости и скорости' },
@@ -50,25 +49,32 @@ function applyGfxQuality(soft) {
     } else {
         delete ctx.shadowBlur;
     }
-    document.documentElement.classList.toggle('gfx-low', gfxQuality === 'low');
     const rs0 = renderScale;
     resize(soft);
     // мягкое понижение (автоматически, во время полёта): готовые заготовки значков и труб остаются прежней чёткости — не пересоздаются
     __tokHoldK = soft ? Math.max(1, __tokHoldK * rs0 / (renderScale || 1)) : 1;
+    const quality = GFX_TEXT[gfxQuality];
+    const auto = gfxPreference === 'auto';
     const slider = document.getElementById('gfxSlider');
-    if (slider) slider.value = String(GFX_LEVELS.indexOf(gfxQuality));
+    if (slider) {
+        slider.value = String(GFX_OPTIONS.indexOf(gfxPreference));
+        slider.setAttribute('aria-valuetext', auto ? 'Авто, ' + quality.name.toLowerCase() : quality.name);
+    }
     const lbl = document.getElementById('gfxLabel');
-    if (lbl) lbl.innerText = GFX_TEXT[gfxQuality].name;
+    if (lbl) lbl.innerText = auto ? 'Авто' : quality.name;
     const hint = document.getElementById('gfxHint');
-    if (hint) hint.innerText = GFX_TEXT[gfxQuality].hint;
-    document.querySelectorAll('.gfx-tick').forEach(t => t.classList.toggle('on', t.dataset.q === gfxQuality));
+    if (hint) {
+        const lowerHint = gfxQuality === 'low' ? '' : ' При просадках игра снизит качество.';
+        hint.innerText = auto ? 'Сейчас: ' + quality.name.toLowerCase() + ' графика.' + lowerHint : quality.hint;
+    }
+    document.querySelectorAll('.gfx-tick').forEach(t => t.classList.toggle('on', t.dataset.q === gfxPreference));
 }
 {
     const slider = document.getElementById('gfxSlider');
     if (slider) {
         slider.addEventListener('input', () => {
-            gfxQuality = GFX_LEVELS[parseInt(slider.value, 10)] || 'medium';
-            try { localStorage.setItem(GFX_KEY, gfxQuality); } catch (e) {}
+            if (!selectGfxPreference(GFX_OPTIONS[Number(slider.value)])) return;
+            resetGfxPerformance();
             applyGfxQuality();
         });
     }
@@ -233,9 +239,9 @@ if (sfxVolumeSlider) {
 
 // верхняя панель в игре: по умолчанию жизни, перья и вопросы — слева, пауза и музыка — справа; тумблер в настройках меняет местами
 const HUD_SWAP_KEY = 'bubo_hud_swap';
-function hudSwapGet() { try { const v = localStorage.getItem(HUD_SWAP_KEY); return v === null ? true : v === '1'; } catch (e) { return true; } }
+function hudSwapGet() { try { const v = BuboSaveStorage.getItem(HUD_SWAP_KEY); return v === null ? true : v === '1'; } catch (e) { return true; } }
 const TIMER_SIDE_KEY = 'bubo_timer_side';   // таймеры эффектов: '1' — слева, '0' — справа; пока не выбрано — там же, где жизни
-function timerSideGet() { try { const v = localStorage.getItem(TIMER_SIDE_KEY); return v === null ? hudSwapGet() : v === '1'; } catch (e) { return true; } }
+function timerSideGet() { try { const v = BuboSaveStorage.getItem(TIMER_SIDE_KEY); return v === null ? hudSwapGet() : v === '1'; } catch (e) { return true; } }
 function applyHudSwap() { const on = hudSwapGet(), t = document.getElementById('topHud'); if (t) t.classList.toggle('hud-swap', on); document.documentElement.classList.toggle('hud-ll', timerSideGet()); try { if (typeof alignBuffBar === 'function') setTimeout(alignBuffBar, 30); } catch (e) {} }   // hud-ll: жизни и таймеры слева, уведомления о бонусах — справа
 applyHudSwap();
 {
@@ -248,7 +254,7 @@ applyHudSwap();
         if (sl) { sl.classList.toggle('text-white', left); sl.classList.toggle('text-purple-300', !left); sl.style.opacity = left ? '1' : '.55'; }
         if (sr) { sr.classList.toggle('text-white', !left); sr.classList.toggle('text-purple-300', left); sr.style.opacity = left ? '.55' : '1'; }
     };
-    const setSide = (left) => { try { localStorage.setItem(HUD_SWAP_KEY, left ? '1' : '0'); } catch (er) {} paint(); applyHudSwap(); try { if (window.__paintTimerSide) window.__paintTimerSide(); } catch (er) {} try { _hudFitKey = ''; fitTopHud(); } catch (er) {} };
+    const setSide = (left) => { try { BuboSaveStorage.setItem(HUD_SWAP_KEY, left ? '1' : '0'); } catch (er) {} paint(); applyHudSwap(); try { if (window.__paintTimerSide) window.__paintTimerSide(); } catch (er) {} try { _hudFitKey = ''; fitTopHud(); } catch (er) {} };
     if (hb) { paint(); hb.addEventListener('click', (e) => { e.stopPropagation(); setSide(!hudSwapGet()); }); }
     if (sl) sl.addEventListener('click', (e) => { e.stopPropagation(); setSide(true); });
     if (sr) sr.addEventListener('click', (e) => { e.stopPropagation(); setSide(false); });
@@ -265,7 +271,7 @@ applyHudSwap();
         if (sr) { sr.classList.toggle('text-white', !left); sr.classList.toggle('text-purple-300', left); sr.style.opacity = left ? '.55' : '1'; }
     };
     window.__paintTimerSide = paint;
-    const setSide = (left) => { try { localStorage.setItem(TIMER_SIDE_KEY, left ? '1' : '0'); } catch (er) {} paint(); applyHudSwap(); try { lastBuffStateKey = ''; } catch (er) {} };
+    const setSide = (left) => { try { BuboSaveStorage.setItem(TIMER_SIDE_KEY, left ? '1' : '0'); } catch (er) {} paint(); applyHudSwap(); try { lastBuffStateKey = ''; } catch (er) {} };
     if (hb) { paint(); hb.addEventListener('click', (e) => { e.stopPropagation(); setSide(!timerSideGet()); }); }
     if (sl) sl.addEventListener('click', (e) => { e.stopPropagation(); setSide(true); });
     if (sr) sr.addEventListener('click', (e) => { e.stopPropagation(); setSide(false); });
@@ -285,7 +291,7 @@ if (settingsVibeToggle) {
 const startBtn = document.getElementById('startBtn');
 if (startBtn) startBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    startOrResumeFlight();
+    window.BuboJourney.start();
 });
 
 const resetProgressBtn = document.getElementById('resetProgressBtn');
@@ -328,7 +334,7 @@ function openResetConfirm() {
 const continueAttemptBtn = document.getElementById('continueAttemptBtn');
 if (continueAttemptBtn) continueAttemptBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    startOrResumeFlight();
+    window.BuboJourney.start();
 });
 
 const restartFromGameOverBtn = document.getElementById('restartFromGameOverBtn');
@@ -562,35 +568,6 @@ fitThemeLabels();
         q.delete('test');
         history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
     } catch (e) {}
-})();
-
-// крестик на «Цели полёта»: скрыть навсегда
-(function () {
-    const x = document.getElementById('menuGoalX'); if (!x) return;
-    x.addEventListener('click', (e) => {
-        e.stopPropagation(); try { localStorage.setItem('bubo_goal_hidden', '1'); } catch (er) {}
-        const c = document.getElementById('menuGoalCard'); if (!c) return;
-        // карточка тает, логотип плавно съезжает на новое место (вместе с ним — проём труб), без рывка
-        c.style.transition = 'opacity .22s ease'; c.style.opacity = '0';
-        setTimeout(() => {
-            const lg = document.querySelector('#startScreen > .menu-logo-wrap > div'), wrap = lg && lg.parentElement;
-            const r0 = lg ? lg.getBoundingClientRect() : null;
-            c.classList.add('hidden'); c.style.opacity = ''; c.style.transition = '';
-            try {
-                if (lg && r0) {
-                    const r1 = lg.getBoundingClientRect(), wr = wrap.getBoundingClientRect(), zf = wrap.offsetWidth ? wr.width / wrap.offsetWidth : 1;
-                    const dy = ((r0.top + r0.height / 2) - (r1.top + r1.height / 2)) / zf;
-                    if (Math.abs(dy) > 1) {
-                        const tr0 = lg.style.transition;
-                        lg.style.transition = 'none'; lg.style.translate = '0 ' + dy.toFixed(1) + 'px'; void lg.offsetWidth;
-                        lg.style.transition = 'translate .9s cubic-bezier(.45,.05,.25,1)'; lg.style.translate = '0 0'; window.__logoGlideUntil = performance.now() + 1000;
-                        setTimeout(() => { lg.style.transition = tr0; lg.style.translate = ''; }, 950);
-                    }
-                }
-            } catch (er) {}
-            try { window.dispatchEvent(new Event('resize')); } catch (er) {}
-        }, 220);
-    });
 })();
 
 // правила: своя тихая «библиотечная» музыка, настройки — «мастерская»; включаются при открытии из меню и плавно возвращаются к музыке меню при закрытии

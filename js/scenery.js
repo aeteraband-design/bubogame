@@ -54,7 +54,8 @@ function buildCityLayer(tileW, H, opt, S, seed) {
         const grd = g.createLinearGradient(0, by, 0, H);
         // каждый дом чуть своего оттенка, чтобы соседние не сливались
         const k = 0.93 + (b.seed % 1000) / 1000 * 0.14;
-        grd.addColorStop(0, cityShade(opt.top, k)); grd.addColorStop(1, cityShade(opt.bottom, k));
+        grd.addColorStop(0, cityShade(opt.top, k * (opt.detailed ? 1.12 : 1)));
+        grd.addColorStop(1, cityShade(opt.bottom, k));
         g.fillStyle = grd;
         g.fillRect(bx, by, b.w, b.h);
         // ===== крыша: надстройки и шпили в том же стиле, что и дом (тот же цвет, тонкие грани) =====
@@ -114,7 +115,8 @@ function buildCityLayer(tileW, H, opt, S, seed) {
         g.fillStyle = 'rgba(6, 1, 18, 0.20)'; g.fillRect(bx, by, 2, H - by);   // слева тень всего в пару пикселей
         g.fillStyle = 'rgba(200, 175, 255, 0.07)'; g.fillRect(bx + b.w - edge, by, edge, H - by);
         // карниз: светлая полоска сверху и тень под ней
-        g.fillStyle = 'rgba(200, 175, 255, 0.07)'; g.fillRect(bx, by, b.w, 2);
+        g.fillStyle = opt.detailed ? 'rgba(217, 184, 255, .07)' : 'rgba(200, 175, 255, .07)';
+        g.fillRect(bx, by, b.w, 2);
         g.fillStyle = 'rgba(6, 1, 18, 0.16)'; g.fillRect(bx, by + 2, b.w, 2.5);
         // цоколь внизу
         const pg = g.createLinearGradient(0, H - 14, 0, H);
@@ -132,9 +134,10 @@ function buildCityLayer(tileW, H, opt, S, seed) {
                 const v = wr();
                 if (v < opt.lit) {
                     // «живое» окно: свет загорается и гаснет; бывает яркий и тусклый
+                    const warm = opt.detailed && (b.seed + ci + Math.round(wy)) % 6 === 0;
                     if (collect) windows.push({
                         x: wx, y: wy, w: opt.winW, h: opt.winH,
-                        rgb: `rgb(255,${175 + Math.floor(wr() * 45)},${95 + Math.floor(wr() * 50)})`,
+                        rgb: `rgb(255,${(warm ? 172 : 175) + Math.floor(wr() * 45)},${(warm ? 83 : 95) + Math.floor(wr() * 50)})`,
                         maxA: opt.litA * (wr() < 0.35 ? 0.4 + 0.15 * wr() : 0.75 + 0.25 * wr()),
                         on: wr() < 0.68, a: 0
                     });
@@ -153,7 +156,7 @@ function buildCityLayer(tileW, H, opt, S, seed) {
     // окна домов, переехавших через край, переносим в начало ленты
     const wrapped = windows.filter(w => w.x + w.w > tileW).map(w => ({ ...w, x: w.x - tileW, twin: w }));
     for (const w of windows) w.a = w.on ? w.maxA : 0;
-    return { canvas: c, windows, wrapped, beacons, bodies };
+    return { canvas: c, windows, wrapped, beacons, bodies, detailed: opt.detailed };
 }
 
 // ===== Фейерверки над городом: изредка, пара залпов разного цвета =====
@@ -362,10 +365,11 @@ function winGlowSprite(rgb) {
 }
 function drawCity() {
     const S = Math.max(1, viewScale * renderScale);
+    const detailed = gfxQuality !== 'low';
     const key = `${Math.round(height)}|${S.toFixed(2)}|${gfxQuality}`;
     // автоматическое понижение качества: высота та же, а чёткость ниже — уже готовый город просто рисуется как есть (без пересборки и рывка)
-    if (citySprites && citySpritesKey !== key && __gfxSoft && citySpritesKey.split('|')[0] === String(Math.round(height)) && S <= parseFloat(citySpritesKey.split('|')[1])) {
-        if (gfxQuality === 'low' && citySprites.length > 1) citySprites = [citySprites[citySprites.length - 1]];
+    if (citySprites && citySpritesKey !== key && __gfxSoft && citySprites[0].detailed === detailed
+        && citySpritesKey.split('|')[0] === String(Math.round(height)) && S <= parseFloat(citySpritesKey.split('|')[1])) {
         citySpritesKey = key;
     }
     if (!citySprites || citySpritesKey !== key) {
@@ -374,9 +378,9 @@ function drawCity() {
         // дома крупнее и реже; цвета к низу теплеют — в тон свечения города у горизонта
         citySprites = [
             { speed: 0.10, tileW, H: height * 0.68,
-              ...buildCityLayer(tileW, height * 0.68, { far: true, minW: 62, maxW: 124, minH: 0.68, maxH: 1.0, top: '#140627', bottom: '#12051e', gapMin: 6, gapVar: 16, stepX: 10, stepY: 12, winW: 3, winH: 4, lit: 0.15, litA: 0.42 }, S, 7) },
+              ...buildCityLayer(tileW, height * 0.68, { detailed, far: true, minW: 62, maxW: 124, minH: 0.68, maxH: 1.0, top: '#140627', bottom: '#12051e', gapMin: 6, gapVar: 16, stepX: 10, stepY: 12, winW: 3, winH: 4, lit: 0.15, litA: 0.42 }, S, 7) },
             { speed: 0.22, tileW, H: height * 0.44,
-              ...buildCityLayer(tileW, height * 0.44, { minW: 82, maxW: 156, minH: 0.32, maxH: 1.0, top: '#190833', bottom: '#150627', gapMin: 8, gapVar: 22, stepX: 12, stepY: 15, winW: 4, winH: 5, lit: 0.18, litA: 0.72 }, S, 42) }
+              ...buildCityLayer(tileW, height * 0.44, { detailed, minW: 82, maxW: 156, minH: 0.32, maxH: 1.0, top: '#190833', bottom: '#150627', gapMin: 8, gapVar: 22, stepX: 12, stepY: 15, winW: 4, winH: 5, lit: 0.18, litA: 0.72 }, S, 42) }
         ];
         if (gfxQuality === 'low') citySprites = [citySprites[1]];
     }

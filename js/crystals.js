@@ -114,7 +114,7 @@ function crystalBurst(x, y, n) {
 // вызывается каждый кадр после движения труб: speed — скорость, с которой уезжают трубы, squeeze — текущее сужение проёма
 // ===== жар труб: красный туман из устьев и лёгкое свечение раскалённых труб =====
 const crystalMist = [];
-let __cMistSpr = null, __cHeatSpr = null;
+let __cMistSpr = null, __cHeatSpr = null, __cPipeHeatSpr = null;
 function crystalMistSprite() {
     if (__cMistSpr) return __cMistSpr;
     const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
@@ -131,6 +131,22 @@ function crystalHeatSprite() {   // мягкое красное пятно у у
     g.fillStyle = gr; g.fillRect(0, 0, 96, 96);
     return (__cHeatSpr = c);
 }
+function crystalPipeHeatSprite() {
+    if (__cPipeHeatSpr) return __cPipeHeatSpr;
+    const c = document.createElement('canvas'); c.width = 2; c.height = 128;
+    const g = c.getContext('2d');
+    const fade = g.createLinearGradient(0, 0, 0, 64);
+    fade.addColorStop(0, '#ff3c28');
+    fade.addColorStop(1, '#ff282800');
+    g.fillStyle = fade;
+    g.fillRect(0, 0, 2, 64);
+    const reverse = g.createLinearGradient(0, 128, 0, 64);
+    reverse.addColorStop(0, '#ff3c28');
+    reverse.addColorStop(1, '#ff282800');
+    g.fillStyle = reverse;
+    g.fillRect(0, 64, 2, 64);
+    return (__cPipeHeatSpr = c);
+}
 function crystalSqueeze() { try { return currentDifficultySqueeze + (currentCompressionFactor * compressionMaxForLevel()); } catch (e) { return 0; } }
 // boost: 1 — обычно; в дождь рисуется ещё раз поверх серой пелены — ярко
 function crystalDrawHeat(boost) {
@@ -141,20 +157,22 @@ function crystalDrawHeat(boost) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     if (rk > 0.02) {
+        const pipeHeat = crystalPipeHeatSprite();
         const t = (typeof frame === 'number' ? frame : 0);
         for (const p of pipes) {
             if ((campaign && p.campaign?.hazard !== 'fire') || p.x + p.width < -40 || p.x > width + 40) continue;
             const w = p.width, cx = p.x + w / 2, flick = 0.88 + 0.12 * Math.sin(t * 0.13 + p.x * 0.05);
             const yT = p.top + sq, yB = height - (p.bottom + sq);
             // раскалённая труба: красный отсвет по телу, сильнее у устья
-            for (const [y0, dir] of [[yT, -1], [yB, 1]]) {
-                const L = 150, g = ctx.createLinearGradient(0, y0, 0, y0 + dir * L);
-                g.addColorStop(0, `rgba(255, 60, 40, ${(0.16 * rk * boost * flick).toFixed(3)})`); g.addColorStop(1, 'rgba(255, 40, 40, 0)');
-                ctx.globalAlpha = 1; ctx.fillStyle = g;
-                ctx.fillRect(p.x - 5, Math.min(y0, y0 + dir * L), w + 10, L);
-                ctx.globalAlpha = Math.min(1, 0.55 * rk * boost * flick);
-                const R = w * 0.95; ctx.drawImage(hs, cx - R, y0 - R * 0.55, R * 2, R * 1.1);   // свечение из устья
-            }
+            const heat = rk * boost * flick;
+            const length = 150;
+            ctx.globalAlpha = Math.min(1, 0.16 * heat);
+            ctx.drawImage(pipeHeat, 0, 64, 2, 64, p.x - 5, yT - length, w + 10, length);
+            ctx.drawImage(pipeHeat, 0, 0, 2, 64, p.x - 5, yB, w + 10, length);
+            ctx.globalAlpha = Math.min(1, 0.55 * heat);
+            const radius = w * 0.95;
+            ctx.drawImage(hs, cx - radius, yT - radius * 0.55, radius * 2, radius * 1.1);
+            ctx.drawImage(hs, cx - radius, yB - radius * 0.55, radius * 2, radius * 1.1);
         }
     }
     for (const m of crystalMist) { ctx.globalAlpha = Math.max(0, Math.min(1, m.a * boost)); ctx.drawImage(ms, m.x - m.r, m.y - m.r, m.r * 2, m.r * 2); }

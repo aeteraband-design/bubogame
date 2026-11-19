@@ -3,6 +3,7 @@
 (function () {
     const wrap = document.querySelector('#startScreen > .menu-logo-wrap');
     if (!wrap) return;
+    const journeyScreen = document.getElementById('journeyPicker');
     const icon = wrap.querySelector('.fa-gamepad'), tile = icon && icon.parentElement;
     if (!icon || !tile) return;
     wrap.style.position = 'relative';
@@ -91,13 +92,13 @@
 
     // рисуем сову игры прямо в холст логотипа в нужном состоянии; все значения игры сразу возвращаем на место
     const LS = { stars: [], acc: 0, wb: [], wbb: [] };   // + капли мокрой совы (свои, не игровые)   // звёздочки ускорения — те же, что в игре
-    function drawOwlRaw(gc, px, x, y, size, state, rot, wing, now, fx, spin) {
+    function drawOwlRaw(gc, px, x, y, size, state, rot, wing, now, fx, spin, idlePose) {
         if (typeof owl === 'undefined' || !owl.draw || typeof ctx === 'undefined') return;
-        const keys = ['x', 'y', 'rotation', 'visible', 'wing', 'lean', 'boostK', 'spinAngle'];
+        const keys = ['x', 'y', 'rotation', 'visible', 'wing', 'lean', 'boostK', 'spinAngle', '__shzWas', 'shzRelax', 'beakAimS'];
         const save = {}; keys.forEach(k => save[k] = owl[k]);
         const main = ctx, ga = gameActive, wft = waitingFirstTap, dm = dtMult, fr = frame,
             d = currentDrunkFactor, fz = currentFreezeFactor, ov = currentOvereatFactor, vs = viewScale, rs = renderScale;
-        const hasShz = typeof SHZ !== 'undefined', shk = hasShz ? SHZ.k : 0, inv0 = invulnerableTime;
+        const hasShz = typeof SHZ !== 'undefined', shk = hasShz ? SHZ.k : 0, inv0 = invulnerableTime, noBlink = window.__noBlink;
         const stW = typeof STORM !== 'undefined' ? [STORM.wet, STORM.ice] : null, wfT = typeof WATERFX !== 'undefined' ? WATERFX.wetT : 0, owW = owl._wWet, wb0 = owl._wb, wbb0 = owl._wbb;
         // игровые эффекты (щит, перо, ускорение, смещения ШАЗАМа) в логотипе не рисуем — после полёта они могут остаться ненулевыми
         const fx0 = [shieldTime, shieldAppearAnim, infiniteStaminaTime, speedBoostTime, slowMotionTime];
@@ -128,10 +129,10 @@
                 finally { LS.stars = speedStars; LS.acc = speedStarAcc; speedStars = ss_; speedRamp = sr_; speedStarAcc = sa_; speedBoostTime = sbt_; gameActive = sga; if (state.id === 'shazam') window.shazamActive = shA; }
             }
             if (state.id === 'freeze' && typeof drawFrozenOwl === 'function') { viewScale = k; renderScale = 1; drawFrozenOwl(); }
-            else owl.draw();
+            else owl.draw(idlePose);
         } catch (e) {}
         finally {
-            ctx = main; window.__noBlink = false; invulnerableTime = inv0; gameActive = ga; waitingFirstTap = wft; dtMult = dm; frame = fr;
+            ctx = main; window.__noBlink = noBlink; invulnerableTime = inv0; gameActive = ga; waitingFirstTap = wft; dtMult = dm; frame = fr;
             currentDrunkFactor = d; currentFreezeFactor = fz; currentOvereatFactor = ov; viewScale = vs; renderScale = rs;
             if (hasShz) SHZ.k = shk;
             if (stW) { STORM.wet = stW[0]; STORM.ice = stW[1]; } if (typeof WATERFX !== 'undefined') WATERFX.wetT = wfT; owl._wWet = owW; owl._wb = wb0; owl._wbb = wbb0;
@@ -174,13 +175,13 @@
         const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : ((state.id === 'dizzy' || state.id === 'wet') ? STATES.find(t => t.id === 'normal') : state));
         return state.id === 'fat' ? size : size * 0.56 / Math.max(0.3, c.w, c.h);   // одинаково крупно во всех состояниях; «полная» — по своему размеру
     }
-    function drawOwlState(x, y, size, state, rot, wing, now, spin, gc, px, fx) {
+    function drawOwlState(x, y, size, state, rot, wing, now, spin, gc, px, fx, idlePose) {
         // ШАЗАМ: молнии вокруг совы не считаем — центр и размер как у наклонённой совы (ускорение)
         const c = owlCenter(state.id === 'shazam' ? STATES.find(t => t.id === 'speed') : ((state.id === 'dizzy' || state.id === 'wet') ? STATES.find(t => t.id === 'normal') : state));
         size = owlSize(state, size);
         const a = spin || 0, cs = Math.cos(a), sn = Math.sin(a), dx = c.dx * size, dy = c.dy * size;
         // крутим вокруг видимого центра совы: она остаётся ровно посередине плитки
-        drawOwlRaw(gc || g, px || dpr, x - (dx * cs - dy * sn), y - (dx * sn + dy * cs), size, state, rot, wing, now, fx !== false, a);
+        drawOwlRaw(gc || g, px || dpr, x - (dx * cs - dy * sn), y - (dx * sn + dy * cs), size, state, rot, wing, now, fx !== false, a, idlePose);
     }
 
 
@@ -192,6 +193,7 @@
     let state = null, t0 = 0, raf = 0, nextAt = performance.now() + 2500, sparks = [], flags = {}, lastT = 0;
 
     function canRun() {
+        if (journeyScreen?.open) return false;
         const ss = document.getElementById('startScreen');
         if (!ss || ss.classList.contains('hidden') || document.hidden) return false;
         if (document.documentElement.classList.contains('booting') || window.__booting) return false;
@@ -261,6 +263,7 @@
     // главный логотип — крупная сова в плитке (картинка, нарисованная той же функцией, что и в игре); джойстик появляется только в анимации
     const NORMAL = STATES.find(t => t.id === 'normal');
     let home = null;
+    let restingLogo = false;
     function makeHomeOwl() {
         try {
             const S = 256, c = document.createElement('canvas'); c.width = c.height = S;
@@ -282,6 +285,19 @@
     const DUR2 = T_A + T_B + T_C + T_D + T_E;
     function tick(now) {
         raf = 0;
+        if (!owlIdleMotionEnabled()) {
+            const visible = canRun();
+            if (state || (restingLogo && !visible)) stop();
+            if (visible && !restingLogo) {
+                const { w, h, tx, ty, ts } = sizeCanvas();
+                g.clearRect(0, 0, w, h);
+                drawOwlState(tx, ty, ts * 1.3, NORMAL, 0, 0.5, 0, 0, g, dpr, false);
+                setIcon(0, 0, 0);
+                restingLogo = true;
+            }
+            return;
+        }
+        if (restingLogo) stop();
         const dt = Math.min(0.05, (now - (lastT || now)) / 1000); lastT = now;
         if (!state) {
             if (now < nextAt) return;
@@ -333,7 +349,9 @@
             glow(tx, ty, ts * 0.9, 0.5, '255,220,170');
             const wing = (state.id === 'shazam' || state.id === 'speed') ? Math.max(0, Math.sin(now / 90)) : 0.5 + 0.5 * Math.sin(k * 9) * (k < 1.6 ? 1 : 0.5);
             const rot = state.id === 'drunk' ? Math.sin(k * 3.2) * 0.18 : 0;
-            drawOwlState(tx, ty, OS, state, rot, wing, now, state.id === 'freeze' ? (t - b2) * 4.2 : 0);   // замёрзшая кувыркается, как в игре
+            const calm = state.id === 'normal' || state.id === 'wet' || state.id === 'fat';
+            const idlePose = calm ? owlIdlePose(k * 1000) : null;
+            drawOwlState(tx, ty, OS, state, rot, wing, now, state.id === 'freeze' ? (t - b2) * 4.2 : 0, g, dpr, true, idlePose);
         } else {   // 5) сова-состояние сжимается — вспышка — возвращается главная сова
             if (flags.sayOn && !flags.sayOff) { flags.sayOff = 1; sayHide(); }   // облачко улетает вместе с состоянием совы
             if (home) setIcon(0, 0, 0);
@@ -395,8 +413,8 @@
     ];
     let naI = 0;
     const noAttempts = () => { try { return typeof attempts === 'number' && attempts <= 0; } catch (e) { return false; } };
-    const LS_GET = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
-    const LS_SET = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+    const LS_GET = (k) => { try { return BuboSaveStorage.getItem(k); } catch (e) { return null; } };
+    const LS_SET = (k, v) => { try { BuboSaveStorage.setItem(k, v); } catch (e) {} };
     const dayKey = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
     let greetPending = LS_GET('bubo_hello_day') !== dayKey(), lastShown = true, sayNow = null, sayHideT = 0, seenN = 0, startTg = false;
     function nextHint() {   // по кругу без повторов
@@ -528,7 +546,7 @@
     }
     function stop() {
         sayHide(true);
-        state = null; sparks = []; LS.stars = []; LS.acc = 0; lgOn(false); txtK(0);
+        state = null; restingLogo = false; sparks = []; LS.stars = []; LS.acc = 0; lgOn(false); txtK(0);
         if (home) { setHome(1); setIcon(0, 0, 0); } else resetIcon();
         g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height);
         nextAt = performance.now() + 1200;   // джойстик ≈1,5 с (с переходами), потом снова сова
@@ -538,10 +556,11 @@
     // makeHomeOwl();   // сова как постоянный логотип — отключено, логотип снова джойстик
     schedule();
     // уходим в полёт: анимация логотипа и облачко гаснут сразу
-    window.logoAnimStop = () => { window.__saySoon = true; if (raf) { cancelAnimationFrame(raf); raf = 0; } if (state) stop(); else sayHide(true); };
+    window.logoAnimStop = () => { window.__saySoon = true; if (raf) { cancelAnimationFrame(raf); raf = 0; } if (state || restingLogo) stop(); else sayHide(true); };
     // свернули и вернулись (или изменился размер экрана) — начинаем цикл заново, сова всегда ровно в плитке
-    const restart = () => { if (state) stop(); else sayHide(true); if (raf) { cancelAnimationFrame(raf); raf = 0; } nextAt = performance.now() + 900; schedule(); };
-    document.addEventListener('visibilitychange', () => { if (document.hidden) { if (state) stop(); } else restart(); });
-    window.addEventListener('resize', () => { if (state) restart(); });
+    const restart = () => { if (state || restingLogo) stop(); else sayHide(true); if (raf) { cancelAnimationFrame(raf); raf = 0; } nextAt = performance.now() + 900; schedule(); };
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { if (state || restingLogo) stop(); } else restart(); });
+    window.addEventListener('resize', () => { if (state || restingLogo) restart(); });
+    OWL_REDUCED_MOTION?.addEventListener?.('change', restart);
     window.logoAnimPlay = (id) => { const s = STATES.find(x => x.id === id); if (s) order.unshift(s); nextAt = 0; schedule(); };
 })();

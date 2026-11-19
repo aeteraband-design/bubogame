@@ -14,9 +14,9 @@
         },
         shazam: {
             idleCore: [255, 241, 190], chargedCore: [255, 241, 190],
-            idleGlow: [226, 192, 102], chargedGlow: [226, 192, 102], linger: 670, ready: .35,
-            aim: { x: -.020, y: .008, angle: -.039, eye: -.17 },
-            hit: { x: .069, y: -.024, angle: .125, eye: .26 }
+            idleGlow: [226, 192, 102], chargedGlow: [255, 156, 64], linger: 670, ready: .82,
+            aim: { x: -.041, y: .020, angle: -.088, eye: -.47 },
+            hit: { x: .062, y: -.019, angle: .109, eye: -.28 }
         }
     };
     const SILHOUETTE = new Path2D(
@@ -28,12 +28,21 @@
         { x: 162, y: 106, path: new Path2D('M-26 -8Q-7 -13 20 4L24 8Q3 15 -13 10Q-25 7 -26 -8Z') },
         { x: 247, y: 106, path: new Path2D('M-23 8L-19 4Q6 -13 25 -8Q23 7 12 10Q-5 15 -23 8Z') }
     ];
+    const EAR_LIGHT = new Path2D('M310 12Q285 44 259 54L294 77Q301 47 310 12Z');
+    const EAR_SHADE = new Path2D('M102 17Q132 49 152 56L123 78Q118 44 102 17Z');
+    const FEATHER_RIM = new Path2D(
+        'M322 144Q334 171 370 195Q330 178 311 162M340 182Q362 207 399 224Q366 215 351 204'
+        + 'M92 163Q63 193 39 209Q79 194 103 177'
+    );
+    const EYE_GLINT = new Path2D('M-10 1Q-4 2 5 3Q0 6-8 4Z');
     const MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let sprite, entered = null, wave = '', phaseAt = 0, impact = null;
+    let sprite, spriteQuality, entered = null, wave = '', phaseAt = 0, impact = null;
+    let frameAt = 0, visiblePose = null, entranceDuration = 0, entranceDepth = 0;
 
-    function getShadow() {
-        if (sprite) return sprite;
+    function getShadow(quality) {
+        if (sprite && spriteQuality === quality) return sprite;
         sprite = document.createElement('canvas');
+        spriteQuality = quality;
         sprite.width = 432;
         sprite.height = 360;
         const g = sprite.getContext('2d');
@@ -43,6 +52,27 @@
         shade.addColorStop(1, 'rgba(16,13,33,.15)');
         g.fillStyle = shade;
         g.fill(SILHOUETTE);
+        if (quality !== 'low') {
+            g.save();
+            g.clip(SILHOUETTE);
+            const rim = g.createRadialGradient(320, 32, 12, 320, 32, 204);
+            rim.addColorStop(0, '#8a65975c');
+            rim.addColorStop(.45, '#64488b30');
+            rim.addColorStop(1, '#64488b00');
+            g.fillStyle = rim;
+            g.fillRect(0, 0, sprite.width, sprite.height);
+            g.fillStyle = '#b48ea44d';
+            g.fill(EAR_LIGHT);
+            g.fillStyle = '#7366a035';
+            g.fill(EAR_SHADE);
+            if (quality === 'high') {
+                g.strokeStyle = '#9b7ec12b';
+                g.lineWidth = 2.4;
+                g.lineCap = 'round';
+                g.stroke(FEATHER_RIM);
+            }
+            g.restore();
+        }
         g.strokeStyle = 'rgba(124,105,158,.23)';
         g.lineWidth = 2;
         g.stroke(SILHOUETTE);
@@ -72,6 +102,8 @@
         wave = '';
         phaseAt = 0;
         impact = null;
+        frameAt = 0;
+        visiblePose = null;
     }
     function smooth(value) {
         const t = Math.min(1, Math.max(0, value));
@@ -93,9 +125,25 @@
     }
 
     function channels(start, end, amount) {
-        return start.map((value, index) => Math.round(value + (end[index] - value) * amount)).join(',');
+        return start.map((value, index) => value + (end[index] - value) * amount);
     }
-    function eye(ctx, eye, core, glow, blink, energy) {
+
+    function easedPose(target, now, still) {
+        if (!visiblePose || still) visiblePose = target;
+        else {
+            const elapsed = Math.max(0, Math.min(45, now - frameAt));
+            const positionEase = 1 - Math.exp(-elapsed / 62);
+            const colorEase = 1 - Math.exp(-elapsed / 54);
+            for (const key of ['x', 'y', 'angle', 'eye', 'energy']) {
+                visiblePose[key] += (target[key] - visiblePose[key]) * positionEase;
+            }
+            visiblePose.core = channels(visiblePose.core, target.core, colorEase);
+            visiblePose.glow = channels(visiblePose.glow, target.glow, colorEase);
+        }
+        frameAt = now;
+        return visiblePose;
+    }
+    function eye(ctx, eye, core, glow, blink, energy, quality) {
         ctx.save();
         ctx.translate(eye.x, eye.y);
         ctx.scale(1, blink);
@@ -105,15 +153,21 @@
         ctx.fill(eye.path);
         ctx.shadowBlur = 0;
         ctx.fillStyle = 'rgba(255,255,255,.45)';
-        ctx.fillRect(-6, 2, 8, 2);
+        if (quality === 'high') ctx.fill(EYE_GLINT);
+        else ctx.fillRect(-6, 2, 8, 2);
         ctx.restore();
     }
-    function draw(ctx, width, height, pipes, owlX) {
+    function draw(ctx, width, height, pipes, owlX, fullCharge = false, opacity = 1) {
         const now = performance.now();
-        if (entered === null) entered = now;
+        const quality = typeof gfxQuality === 'undefined' ? 'medium' : gfxQuality;
+        if (entered === null) {
+            entered = now;
+            entranceDuration = fullCharge ? 440 : 1030;
+            entranceDepth = fullCharge ? .10 : .20;
+        }
         const age = now - entered;
         const still = MOTION.matches;
-        const entrance = still ? 1 : 1 - (1 - Math.min(1, age / 1030)) ** 3;
+        const entrance = still ? 1 : 1 - (1 - Math.min(1, age / entranceDuration)) ** 3;
         const scale = Math.min(width * .95 / 432, height * .59 / 360);
         const palette = looks[wave] || looks.fire;
         let impactLook = palette, hit = 0, shotTilt = 0;
@@ -126,29 +180,34 @@
                 shotTilt = impact.side * .024;
             }
         }
-        const charge = wave
+        const charge = fullCharge ? 1 : wave
             ? Math.max(palette.ready * smooth((now - phaseAt) / 430), warming(pipes, owlX, width))
             : 0;
         const chroma = smooth(Math.max(charge * 1.18, hit));
         const ready = still ? 0 : charge * (1 - hit * .75);
         if (still) { hit = 0; shotTilt = 0; }
-        const pose = palette.aim, recoil = impactLook.hit;
-        const x = width * (.67 + pose.x * ready + recoil.x * hit);
-        const y = Math.max(57, height * .13) + height * ((1 - entrance) * .20 + pose.y * ready + recoil.y * hit);
+        const aim = palette.aim, recoil = impactLook.hit;
+        const pose = easedPose({
+            x: .67 + aim.x * ready + recoil.x * hit,
+            y: (1 - entrance) * entranceDepth + aim.y * ready + recoil.y * hit,
+            angle: aim.angle * ready + (recoil.angle + shotTilt) * hit,
+            eye: 1 + aim.eye * ready + recoil.eye * hit,
+            energy: still ? .3 : Math.min(1, ready * .78 + hit),
+            core: channels(palette.idleCore, palette.chargedCore, chroma),
+            glow: channels(palette.idleGlow, palette.chargedGlow, chroma)
+        }, now, still);
         const sinceBlink = (age + 630) % 3720;
         const blink = still ? 1 : .12 + .88 * Math.min(1, Math.abs(sinceBlink - 96) / 74);
-        const eyeScale = blink * (1 + pose.eye * ready + recoil.eye * hit);
-        const energy = still ? .3 : Math.min(1, ready * .78 + hit);
-        const core = 'rgb(' + channels(palette.idleCore, palette.chargedCore, chroma) + ')';
-        const glow = 'rgba(' + channels(palette.idleGlow, palette.chargedGlow, chroma) + ',' + (.42 + energy * .58) + ')';
+        const core = 'rgb(' + pose.core.map(Math.round) + ')';
+        const glow = 'rgba(' + pose.glow.map(Math.round) + ',' + (.42 + pose.energy * .58) + ')';
         ctx.save();
-        ctx.globalAlpha = .18 + entrance * .82;
-        ctx.translate(x, y);
-        ctx.rotate(pose.angle * ready + (recoil.angle + shotTilt) * hit);
+        ctx.globalAlpha = opacity * (.18 + entrance * .82);
+        ctx.translate(width * pose.x, Math.max(57, height * .13) + height * pose.y);
+        ctx.rotate(pose.angle);
         ctx.scale(scale, scale);
         ctx.translate(-208, 0);
-        ctx.drawImage(getShadow(), 0, 0);
-        EYES.forEach(mark => eye(ctx, mark, core, glow, eyeScale, energy));
+        ctx.drawImage(getShadow(quality), 0, 0);
+        EYES.forEach(mark => eye(ctx, mark, core, glow, blink * pose.eye, pose.energy, quality));
         ctx.restore();
     }
 

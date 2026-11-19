@@ -1,18 +1,102 @@
 (() => {
     const campaign = window.BuboCampaign;
     if (!campaign) return;
+    const journey = window.BuboJourney;
     const $ = id => document.getElementById(id);
     const exit = $('campaignResultHome');
     const modal = $('campaignResult');
     const world = $('gameContainer');
     const hud = $('campaignHUD');
-    const classicStart = $('startBtn');
     const campaignStart = $('campaignStartBtn');
     const classicHelp = $('goCampaignHelpBtn');
     const cancelWind = $('campaignSecondWindConfirm');
     let shownResult = null;
     let confirmingWind = false;
     let recoveryTimer = 0;
+    const picker = $('journeyPicker');
+    const pickerStart = $('journeyPickerStart');
+    const pickerReturn = $('journeyPickerReturn');
+    const districts = journey.districts();
+    const bossLevel = { id: 'boss', name: 'Башня Смотрителя', shortName: 'Башня' };
+    const previewUrl = district => 'assets/levels/' + district.id + '.webp?v=0.18.2';
+    const levels = [...districts, bossLevel].map((district, index) => {
+        const item = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'journey-level';
+        button.dataset.district = district.id;
+        const art = document.createElement('img');
+        art.className = 'journey-level-art';
+        art.alt = '';
+        art.decoding = 'async';
+        art.loading = 'lazy';
+        art.fetchPriority = 'low';
+        const number = document.createElement('span');
+        number.className = 'journey-level-number';
+        number.textContent = index + 1;
+        const label = document.createElement('span');
+        label.className = 'journey-level-name';
+        label.textContent = district.shortName || district.name;
+        const icon = document.createElement('i');
+        icon.setAttribute('aria-hidden', 'true');
+        button.append(art, number, label, icon);
+        item.append(button);
+        $('journeyPickerLevels').append(item);
+        action(button, () => {
+            selectedLevel = index;
+            refreshPicker(campaign.status());
+        });
+        return { district, button, icon, art };
+    });
+    let selectedLevel = 0;
+
+    function playableLevel() {
+        if (hasWonGame) return 0;
+        return journey.isBossReady() ? districts.length : districts.indexOf(journey.region());
+    }
+    function refreshPicker(state) {
+        const current = playableLevel();
+        const collectedCount = getTotalCollectedThemes();
+        const completedRoute = journey.hasDefeatedBoss();
+        const progress = $('journeyPickerProgress');
+        progress.textContent = collectedCount + ' / ' + TOTAL_THEMES;
+        progress.setAttribute('aria-label', 'Собрано ' + collectedCount + ' из ' + TOTAL_THEMES + ' значков');
+        levels.forEach(({ district, button, icon }, index) => {
+            const passed = completedRoute || index < current;
+            const status = passed ? 'Пройдено' : index === current ? 'Доступно'
+                : district === bossLevel ? 'После полной коллекции' : 'От ' + journey.districtUnlockAt(district.id) + ' значков';
+            button.dataset.status = passed ? 'passed' : index === current ? 'current' : 'upcoming';
+            button.setAttribute('aria-pressed', String(index === selectedLevel));
+            button.setAttribute('aria-label', (index + 1) + '. ' + district.name + '. ' + status);
+            icon.className = 'fa-solid ' + (passed ? 'fa-check' : index === current ? 'fa-play' : 'fa-lock');
+            if (index === current) button.setAttribute('aria-current', 'step');
+            else button.removeAttribute('aria-current');
+            if (index === selectedLevel) {
+                picker.dataset.status = button.dataset.status;
+                $('journeyPickerLevelStatus').textContent = passed ? 'Пройдено' : index === current ? 'Доступно' : 'Закрыто';
+            }
+        });
+        const selected = levels[selectedLevel].district;
+        const preview = $('journeyPickerImage');
+        const source = previewUrl(selected);
+        if (preview.getAttribute('src') !== source) preview.src = source;
+        $('journeyPickerLevelNumber').textContent = 'Уровень ' + (selectedLevel + 1);
+        $('journeyPickerLevelName').textContent = selected.name;
+        const canStart = selectedLevel === current;
+        const passed = completedRoute || selectedLevel < current;
+        const required = journey.districtUnlockAt(selected.id);
+        pickerStart.disabled = !canStart;
+        pickerStart.hidden = !canStart;
+        pickerReturn.hidden = canStart;
+        pickerStart.textContent = completedRoute ? 'Начать новый маршрут' : selected === bossLevel ? 'К Смотрителю'
+            : state.practiced && collectedCount && !hasWonGame ? 'Продолжить полёт' : 'В полёт';
+        $('journeyPickerHint').textContent = completedRoute ? 'Смотритель побеждён. Новый маршрут начнётся в Ночном городе.'
+            : passed ? ''
+            : selectedLevel > current ? selected === bossLevel ? 'Башня откроется после сбора всей коллекции.'
+                : 'Собери ' + required + ' ' + ruPlural(required, ['значок', 'значка', 'значков']) + ', чтобы открыть район.'
+            : !state.practiced ? 'Три учебные трубы без расхода попыток.'
+            : selected === bossLevel ? 'Три волны. Победа даёт вращение в рулетке.' : '';
+    }
     function untilReset() {
         const now = new Date();
         const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -45,10 +129,31 @@
         button.addEventListener('click', event => { event.stopPropagation(); fn(); });
     }
     action(campaignStart, () => {
-        if (campaign.status().canReplay) campaign.startMapReplay();
-        else campaign.start();
+        selectedLevel = playableLevel();
+        refreshPicker(campaign.status());
+        picker.showModal();
+        window.logoAnimStop?.();
+        for (const { district, art } of levels) {
+            if (!art.hasAttribute('src')) art.src = previewUrl(district);
+        }
+        levels[selectedLevel].button.focus();
     });
-    action($('campaignReplayBtn'), () => campaign.trainingReplay());
+    action($('journeyPickerClose'), () => picker.close());
+    action(pickerReturn, () => {
+        selectedLevel = playableLevel();
+        refreshPicker(campaign.status());
+        levels[selectedLevel].button.focus();
+    });
+    action($('menuGoalX'), () => {
+        try { BuboSaveStorage.setItem('bubo_goal_hidden', '1'); } catch (error) {}
+        $('menuGoalCard').classList.add('hidden');
+        campaignStart.focus({ preventScroll: true });
+    });
+    action(pickerStart, () => {
+        if (selectedLevel !== playableLevel()) return;
+        picker.close();
+        journey.start();
+    });
     action(exit, () => { campaign.dismissResult(); campaignStart.focus({ preventScroll: true }); });
 
     const actionButton = $('campaignResultNext');
@@ -58,14 +163,14 @@
         if (!result) return;
         if (result.test) {
             campaign.setStageForTest(result.phase);
-        } else if (result.type === 'victory') {
+        } else if (result.type === 'victory' || result.type === 'journey-win') {
             if (result.mapReplay) campaign.startMapReplay();
             else {
                 campaign.dismissResult();
                 openRoulette({ victory: true });
             }
-        } else if (state.attempts === 0 && !['training-failure', 'checkpoint', 'save-error'].includes(result.type)) {
-            const offer = campaign.secondWindOffer();
+        } else if (result.journey && state.attempts === 0) {
+            const offer = journey.offer();
             if (!offer?.available) { refresh(); return; }
             if (offer.mode === 'paid' && !confirmingWind) {
                 confirmingWind = true;
@@ -73,8 +178,8 @@
                 return;
             }
             confirmingWind = false;
-            campaign.startSecondWind();
-        } else if (result.type === 'save-error' && state.canReplay) campaign.startMapReplay();
+            journey.start(true);
+        } else if (result.journey || result.type === 'checkpoint') journey.start();
         else if (result.type === 'training-failure' && state.practiced) campaign.trainingReplay();
         else campaign.start();
     });
@@ -85,15 +190,14 @@
     });
     action($('campaignResultQuiz'), () => { campaign.dismissResult(); openQuiz(); });
     action($('campaignResultSkill'), () => { campaign.dismissResult(); openProfile('skills'); });
-    action($('campaignResultReplay'), () => campaign.trainingReplay());
 
     action($('goQuizBtn'), () => { returnToHome(); openQuiz(); });
-    action(classicHelp, () => { returnToHome(); campaign.start(); });
+    action(classicHelp, () => { returnToHome(); journey.start(); });
     const classicEnd = $('gameOverModal');
     function refreshEnd() {
         const exhausted = !classicEnd.classList.contains('hidden') && attempts === 0;
         $('goQuizBtn').hidden = !exhausted;
-        classicHelp.hidden = !exhausted || !campaign.secondWindOffer()?.available;
+        classicHelp.hidden = !exhausted || !journey.offer()?.available;
         const detail = $('goAttemptDetail');
         detail.hidden = !exhausted;
         detail.textContent = exhausted ? 'Попытки обновятся через ' + untilReset() + '.' : '';
@@ -150,11 +254,11 @@
         clearTimeout(recoveryTimer);
         if (!result) { shownResult = null; confirmingWind = false; return; }
         if (result !== shownResult) confirmingWind = false;
-        const won = result.type === 'victory';
+        const won = result.type === 'victory' || result.type === 'journey-win';
         const checkpoint = result.type === 'checkpoint';
         const trainingFailure = result.type === 'training-failure';
-        const noAttempts = state.attempts <= 0 && (result.type === 'no-attempts' || result.type === 'failure');
-        const offer = noAttempts ? campaign.secondWindOffer() : null;
+        const noAttempts = state.attempts <= 0 && result.journey && !won;
+        const offer = noAttempts ? journey.offer() : null;
         const confirmingPurchase = noAttempts && offer?.mode === 'paid' && offer.available && confirmingWind;
         if (offer?.reason === 'pending' && offer.retryAfterMs > 0) {
             recoveryTimer = setTimeout(() => { window.BuboSecondWind?.recover(); refresh(); }, offer.retryAfterMs + 50);
@@ -171,7 +275,7 @@
                 : 'Награда сохранена и ждёт начисления.'
             : won ? (result.mapReplay ? 'Карта снова пройдена.' : 'Карта завершена. Вращение ждёт в рулетке.')
             : checkpoint ? (result.replay ? 'Можно возвращаться к походу.'
-                : result.phase === 'training' ? 'Открыт Ночной город.' : 'Контрольная точка сохранена.')
+                : result.phase === 'training' ? 'Впереди ' + journey.region().name + ' и коллекция из ' + TOTAL_THEMES + ' значков.' : 'Контрольная точка сохранена.')
             : trainingFailure ? result.hint : result.reason;
 
         const reward = $('campaignReward');
@@ -194,9 +298,9 @@
         actionButton.textContent = result.test ? 'Повторить предпросмотр' : won ? (result.mapReplay ? 'Повторить поход' : 'Открыть рулетку')
             : noAttempts ? !offer?.available ? '' : offer.mode === 'free' ? 'Второе дыхание · бесплатно'
                 : (confirmingWind ? 'Начать за ' : 'Второе дыхание · ') + offer.price + ' монет'
-            : trainingFailure || result.type === 'save-error' ? 'Ещё раз' : 'Продолжить поход';
+            : result.type === 'journey-ready' ? 'К Смотрителю' : result.type === 'journey-failure' ? 'Вернуться к башне'
+            : trainingFailure || result.type.endsWith('save-error') ? 'Ещё раз' : 'Продолжить полёт';
         $('campaignResultQuiz').hidden = confirmingPurchase || !(noAttempts || (checkpoint && result.phase !== 'training'));
-        $('campaignResultReplay').hidden = confirmingPurchase || !noAttempts;
         exit.hidden = confirmingPurchase;
         const chooseSkill = checkpoint && result.phase === 'night' && !result.mapReplay;
         $('campaignResultSkill').hidden = !chooseSkill;
@@ -219,27 +323,18 @@
     function refresh() {
         const state = campaign.status();
         $('campaignActions').hidden = false;
-        $('startScreen').classList.toggle('camp-intro', !state.practiced);
-        const labels = campaignStart.querySelectorAll('strong, small');
-        campaignStart.hidden = state.phase === 'complete' && !state.canReplay;
-        labels[0].textContent = state.canReplay ? 'Повторить поход' : state.practiced ? 'Продолжить поход' : 'Начать поход';
-        const waves = { fire: 'Огонь', water: 'Водонапор', shazam: 'ШАЗАМ' };
-        const checkpoint = waves[state.checkpointWave];
-        labels[1].textContent = state.canReplay ? 'Новый маршрут'
-            : state.practiced ? state.title + (checkpoint ? ' · ' + checkpoint : '') : 'Три учебные трубы';
-        $('campaignReplayBtn').hidden = !state.practiced;
+        const district = journey.region();
+        if (picker.open) refreshPicker(state);
+        const districtLabel = $('journeyDistrict');
+        districtLabel.hidden = !journey.isFlight();
+        districtLabel.textContent = district.name;
         renderHud(state);
         renderResult(state);
         refreshEnd();
     }
 
-    new MutationObserver(() => {
-        const label = $('startBtnLabel');
-        if (label.textContent !== 'Свободный полёт') label.textContent = 'Свободный полёт';
-    }).observe($('startBtnLabel'), { childList: true, subtree: true, characterData: true });
-    $('startBtnLabel').textContent = 'Свободный полёт';
-    classicStart.setAttribute('aria-label', 'Свободный полёт');
     window.addEventListener('bubo:campaign-change', refresh);
+    window.addEventListener('bubo:journey-change', refresh);
     window.addEventListener('bubo:campaign-combat', updateCombat);
     window.addEventListener('bubo:campaign-topics', () => { if (campaign.isActive() || !modal.hidden) refresh(); });
     window.addEventListener('bubo:second-wind-change', () => { if (!modal.hidden || !classicEnd.classList.contains('hidden')) refresh(); });
@@ -251,5 +346,6 @@
         else campaign.dismissResult();
     });
     campaign.settleRewards();
+    journey.settleRewards();
     refresh();
 })();

@@ -39,6 +39,152 @@ function mkGrad(kind, a, stops) {
     for (const st of stops) g.addColorStop(st[0], st[1]);
     return g;
 }
+const OWL_DETAIL = {};
+const OWL_DETAIL_SIZE = 42;
+const OWL_DETAIL_OFFSET = -21;
+
+function owlWingPath(c) {
+    c.beginPath();
+    c.moveTo(5.0, -3.6);
+    c.bezierCurveTo(-1.5, -5.0, -10.5, -2.6, -15.2, 1.0);
+    c.bezierCurveTo(-16.4, 2.0, -15.4, 3.5, -13.4, 3.9);
+    c.bezierCurveTo(-8.8, 5.0, -3.5, 6.6, 1.2, 5.6);
+    c.bezierCurveTo(4.6, 4.9, 6.6, 2.4, 6.5, -0.4);
+    c.bezierCurveTo(6.5, -1.6, 6.3, -3.32, 5.0, -3.6);
+    c.closePath();
+}
+
+function bakeOwlDetail(kind, high) {
+    const sprite = document.createElement('canvas');
+    const scale = high ? 4 : 2.5;
+    sprite.width = sprite.height = OWL_DETAIL_SIZE * scale;
+    const g = sprite.getContext('2d');
+    const center = -OWL_DETAIL_OFFSET * scale;
+    g.setTransform(scale, 0, 0, scale, center, center);
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+
+    if (kind === 'head') {
+        g.beginPath();
+        owlSmoothClosed(g, OWL_BODY_PTS);
+        g.closePath();
+        g.clip();
+        const sheen = g.createRadialGradient(-4.8, -10.5, .8, -3.4, -8.8, 13);
+        sheen.addColorStop(0, high ? 'rgba(222,175,255,.68)' : 'rgba(222,175,255,.44)');
+        sheen.addColorStop(.44, 'rgba(178,111,252,.26)');
+        sheen.addColorStop(1, 'rgba(178,111,252,0)');
+        g.fillStyle = sheen;
+        g.fillRect(-17, -16, 28, 18);
+        g.strokeStyle = high ? 'rgba(244,220,255,.60)' : 'rgba(244,220,255,.39)';
+        g.lineWidth = 1.1;
+        g.beginPath();
+        g.moveTo(-11.4, -4.8);
+        g.quadraticCurveTo(-8.7, -10.1, -2.2, -12);
+        g.stroke();
+        if (high) {
+            g.strokeStyle = 'rgba(151,78,233,.53)';
+            g.lineWidth = .95;
+            g.beginPath();
+            g.moveTo(-9.4, -4.3);
+            g.quadraticCurveTo(-8.2, -6.8, -5.6, -7.9);
+            g.moveTo(-7.1, -3.5);
+            g.quadraticCurveTo(-5.9, -5.2, -4.1, -5.9);
+            g.stroke();
+        }
+    } else {
+        owlWingPath(g);
+        g.clip();
+        const light = g.createRadialGradient(-.2, -2, .4, -2.4, .1, 13.5);
+        light.addColorStop(0, high ? 'rgba(223,163,255,.75)' : 'rgba(223,163,255,.49)');
+        light.addColorStop(.48, 'rgba(162,95,245,.34)');
+        light.addColorStop(1, 'rgba(162,95,245,0)');
+        g.fillStyle = light;
+        g.fillRect(-17, -5, 24, 12);
+
+        const shade = g.createLinearGradient(0, .7, 0, 6.8);
+        shade.addColorStop(0, 'rgba(48,16,100,0)');
+        shade.addColorStop(1, high ? 'rgba(39,7,77,.54)' : 'rgba(39,7,77,.40)');
+        g.fillStyle = shade;
+        g.fillRect(-17, .4, 24, 7);
+        g.lineWidth = high ? .95 : .78;
+        g.strokeStyle = high ? 'rgba(44,10,97,.77)' : 'rgba(44,10,97,.63)';
+        g.beginPath();
+        g.moveTo(-.6, -.65);
+        g.quadraticCurveTo(-4.1, -.3, -8.9, 1.1);
+        g.moveTo(.7, .85);
+        g.quadraticCurveTo(-3.6, 1.25, -10.05, 2.2);
+        g.moveTo(1.4, 2.5);
+        g.quadraticCurveTo(-2.5, 3.25, -7.55, 3.45);
+        g.stroke();
+        if (high) {
+            g.strokeStyle = 'rgba(235,195,255,.54)';
+            g.lineWidth = .75;
+            g.beginPath();
+            g.moveTo(1.55, -1.55);
+            g.quadraticCurveTo(-3.4, -2.45, -9.75, .25);
+            g.moveTo(-11.25, 2.55);
+            g.quadraticCurveTo(-8.95, 3.45, -7.4, 3.65);
+            g.stroke();
+        }
+    }
+    return sprite;
+}
+
+function owlDetail() {
+    if (gfxQuality === 'low') return null;
+    const high = gfxQuality === 'high';
+    if (!OWL_DETAIL[gfxQuality]) {
+        OWL_DETAIL[gfxQuality] = {
+            head: bakeOwlDetail('head', high),
+            wing: bakeOwlDetail('wing', high),
+            iris: high ? 'rgba(172,135,249,.9)' : 'rgba(172,135,249,.67)'
+        };
+    }
+    return OWL_DETAIL[gfxQuality];
+}
+
+function drawOwlDetail(sprite) {
+    ctx.drawImage(sprite, OWL_DETAIL_OFFSET, OWL_DETAIL_OFFSET, OWL_DETAIL_SIZE, OWL_DETAIL_SIZE);
+}
+
+const OWL_REDUCED_MOTION = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+function owlIdleMotionEnabled() {
+    return gfxQuality !== 'low' && !OWL_REDUCED_MOTION?.matches;
+}
+function owlIdlePose(elapsed) {
+    if (!owlIdleMotionEnabled()) return null;
+    const high = gfxQuality === 'high';
+    const breathPeriod = high ? 3300 : 4300;
+    const breath = (1 - Math.cos(elapsed / breathPeriod * 2 * Math.PI)) * (high ? 0.011 : 0.005);
+    const blink = elapsed % (high ? 5100 : 6900) - (high ? 1850 : 3000);
+    const closeMs = high ? 62 : 56, openMs = high ? 112 : 96;
+    let eye = 1;
+    if (blink >= 0 && blink < closeMs + openMs) {
+        const t = blink < closeMs ? blink / closeMs : 1 - (blink - closeMs) / openMs;
+        eye -= (high ? 0.92 : 0.76) * t * t * (3 - 2 * t);
+    }
+    return { breath, eye };
+}
+
+const OWL_HURT_MS = 170;
+let owlHurtAt = null;
+
+function owlReactToHeartLoss() {
+    if (owlIdleMotionEnabled()) owlHurtAt = performance.now();
+}
+
+function owlHurtAperture() {
+    if (owlHurtAt === null || !owlIdleMotionEnabled()) return 1;
+    const elapsed = performance.now() - owlHurtAt;
+    if (elapsed >= OWL_HURT_MS) {
+        owlHurtAt = null;
+        return 1;
+    }
+    const t = Math.max(0, Math.min(1, elapsed / 30, (OWL_HURT_MS - elapsed) / 95));
+    const closure = t * t * (3 - 2 * t);
+    return 1 - closure * (gfxQuality === 'high' ? 0.9 : 0.68);
+}
+
 const owl = {
     x: 90,
     y: 260,
@@ -116,9 +262,14 @@ const owl = {
         if (dr > 0) this.rotation += Math.sin(frame * 0.09) * 0.12 * dr;
         if (this.wing > 0) this.wing -= 0.055 * dtMult;
     },
-    draw() {
+    draw(idlePose = null) {
         if (!this.visible) return;
+        if (!idlePose && waitingFirstTap && !gameActive && ctx.canvas === canvas) {
+            // Только живой холст перед стартом, не портреты и не промежуточные кадры.
+            idlePose = owlIdlePose(hoverAngle * 16.666 / 0.055);
+        }
         ctx.save();
+        const detail = owlDetail();
         const shz = (typeof SHZ !== 'undefined') ? SHZ : null;
         ctx.translate(this.x + (shz ? shz.dx : 0), this.y);
         // Наклон вперёд: чуть-чуть с каждым уровнем сложности (к Хард+ около 6°) и ещё немного при ускорении (до ~14° вместе)
@@ -145,6 +296,11 @@ const owl = {
         ctx.rotate(this.rotation + this.lean);
         ctx.translate(-OWL_CX * bodyScale, -OWL_CY * bodyScale);
         ctx.scale(bodyScale, bodyScale);
+        if (idlePose?.breath) {
+            ctx.translate(OWL_CX, OWL_CY);
+            ctx.scale(1 + idlePose.breath * 0.35, 1 + idlePose.breath);
+            ctx.translate(-OWL_CX, -OWL_CY);
+        }
 
         if (shz && shz.k > 0.02) {   // ШАЗАМ: тёплое оранжевое свечение вокруг совы
             ctx.save(); ctx.translate(OWL_CX, OWL_CY);
@@ -265,7 +421,8 @@ const owl = {
         ctx.closePath();
         ctx.fill();
         ctx.lineJoin = 'round';
-        ctx.stroke(); 
+        ctx.stroke();
+        if (detail) drawOwlDetail(detail.head);
 
         ctx.save();
         ctx.strokeStyle = 'rgba(235, 215, 255, 0.85)';
@@ -369,15 +526,7 @@ const owl = {
         ctx.lineWidth = 1.0 / 1.02;   // контур такой же тонкий, как на теле
         ctx.save();
         ctx.translate(-5.0, 0.8); ctx.scale(1.016, 1.03); ctx.translate(5.0, -0.8);   // крыло чуть шире по краю — внешний силуэт остаётся прежним
-        ctx.beginPath();
-        // гладкий контур крыла без изломов (плавно у «подмышки»)
-        ctx.moveTo(5.0, -3.6);
-        ctx.bezierCurveTo(-1.5, -5.0, -10.5, -2.6, -15.2, 1.0);
-        ctx.bezierCurveTo(-16.4, 2.0, -15.4, 3.5, -13.4, 3.9);
-        ctx.bezierCurveTo(-8.8, 5.0, -3.5, 6.6, 1.2, 5.6);
-        ctx.bezierCurveTo(4.6, 4.9, 6.6, 2.4, 6.5, -0.4);
-        ctx.bezierCurveTo(6.5, -1.6, 6.3, -3.32, 5.0, -3.6);
-        ctx.closePath();
+        owlWingPath(ctx);
         ctx.fill();
         ctx.stroke();
         ctx.restore();
@@ -400,12 +549,16 @@ const owl = {
         ctx.quadraticCurveTo(-4.84, -3.66, -12.59, 0.47);   // вплотную к верхнему контуру крыла
         ctx.stroke();
 
-        ctx.strokeStyle = 'rgba(32, 4, 75, 0.7)';
-        ctx.lineWidth = 1.0; ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(-0.8, 0.5); ctx.lineTo(-9.5, 2.0);
-        ctx.moveTo(0.8, 2.3);  ctx.lineTo(-6.8, 3.2);
-        ctx.stroke();
+        if (detail) {
+            drawOwlDetail(detail.wing);
+        } else {
+            ctx.strokeStyle = 'rgba(32, 4, 75, 0.7)';
+            ctx.lineWidth = 1.0; ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(-0.8, 0.5); ctx.lineTo(-9.5, 2.0);
+            ctx.moveTo(0.8, 2.3);  ctx.lineTo(-6.8, 3.2);
+            ctx.stroke();
+        }
         ctx.restore();
 
         // Клюв чуть меньше (масштаб от основания у лица)
@@ -444,10 +597,18 @@ const owl = {
 
         // Глаз целиком (обводка, белок, зрачок) чуть меньше обычного; при переедании плавно вырастает до прежнего размера
         const eyeS = (0.95 + 0.05 * puff) * (1 - 0.07 * (this.boostK || 0) * (1 - (currentFreezeFactor || 0)));   // при ускорении глаз чуть меньше (плавно, гаснет при заморозке)
-        ctx.translate(5.2, -4.0); ctx.scale(eyeS, eyeS); ctx.translate(-5.2, 4.0);
+        const eyeHeight = eyeS * (idlePose?.eye ?? 1);
+        ctx.translate(5.2, -4.0); ctx.scale(eyeS, eyeHeight); ctx.translate(-5.2, 4.0);
         ctx.fillStyle = '#2F065A';
         ctx.beginPath(); ctx.arc(5.2, -4.0, 7.8, 0, Math.PI * 2); ctx.fill();
 
+        const hurtEye = gameActive && !window.__noBlink ? owlHurtAperture() : 1;
+        if (hurtEye < 1) {
+            // Веко закрывает белок, внешняя обводка глаза сохраняет прежний силуэт.
+            ctx.fillStyle = '#7332CC';
+            ctx.beginPath(); ctx.arc(5.2, -4.0, 6.7, 0, Math.PI * 2); ctx.fill();
+            ctx.translate(5.2, -4.0); ctx.scale(1, hurtEye); ctx.translate(-5.2, 4.0);
+        }
         ctx.fillStyle = '#FFF8E1';
         ctx.beginPath(); ctx.arc(5.2, -4.0, 6.7, 0, Math.PI * 2); ctx.fill();
 
@@ -470,12 +631,20 @@ const owl = {
         ctx.translate(pcx, pcy); ctx.scale(eyeK, eyeK); ctx.translate(-pcx, -pcy);
         ctx.fillStyle = '#150226';
         ctx.beginPath(); ctx.arc(6.6 + eyeDx, -4.2 + eyeDy, 3.7, 0, Math.PI * 2); ctx.fill();
+        if (detail) {
+            ctx.strokeStyle = detail.iris;
+            ctx.lineWidth = .72;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.arc(pcx, pcy, 2.96, .18, 1.44);
+            ctx.stroke();
+        }
 
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath(); ctx.arc(5.6 + eyeDx, -5.6 + eyeDy, 1.3, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.arc(8.0 + eyeDx, -3.2 + eyeDy, 0.75, 0, Math.PI * 2); ctx.fill();
         ctx.translate(pcx, pcy); ctx.scale(1 / eyeK, 1 / eyeK); ctx.translate(-pcx, -pcy); // конец увеличенного зрачка
-        ctx.translate(5.2, -4.0); ctx.scale(1 / eyeS, 1 / eyeS); ctx.translate(-5.2, 4.0); // конец масштаба глаза
+        ctx.translate(5.2, -4.0); ctx.scale(1 / eyeS, 1 / (eyeHeight * hurtEye)); ctx.translate(-5.2, 4.0); // конец масштаба глаза
 
         // Замерзание: сова в ледяной корочке и с сосулькой на клюве
         if (currentFreezeFactor > 0.01) {

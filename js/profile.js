@@ -5,13 +5,17 @@
 // За каждый уровень — очко обучения (на каждом 5-м — два) и монеты, на каждом 5-м ещё и попытка.
 // Очки тратятся на навыки (как у учителей в «Готике» — ещё и монеты): у каждого навыка 5 ступеней, каждая дороже.
 const PF_KEY = 'bubo_profile', PG_KEY = 'bubo_prog', PS_KEY = 'bubo_stats';
-function pfLoad(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v && typeof v === 'object' ? v : d; } catch (e) { return d; } }
-function pfStore(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+function pfLoad(k, d) { try { const v = JSON.parse(BuboSaveStorage.getItem(k)); return v && typeof v === 'object' ? v : d; } catch (e) { return d; } }
+function pfStore(k, v) { try { BuboSaveStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 function pfGet() {
     const p = pfLoad(PF_KEY, null);
     return p && p.nick ? p : { nick: 'Сова', av: 'normal', guest: true };
 }
-function pfSet(p) { pfStore(PF_KEY, p); pfPlateSync(); }
+function pfSet(p) {
+    if (!pfStore(PF_KEY, p)) return false;
+    pfPlateSync();
+    return true;
+}
 let PG = Object.assign({ xp: 0, lvl: 1, pts: 0, sk: {} }, pfLoad(PG_KEY, {}));
 let PS = Object.assign({ q: 0, best: 0, themes: 0, att: 0, wins: 0, coins: 0, qzOk: 0, qzAll: 0, time: 0, days: 0, lastDay: '' }, pfLoad(PS_KEY, {}));
 if (!PG.sk || typeof PG.sk !== 'object') PG.sk = {};
@@ -385,10 +389,12 @@ function auBuild() {
     auRoot.addEventListener('click', (e) => {
         const b = e.target.closest('[data-au]'); if (!b) return;
         const a = b.dataset.au;
+        if (auBusy) return;
         if (a === 'av') { auAv = b.dataset.av; auRoot.querySelectorAll('.pf-avs .pf-av').forEach(x => x.classList.toggle('on', x === b)); const em = auRoot.querySelector('.au-emb .pf-av'); if (em) { em.dataset.av = auAv; em.style.setProperty('--g', pfAv(auAv).g); pfPaintAv(em); } pfTheme(document.getElementById('authWin'), auAv); try { Haptics.flap(); } catch (er) {} }
         else if (a === 'eye') { const inp = b.parentNode.querySelector('input'); const on = inp.type === 'password'; inp.type = on ? 'text' : 'password'; b.innerHTML = `<i class="fa-solid ${on ? 'fa-eye-slash' : 'fa-eye'}"></i>`; }
         else if (a === 'go') auSubmit();
-        else if (a === 'vk') pfToast(auRoot.querySelector('#authWin'), 'Вход через ВКонтакте появится вместе с сервером игры', 'info');
+        else if (a === 'guest') { BuboLocalProfiles.select('guest'); closeAuth(); }
+        else if (a === 'cancel') closeAuth();
         else if (a === 'mode') { auMode = auMode === 'reg' ? 'login' : 'reg'; auRender(); }
     });
     auRoot.addEventListener('input', (e) => { const f = e.target.closest('.pf-f'); if (f) f.classList.remove('bad'); const er = auRoot.querySelector('.pf-err'); if (er) er.textContent = ''; });
@@ -398,20 +404,22 @@ function auBuild() {
 function auRender() {
     const reg = auMode === 'reg';
     const tw = [[-44, -30, 8, 0], [46, -10, 7, .9], [38, 34, 6, 1.7]].map(([x, y, s, d]) => `<i class="pf-tw" style="left:calc(50% + ${x}px - ${s / 2}px);top:calc(50% + ${y}px - ${s / 2}px);--s:${s}px;--d:${d}s">✦</i>`).join('');
-    auRoot.innerHTML = `<div id="authWin" style="--pfC:${pfAv(reg ? auAv : 'normal').c};--pfL:${pfAv(reg ? auAv : 'normal').l};--pfS:${pfAv(reg ? auAv : 'normal').s}">
+    auRoot.innerHTML = `<div id="authWin" role="dialog" aria-modal="true" aria-labelledby="auTitle" tabindex="-1" style="--pfC:${pfAv(reg ? auAv : 'normal').c};--pfL:${pfAv(reg ? auAv : 'normal').l};--pfS:${pfAv(reg ? auAv : 'normal').s}">
         <div class="au-emb">${pfAvHTML(reg ? auAv : 'normal', 'round')}<div class="pf-ring"></div>${tw}</div>
-        <div class="pf-title"><b>${reg ? 'НОВЫЙ ИГРОК' : 'ВХОД'}</b><span>${reg ? 'Создай профиль совы: уровень, навыки и статистика будут копиться с каждым полётом' : 'Войди в свой профиль совы'}</span></div>
+        <div class="pf-title"><b id="auTitle">${reg ? 'НОВЫЙ ИГРОК' : 'ВХОД'}</b><span>${reg ? 'Новый профиль начинает игру с нуля. Старые сохранения останутся в этом браузере.' : 'Войди в профиль, который ты создал в этом браузере.'}</span></div>
         ${reg ? `<div class="pf-lbl">Выбери аватар</div><div class="pf-avs">${PF_AV.map(a => pfAvHTML(a.id, a.id === auAv ? 'on' : '', 'data-au="av"')).join('')}</div>` : ''}
         <div class="pf-fields">
             ${reg ? `<label class="pf-f" data-f="nick" style="--c:#C084FC"><i class="fa-solid fa-user"></i><input id="auNick" type="text" maxlength="16" placeholder="Никнейм" autocomplete="nickname" autocapitalize="off" spellcheck="false"></label>` : ''}
-            <label class="pf-f" data-f="mail" style="--c:#5EEAD4"><i class="fa-solid fa-envelope"></i><input id="auMail" type="email" maxlength="60" placeholder="${reg ? 'Почта' : 'Почта или никнейм'}" autocomplete="email" autocapitalize="off" spellcheck="false" inputmode="email"></label>
+            <label class="pf-f" data-f="mail" style="--c:#5EEAD4"><i class="fa-solid fa-envelope"></i><input id="auMail" type="${reg ? 'email' : 'text'}" maxlength="60" placeholder="${reg ? 'Почта' : 'Почта или никнейм'}" autocomplete="${reg ? 'email' : 'username'}" autocapitalize="off" spellcheck="false" inputmode="${reg ? 'email' : 'text'}"></label>
             <label class="pf-f" data-f="pass" style="--c:#FFB25C"><i class="fa-solid fa-lock"></i><input id="auPass" type="password" maxlength="40" placeholder="Пароль${reg ? ' (от 6 символов)' : ''}" autocomplete="${reg ? 'new-password' : 'current-password'}"><button type="button" class="pf-eye" data-au="eye" aria-label="Показать пароль"><i class="fa-solid fa-eye"></i></button></label>
         </div>
-        <div class="pf-err"></div>
+        <div class="pf-err" role="alert"></div>
         <button type="button" class="pf-main" data-au="go"><i class="fa-solid ${reg ? 'fa-user-plus' : 'fa-right-to-bracket'}"></i>${reg ? 'СОЗДАТЬ ПРОФИЛЬ' : 'ВОЙТИ'}</button>
-        <div class="pf-or">или</div>
-        <button type="button" class="pf-vk" data-au="vk"><span class="vk-l">VK</span>Войти через ВКонтакте</button>
+        <div class="pf-note"><i class="fa-solid fa-circle-info"></i><span>Данные хранятся здесь. Для проверки используй отдельный пароль.</span></div>
         <div class="pf-link">${reg ? 'Уже есть аккаунт?' : 'Нет аккаунта?'}<button type="button" data-au="mode">${reg ? 'Войти' : 'Регистрация'}</button></div>
+        <div class="pf-link">${BuboLocalProfiles.activeId || BuboLocalProfiles.selection === 'guest'
+            ? '<button type="button" data-au="cancel">Назад</button>'
+            : '<button type="button" data-au="guest">Играть гостем</button>'}</div>
     </div>`;
     requestAnimationFrame(() => pfPaintAll(auRoot));
 }
@@ -421,6 +429,24 @@ async function pfHash(s) {
         return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join('');
     } catch (e) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return 'd' + (h >>> 0).toString(16); }
 }
+const pfBytesHex = bytes => Array.from(bytes, value => value.toString(16).padStart(2, '0')).join('');
+const pfNewId = () => pfBytesHex(crypto.getRandomValues(new Uint8Array(16)));
+async function pfLocalHash(pass, salt = pfNewId()) {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', encoder.encode(pass), 'PBKDF2', false, ['deriveBits']);
+    const hash = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: encoder.encode(salt), iterations: 600000 }, key, 256);
+    return 'p2$' + salt + '$' + pfBytesHex(new Uint8Array(hash));
+}
+async function pfMatchesPassword(profile, pass) {
+    const modern = /^p2\$([a-f\d]{32})\$[a-f\d]{64}$/.exec(profile.ph);
+    if (modern) return await pfLocalHash(pass, modern[1]) === profile.ph;
+    if (/^d[a-f\d]{1,8}$/.test(profile.ph)) {
+        let hash = 5381;
+        for (let i = 0; i < pass.length; i++) hash = ((hash << 5) + hash + pass.charCodeAt(i)) | 0;
+        return 'd' + (hash >>> 0).toString(16) === profile.ph;
+    }
+    return await pfHash(pass) === profile.ph;
+}
 const PF_NICK_RE = /^[A-Za-zА-Яа-яЁё0-9 _.\-]{3,16}$/, PF_MAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 function pfNickErr(n) { if (n.length < 3) return 'Никнейм — от 3 символов'; if (!PF_NICK_RE.test(n)) return 'В никнейме — буквы, цифры, пробел, _ . -'; return ''; }
 function auBad(f, msg) {
@@ -429,38 +455,74 @@ function auBad(f, msg) {
     try { Haptics.hit(); } catch (e) {}
 }
 let auBusy = false;
+const auIdentity = value => value.trim().toLowerCase();
 async function auSubmit() {
     if (auBusy) return;
     const v = (id) => { const i = document.getElementById(id); return i ? i.value.trim() : ''; };
     const nick = v('auNick').replace(/\s+/g, ' '), mail = v('auMail'), pass = (document.getElementById('auPass') || {}).value || '';
-    if (auMode === 'login') {
+    const reg = auMode === 'reg';
+    if (reg) {
+        const ne = pfNickErr(nick); if (ne) return auBad('nick', ne);
+        if (!PF_MAIL_RE.test(mail)) return auBad('mail', 'Проверь почту — например, owl@mail.ru');
+        if (pass.length < 6) return auBad('pass', 'Пароль — от 6 символов');
+    } else {
         if (!mail) return auBad('mail', 'Введи почту или никнейм');
         if (!pass) return auBad('pass', 'Введи пароль');
-        return auBad('mail', 'Профиль не найден на этом устройстве. Вход с других устройств появится вместе с сервером игры');
     }
-    const ne = pfNickErr(nick); if (ne) return auBad('nick', ne);
-    if (!PF_MAIL_RE.test(mail)) return auBad('mail', 'Проверь почту — например, owl@mail.ru');
-    if (pass.length < 6) return auBad('pass', 'Пароль — от 6 символов');
     auBusy = true;
-    const ph = await pfHash(pass);
-    auBusy = false;
-    pfSet({ nick, mail, ph, av: auAv, created: Date.now(), vk: false });
-    try { AudioFX.playAttemptBonus(); Haptics.powerup(); } catch (e) {}
-    closeAuth();
-    pfWelcome(nick);
+    const submit = auRoot.querySelector('[data-au="go"]');
+    submit.disabled = true;
+    try {
+        let id;
+        if (reg) {
+            const ph = await pfLocalHash(pass);
+            const registered = BuboLocalProfiles.accounts();
+            if (registered.some(({ data }) => auIdentity(data.mail) === auIdentity(mail))) return auBad('mail', 'Эта почта уже используется в этом браузере');
+            if (registered.some(({ data }) => auIdentity(data.nick) === auIdentity(nick))) return auBad('nick', 'Этот никнейм уже занят в этом браузере');
+            id = pfNewId();
+            if (!BuboLocalProfiles.writeAccount(id, { nick, mail, ph, av: auAv, created: Date.now(), vk: false })) {
+                return auBad('', 'Браузер не смог сохранить профиль');
+            }
+        } else {
+            const identity = auIdentity(mail);
+            const entry = BuboLocalProfiles.accounts().find(({ data }) => auIdentity(data.mail) === identity || auIdentity(data.nick) === identity);
+            if (!entry || !await pfMatchesPassword(entry.data, pass)) return auBad('pass', 'Никнейм, почта или пароль не подходят');
+            id = entry.id;
+            if (!entry.data.ph.startsWith('p2$')) {
+                const ph = await pfLocalHash(pass);
+                const latest = BuboLocalProfiles.account(id);
+                if (!latest || latest.data.ph !== entry.data.ph) return auBad('', 'Профиль изменился. Попробуй войти ещё раз');
+                BuboLocalProfiles.writeAccount(id, { ...latest.data, ph });
+            }
+        }
+        if (!BuboLocalProfiles.select(id, true)) return auBad('', 'Браузер не смог открыть профиль. Попробуй войти ещё раз');
+        StorageManager.flushPending();
+        window.location.reload();
+    } catch (error) {
+        auBad('', 'Браузер не смог обработать пароль. Открой игру по HTTPS');
+    } finally {
+        auBusy = false;
+        submit.disabled = false;
+    }
 }
 // приветствие говорит сова в логотипе — в своём облачке (одна подсказка, а не несколько поверх друг друга)
 function pfWelcome(nick) {
     window.__owlSayNext = { id: 'welcome', text: `Привет, ${nick}! Летай, копи опыт и прокачивай сову` };
-    try { localStorage.setItem('bubo_hello_day', (() => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); })()); } catch (e) {}
+    try { BuboSaveStorage.setItem('bubo_hello_day', (() => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); })()); } catch (e) {}
 }
 function openAuth(mode) {
     auBuild(); auMode = mode || 'reg';
     const p = pfGet(); auAv = p ? p.av : 'normal';
     auRender();
     auRoot.classList.remove('hidden');
+    document.getElementById('startScreen').inert = true;
+    document.getElementById('authWin').focus({ preventScroll: true });
 }
-function closeAuth() { if (auRoot) auRoot.classList.add('hidden'); try { updateMenuVisibility(); } catch (e) {} }
+function closeAuth() {
+    if (auRoot) auRoot.classList.add('hidden');
+    document.getElementById('startScreen').inert = false;
+    try { updateMenuVisibility(); } catch (e) {}
+}
 
 // ---- окно профиля ----
 let pfRoot = null, pfTab = 'owl', pfSure = null, pfSureT = 0, pfPendAv = null;
@@ -501,7 +563,14 @@ function pfBuild() {
         else if (a === 'nick') pfSaveNick();
         else if (a === 'mail') pfSaveMail();
         else if (a === 'pass') pfSavePass();
-        else if (a === 'vk') pfToast(document.getElementById('pfWin'), 'Привязка ВКонтакте появится вместе с сервером игры', 'info');
+        else if (a === 'new-account' || a === 'login') {
+            closeProfile();
+            openAuth(a === 'new-account' ? 'reg' : 'login');
+        } else if (a === 'logout') {
+            if (!BuboLocalProfiles.select('login', true)) return pfToast(document.getElementById('pfWin'), 'Браузер не смог закрыть профиль', 'bad');
+            StorageManager.flushPending();
+            window.location.reload();
+        }
     });
     pfRoot.addEventListener('input', (e) => { const f = e.target.closest('.pf-f'); if (f) f.classList.remove('bad'); });
     pfRoot.querySelector('#pfTabs').addEventListener('scroll', pfTabsEdge, { passive: true });
@@ -630,8 +699,10 @@ function pfRenderPane() {
             + `<div class="pf-sec" style="--c:#FFB25C"><i class="fa-solid fa-key"></i>Сменить пароль</div>`
             + `<div class="pf-fields"><label class="pf-f" data-f="old" style="--c:#FFB25C"><i class="fa-solid fa-lock"></i><input id="pfOld" type="password" maxlength="40" placeholder="Текущий пароль" autocomplete="current-password"><button type="button" class="pf-eye" data-pf="eye" aria-label="Показать пароль"><i class="fa-solid fa-eye"></i></button></label>`
             + `<div class="pf-row"><label class="pf-f" data-f="new" style="--c:#FFB25C"><i class="fa-solid fa-lock"></i><input id="pfNew" type="password" maxlength="40" placeholder="Новый пароль" autocomplete="new-password"><button type="button" class="pf-eye" data-pf="eye" aria-label="Показать пароль"><i class="fa-solid fa-eye"></i></button></label><button type="button" class="pf-save" data-pf="pass" aria-label="Сохранить"><i class="fa-solid fa-check"></i></button></div></div>`
-            + `<button type="button" class="pf-vk" data-pf="vk"><span class="vk-l">VK</span>Привязать ВКонтакте</button>`)
-            + `<div class="pf-note"><i class="fa-solid fa-circle-info"></i><span>Профиль и прогресс пока хранятся на этом устройстве. Вход с других устройств появится вместе с сервером игры.</span></div>`;
+            + `<button type="button" class="pf-vk" data-pf="logout"><i class="fa-solid fa-right-from-bracket"></i>Выйти из профиля</button>`)
+            + `<div class="pf-link"><button type="button" data-pf="new-account">Создать новый профиль</button>
+                ${p.guest ? '<button type="button" data-pf="login">Войти</button>' : ''}</div>`
+            + `<div class="pf-note"><i class="fa-solid fa-circle-info"></i><span>У каждого профиля своё сохранение в этом браузере. Чтобы вернуться к нему, войди с прежним никнеймом или почтой.</span></div>`;
     }
     el.innerHTML = h;
     pfPaintAll(el);
@@ -644,23 +715,34 @@ function pfSaveNick() {
     const p = pfGet(); if (!p) return;
     const n = ((document.getElementById('pfNick') || {}).value || '').trim().replace(/\s+/g, ' ');
     const er = pfNickErr(n); if (er) return pfFieldBad('pfNick', er);
+    if (!p.guest && BuboLocalProfiles.accounts().some(({ id, data }) => id !== BuboLocalProfiles.activeId
+        && auIdentity(data.nick) === auIdentity(n))) return pfFieldBad('pfNick', 'Этот никнейм уже занят в этом браузере');
     p.nick = n; pfSet(p); pfRenderHero(); pfToast(document.getElementById('pfWin'), 'Никнейм сохранён');
 }
 function pfSaveMail() {
     const p = pfGet(); if (!p) return;
     const m = ((document.getElementById('pfMail') || {}).value || '').trim();
     if (!PF_MAIL_RE.test(m)) return pfFieldBad('pfMail', 'Проверь почту — например, owl@mail.ru');
+    if (BuboLocalProfiles.accounts().some(({ id, data }) => id !== BuboLocalProfiles.activeId
+        && auIdentity(data.mail) === auIdentity(m))) return pfFieldBad('pfMail', 'Эта почта уже используется в этом браузере');
     p.mail = m; pfSet(p); pfToast(document.getElementById('pfWin'), 'Почта сохранена');
 }
 async function pfSavePass() {
     const p = pfGet(); if (!p) return;
     const o = (document.getElementById('pfOld') || {}).value || '', n = (document.getElementById('pfNew') || {}).value || '';
     if (!o) return pfFieldBad('pfOld', 'Введи текущий пароль');
-    if (await pfHash(o) !== p.ph) return pfFieldBad('pfOld', 'Текущий пароль не подходит');
     if (n.length < 6) return pfFieldBad('pfNew', 'Новый пароль — от 6 символов');
-    p.ph = await pfHash(n); pfSet(p);
-    document.getElementById('pfOld').value = ''; document.getElementById('pfNew').value = '';
-    pfToast(document.getElementById('pfWin'), 'Пароль изменён');
+    try {
+        if (!await pfMatchesPassword(p, o)) return pfFieldBad('pfOld', 'Текущий пароль не подходит');
+        const ph = await pfLocalHash(n);
+        const current = pfGet();
+        if (current.ph !== p.ph || !pfSet({ ...current, ph })) return pfFieldBad('pfNew', 'Не удалось сохранить пароль. Попробуй ещё раз');
+        for (const id of ['pfOld', 'pfNew']) {
+            const field = document.getElementById(id);
+            if (field) field.value = '';
+        }
+        pfToast(document.getElementById('pfWin'), 'Пароль изменён');
+    } catch (error) { pfFieldBad('pfNew', 'Браузер не смог обработать пароль'); }
 }
 // изучение навыка: первое нажатие — «Изучить?», второе (в течение 3 с) — изучить
 function pfSkTap(k) {
@@ -690,6 +772,7 @@ function pfSkTap(k) {
         return;
     }
     try { AudioFX.playAttemptBonus(); Haptics.powerup(); } catch (e) {}
+    window.BuboPlaytest?.record('skill:purchase', { item: k, rank: r + 1, price: nc, balance: coinsGet() });
     pfRenderHero(); pfRenderPane(); pfPlateSync();
     const card = document.querySelector(`#pfPane .sk-t[data-sk="${k}"]`); if (card) card.classList.add('up');
     pfToast(win, `${s.name}: ступень ${r + 1}`);
@@ -772,7 +855,7 @@ function closeProfile() {
 // и полный сброс — ещё и профиль: снова регистрация
 function profAdminLevel() { const i = pfLvInfo(PG.xp); pfXpAdd(i.need - i.cur); }
 function profResetProgress() {
-    try { [PG_KEY, PS_KEY, 'bubo_inv'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
+    try { [PG_KEY, PS_KEY, 'bubo_inv'].forEach(k => BuboSaveStorage.removeItem(k)); } catch (e) {}
     PG = { xp: 0, lvl: 1, pts: 0, sk: {}, introCurve: true };
     PS = { q: 0, best: 0, themes: 0, att: 0, wins: 0, coins: 0, qzOk: 0, qzAll: 0, time: 0, days: 0, lastDay: '' };
     try { invRender(); } catch (e) {}
@@ -780,16 +863,21 @@ function profResetProgress() {
 }
 function profResetAll() {
     profResetProgress();
-    try { [PF_KEY, 'bubo_hello_day'].forEach(k => localStorage.removeItem(k)); } catch (e) {}
+    try { [PF_KEY, 'bubo_hello_day'].forEach(k => BuboSaveStorage.removeItem(k)); } catch (e) {}
     pfPlateAv = ''; pfPlateSync();
 }
 
-// После загрузки можно сразу лететь с локальным профилем совы.
+// After loading, offer a profile once. Existing players go straight to their menu.
 (function () {
     pfPlateSync();
     const iv = setInterval(() => {
         if (document.documentElement.classList.contains('booting')) return;
         pfPlateSync();
+        if (!BuboLocalProfiles.activeId && BuboLocalProfiles.selection !== 'guest') {
+            openAuth(BuboLocalProfiles.selection === 'login' ? 'login' : 'reg');
+        } else if (BuboLocalProfiles.activeId && !pfLoad(PF_KEY, null)?.guest) {
+            try { if (!BuboSaveStorage.getItem('bubo_hello_day')) pfWelcome(pfGet().nick); } catch (error) {}
+        }
         clearInterval(iv);
     }, 200);
     setInterval(() => { if (pfPlate && !pfPlate.classList.contains('hidden')) { const p = pfGet(); if (!p) pfPlateSync(); } }, 2000);

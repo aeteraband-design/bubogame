@@ -284,7 +284,9 @@ function update() {
         for (let i = shieldTouches.length - 1; i >= 0; i--) { shieldTouches[i].p *= Math.pow(0.9, dtMult); if (shieldTouches[i].p < 0.02) shieldTouches.splice(i, 1); }
     }
 
+    const livesBeforeFire = lives;
     crystalUpdate(currentSpeed, activeSqueeze);   // эффект «Опасные трубы»
+    if (gameActive && lives > 0 && lives < livesBeforeFire) owlReactToHeartLoss();
     if (!gameActive && campaign) return;
     if (typeof waterUpdate === 'function') waterUpdate(currentSpeed, activeSqueeze);
     if (typeof quizUpdate2D === 'function') quizUpdate2D(currentSpeed, activeSqueeze);   // портал в квиз-мир   // эффект «Вода из труб»
@@ -506,6 +508,7 @@ function update() {
                 const maxLimit = cat.count;
                 if (collected[it.type] < maxLimit) {
                     collected[it.type]++;
+                    window.BuboJourney?.recordCollection();
                     if (typeof profFlightCollect === 'function') profFlightCollect('theme', 1);
                     checkFlightThemeBonus(it.type);
                     if (typeof quizOnTheme === 'function') quizOnTheme();   // каждые 10% тем — портал в квиз-мир
@@ -568,11 +571,14 @@ function buffKeyForLabel(t) {
     if (/опьянели/i.test(t)) return 'drunk';
     return null;
 }
+function buffWaitsForLabel(key) {
+    return key !== 'crystal' && key !== 'water';
+}
 function sendTagToTimer(tag, key) {
     tag.__toTimer = true;
     const existing = document.querySelector(`#buffBar [data-key="${key}"]`);
     const alreadyShown = existing && existing.style.opacity !== '0' && !buffArrive[key];
-    if (!alreadyShown) buffArrive[key] = performance.now() + 2500;
+    if (!alreadyShown && buffWaitsForLabel(key)) buffArrive[key] = performance.now() + 2500;
     lastBuffStateKey = ''; updateBuffHUD();
     tag.style.animation = 'buffTagIntro 0.45s linear forwards';   // в начале движется так же, как обычные подсказки — соседние не наезжают
     const showTimer = () => {
@@ -711,13 +717,13 @@ function updateBuffHUD() {
         });
     }
 
-    // Новый таймер, к которому вот-вот полетит подсказка, не показываем заранее: он проявится, когда подсказка долетит
+    // Некоторые таймеры ждут свою подсказку. Опасность должна быть видна сразу.
     {
         const keysNow = activeBuffs.map(b => b.key);
         for (const b of activeBuffs) {
             const k = b.key;
             const refreshed = lastBuffLeft[k] !== undefined && b.left > lastBuffLeft[k] + 30;   // эффект взяли ещё раз — время подскочило
-            if (!lastBuffKeySet.has(k) && !buffArrive[k] && buffTagPending(k)) buffArrive[k] = performance.now() + 1600;
+            if (buffWaitsForLabel(k) && !lastBuffKeySet.has(k) && !buffArrive[k] && buffTagPending(k)) buffArrive[k] = performance.now() + 1600;
             if (refreshed && lastBuffKeySet.has(k)) buffRefreshed[k] = performance.now() + 1500;   // продление: подсказку не создаём, таймер пульсирует
             lastBuffLeft[k] = b.left;
         }
@@ -740,6 +746,17 @@ function makeBuffEl(b) {
     el.innerHTML = `<span style="display:inline-flex;min-width:11px;height:14px;justify-content:center;align-items:center;flex-shrink:0">${b.svgIcon ? b.svgIcon : `<i class="fa-solid ${b.icon}" style="color: ${b.color};"></i>`}</span><span class="buff-txt" style="font-weight:900!important;">${buffTxtHtml(b.text)}</span>`;
     return el;
 }
+function syncBuffText(el, buff) {
+    buffTxtSet(el.querySelector('.buff-txt'), buff.text);
+    const pending = buffWaitsForLabel(buff.key) ? buffArrive[buff.key] : undefined;
+    if (pending && performance.now() < pending) {
+        el.style.transition = 'opacity 0.12s';
+        el.style.opacity = '0';
+    } else if (!pending && el.style.opacity === '0') {
+        el.style.opacity = '1';
+    }
+}
+
 function renderBuffBar(bar, list) {
     if (typeof alignBuffBar === 'function' && !bar.children.length) alignBuffBar();   // первый таймер — выравниваем по краю панели
     const z = uiFx();   // панель таймеров масштабируется transform: scale(--fx)
@@ -750,10 +767,7 @@ function renderBuffBar(bar, list) {
         const cur = [...els.keys()];
         if (cur.length === list.length && list.every((b, i) => b.key === cur[i])) {
             list.forEach((b) => {
-                const el = els.get(b.key);
-                buffTxtSet(el.querySelector('.buff-txt'), b.text);
-                const hidden = !!(buffArrive[b.key] && performance.now() < buffArrive[b.key]);
-                if (hidden) { el.style.transition = 'opacity 0.12s'; el.style.opacity = '0'; } else if (el.style.opacity === '0' && !buffArrive[b.key]) el.style.opacity = '1';
+                syncBuffText(els.get(b.key), b);
             });
             return;
         }
@@ -778,9 +792,7 @@ function renderBuffBar(bar, list) {
     list.forEach((b) => {
         let el = els.get(b.key);
         if (!el) el = makeBuffEl(b);
-        buffTxtSet(el.querySelector('.buff-txt'), b.text);
-        const hidden = !!(buffArrive[b.key] && performance.now() < buffArrive[b.key]);
-        if (hidden) { el.style.transition = 'opacity 0.12s'; el.style.opacity = '0'; } else if (el.style.opacity === '0' && !buffArrive[b.key]) el.style.opacity = '1';
+        syncBuffText(el, b);
         bar.appendChild(el);   // переставляет в нужный порядок
     });
     // плавный сдвиг тех, кто поменял место (FLIP)
@@ -893,6 +905,7 @@ function handleSecretRoulette(originX, originY) {
                     return { skip: true, label: '', color: '#EF4444', icon: 'fa-heart-crack', isScoreAdd: false };
                 }
                 lives = Math.round((lives - 1.0) * 10) / 10;
+                owlReactToHeartLoss();
                 AudioFX.playHit();
                 Haptics.hit();
                 updateLivesHUD();
@@ -916,6 +929,7 @@ function handleSecretRoulette(originX, originY) {
                 }
                 const lostKey = existing[Math.floor(Math.random() * existing.length)];
                 collected[lostKey]--;
+                window.BuboJourney?.recordCollection();
                 updateCollectionHUD();
                 AudioFX.playThemeLose();   // потеря темы — свой звук «вычитания», не удар
                 triggerBadgeAnimation(lostKey, true);
@@ -985,6 +999,7 @@ function handleSecretRoulette(originX, originY) {
             if (open.length > 0) {
                 const key = open[Math.floor(Math.random() * open.length)];
                 collected[key]++;
+                window.BuboJourney?.recordCollection();
                 if (typeof profFlightCollect === 'function') profFlightCollect('theme', 1);
                 checkFlightThemeBonus(key);
                 updateCollectionHUD();
@@ -1028,6 +1043,7 @@ function handleHit(cause = 'Сова врезалась в трубу — это
     }
 
     lives = Math.round((lives - 1.0) * 10) / 10;
+    owlReactToHeartLoss();
     invulnerableTime = 130;
     owl.vy = -3.8;
     updateLivesHUD(); StorageManager.save();
@@ -1046,6 +1062,7 @@ function handleStaminaDepletion() {
     }
 
     lives = Math.round((lives - 1.0) * 10) / 10;
+    owlReactToHeartLoss();
     stamina = maxStamina;
     invulnerableTime = 130;
     updateLivesHUD(); updateStaminaHUD(); StorageManager.save();
@@ -1089,8 +1106,11 @@ function triggerOwlFeatherExplosion() {
 
 function handleRunFailure(reason, opts) {
     if (window.BuboCampaign?.onFatal(reason)) return;
+    const journey = window.BuboJourney;
+    const secondWind = Boolean(journey?.inSecondWind());
     gameActive = false;
-    const earnedCoins = window.FlightQuizBonus?.endFlight(score, 'loss') || 0;
+    const attemptsAfterLoss = secondWind ? attempts : Math.max(0, attempts - 1);
+    const earnedCoins = window.FlightQuizBonus?.endFlight(score, 'loss', attemptsAfterLoss) || 0;
     waitingFirstTap = false;
     isFlightPaused = false;
     clearAllBuffs();
@@ -1101,8 +1121,9 @@ function handleRunFailure(reason, opts) {
     AudioFX.stopMusic();
 
     setTimeout(() => {
-        attempts = Math.max(0, attempts - 1);
+        if (!secondWind) attempts = Math.max(0, attempts - 1);
         if (attempts <= 0 && !zeroDay) zeroDay = todayKey();
+        if (!gameActive && !waitingFirstTap) journey?.leaveFlight();
         StorageManager.save();
 
         // Если за это время игрок уже вышел в главное меню — экран поражения не показываем
@@ -1142,7 +1163,7 @@ function showGameOverScreen(reason, earnedCoins = 0, checkingAttempts = false) {
         info.classList.toggle('go-warn', !has);
         info.innerHTML = has
             ? `<div class="go-ii"><i class="fa-solid fa-floppy-disk"></i></div><div><b>Прогресс сохранён</b>Продолжи с того же места${lvlName ? ` — сложность <span class="go-lvl">${lvlName}</span>` : ''}.${coins}</div>`
-            : `<div class="go-ii"><i class="fa-solid fa-triangle-exclamation"></i></div><div><b>Попытки на сегодня закончились</b>Прогресс полёта сохранён до конца дня.${coins}</div>`;
+            : `<div class="go-ii"><i class="fa-solid fa-triangle-exclamation"></i></div><div><b>Попытки на сегодня закончились</b>Собранные темы сохранятся до следующего вылета.${coins}</div>`;
     }
     const contBtn = $('continueAttemptBtn'), restartBtn = $('restartFromGameOverBtn'), homeBtn = $('gameOverHomeBtn'), okBtn = $('gameOverOkBtn');
     if (contBtn) contBtn.classList.toggle('hidden', !has);

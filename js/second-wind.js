@@ -18,7 +18,7 @@
 
     function read() {
         try {
-            const raw = localStorage.getItem(KEY);
+            const raw = BuboSaveStorage.getItem(KEY);
             if (raw === null) return { version: 1, day: '', usedDay: '', freeUsed: 0, pending: null, last: null };
             const value = JSON.parse(raw);
             if (value?.version !== 1 || !(value.day === '' || isDay(value.day))
@@ -36,7 +36,7 @@
     }
 
     function save(value) {
-        try { localStorage.setItem(KEY, JSON.stringify(value)); return true; } catch (e) { return false; }
+        try { BuboSaveStorage.setItem(KEY, JSON.stringify(value)); return true; } catch (e) { return false; }
     }
 
     function notify() {
@@ -84,7 +84,7 @@
     }
 
     function saveWallet(amount, receipts) {
-        try { localStorage.setItem(COINS_KEY, [amount, ...receipts].join('|')); } catch (e) { return false; }
+        try { BuboSaveStorage.setItem(COINS_KEY, [amount, ...receipts].join('|')); } catch (e) { return false; }
         try { shopSyncBtn(); } catch (e) {}
         return true;
     }
@@ -174,7 +174,7 @@
     function reset() {
         const pending = read()?.pending;
         if (pending && !refund(pending)) return false;
-        try { localStorage.removeItem(KEY); } catch (e) { return false; }
+        try { BuboSaveStorage.removeItem(KEY); } catch (e) { return false; }
         notify();
         return true;
     }
@@ -183,6 +183,7 @@
         PRICE, FREE_LIMIT, MAX_FREE_DAYS, status, consume, markStarted, refund, recover, reset
     };
     window.addEventListener('storage', event => {
-        if (event.key === KEY || event.key === COINS_KEY || event.key === null) notify();
+        if (event.key === null || event.key === BuboLocalProfiles.storageKey(KEY)
+            || event.key === BuboLocalProfiles.storageKey(COINS_KEY)) notify();
     });
 })();

@@ -5,16 +5,16 @@
 const COINS_KEY = 'bubo_coins', SHOP_PEND_KEY = 'bubo_shop_pending';
 const SHOP_WEEKLY_DEBIT = 'shop:weekly-shazam:';
 const SHOP_WALLET_MARKERS = [SHOP_WEEKLY_DEBIT, 'wind:charge:', 'wind:refund:'];
-function coinsGet() { try { return Math.max(0, parseInt(localStorage.getItem(COINS_KEY), 10) || 0); } catch (e) { return 0; } }
+function coinsGet() { try { return Math.max(0, parseInt(BuboSaveStorage.getItem(COINS_KEY), 10) || 0); } catch (e) { return 0; } }
 function coinsWallet() {
-    const raw = localStorage.getItem(COINS_KEY) || '0';
+    const raw = BuboSaveStorage.getItem(COINS_KEY) || '0';
     const [amount, ...receipts] = raw.split('|');
     return { amount: Math.max(0, parseInt(amount, 10) || 0), receipts };
 }
 function coinsSet(n) {
     try {
         const wallet = coinsWallet();
-        localStorage.setItem(COINS_KEY, [Math.max(0, Math.round(n)), ...wallet.receipts].join('|'));
+        BuboSaveStorage.setItem(COINS_KEY, [Math.max(0, Math.round(n)), ...wallet.receipts].join('|'));
     } catch (e) { return false; }
     try { shopSyncBtn(); } catch (e) {}
     return true;
@@ -34,7 +34,7 @@ function coinsAddOnce(n, receipt, onCredit) {
         if (starter && !starterCredit) markers.unshift(starter);
         const recent = wallet.receipts.filter(value => !value.startsWith(prefix)
             && !SHOP_WALLET_MARKERS.some(key => value.startsWith(key))).slice(markers.length - 63);
-        localStorage.setItem(COINS_KEY, [wallet.amount + Math.round(n), ...markers, ...recent, receipt].join('|'));
+        BuboSaveStorage.setItem(COINS_KEY, [wallet.amount + Math.round(n), ...markers, ...recent, receipt].join('|'));
     } catch (e) { return false; }
     try { shopSyncBtn(); } catch (e) {}
     if (typeof pfStat === 'function') pfStat('coins', n);
@@ -43,8 +43,8 @@ function coinsAddOnce(n, receipt, onCredit) {
 }
 
 // бонусы «на старт полёта»: купил — сработают, когда полетишь в следующий раз
-function shopPend() { try { return JSON.parse(localStorage.getItem(SHOP_PEND_KEY)) || {}; } catch (e) { return {}; } }
-function shopSetPend(p) { try { localStorage.setItem(SHOP_PEND_KEY, JSON.stringify(p)); return true; } catch (e) { return false; } }
+function shopPend() { try { return JSON.parse(BuboSaveStorage.getItem(SHOP_PEND_KEY)) || {}; } catch (e) { return {}; } }
+function shopSetPend(p) { try { BuboSaveStorage.setItem(SHOP_PEND_KEY, JSON.stringify(p)); return true; } catch (e) { return false; } }
 function shopOnFlightStart() {
     const p = shopPend(); if (!p.shield && !p.slow && !p.shazam) return;
     if (!shopSetPend({}) || (typeof invGet === 'function' && invGet().movedLegacyPending)) return;
@@ -143,7 +143,7 @@ function shopFinishWeekly(wallet) {
         && invWrite({ ...stock, shazam: current + 1, [SHOP_WEEKLY_STOCK_FIELD]: week.key });
     const balance = wallet.amount + (granted ? 0 : SHOP_WEEKLY.price);
     try {
-        localStorage.setItem(COINS_KEY, [balance, ...wallet.receipts.filter(value => value !== receipt)].join('|'));
+        BuboSaveStorage.setItem(COINS_KEY, [balance, ...wallet.receipts.filter(value => value !== receipt)].join('|'));
     } catch (e) {
         return granted ? '' : 'Не удалось вернуть монеты. Повторим при открытии лавки.';
     }
@@ -159,7 +159,7 @@ function shopBuyWeekly() {
         const reason = shopWeeklyBlock(invGet(), week);
         if (reason) return reason;
         if (wallet.amount < SHOP_WEEKLY.price) return 'На покупку не хватает монет.';
-        localStorage.setItem(COINS_KEY, [wallet.amount - SHOP_WEEKLY.price, ...wallet.receipts, SHOP_WEEKLY_DEBIT + week.key].join('|'));
+        BuboSaveStorage.setItem(COINS_KEY, [wallet.amount - SHOP_WEEKLY.price, ...wallet.receipts, SHOP_WEEKLY_DEBIT + week.key].join('|'));
         return shopFinishWeekly(coinsWallet());
     } catch (e) { return 'Не удалось сохранить покупку.'; }
 }
@@ -292,7 +292,7 @@ function shopBuild() {
         const a = b.dataset.sh;
         if (a === 'close') closeShop();
         else if (a === 'quiz') { closeShop(); if (typeof openQuiz === 'function') openQuiz(); }
-        else if (a === 'hideearn') { try { localStorage.setItem('bubo_shop_earn_hidden', '1'); } catch (er) {} const el = document.getElementById('shEarn'); if (el) el.classList.add('gone'); shopFit(); }
+        else if (a === 'hideearn') { try { BuboSaveStorage.setItem('bubo_shop_earn_hidden', '1'); } catch (er) {} const el = document.getElementById('shEarn'); if (el) el.classList.add('gone'); shopFit(); }
         else shopTap(a, b);
     });
     return shRoot;
@@ -414,7 +414,7 @@ function openShop(e) {
     if (e) e.stopPropagation();
     try { AudioFX.resume(); } catch (er) {}
     shopBuild(); shSure = null; shopPurchaseError(''); shopRender(); shopRecoverWeekly();
-    try { const el = document.getElementById('shEarn'); if (el) el.classList.toggle('gone', localStorage.getItem('bubo_shop_earn_hidden') === '1'); } catch (er) {}
+    try { const el = document.getElementById('shEarn'); if (el) el.classList.toggle('gone', BuboSaveStorage.getItem('bubo_shop_earn_hidden') === '1'); } catch (er) {}
     try { const w = document.getElementById('shWin'); if (w) w.scrollTop = 0; } catch (er) {}
     shRoot.classList.remove('hidden');
     shopFit();

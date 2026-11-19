@@ -48,6 +48,8 @@
 #authModal, #profModal { position: absolute; inset: 0; z-index: 46; display: flex; align-items: center; justify-content: center; padding: 12px;
     background: rgba(20, 3, 38, .25); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
 #authModal.hidden, #profModal.hidden { display: none; }
+#authModal { z-index: 47; }
+#authWin .pf-main:disabled { opacity: .7; cursor: progress; }
 #authWin, #pfWin { position: relative; width: 100%; max-width: 380px; zoom: var(--menu-zoom, 1); max-height: calc((100dvh - 24px) / var(--menu-zoom, 1));
     overflow-x: hidden; overflow-y: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
     border-radius: 28px; padding: 18px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; font-family: Onest, sans-serif; color: #fff; text-align: left;
@@ -55,6 +57,7 @@
     background: radial-gradient(110% 40% at 50% -8%, color-mix(in srgb, var(--pfC) 26%, transparent), transparent 62%), radial-gradient(80% 36% at 0% 106%, color-mix(in srgb, var(--pfS) 14%, transparent), transparent 60%), rgba(29, 9, 54, .97);
     border-color: color-mix(in srgb, var(--pfC) 45%, transparent); }
 @supports not (height: 100dvh) { #authWin, #pfWin { max-height: calc((100vh - 24px) / var(--menu-zoom, 1)); } }
+#authWin:focus { outline: none; }
 #authWin::-webkit-scrollbar, #pfWin::-webkit-scrollbar { display: none; }
 #authWin > *, #pfWin > * { flex-shrink: 0; }
 #pfWin { max-width: 400px; overflow: hidden; height: min(calc((100dvh - 24px) / var(--menu-zoom, 1)), 860px); }

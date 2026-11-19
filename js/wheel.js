@@ -49,7 +49,7 @@ function rwHasPending() {
 }
 
 function rwSavedProgress() {
-    try { return JSON.parse(localStorage.getItem(StorageManager.LOCAL_KEY)); }
+    try { return JSON.parse(BuboSaveStorage.getItem(StorageManager.LOCAL_KEY)); }
     catch (e) { return null; }
 }
 
@@ -265,6 +265,7 @@ function spinRoulette() {
         return;
     }
     window.BuboCampaign?.settleRewards();
+    window.BuboJourney?.settleRewards();
     void StorageManager.saveRemote();
     rw.spinning = true; rw.drag = null; rw.vel = 0;
     { const w = rwEl('rwWindow'); if (w) w.classList.add('rw-is-spinning'); }
@@ -406,7 +407,7 @@ function claimRoulettePrize() {
         rwEl('rwResDesc').innerText = 'Не удалось сохранить приз. Попробуй ещё раз.';
         return;
     }
-    try { localStorage.setItem('bubo_last_prize', key + ':' + Date.now()); } catch (e) {}
+    try { BuboSaveStorage.setItem('bubo_last_prize', key + ':' + Date.now()); } catch (e) {}
     updateAttemptsHUD(); updateLivesHUD(); updateStaminaHUD(); updateMenuVisibility();
     void StorageManager.saveRemote();
     rwFinishClaim();
@@ -532,7 +533,7 @@ function closeVictoryModal() {
 (function initVictoryUI() {
     const on = (id, fn) => { const el = rwEl(id); if (el) el.addEventListener('click', (e) => { e.stopPropagation(); const m = rwEl('winModal'); if (m && m.__lockUntil && performance.now() < m.__lockUntil) return; fn(); }); };
     on('vicSpinBtn', () => { if (rouletteSpins <= 0 && !rwHasPending()) return; closeVictoryModal(); openRoulette({}); });
-    on('vicNewGameBtn', () => { closeVictoryModal(); startOrResumeFlight(); });
+    on('vicNewGameBtn', () => { closeVictoryModal(); window.BuboJourney.start(); });
     on('vicHomeBtn', () => { closeVictoryModal(); if (AudioFX.mode === 'victory') AudioFX.setMode('menu'); updateMenuVisibility(); });
 })();
 

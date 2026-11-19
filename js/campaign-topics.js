@@ -9,7 +9,16 @@
         music: '\uf001', kino: '\uf008', series: '\ue131', games: '\uf11b', hp: '\uf6e8',
         nature: '\uf6ed', geo: '\uf7a2', sport: '\uf1e3', food: '\uf805', art: '\uf53f'
     };
-    const topics = [...BY_PHASE].flatMap(([phase, ids]) => ids.map(id => ({ id, phase })));
+    const DISTRICTS = new Map([
+        ['dawn', { native: ['logic'], quiz: ['nature', 'geo'] }],
+        ['music', { native: ['music'], quiz: ['music', 'art'] }],
+        ['magic', { native: ['fun'], quiz: ['hp', 'series'] }],
+        ['jungle', { native: ['cartoons'], quiz: ['food', 'sport'] }],
+        ['night', { native: ['kino', 'series'], quiz: ['kino', 'games'] }]
+    ]);
+    const districtByTopic = new Map();
+    for (const [district, group] of DISTRICTS) for (const id of group.quiz) districtByTopic.set(id, district);
+    const topics = [...BY_PHASE].flatMap(([phase, ids]) => ids.map(id => ({ id, phase, district: districtByTopic.get(id) })));
     const topicIds = new Set(topics.map(topic => topic.id));
     const slots = [0, 1];
     const previewStamps = new Set();
@@ -19,7 +28,7 @@
 
     function hasSlot(id, slot, test) {
         const key = slotKey(id, slot);
-        return test ? previewStamps.has(key) : localStorage.getItem(key) === '1';
+        return test ? previewStamps.has(key) : BuboSaveStorage.getItem(key) === '1';
     }
 
     function count(id, test = false) {
@@ -40,11 +49,28 @@
         return visuals.get(id);
     }
 
-    function forGate({ phase, index, test } = {}) {
-        const id = BY_PHASE.get(phase)?.[index];
-        if (!id) return null;
+    function missing(id, test) {
         try { return { id, slots: slots.filter(slot => !hasSlot(id, slot, test)) }; }
         catch (e) { return { id, slots: [...slots] }; }
+    }
+
+    function forGate({ phase, index, test } = {}) {
+        const id = BY_PHASE.get(phase)?.[index];
+        return id ? missing(id, test) : null;
+    }
+
+    function forDistrict(district, turn = 0) {
+        const ids = DISTRICTS.get(district)?.quiz;
+        if (!ids) return null;
+        for (let offset = 0; offset < ids.length; offset++) {
+            const topic = missing(ids[(turn + offset) % ids.length]);
+            if (topic.slots.length) return topic;
+        }
+        return null;
+    }
+
+    function nativeThemesForDistrict(district) {
+        return DISTRICTS.get(district)?.native || [];
     }
 
     function notify(detail) {
@@ -58,7 +84,7 @@
             if (hasSlot(id, slot, test)) return { changed: false, progress: count(id, test) };
             const key = slotKey(id, slot);
             if (test) previewStamps.add(key);
-            else localStorage.setItem(key, '1');
+            else BuboSaveStorage.setItem(key, '1');
             const progress = count(id, test);
             result = { changed: true, progress, unlocked: progress === slots.length };
         } catch (e) { return null; }
@@ -69,19 +95,19 @@
     function reset() {
         previewStamps.clear();
         try {
-            for (const { id } of topics) for (const slot of slots) localStorage.removeItem(slotKey(id, slot));
+            for (const { id } of topics) for (const slot of slots) BuboSaveStorage.removeItem(slotKey(id, slot));
         } catch (e) { return false; }
         notify();
         return true;
     }
 
     window.addEventListener('storage', event => {
-        if (event.key === null || event.key.startsWith(KEY)) notify();
+        if (event.key === null || event.key.startsWith(BuboLocalProfiles.storageKey(KEY))) notify();
     });
 
     window.BuboCampaignTopics = {
         list: () => topics.map(topic => ({ ...topic })),
         progress, isUnlocked: id => progress(id) === slots.length,
-        forGate, collect, visual, reset, resetPreview: () => previewStamps.clear()
+        forGate, forDistrict, nativeThemesForDistrict, collect, visual, reset, resetPreview: () => previewStamps.clear()
     };
 })();

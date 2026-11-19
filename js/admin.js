@@ -211,7 +211,7 @@
         const oldMax = MAX_ATTEMPTS, oldStorm = (ADMIN_CFG && ADMIN_CFG.stormFreq) | 0;
         ADMIN_CFG = normalizeAdminCfg(cfgIn);
         try { if (typeof wxAdminFreqChanged === 'function') wxAdminFreqChanged(oldStorm, ADMIN_CFG.stormFreq | 0); } catch (e) {}
-        try { localStorage.setItem(ADMIN_KEY, JSON.stringify(ADMIN_CFG)); } catch (e) {}
+        try { BuboSaveStorage.setItem(ADMIN_KEY, JSON.stringify(ADMIN_CFG)); } catch (e) {}
         MAX_ATTEMPTS = ADMIN_CFG.attempts;
         if (!hasStartedCampaign) { maxLives = ADMIN_CFG.maxLives; lives = Math.min(lives, maxLives); }   // новая игра — сразу новый максимум сердечек
         QUESTIONS_PER_ATTEMPT = ADMIN_CFG.questionsPerAttempt;
@@ -254,14 +254,14 @@
     //  ВСЁ      — и то и другое, и выход из профиля: снова регистрация, как при первом запуске.
     function admResetProgress() {
         window.BuboCampaign?.reset();
+        window.BuboJourney?.resetRoute({ retainRewards: false });
         if (typeof qzSetAdminPreview === 'function') qzSetAdminPreview('');
         quizPreviewLevel = '';
         try { resetEntireGame({ attempts: MAX_ATTEMPTS }); playDay = todayKey(); zeroDay = ''; } catch (er) {}
         try { if (typeof quizResetDay === 'function') quizResetDay(); } catch (er) {}
-        try { localStorage.removeItem('bubo_shop_earn_hidden'); } catch (er) {}   // подсказка в лавке снова покажется, как новичку
-        try { localStorage.removeItem('bubo_goal_hidden'); } catch (er) {}   // «Цель полёта» тоже снова покажется
+        try { BuboSaveStorage.removeItem('bubo_shop_earn_hidden'); } catch (er) {}   // подсказка в лавке снова покажется, как новичку
         try { if (typeof coinsSet === 'function') coinsSet(0); } catch (er) {}
-        try { ['bubo_shop_pending', 'bubo_quiz_theme', 'bubo_quiz_lvl', 'bubo_last_prize', 'bubo_quiz_sub', 'bubo_quiz_prog', 'bubo_first_game_done', 'bubo_wx'].forEach(k => localStorage.removeItem(k)); } catch (er) {}
+        try { ['bubo_shop_pending', 'bubo_quiz_theme', 'bubo_quiz_lvl', 'bubo_last_prize', 'bubo_quiz_sub', 'bubo_quiz_prog', 'bubo_first_game_done', 'bubo_wx'].forEach(k => BuboSaveStorage.removeItem(k)); } catch (er) {}
         try { if (typeof quizMenuBadge === 'function') quizMenuBadge(); } catch (er) {}
         try { if (typeof profResetProgress === 'function') profResetProgress(); } catch (er) {}   // уровень совы, навыки, статистика и запас — с нуля
         try { if (typeof quizResetSeen === 'function') quizResetSeen(); } catch (er) {}
@@ -288,7 +288,7 @@
     admTwoTap('admAllBtn', 'ВСЁ', () => {
         admResetCfg(); admResetProgress();
         try { if (typeof profResetAll === 'function') profResetAll(); } catch (er) {}
-        try { localStorage.removeItem('bubo_inv_side'); } catch (er) {}
+        try { BuboSaveStorage.removeItem('bubo_inv_side'); } catch (er) {}
         // После сброса возвращаемся к гостевому профилю в меню.
         setTimeout(() => { try { close(); } catch (er) { modal.classList.add('hidden'); } }, 600);
     });
@@ -324,7 +324,7 @@
             close();
             if (!window.BuboCampaign?.setStageForTest(b.dataset.g.slice(6))) openReal();
         }
-        else if (b.dataset.g === 'out') { try { localStorage.removeItem(AUTH); } catch (er) {} close(); }
+        else if (b.dataset.g === 'out') { try { BuboSaveStorage.removeItem(AUTH); } catch (er) {} close(); }
     });
     body.addEventListener('click', async (e) => {
         const b = e.target.closest('[data-playtest]'); if (!b || tab !== 'quiz') return;
@@ -446,7 +446,7 @@
             login.querySelector('form').addEventListener('submit', (e) => {
                 e.preventDefault();
                 const u = login.querySelector('#alU').value.trim().toLowerCase(), p = login.querySelector('#alP').value.trim();
-                if (u === 'admin' && p === '19881988') { try { localStorage.setItem(AUTH, '1'); } catch (er) {} login.classList.add('hidden'); openReal(); }
+                if (u === 'admin' && p === '19881988') { try { BuboSaveStorage.setItem(AUTH, '1'); } catch (er) {} login.classList.add('hidden'); openReal(); }
                 else { login.querySelector('#alE').textContent = 'Неверный логин или пароль'; const b = login.querySelector('.al-box'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); }
             });
         }
@@ -454,7 +454,7 @@
         login.classList.remove('hidden');
         setTimeout(() => { try { login.querySelector('#alU').focus(); } catch (er) {} }, 50);
     };
-    const open = (e) => { if (e) e.stopPropagation(); let ok = false; try { ok = localStorage.getItem(AUTH) === '1'; } catch (er) {} if (ok) openReal(); else showLogin(); };
+    const open = (e) => { if (e) e.stopPropagation(); let ok = false; try { ok = BuboSaveStorage.getItem(AUTH) === '1'; } catch (er) {} if (ok) openReal(); else showLogin(); };
     const close = (e) => { if (e) e.stopPropagation(); stopHold(); prevStop(); modal.classList.add('hidden'); syncAll(); };
     openBtn.addEventListener('click', open);
     $('admClose').addEventListener('click', close);

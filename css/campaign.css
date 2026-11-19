@@ -3,6 +3,11 @@
     display: none !important;
 }
 #campaignActions { display: grid; gap: 6px; }
+#startBtn[hidden], #journeyDistrict[hidden] { display:none !important; }
+#journeyDistrict {
+    min-width:0; margin-inline:6px; color:#f6e4ff; font-size:9px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
 .camp-start {
     display: grid; grid-template-columns: 34px 1fr 15px; gap: 10px;
     width: 100%; min-height: 54px; padding: 8px 13px; text-align: left; align-items: center; border-radius: 16px;
@@ -11,10 +16,6 @@
 .camp-start strong, .camp-start small { display: block; color:#fff; }
 .camp-start strong { font-size: 14px; font-weight: 900; line-height:1.12; text-transform:uppercase; }
 .camp-start small { margin-top:2px; font: 700 11px Onest,sans-serif; }
-.camp-replay { min-height: 34px; width:100%; border-radius:12px; font-size:11px; color:#e5d6ff; }
-.camp-replay i { margin-right:6px; color:#ffb56d; }
-#startBtn.camp-free { border-radius:14px; }
-#startBtn.camp-free #startBtnLabel { font-size:12px; }
 .camp-active #scoreBadge, .camp-active #bottomHud { display:none !important; }
 #campaignHUD {
     position:absolute; bottom:12px; left:14px; right:14px; z-index:21; pointer-events:none;
@@ -61,8 +62,3 @@
 .camp-question { color:#d5f3ff; border-color:#63c8ee9e; background:#202e59; }
 .camp-alt:active { transform:scale(.98); }
 .camp-main:focus-visible, .camp-alt:focus-visible, .camp-start:focus-visible { outline:2px solid #fff5d2; outline-offset:2px; }
-#startScreen #startBtn.camp-free {
-    background:#251641; color:#e8d6ff; border:1px solid #9b6bdd8c;
-    box-shadow:0 3px 10px #10042170;
-}
-#startScreen.camp-intro #menuGoalCard { display:none !important; }
