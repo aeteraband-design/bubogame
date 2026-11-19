@@ -922,9 +922,16 @@ function checkVictoryCondition() {
 function updateMenuVisibility() {
     try { rwUpdateUI(); } catch (e) {}
     window.refreshFlightBonusUI?.();
+    const needsTraining = !window.BuboCampaign?.status().practiced;
+    const campaignButton = document.getElementById('campaignStartBtn');
+    if (needsTraining) campaignButton?.removeAttribute('aria-haspopup');
+    else campaignButton?.setAttribute('aria-haspopup', 'dialog');
     const pickerAttempts = document.getElementById('campaignStartAttempts');
-    if (pickerAttempts) pickerAttempts.textContent = window.BuboJourney.prizeDistrictId() ? 'Приз ждёт в рулетке'
+    if (pickerAttempts) pickerAttempts.textContent = needsTraining ? '3 трубы · без расхода попыток'
+        : window.BuboJourney.prizeDistrictId() ? 'Приз ждёт в рулетке'
         : attempts > 0 ? 'Осталось попыток: ' + attempts : 'Попытки обновятся завтра';
+    const rulesLabel = document.getElementById('understoodRulesLabel');
+    if (rulesLabel) rulesLabel.textContent = needsTraining ? 'ПОНЯТНО, К ОБУЧЕНИЮ' : 'ПОНЯТНО, К КАРТЕ';
     const statsCard = document.getElementById('statsCard');
     const menuDiffCard = document.getElementById('menuDiffCard');
     const resetProgressBtn = document.getElementById('resetProgressBtn');
@@ -942,7 +949,7 @@ function updateMenuVisibility() {
     }
 
     if (startBtnLabel) {
-        startBtnLabel.textContent = hasWonGame ? 'Новый маршрут'
+        startBtnLabel.textContent = needsTraining ? 'Пройти обучение' : hasWonGame ? 'Новый маршрут'
             : hasProgress ? 'Продолжить полёт' : 'Начать полёт';
     }
 

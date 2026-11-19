@@ -4,7 +4,7 @@
 }
 .district-collection-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .district-collection-grid .collection-theme-label { line-height: calc(12px * var(--tb, 1)) !important; }
-.camp-active #scoreBadge, .camp-active #bottomHud { display:none !important; }
+.camp-active #scoreBadge, .camp-active #bottomHud, .camp-training #topHudStats { display:none !important; }
 #campaignHUD {
     position:absolute; bottom:12px; left:14px; right:14px; z-index:21; pointer-events:none;
     display:grid; gap:7px; padding:10px 12px; border:1px solid #8c67d8; border-radius:14px;
@@ -17,6 +17,24 @@
 .camp-meter { height:5px; border-radius:8px; overflow:hidden; background:#c3a7ff24; }
 .camp-meter span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#8be6e8,#c9a1ff,#ffc173); transition:width .2s ease; }
 .camp-hud-detail { align-items:flex-start; color:#d8cbfa; font-size:10.5px; line-height:1.25; }
+.camp-training #campaignHUD {
+    bottom: max(14px, env(safe-area-inset-bottom));
+    left: 14px;
+    right: 14px;
+    width: auto;
+    max-width: 400px;
+    margin-inline: auto;
+    gap: 8px;
+    background: #1d0936f2;
+    border-color: #782ce9b3;
+    box-shadow: 0 8px 24px #14032685, inset 0 1px 0 #cda7ff24;
+}
+.camp-training .camp-hud-row strong { font-size: 15px; }
+.camp-training .camp-hud-row b { font-size: 12px; }
+.camp-training .camp-hud-detail { font-size: 12px; line-height: 1.35; }
+.camp-training .camp-meter { height: 6px; }
+.camp-training .camp-meter span { background: linear-gradient(90deg, #fe7600, #ffba64); }
+.camp-training #tapToStartMsg > div { max-width: calc(100% - 32px); text-align: center; }
 #campaignHudTopics { flex:none; color:#f5d9ff; font-weight:850; white-space:nowrap; }
 .camp-day #campaignHUD { background:#132b3beF; color:#fff; border-color:#bad8dd; }
 .camp-day .camp-hud-detail { color:#e6f2f7; }
@@ -28,8 +46,8 @@
 }
 #campaignResultCard {
     display:grid; gap:12px; width:100%; max-width:376px; max-height:100%; overflow:auto; padding:18px 16px 15px;
-    background:radial-gradient(130% 85% at 50% 0,#442560,#21113c 56%,#1b0d34);
-    color:#fff; border:1px solid #9a70dc; border-radius:24px; box-shadow:0 9px 34px #10091e9c;
+    background:radial-gradient(130% 85% at 50% 0,#3b175f,#240a42 56%,#1d0936);
+    color:#fff; border:1px solid #782ce9b3; border-radius:24px; box-shadow:0 9px 34px #10091e9c, inset 0 1px 0 #cda7ff24;
     font-family:Onest,sans-serif; text-align:center;
 }
 .camp-result-icon { display:grid; place-items:center; margin:auto; width:54px; height:54px; color:#ffcb8c; border:1px solid #f7bb764f; border-radius:18px; background:#f19b2e20; font-size:25px; }
@@ -43,7 +61,7 @@
 #campaignAttemptDetail:not([hidden]) { padding:9px 12px; color:#f3e6ff; border:1px solid #9168c566; border-radius:12px; background:#1a0b32a8; font-size:12px; }
 .camp-result-actions { display:grid; gap:7px; }
 .camp-main, .camp-alt { display:flex; align-items:center; justify-content:center; gap:7px; min-height:42px; width:100%; border-radius:13px; font:850 12px Onest,sans-serif; }
-.camp-main { min-height:46px; color:#fff; }
+.camp-main { min-height:46px; color:#fff; font-size:14px; }
 #campaignSecondWindConfirm, #goCampaignHelpBtn { min-height:44px; }
 .camp-alt { color:#f1e6ff; border:1px solid #9c6df87d; background:#34194f; }
 .camp-skill { color:#ead6ff; border-color:#b78eebad; background:#502e6f; }

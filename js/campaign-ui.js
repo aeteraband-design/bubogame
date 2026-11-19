@@ -7,6 +7,8 @@
     const modal = $('campaignResult');
     const world = $('gameContainer');
     const hud = $('campaignHUD');
+    const tapLabel = $('tapToStartLabel');
+    const flightTapCopy = tapLabel.textContent;
     const campaignStart = $('campaignStartBtn');
     const classicHelp = $('goCampaignHelpBtn');
     const cancelWind = $('campaignSecondWindConfirm');
@@ -46,7 +48,7 @@
         $('journeyPickerLevels').append(item);
         action(button, () => {
             selectedLevel = index;
-            refreshPicker(campaign.status());
+            refreshPicker();
         });
         return { district, button, icon, art, stars };
     });
@@ -55,7 +57,7 @@
     function playableLevel() {
         return journey.hasDefeatedBoss() ? 0 : journey.completedCount();
     }
-    function refreshPicker(state) {
+    function refreshPicker() {
         const current = playableLevel();
         const completedCount = journey.completedCount();
         const completedRoute = journey.hasDefeatedBoss();
@@ -98,12 +100,11 @@
         pickerStart.hidden = !canStart;
         pickerReturn.hidden = canStart;
         pickerStart.textContent = completedRoute ? 'Начать новый маршрут' : awaitingPrize ? 'Забрать приз'
-            : bossReady ? 'К Смотрителю' : state.practiced && passed > 0 ? 'Продолжить полёт' : 'В полёт';
+            : bossReady ? 'К Смотрителю' : passed > 0 ? 'Продолжить полёт' : 'В полёт';
         let hint = '';
         if (completedRoute && canStart) hint = 'Новый маршрут начнётся в Ночном городе.';
         else if (selectedLevel > current && !completedRoute) hint = 'Победи Смотрителя и забери приз в предыдущем районе.';
         else if (canStart && awaitingPrize) hint = 'Приз откроет следующий район.';
-        else if (canStart && !state.practiced) hint = 'Три учебные трубы без расхода попыток.';
         else if (canStart && bossReady) hint = 'Три волны. Победа даёт вращение в рулетке.';
         const topics = window.BuboCampaignTopics.districtTopics(selected.id);
         document.getElementById('journeyPickerTopics').textContent = topics.map(theme => theme.name).join(' · ');
@@ -141,8 +142,14 @@
         button.addEventListener('click', event => { event.stopPropagation(); fn(); });
     }
     action(campaignStart, () => {
+        if (journey.reloadIfOutdated()) return;
+        if (!campaign.status().practiced) {
+            journey.start();
+            return;
+        }
         selectedLevel = playableLevel();
-        refreshPicker(campaign.status());
+        refreshPicker();
+        campaignStart.focus({ preventScroll: true });
         picker.showModal();
         window.logoAnimStop?.();
         for (const { district, art } of levels) {
@@ -153,7 +160,7 @@
     action($('journeyPickerClose'), () => picker.close());
     action(pickerReturn, () => {
         selectedLevel = playableLevel();
-        refreshPicker(campaign.status());
+        refreshPicker();
         levels[selectedLevel].button.focus();
     });
     action(pickerStart, () => {
@@ -176,7 +183,7 @@
                 campaign.dismissResult();
                 openRoulette({ victory: true });
             }
-        } else if (result.type === 'journey-district-cleared') {
+        } else if (result.type === 'journey-district-cleared' || isTrainingComplete(result)) {
             campaign.dismissResult();
             campaignStart.click();
         } else if (result.journey && state.attempts === 0) {
@@ -221,15 +228,19 @@
     }
 
     function renderHud(state) {
+        const training = state.active && state.phase === 'training';
         hud.hidden = !state.active;
         world.classList.toggle('camp-active', state.active);
+        world.classList.toggle('camp-training', training);
+        const tapCopy = training ? 'Коснись, чтобы взлететь' : flightTapCopy;
+        if (tapLabel.textContent !== tapCopy) tapLabel.textContent = tapCopy;
         world.classList.toggle('camp-day', state.active && state.phase === 'dawn');
         if (!state.active) return;
 
         $('campaignHudTitle').textContent = state.waveTitle
             ? state.title + ' · ' + state.waveIndex + '/3 · ' + state.waveTitle
             : state.title;
-        $('campaignHudGates').textContent = state.passed + ' / ' + state.total;
+        $('campaignHudGates').textContent = state.passed + ' / ' + state.total + (training ? ' трубы' : '');
         $('campaignHudHint').textContent = state.test ? 'Предпросмотр · ' + state.hint : state.hint;
         const summary = !state.test && topicSummary(state.phase);
         const counter = $('campaignHudTopics');
@@ -258,6 +269,10 @@
         pill.append(mark, (amount === 1 && word === 'вращение') ? '+1 вращение' : '+' + amount + ' ' + word);
         list.append(pill);
     }
+    function isTrainingComplete(result) {
+        return result.type === 'checkpoint' && result.phase === 'training';
+    }
+
     function renderResult(state) {
         const result = state.result;
         modal.hidden = !result;
@@ -277,7 +292,7 @@
         modal.dataset.result = result.type;
         $('campaignResultTitle').textContent = result.test ? 'Предпросмотр завершён' : won ? result.title + ' побеждён' : districtCleared ? 'Район пройден'
             : checkpoint ? result.replay ? 'Разминка завершена'
-                : result.phase === 'training' ? 'Три трубы пройдены' : result.title + ' пройден'
+                : result.phase === 'training' ? 'Обучение пройдено' : result.title + ' пройден'
             : trainingFailure ? 'Попробуй ещё раз' : noAttempts ? 'Попытки закончились' : result.title;
         $('campaignResultMessage').textContent = result.test ? (result.reason || result.title + ' пройден.')
             : result.rewardPending
@@ -287,7 +302,7 @@
             : districtCleared ? result.reason
             : won ? (result.mapReplay ? 'Карта снова пройдена.' : 'Забери приз в рулетке, чтобы продолжить маршрут.')
             : checkpoint ? (result.replay ? 'Можно возвращаться к походу.'
-                : result.phase === 'training' ? 'Впереди ' + journey.region().name + ' и коллекция из ' + journey.regionProgress().total + ' значков.' : 'Контрольная точка сохранена.')
+                : result.phase === 'training' ? 'Начни путешествие с Ночного города.' : 'Контрольная точка сохранена.')
             : trainingFailure ? result.hint : result.reason;
 
         const reward = $('campaignReward');
@@ -305,10 +320,10 @@
         const detail = $('campaignAttemptDetail');
         detail.hidden = !noAttempts;
         detail.textContent = noAttempts ? windDetail(offer) : '';
-        actionButton.hidden = (noAttempts && !offer?.available) || (result.replay && state.phase === 'complete');
+        actionButton.hidden = noAttempts && !offer?.available;
         cancelWind.hidden = !confirmingPurchase;
         actionButton.textContent = result.test ? 'Повторить предпросмотр' : won ? (result.mapReplay ? 'Повторить поход' : 'Открыть рулетку')
-            : districtCleared ? 'К карте'
+            : districtCleared || isTrainingComplete(result) ? 'К карте районов'
             : noAttempts ? !offer?.available ? '' : offer.mode === 'free' ? 'Второе дыхание · бесплатно'
                 : (confirmingWind ? 'Начать за ' : 'Второе дыхание · ') + offer.price + ' монет'
             : result.type === 'journey-ready' ? 'К Смотрителю' : result.type === 'journey-failure' ? 'Вернуться к башне'
@@ -335,7 +350,7 @@
 
     function refresh() {
         const state = campaign.status();
-        if (picker.open) refreshPicker(state);
+        if (picker.open) refreshPicker();
         renderHud(state);
         renderResult(state);
         refreshEnd();

@@ -321,7 +321,7 @@ function openResetConfirm() {
     if (yes) yes.addEventListener('click', (e) => {
         e.stopPropagation(); if (m) m.classList.add('hidden');
         resetEntireGame({ keepAttempts: true });   // попытки не обновляются — сбрасывается только прогресс
-        startOrResumeFlight();
+        document.getElementById('campaignStartBtn').click();
     });
 })();
 
@@ -337,7 +337,7 @@ if (restartFromGameOverBtn) restartFromGameOverBtn.addEventListener('click', (e)
     const modal = document.getElementById('gameOverModal');
     if (modal) modal.classList.add('hidden');
     resetEntireGame({ keepAttempts: true });
-    startOrResumeFlight();
+    document.getElementById('campaignStartBtn').click();
 });
 
 const gameOverHomeBtn = document.getElementById('gameOverHomeBtn');

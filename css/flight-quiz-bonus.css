@@ -84,14 +84,15 @@
     text-align: center;
 }
 #scoreBadge.bubo-flight-bonus-score { position: relative; }
+#topHud #scoreBadge > .bubo-flight-bonus-ring { margin: 0 !important; }
 .bubo-flight-bonus-ring {
     position: absolute;
-    inset: -2px;
-    margin: 0 !important;
+    /* Позиционирование идёт от внутреннего края рамки толщиной 1 px. */
+    inset: -1px;
     border-radius: inherit;
     pointer-events: none;
-    background: conic-gradient(from -90deg, #ffad4d 0%, #ff7815 var(--fb-progress, 0%), transparent var(--fb-progress, 0%));
-    padding: 2px;
+    background: conic-gradient(from -90deg, #ffbc70 0%, #ff943b var(--fb-progress, 0%), transparent var(--fb-progress, 0%));
+    padding: 1px;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -99,4 +100,15 @@
 }
 .bubo-flight-bonus-ring.is-complete {
     background: #ff9a32;
+}
+
+@keyframes bubo-flight-bonus-glint {
+    0%, 82%, 100% { filter: brightness(1); }
+    91% { filter: brightness(1.32); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    html:not([data-gfx-quality="low"], .gfx-low) .bubo-flight-bonus-ring {
+        animation: bubo-flight-bonus-glint 8s ease-in-out infinite;
+    }
 }

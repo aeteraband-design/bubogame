@@ -5,8 +5,8 @@
     const PHASES = ['training', 'night', 'dawn', 'boss', 'complete'];
     const STAGES = {
         training: {
-            title: 'Первые три трубы',
-            hint: 'Каждое нажатие поднимает сову. Остановись — она начнёт падать.',
+            title: 'Обучение',
+            hint: 'Нажимай, когда сова опускается. Пролети через три проёма.',
             reward: { xp: 20, coins: 0, spins: 0 },
             gapScale: 1.65,
             routes: [[.50, .50, .47]]

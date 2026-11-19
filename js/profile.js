@@ -861,12 +861,6 @@ function profResetProgress() {
     try { invRender(); } catch (e) {}
     pfPlateSync();
 }
-function profResetAll() {
-    profResetProgress();
-    try { [PF_KEY, 'bubo_hello_day'].forEach(k => BuboSaveStorage.removeItem(k)); } catch (e) {}
-    pfPlateAv = ''; pfPlateSync();
-}
-
 // After loading, offer a profile once. Existing players go straight to their menu.
 (function () {
     pfPlateSync();

@@ -263,8 +263,10 @@
     //  ПРОГРЕСС — игра с нуля, как в новый день у нового игрока: попытки, темы, вопросы дня, монеты, вращения, уровень совы, навыки, статистика, запас.
     //             Профиль (ник, аватар) и настройки админки остаются;
     //  АДМИНКА  — только настройки админки к стандартным;
-    //  ВСЁ      — и то и другое, и выход из профиля: снова регистрация, как при первом запуске.
-    function admResetProgress() {
+    //  ВСЁ      — сброс игры и админки, затем выход на экран входа. Данные для входа сохраняются.
+    function admResetProgress(resetSettings = false) {
+        if (window.BuboJourney?.reloadIfOutdated()) return false;
+        if (resetSettings) admResetCfg();
         window.BuboCampaign?.reset();
         window.BuboJourney?.resetRoute({ retainRewards: false });
         if (typeof qzSetAdminPreview === 'function') qzSetAdminPreview('');
@@ -281,6 +283,7 @@
         try { if (typeof qzSaveAttempt === 'function') qzSaveAttempt(null); } catch (er) {}
         try { if (typeof FlightQuizBonus !== 'undefined') FlightQuizBonus.reset(); } catch (er) {}
         try { StorageManager.save(); updateHUDAll(); updateMenuVisibility(); } catch (er) {}
+        return true;
     }
     function admResetCfg() { try { window.applyAdminConfig(ADMIN_DEFAULTS); renderBody(); } catch (er) {} }
     function admTwoTap(id, label, run) {
@@ -298,11 +301,16 @@
     admTwoTap('admAttBtn', 'ПРОГРЕСС', admResetProgress);
     admTwoTap('admCfgBtn', 'АДМИНКА', admResetCfg);
     admTwoTap('admAllBtn', 'ВСЁ', () => {
-        admResetCfg(); admResetProgress();
-        try { if (typeof profResetAll === 'function') profResetAll(); } catch (er) {}
-        try { BuboSaveStorage.removeItem('bubo_inv_side'); } catch (er) {}
-        // После сброса возвращаемся к гостевому профилю в меню.
-        setTimeout(() => { try { close(); } catch (er) { modal.classList.add('hidden'); } }, 600);
+        if (!admResetProgress(true)) return;
+        try {
+            BuboSaveStorage.removeItem('bubo_inv_side');
+            BuboSaveStorage.removeItem('bubo_goal_hidden');
+            BuboSaveStorage.removeItem('bubo_hello_day');
+            if (!BuboLocalProfiles.activeId) BuboSaveStorage.removeItem('bubo_profile');
+        } catch (error) {}
+        if (!BuboLocalProfiles.select('ask', true)) return;
+        StorageManager.flushPending();
+        window.location.reload();
     });
     // кнопка неактивна, пока сбрасывать нечего: игра как новая (попытки полные, прогресса и вопросов дня нет)
     function admResetSync() {
